@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
 
 
-def md5sum(filename, blocksize=4194304):
+def md5sum(filename, blocksize=8388608):
     hash_md5 = hashlib.md5()
     with open(filename, "rb") as f:
         for block in iter(lambda: f.read(blocksize), b""):

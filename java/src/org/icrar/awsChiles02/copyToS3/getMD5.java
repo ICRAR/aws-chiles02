@@ -64,7 +64,7 @@ public class GetMD5 {
     FileInputStream fis = new FileInputStream(file);
 
     //Create byte array to read data in chunks
-    byte[] byteArray = new byte[4194304];
+    byte[] byteArray = new byte[8388608];
     int bytesCount;
 
     // Read file data and update in message digest
