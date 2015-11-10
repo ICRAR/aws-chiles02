@@ -39,6 +39,7 @@ public class GetMD5 {
   private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
 
   public static void main(String[] args) throws Exception {
+    LOG.info("args" + args);
     if (args.length == 2) {
       File file = new File(args[1]);
       String md5 = getFileChecksum(MessageDigest.getInstance("MD5"), file);
