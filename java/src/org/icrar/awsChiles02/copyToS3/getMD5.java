@@ -27,6 +27,8 @@ package org.icrar.awsChiles02.copyToS3;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 
 import org.apache.commons.logging.Log;
@@ -39,10 +41,14 @@ public class GetMD5 {
   private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
 
   public static void main(String[] args) throws Exception {
-    if (args.length == 1) {
-      File file = new File(args[0]);
-      String md5 = getFileChecksum(MessageDigest.getInstance("MD5"), file);
-      LOG.info("MD5: " + md5);
+    for (String filename : args) {
+      File file = new File(filename);
+      if (file.isFile() && file.exists()) {
+        String md5 = getFileChecksum(MessageDigest.getInstance("MD5"), file);
+        LOG.info("MD5: " + md5);
+
+        Files.write(Paths.get(filename + ".md5"), md5.getBytes());
+      }
     }
   }
 
@@ -58,7 +64,7 @@ public class GetMD5 {
     FileInputStream fis = new FileInputStream(file);
 
     //Create byte array to read data in chunks
-    byte[] byteArray = new byte[65536];
+    byte[] byteArray = new byte[4194304];
     int bytesCount;
 
     // Read file data and update in message digest
