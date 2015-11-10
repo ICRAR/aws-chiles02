@@ -1,4 +1,5 @@
-/aws-chiles02.iml
+/python/python.iml
+/java/java.iml
 /.idea
 
 # Byte-compiled / optimized / DLL files
@@ -9,4 +10,5 @@ __pycache__/
 *.so
 
 
-# Created by .ignore support plugin (hsz.mobi)
+/java/out
+.class
