@@ -47,10 +47,10 @@ cd {0}
 tar -cvf {1}/{2}.tar {2}
 
 # Now make the MD5 file
-~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar GetMD5 {1}/{2}.tar
+~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.GetMD5 {1}/{2}.tar
 
 # Copy the file to S3
-~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar {1}/{2}.tar
+~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar {1}/{2}.tar
 
 
 '''.format(
