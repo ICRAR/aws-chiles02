@@ -77,7 +77,7 @@ def write_scripts(list_measurement_sets, root_directory):
 def get_list_measurement_sets(directory_in):
     list_measurement_sets = []
     for root, dir_names, filenames in walk(directory_in):
-        for match in fnmatch.filter(filenames, '*_calibrated_deepfield.ms'):
+        for match in fnmatch.filter(dir_names, '*_calibrated_deepfield.ms'):
             LOG.info('Looking at: {0}'.format(join(root, match)))
 
     return list_measurement_sets
