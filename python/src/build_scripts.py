@@ -78,7 +78,9 @@ def get_list_measurement_sets(directory_in):
     list_measurement_sets = []
     for root, dir_names, filenames in walk(directory_in):
         for match in fnmatch.filter(dir_names, '*_calibrated_deepfield.ms'):
-            LOG.info('Looking at: {0}'.format(join(root, match)))
+            measurement_set = join(root, match)
+            LOG.info('Looking at: {0}'.format(measurement_set))
+            list_measurement_sets.append(measurement_set)
 
     return list_measurement_sets
 
@@ -93,7 +95,6 @@ def build_scripts(args):
     if not exists(args.directory_out):
         makedirs(args.directory_out)
 
-    import pdb; pdb.set_trace()
     list_measurement_sets = get_list_measurement_sets(args.directory_in)
     write_scripts(list_measurement_sets, args.directory_out)
 
