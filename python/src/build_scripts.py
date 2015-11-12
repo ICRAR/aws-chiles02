@@ -64,12 +64,10 @@ tar -cvf {1}/{2}.tar {2}
 def write_scripts(list_measurement_sets, root_directory):
     index = 0
     for measurement_set in list_measurement_sets:
-        script_filename = \
-            join(
-                root_directory,
-                '{0:03d}'.format(index),
-                'copy_measurement_set.sh'
-            )
+        script_dir = join(root_directory, '{0:03d}'.format(index))
+        if not exists(script_dir):
+            makedirs(script_dir)
+        script_filename = join(script_dir, 'copy_measurement_set.sh')
         write_script(script_filename, measurement_set)
         index += 1
 
