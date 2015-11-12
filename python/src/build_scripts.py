@@ -93,6 +93,7 @@ def build_scripts(args):
     if not exists(args.directory_out):
         makedirs(args.directory_out)
 
+    import pdb; pdb.set_trace()
     list_measurement_sets = get_list_measurement_sets(args.directory_in)
     write_scripts(list_measurement_sets, args.directory_out)
 
