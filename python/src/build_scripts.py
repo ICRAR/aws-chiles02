@@ -49,10 +49,12 @@ tar -cvf {1}/{2}.tar {2}
 # Now make the MD5 file
 ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.GetMD5 {1}/{2}.tar
 
-# Copy the file to S3
+# Copy the files to S3
 ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar {1}/{2}.tar
+~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar.md5 {1}/{2}.tar.md5
 
-
+rm {1}/{2}.tar
+rm {1}/{2}.tar.md5
 '''.format(
             measurement_set_directory,
             script_directory,

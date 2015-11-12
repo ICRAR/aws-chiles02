@@ -30,9 +30,6 @@ import java.util.List;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.cli.CommandLine;
@@ -101,39 +98,15 @@ public class CopyFileToS3 {
         (profileName == null)
         ? new ProfileCredentialsProvider()
         : new ProfileCredentialsProvider(profileName);
-    TransferManager tm = new TransferManager(credentialsProvider);
+    TransferManager transferManager = new TransferManager(credentialsProvider);
 
-    // For more advanced uploads, you can create a request object
-    // and supply additional request parameters (ex: progress listeners,
-    // canned ACLs, etc.)
-    PutObjectRequest request =
-        new PutObjectRequest(
-            bucketName,
-            keyName,
-            new File(filePath)
-        );
-
-    // You can ask the upload for its progress, or you can
-    // add a ProgressListener to your request to receive notifications
-    // when bytes are transferred.
-    request.setGeneralProgressListener(
-        new ProgressListener() {
-          @Override
-          public void progressChanged(ProgressEvent progressEvent) {
-            LOG.info(
-                "Transferred bytes: " +
-                    progressEvent.getBytesTransferred());
-          }
-        }
-    );
-
-    // TransferManager processes all transfers asynchronously,
-    // so this call will return immediately.
     long startTime = System.currentTimeMillis();
-    Upload upload = tm.upload(request);
+
+    // TransferManager processes all transfers asynchronously, so this call will return immediately.
+    Upload upload = transferManager.upload(bucketName, keyName, new File(filePath));
 
     try {
-      // You can block and wait for the upload to finish
+      // Block and wait for the upload to finish
       upload.waitForCompletion();
     }
     catch (AmazonClientException amazonClientException) {
@@ -142,5 +115,8 @@ public class CopyFileToS3 {
     }
     long endTime = System.currentTimeMillis();
     LOG.info("Upload took " + (endTime - startTime) + " seconds");
+
+    // Close everything down
+    transferManager.shutdownNow();
   }
 }
