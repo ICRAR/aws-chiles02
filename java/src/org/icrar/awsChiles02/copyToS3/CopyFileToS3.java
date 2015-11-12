@@ -129,6 +129,7 @@ public class CopyFileToS3 {
 
     // TransferManager processes all transfers asynchronously,
     // so this call will return immediately.
+    long startTime = System.currentTimeMillis();
     Upload upload = tm.upload(request);
 
     try {
@@ -139,5 +140,7 @@ public class CopyFileToS3 {
       LOG.error("Unable to upload file, upload aborted.", amazonClientException);
       amazonClientException.printStackTrace();
     }
+    long endTime = System.currentTimeMillis();
+    LOG.info("Upload took " + (endTime - startTime) + " seconds");
   }
 }
