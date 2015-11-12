@@ -40,8 +40,8 @@ def write_script(full_script_filename, full_measurement_set):
 
     (script_directory, script_filename) = split(full_script_filename)
     (measurement_set_directory, measurement_set_filename) = split(full_measurement_set)
-    with open(script_filename, 'w') as output_file:
-        output_file.write('''#!/bin/bash
+    output_file = open(full_script_filename, 'w')
+    output_file.write('''#!/bin/bash
 # Tar up the measurement set - find the MD5 and copy it to S3
 cd {0}
 tar -cvf {1}/{2}.tar {2}
@@ -59,6 +59,7 @@ tar -cvf {1}/{2}.tar {2}
             measurement_set_filename
         )
         )
+    output_file.close()
 
 
 def write_scripts(list_measurement_sets, root_directory):
