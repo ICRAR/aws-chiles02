@@ -114,7 +114,7 @@ public class CopyFileToS3 {
       amazonClientException.printStackTrace();
     }
     long endTime = System.currentTimeMillis();
-    LOG.info("Upload took " + (endTime - startTime) + " seconds");
+    LOG.info("Upload took " + (endTime - startTime) / 1000 + " seconds");
 
     // Close everything down
     transferManager.shutdownNow();
