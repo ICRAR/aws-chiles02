@@ -46,18 +46,8 @@ public class GetMD5 {
     for (String filename : args) {
       File file = new File(filename);
       if (file.isFile() && file.exists()) {
-        long startTime = System.currentTimeMillis();
-        String md5 = getFileChecksum01(MessageDigest.getInstance("MD5"), file);
+        String md5 = getFileChecksum(MessageDigest.getInstance("MD5"), file);
         LOG.info("MD5: " + md5);
-
-        long checkPoint1 = System.currentTimeMillis();
-        LOG.info("Checkpoint1 = " + (checkPoint1 - startTime) / 1000);
-
-        md5 = getFileChecksum02(MessageDigest.getInstance("MD5"), file);
-        LOG.info("MD5: " + md5);
-
-        long checkPoint2 = System.currentTimeMillis();
-        LOG.info("Checkpoint2 = " + (checkPoint2 - checkPoint1) / 1000);
 
         Files.write(Paths.get(filename + ".md5"), md5.getBytes());
       }
@@ -71,7 +61,7 @@ public class GetMD5 {
    * @return the MD5 as a hex string
    * @throws IOException
    */
-  private static String getFileChecksum02(MessageDigest digest, File file) throws IOException {
+  private static String getFileChecksum(MessageDigest digest, File file) throws IOException {
     FileInputStream f = new FileInputStream( file );
     FileChannel ch = f.getChannel( );
     byte[] byteArray = new byte[8388608];
@@ -81,43 +71,6 @@ public class GetMD5 {
       digest.update(byteArray, 0, bytesCount);
       bb.clear( );
     }
-
-    // Get the hash's bytes
-    byte[] bytes = digest.digest();
-
-    // This bytes[] has bytes in decimal format;
-    // Convert it to hexadecimal format
-    StringBuilder sb = new StringBuilder();
-    for (byte aByte : bytes) {
-      sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
-    }
-
-    //return complete hash
-    return sb.toString();
-  }
-
-  /**
-   * Calculate the digest
-   * @param digest the type of message Digest to use
-   * @param file the file to check
-   * @return the MD5 as a hex string
-   * @throws IOException
-   */
-  private static String getFileChecksum01(MessageDigest digest, File file) throws IOException {
-    // Get file input stream for reading the file content
-    FileInputStream fis = new FileInputStream(file);
-
-    //Create byte array to read data in chunks
-    byte[] byteArray = new byte[8388608];
-    int bytesCount;
-
-    // Read file data and update in message digest
-    while ((bytesCount = fis.read(byteArray)) != -1) {
-      digest.update(byteArray, 0, bytesCount);
-    }
-
-    // close the stream; We don't need it now.
-    fis.close();
 
     // Get the hash's bytes
     byte[] bytes = digest.digest();
