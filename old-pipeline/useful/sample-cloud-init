@@ -1,0 +1,217 @@
+Content-Type: multipart/mixed; boundary="===============1282103968297334471=="
+MIME-Version: 1.0
+
+--===============1282103968297334471==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+
+#cloud-config
+repo_update: true
+repo_upgrade: all
+
+# Install additional packages on first boot
+packages:
+ - wget
+ - git
+ - libXrandr
+ - libXfixes
+ - libXcursor
+ - libXinerama
+ - htop
+ - sysstat
+
+# Add a kill command so if it goes TU we will kill the instance
+power_state:
+ delay: "+1440"
+ mode: halt
+ message: Kill command executed
+ timeout: 120
+
+runcmd:
+ - (cd /home/ec2-user/chiles_pipeline ; git pull)
+ - pip2.7 install configobj boto
+
+write_files:
+ - content: |
+      [Credentials]
+      aws_access_key_id = XX
+      aws_secret_access_key = YY
+
+   path: /etc/boto.cfg
+
+# Log all cloud-init process output (info & errors) to a logfile
+output : { all : ">> /var/log/chiles-output.log" }
+
+# Final_message written to log when cloud-init processes are finished
+final_message: "System boot (via cloud-init) is COMPLETE, after $UPTIME seconds. Finished at $TIMESTAMP"
+
+--===============1282103968297334471==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+#!/bin/bash -vx
+#  _   _  ___ _____ _____
+# | \ | |/ _ \_   _| ____|
+# |  \| | | | || | |  _|
+# | |\  | |_| || | | |___
+# |_| \_|\___/ |_| |_____|
+#
+# When this is run as a user data start up script is is run as root - BE CAREFUL!!!
+# Setup the ephemeral disks
+
+# Print into the logs the disk free
+df -h
+
+if [ -b "/dev/xvdb" ]; then
+
+    METADATA_URL_BASE="http://169.254.169.254/latest"
+
+    yum -y -d0 install mdadm curl
+
+    # Configure Raid if needed - taking into account xvdb or sdb
+    root_drive=`df -h | grep -v grep | awk 'NR==2{print $1}'`
+
+    if [ "$root_drive" == "/dev/xvda1" ]; then
+      echo "Detected 'xvd' drive naming scheme (root: $root_drive)"
+      DRIVE_SCHEME='xvd'
+    else
+      echo "Detected 'sd' drive naming scheme (root: $root_drive)"
+      DRIVE_SCHEME='sd'
+    fi
+
+    # figure out how many ephemerals we have by querying the metadata API, and then:
+    #  - convert the drive name returned from the API to the hosts DRIVE_SCHEME, if necessary
+    #  - verify a matching device is available in /dev/
+    drives=""
+    ephemeral_count=0
+    ephemerals=$(curl --silent $METADATA_URL_BASE/meta-data/block-device-mapping/ | grep ephemeral)
+    for e in $ephemerals; do
+      echo "Probing $e .."
+      device_name=$(curl --silent $METADATA_URL_BASE/meta-data/block-device-mapping/$e)
+      # might have to convert 'sdb' -> 'xvdb'
+      device_name=$(echo $device_name | sed "s/sd/$DRIVE_SCHEME/")
+      device_path="/dev/$device_name"
+
+      # test that the device actually exists since you can request more ephemeral drives than are available
+      # for an instance type and the meta-data API will happily tell you it exists when it really does not.
+      if [ -b $device_path ]; then
+        echo "Detected ephemeral disk: $device_path"
+        drives="$drives $device_path"
+        ephemeral_count=$((ephemeral_count + 1 ))
+      else
+        echo "Ephemeral disk $e, $device_path is not present. skipping"
+      fi
+    done
+
+    echo "ephemeral_count = $ephemeral_count"
+    if (( ephemeral_count > 1 )); then
+        umount /media/ephemeral0
+        # overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input
+        for drive in $drives; do
+          dd if=/dev/zero of=$drive bs=4096 count=1024
+        done
+
+        partprobe
+        mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$ephemeral_count $drives
+        blockdev --setra 65536 /dev/md0
+        mkfs.ext4 /dev/md0
+        mkdir -p /mnt/output
+        mount -t ext4 -o noatime /dev/md0 /mnt/output
+    elif (( ephemeral_count == 1 )); then
+        if mountpoint -q "/media/ephemeral0" ; then
+            # The ephemeral disk is usually mounted on /media/ephemeral0
+            rm -f /mnt/output
+            ln -s /media/ephemeral0 /mnt/output
+        else
+            # The ephemeral disk is not mounted on /media/ephemeral0 so mount it
+            mkdir -p /mnt/output
+            mkfs.ext4 /dev/xvdb
+            mount /dev/xvdb /mnt/output
+        fi
+    else
+        mkdir -p /mnt/output
+        mkfs.ext4 /dev/xvdb
+        mount /dev/xvdb /mnt/output
+    fi
+fi
+chmod oug+wrx /mnt/output
+
+# Print into the logs the disk free
+df -h
+#  _   _  ___ _____ _____
+# | \ | |/ _ \_   _| ____|
+# |  \| | | | || | |  _|
+# | |\  | |_| || | | |___
+# |_| \_|\___/ |_| |_____|
+#
+# The disk setup is done in the setup_disks.bash script
+#
+# When this is run as a user data start up script is is run as root - BE CAREFUL!!!
+
+# As we might need to wait for the mount point to arrive as it can only be attached
+# after the instance is running
+sleep 10
+while [ ! -b "/dev/xvdf" ]; do
+  echo Sleeping
+  sleep 30
+done
+
+# Now mount the data disk
+mkdir -p /mnt/Data/data1
+mount /dev/xvdf /mnt/Data/data1
+chmod -R oug+r /mnt/Data/data1
+
+# Run the cvel pipeline
+##### runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh min_freq max_freq' #####
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1200 1204'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1204 1208'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1208 1212'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1212 1216'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1216 1220'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1220 1224'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1224 1228'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1228 1232'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1232 1236'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1236 1240'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1240 1244'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1244 1248'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1248 1252'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1252 1256'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1256 1260'
+
+runuser -l ec2-user -c 'bash -vx /home/ec2-user/chiles_pipeline/bash/start_cvel.sh 1260 1264'
+
+
+# Copy files to S3
+runuser -l ec2-user -c 'python2.7 /home/ec2-user/chiles_pipeline/python/copy_cvel_output.py -p 2 20131122_941_6'
+
+# Copy log files to S3
+runuser -l ec2-user -c 'python2.7 /home/ec2-user/chiles_pipeline/python/copy_log_files.py -p 3 CVEL-logs/20131122_941_6'
+
+# Unattach the volume and delete it
+umount /dev/xvdf
+sleep 10
+runuser -l ec2-user -c 'python2.7 /home/ec2-user/chiles_pipeline/python/delete_volumes.py vol-7208d475'
+
+# Terminate
+shutdown -h now
+
+--===============1282103968297334471==--

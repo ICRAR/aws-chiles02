@@ -1,0 +1,1 @@
+aws s3api get-object --bucket chiles.output.icrar.org.s3.amazonaws.com --key IMGCONCAT/1400-1424.cube.tar.gz 1400-1424.cube.tar.gz
