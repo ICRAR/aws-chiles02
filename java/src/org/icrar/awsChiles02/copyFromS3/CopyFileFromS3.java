@@ -32,7 +32,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,8 +44,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class CopyFileFromS3 {
     private static final int THREAD_POOL_SIZE = 5;
-    private static final int REQUEST_LENGTH = 6;//1024;
-    private static final int FILE_SIZE = 62;// * 1024 + 10;
+    private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
     private static final String BUCKET_NAME = "a-c-test";
     private static final String KEY_NAME = "t1";
     private static final String DESTINATION_NAME = "/Users/mboulton/t1.out";
@@ -54,19 +55,25 @@ public class CopyFileFromS3 {
     private static ProfileCredentialsProvider credentialsProvider;
     private static AmazonS3Client awsS3Client;
 
-    private static int requestedFileCurrentPosition = 0;
+    private static long requestedFileCurrentPosition = 0;
 
     // This lock is used to sync between the Threads so we know when they are ready.
     private static final class Lock { }
     private final Object lock = new Lock();
 
-    private CopyFileFromS3() {}
+    private final long fileSize;
+    private final int requestLength;
+
+    private CopyFileFromS3(long fileSize, int requestLength) {
+        this.fileSize = fileSize;
+        this.requestLength = requestLength;
+    }
 
     /**
      * Do the actual download of the S3 file.
      */
     private void go() {
-        int bufferElementsLoaded = initBufferRequest(FILE_SIZE);
+        int bufferElementsLoaded = initBufferRequest();
         int currentFilePosition = 0;
         int index = 0;
 
@@ -90,7 +97,7 @@ public class CopyFileFromS3 {
         }
         BufferedOutputStream bos = new BufferedOutputStream(fos);
 
-        while (currentFilePosition < FILE_SIZE) {
+        while (currentFilePosition < fileSize) {
             synchronized (lock) {
                 // Loop here until the next segmen of the file is ready. We can't wait on a particular thread
                 // hence the reason to check each time we get control back from lock.wait().
@@ -137,9 +144,9 @@ public class CopyFileFromS3 {
      * @param index
      */
     private void doNextRequest(int index) {
-        if (requestedFileCurrentPosition < FILE_SIZE) {
-            int requestSize = requestedFileCurrentPosition + REQUEST_LENGTH < FILE_SIZE ?
-                    REQUEST_LENGTH : FILE_SIZE - requestedFileCurrentPosition;
+        if (requestedFileCurrentPosition < fileSize) {
+            int requestSize = requestedFileCurrentPosition + requestLength < fileSize ?
+                    requestLength : (int)(fileSize - requestedFileCurrentPosition);
             S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client,
                                                         requestedFileCurrentPosition,
                                                         requestSize,
@@ -153,21 +160,25 @@ public class CopyFileFromS3 {
 
     /**
      *
-     * @param fileSize
      * @return
      */
-    private int initBufferRequest(final int fileSize) {
+    private int initBufferRequest() {
         int index;
 
         for (index=0; index<THREAD_POOL_SIZE; index++) {
-            if (requestedFileCurrentPosition + REQUEST_LENGTH > fileSize) {
+            if (requestedFileCurrentPosition + requestLength > fileSize) {
                 break;
             }
-            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client, requestedFileCurrentPosition, REQUEST_LENGTH, BUCKET_NAME, KEY_NAME, lock);
-            requestedFileCurrentPosition += REQUEST_LENGTH;
+            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client, requestedFileCurrentPosition, requestLength, BUCKET_NAME, KEY_NAME, lock);
+            requestedFileCurrentPosition += requestLength;
         }
         if (requestedFileCurrentPosition < fileSize && index != THREAD_POOL_SIZE) {
-            S3_DATA_REQUESTS[index++] = new S3DataRequest(awsS3Client, requestedFileCurrentPosition, fileSize- requestedFileCurrentPosition, BUCKET_NAME, KEY_NAME, lock);
+            S3_DATA_REQUESTS[index++] = new S3DataRequest(awsS3Client,
+                                                          requestedFileCurrentPosition,
+                                                          (int)(fileSize - requestedFileCurrentPosition),
+                                                          BUCKET_NAME,
+                                                          KEY_NAME,
+                                                          lock);
         }
 
         for (int i=0;i<index;i++) {
@@ -215,20 +226,38 @@ public class CopyFileFromS3 {
         System.out.println(":");
     }
 
+    /**
+     *
+     * @param profileName
+     */
     private static void setupAWS(String profileName) {
         credentialsProvider = new ProfileCredentialsProvider(profileName);
         awsS3Client = new AmazonS3Client(credentialsProvider);
     }
 
+    /**
+     *
+     * @param bucketName
+     * @param key
+     * @return
+     */
+    private static long getObjectSizePlusMetadata(String bucketName, String key) {
+        GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, key);
+        ObjectMetadata objectMetadata = awsS3Client.getObjectMetadata(getObjectMetadataRequest);
+        return objectMetadata.getContentLength();
+    }
+
     public static void main(String[] args) throws Exception {
-        String bucketName = "a-c-test";
+        String bucketName = BUCKET_NAME;
         String filePath = "t1";
-        String keyName;
+        String key = KEY_NAME;
         String profileName = "aws-profile";
 
         setupAWS(profileName);
 
-        CopyFileFromS3 me = new CopyFileFromS3();
+        long fileSize = getObjectSizePlusMetadata(bucketName, key);
+
+        CopyFileFromS3 me = new CopyFileFromS3(fileSize, 128 * 1024);
         me.go();
         // me.test1();
         System.out.println("At end of main, about to shutdown Executor");

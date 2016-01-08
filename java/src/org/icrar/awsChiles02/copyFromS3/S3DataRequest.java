@@ -32,7 +32,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
  */
 public class S3DataRequest {
     private final AmazonS3Client awsS3Client;
-    private int startPosition;
+    private long startPosition;
     private int length;
     private String bucketName;
     private String keyName;
@@ -51,7 +51,7 @@ public class S3DataRequest {
      * @param lock
      */
     public S3DataRequest(final AmazonS3Client awsS3Client,
-                         int startPostion,
+                         long startPostion,
                          int length,
                          String bucketName,
                          String keyName,
@@ -75,7 +75,7 @@ public class S3DataRequest {
      * @param startPostion
      * @param length
      */
-    public void ResetS3DataRequest(int startPostion, int length) {
+    public void ResetS3DataRequest(long startPostion, int length) {
         if (length <= 0) {
             throw new IllegalArgumentException("Length cannot be less than 1");
         }
@@ -100,7 +100,7 @@ public class S3DataRequest {
      *
      * @return
      */
-    public int getStartPosition() {
+    public long getStartPosition() {
         return startPosition;
     }
 

@@ -43,14 +43,20 @@ public class S3DataReader implements Runnable {
 
     private void getData() {
         S3Object s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
-        try {
-            s3Object.getObjectContent().read(request.getS3Data(),0,request.getLength());
-        } catch (IOException e) {
-            e.printStackTrace();
+        int bytesRead = 0;
+        int currentPosition = 0;
+        while (bytesRead != -1) {
+            try {
+                bytesRead = s3Object.getObjectContent().read(
+                        request.getS3Data(), currentPosition, request.getLength() - currentPosition);
+                currentPosition += bytesRead;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         // We don't need to set the s3Data bytes in the original request as that was done above in the read.
         request.setRequestComplete(true);
-        System.out.println("Thread at position " + request.getStartPosition() + " about to do sync/notifyAll");
+        System.out.println("Thread at position " + request.getStartPosition() + ", read " + currentPosition + " about to do sync/notifyAll");
         synchronized (lock) {
             lock.notifyAll();
         }
