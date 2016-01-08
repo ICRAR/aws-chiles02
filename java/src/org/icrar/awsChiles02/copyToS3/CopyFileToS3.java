@@ -90,7 +90,7 @@ public class CopyFileToS3 {
 
       // automatically generate the help statement
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "ant", options );
+      formatter.printHelp( "CopyFileToS3", options );
       return;
     }
 
