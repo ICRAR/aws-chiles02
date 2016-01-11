@@ -276,11 +276,13 @@ public class CopyFileFromS3 {
         String destinationPath;
         int threadBufferSize = DEFAULT_REQUEST_LENGTH;
 
+        long startTime = System.currentTimeMillis();
 
         String profileName = null;
 
         Option awsProfile = Option.builder("aws_profile")
                 .hasArg()
+                .argName("profile_name")
                 .desc("the aws profile to use")
                 .build();
 
@@ -288,7 +290,6 @@ public class CopyFileFromS3 {
                 .hasArg()
                 .argName("SIZE")
                 .desc("number of bytes in each thread's buffer, size of each download part")
-                .type(Integer.class)
                 .build();
 
         Options options = new Options();
@@ -306,10 +307,10 @@ public class CopyFileFromS3 {
             }
 
             if (line.hasOption("thread_buffer")) {
-                Object value = line.getParsedOptionValue("thread_buffer");
-                if (value instanceof Integer) {
-                    threadBufferSize = ((Integer) value).intValue();
-                }
+                String value = line.getOptionValue("thread_buffer");
+                System.out.println("Found thread_buffer option with value " + value.toString());
+                threadBufferSize = Integer.parseInt(value);
+                System.out.println("Option is integer with value " + threadBufferSize);
             }
 
             List<String> mainArguments = line.getArgList();
@@ -341,6 +342,7 @@ public class CopyFileFromS3 {
 
         CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
         me.go();
+        long finishTime = System.currentTimeMillis();
         // me.test1();
         System.out.println("At end of main, about to shutdown Executor");
         MY_EXECUTOR.shutdown();
@@ -348,6 +350,6 @@ public class CopyFileFromS3 {
             System.out.println("Forcing Executor shutdown");
             MY_EXECUTOR.shutdownNow();
         }
-        System.out.println("Finished.");
+        System.out.println("Finished in " + (finishTime - startTime) + ".");
     }
 }
