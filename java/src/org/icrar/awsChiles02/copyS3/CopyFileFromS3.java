@@ -90,7 +90,7 @@ public class CopyFileFromS3 {
      */
     private String go() {
         int bufferElementsLoaded = initBufferRequest();
-        int currentFilePosition = 0;
+        long currentFilePosition = 0;
         int index = 0;
 
         File outFile = new File(destinationPath);
@@ -137,7 +137,8 @@ public class CopyFileFromS3 {
 
             LOG.info(
                     "Got complete for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
-                            + " and length " + S3_DATA_REQUESTS[index].getS3Data().length);
+                            + " and length " + S3_DATA_REQUESTS[index].getS3Data().length
+                            + ". currentFilePosition is " + currentFilePosition);
             currentFilePosition += S3_DATA_REQUESTS[index].getS3Data().length;
 
             doNextRequest(index);
