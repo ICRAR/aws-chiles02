@@ -1,10 +1,9 @@
 /**
- *  (c) UWA, The University of Western Australia
+ *  Copyright (c) UWA, The University of Western Australia
  *  M468/35 Stirling Hwy
  *  Perth WA 6009
  *  Australia
  *
- *  Copyright by UWA, 2012-2015
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -22,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA 02111-1307  USA
  */
-package org.icrar.awsChiles02.copyToS3;
+package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.File;
@@ -30,8 +29,8 @@ import java.util.List;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -45,8 +44,8 @@ import org.apache.commons.logging.LogFactory;
 /**
  *
  */
-public class CopyFileToS3 {
-  private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
+public class CopyFileFromS3 {
+  private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
 
   public static void main(String[] args) throws Exception {
     String bucketName;
@@ -80,7 +79,7 @@ public class CopyFileToS3 {
       else {
         // automatically generate the help statement
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp( "CopyFileToS3", options );
+        formatter.printHelp( "CopyFileFromS3", options );
         return;
       }
     }
@@ -90,7 +89,7 @@ public class CopyFileToS3 {
 
       // automatically generate the help statement
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "ant", options );
+      formatter.printHelp( "copy from", options );
       return;
     }
 
@@ -103,18 +102,18 @@ public class CopyFileToS3 {
     long startTime = System.currentTimeMillis();
 
     // TransferManager processes all transfers asynchronously, so this call will return immediately.
-    Upload upload = transferManager.upload(bucketName, keyName, new File(filePath));
+    Download download = transferManager.download(bucketName, keyName, new File(filePath));
 
     try {
       // Block and wait for the upload to finish
-      upload.waitForCompletion();
+      download.waitForCompletion();
     }
     catch (AmazonClientException amazonClientException) {
-      LOG.error("Unable to upload file, upload aborted.", amazonClientException);
+      LOG.error("Unable to download file, download aborted.", amazonClientException);
       amazonClientException.printStackTrace();
     }
     long endTime = System.currentTimeMillis();
-    LOG.info("Upload took " + (endTime - startTime) / 1000 + " seconds");
+    LOG.info("download took " + (endTime - startTime) / 1000 + " seconds");
 
     // Close everything down
     transferManager.shutdownNow();
