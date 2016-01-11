@@ -22,12 +22,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA 02111-1307  USA
  */
-package org.icrar.awsChiles02.copyFromS3;
+package org.icrar.awsChiles02.copyS3;
 
 import com.amazonaws.services.s3.model.S3Object;
+import org.icrar.awsChiles02.copyS3.S3DataRequest;
 
 import java.io.IOException;
-import java.util.Random;
 
 /**
  * Created by mboulton on 7/12/2015.

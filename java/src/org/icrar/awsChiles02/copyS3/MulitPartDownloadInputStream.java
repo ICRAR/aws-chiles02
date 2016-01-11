@@ -1,4 +1,4 @@
-package org.icrar.awsChiles02.copyFromS3;
+package org.icrar.awsChiles02.copyS3;
 
 /**
  * Created by mboulton on 9/12/2015.

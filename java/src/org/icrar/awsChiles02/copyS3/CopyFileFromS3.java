@@ -22,7 +22,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA 02111-1307  USA
  */
-package org.icrar.awsChiles02.copyFromS3;
+package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.*;
@@ -79,7 +79,7 @@ public class CopyFileFromS3 {
 
         File outFile = new File(DESTINATION_NAME);
         if (outFile.exists()) {
-            System.out.println("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
+            LOG.info("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
             outFile.delete();
         }
 
@@ -117,7 +117,7 @@ public class CopyFileFromS3 {
                 e.printStackTrace();
             }
 
-            System.out.println(
+            LOG.info(
                     "Got complete for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
                             + " and length " + S3_DATA_REQUESTS[index].getS3Data().length);
             currentFilePosition += S3_DATA_REQUESTS[index].getS3Data().length;
