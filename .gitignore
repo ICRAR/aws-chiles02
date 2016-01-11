@@ -1,5 +1,8 @@
+/pipeline/docker/casapy/casa-release-4.5.0-el6.tar.gz
+/pipeline/pipeline.iml
 /python/python.iml
 /java/java.iml
+/old-pipeline/old-pipeline.iml
 /.idea
 /java/.idea
 /out

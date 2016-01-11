@@ -44,8 +44,8 @@ import org.apache.commons.logging.LogFactory;
 /**
  *
  */
-public class CopyFileFromS3 {
-  private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
+public class CopyFileFromS3SingleThreaded {
+  private static final Log LOG = LogFactory.getLog(CopyFileFromS3SingleThreaded.class);
 
   public static void main(String[] args) throws Exception {
     String bucketName;
