@@ -1,9 +1,10 @@
 /**
- *  Copyright (c) UWA, The University of Western Australia
+ *  (c) UWA, The University of Western Australia
  *  M468/35 Stirling Hwy
  *  Perth WA 6009
  *  Australia
  *
+ *  Copyright by UWA, 2012-2015
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -21,7 +22,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA 02111-1307  USA
  */
-package org.icrar.awsChiles02.copyS3;
+package org.icrar.awsChiles02.copyToS3;
 
 
 import java.io.File;
@@ -89,7 +90,7 @@ public class CopyFileToS3 {
 
       // automatically generate the help statement
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "copy to", options );
+      formatter.printHelp( "CopyFileToS3", options );
       return;
     }
 

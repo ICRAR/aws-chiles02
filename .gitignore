@@ -1,6 +1,7 @@
 /python/python.iml
 /java/java.iml
 /.idea
+/java/.idea
 /out
 
 # Byte-compiled / optimized / DLL files
@@ -13,3 +14,11 @@ __pycache__/
 
 /java/out
 .class
+
+.DS_Store
+
+java/aws-chiles02.iml
+
+java/libs/jtar-2.3-javadoc.jar
+
+java/libs/jtar-2.3-sources.jar
