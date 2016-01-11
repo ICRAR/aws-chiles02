@@ -4,7 +4,7 @@
  *  Perth WA 6009
  *  Australia
  *
- *  Copyright by UWA, 2015-2015
+ *  Copyright by UWA, 2015-2016
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@ package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,13 @@ import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -45,9 +53,9 @@ import org.apache.commons.logging.LogFactory;
 public class CopyFileFromS3 {
     private static final int THREAD_POOL_SIZE = 5;
     private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
-    private static final String BUCKET_NAME = "a-c-test";
-    private static final String KEY_NAME = "t1";
-    private static final String DESTINATION_NAME = "/Users/mboulton/t1.out";
+    //private static final String BUCKET_NAME = "a-c-test";
+    //private static final String KEY_NAME = "t1";
+    //private static final String DESTINATION_NAME = "/Users/mboulton/t1.out";
     private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
     private static final ExecutorService MY_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     private static final S3DataRequest[] S3_DATA_REQUESTS = new S3DataRequest[THREAD_POOL_SIZE];
@@ -63,10 +71,16 @@ public class CopyFileFromS3 {
 
     private final long fileSize;
     private final int requestLength;
+    private final String bucketName;
+    private final String key;
+    private final String destinationPath;
 
-    private CopyFileFromS3(long fileSize, int requestLength) {
+    private CopyFileFromS3(long fileSize, int requestLength, String bucketName, String key, String destinationPath) {
         this.fileSize = fileSize;
         this.requestLength = requestLength;
+        this.bucketName = bucketName;
+        this.key = key;
+        this.destinationPath = destinationPath;
     }
 
     /**
@@ -77,7 +91,7 @@ public class CopyFileFromS3 {
         int currentFilePosition = 0;
         int index = 0;
 
-        File outFile = new File(DESTINATION_NAME);
+        File outFile = new File(destinationPath);
         if (outFile.exists()) {
             LOG.info("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
             outFile.delete();
@@ -150,8 +164,8 @@ public class CopyFileFromS3 {
             S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client,
                                                         requestedFileCurrentPosition,
                                                         requestSize,
-                                                        BUCKET_NAME,
-                                                        KEY_NAME,
+                                                        bucketName,
+                                                        key,
                                                         lock);
             MY_EXECUTOR.execute(new S3DataReader(S3_DATA_REQUESTS[index]));
             requestedFileCurrentPosition += requestSize;
@@ -169,15 +183,20 @@ public class CopyFileFromS3 {
             if (requestedFileCurrentPosition + requestLength > fileSize) {
                 break;
             }
-            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client, requestedFileCurrentPosition, requestLength, BUCKET_NAME, KEY_NAME, lock);
+            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client,
+                                                        requestedFileCurrentPosition,
+                                                        requestLength,
+                                                        bucketName,
+                                                        key,
+                                                        lock);
             requestedFileCurrentPosition += requestLength;
         }
         if (requestedFileCurrentPosition < fileSize && index != THREAD_POOL_SIZE) {
             S3_DATA_REQUESTS[index++] = new S3DataRequest(awsS3Client,
                                                           requestedFileCurrentPosition,
                                                           (int)(fileSize - requestedFileCurrentPosition),
-                                                          BUCKET_NAME,
-                                                          KEY_NAME,
+                                                          bucketName,
+                                                          key,
                                                           lock);
         }
 
@@ -188,6 +207,10 @@ public class CopyFileFromS3 {
         return index;
     }
 
+    /*
+    Test routine.
+     */
+    /*
     private void test1() {
         String bucketName = "a-c-test";
         String filePath = "t1";
@@ -224,7 +247,7 @@ public class CopyFileFromS3 {
             System.out.print(b[i] + ",");
         }
         System.out.println(":");
-    }
+    }*/
 
     /**
      *
@@ -248,16 +271,75 @@ public class CopyFileFromS3 {
     }
 
     public static void main(String[] args) throws Exception {
-        String bucketName = BUCKET_NAME;
-        String filePath = "t1";
-        String key = KEY_NAME;
-        String profileName = "aws-profile";
+        String bucketName = "a-c-test";
+        String key = "t1";
+        String destinationPath;
+        int threadBufferSize = DEFAULT_REQUEST_LENGTH;
+
+
+        String profileName = null;
+
+        Option awsProfile = Option.builder("aws_profile")
+                .hasArg()
+                .desc("the aws profile to use")
+                .build();
+
+        Option threadBuffer = Option.builder("thread_buffer")
+                .hasArg()
+                .argName("SIZE")
+                .desc("number of bytes in each thread's buffer, size of each download part")
+                .type(Integer.class)
+                .build();
+
+        Options options = new Options();
+        options.addOption(awsProfile);
+        options.addOption(threadBuffer);
+
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // parse the command line arguments
+            CommandLine line = parser.parse(options, args);
+
+            if (line.hasOption("aws_profile")) {
+                profileName = line.getOptionValue("aws_profile");
+            }
+
+            if (line.hasOption("thread_buffer")) {
+                Object value = line.getParsedOptionValue("thread_buffer");
+                if (value instanceof Integer) {
+                    threadBufferSize = ((Integer) value).intValue();
+                }
+            }
+
+            List<String> mainArguments = line.getArgList();
+            if (mainArguments.size() == 3) {
+                bucketName = mainArguments.get(0);
+                key = mainArguments.get(1);
+                destinationPath = mainArguments.get(2);
+            }
+            else {
+                // automatically generate the help statement
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp( "CopyFileFromS3 [OPTIONS] <Bucket Name> <Object Name> <Destination File>", options );
+                return;
+            }
+        } catch (ParseException exp) {
+            // oops, something went wrong
+            LOG.error( "Parsing failed.", exp);
+
+            // automatically generate the help statement
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp( "CopyFileFromS3", options );
+            return;
+        }
+
 
         setupAWS(profileName);
 
         long fileSize = getObjectSizePlusMetadata(bucketName, key);
 
-        CopyFileFromS3 me = new CopyFileFromS3(fileSize, 128 * 1024);
+        CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
         me.go();
         // me.test1();
         System.out.println("At end of main, about to shutdown Executor");
