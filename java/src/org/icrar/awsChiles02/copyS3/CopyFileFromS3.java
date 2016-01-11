@@ -26,6 +26,8 @@ package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,9 +36,7 @@ import java.util.concurrent.TimeUnit;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -51,17 +51,16 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class CopyFileFromS3 {
-    private static final int THREAD_POOL_SIZE = 5;
+    private static final int THREAD_POOL_SIZE = 20;
     private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
-    //private static final String BUCKET_NAME = "a-c-test";
-    //private static final String KEY_NAME = "t1";
-    //private static final String DESTINATION_NAME = "/Users/mboulton/t1.out";
     private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
     private static final ExecutorService MY_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     private static final S3DataRequest[] S3_DATA_REQUESTS = new S3DataRequest[THREAD_POOL_SIZE];
 
     private static ProfileCredentialsProvider credentialsProvider;
     private static AmazonS3Client awsS3Client;
+
+    private static ObjectMetadata objectMetadata;
 
     private static long requestedFileCurrentPosition = 0;
 
@@ -74,19 +73,22 @@ public class CopyFileFromS3 {
     private final String bucketName;
     private final String key;
     private final String destinationPath;
+    private final MessageDigest digest;
 
-    private CopyFileFromS3(long fileSize, int requestLength, String bucketName, String key, String destinationPath) {
+    private CopyFileFromS3(long fileSize, int requestLength, String bucketName, String key, String destinationPath)
+            throws NoSuchAlgorithmException {
         this.fileSize = fileSize;
         this.requestLength = requestLength;
         this.bucketName = bucketName;
         this.key = key;
         this.destinationPath = destinationPath;
+        this.digest = MessageDigest.getInstance("MD5");
     }
 
     /**
      * Do the actual download of the S3 file.
      */
-    private void go() {
+    private String go() {
         int bufferElementsLoaded = initBufferRequest();
         int currentFilePosition = 0;
         int index = 0;
@@ -131,6 +133,8 @@ public class CopyFileFromS3 {
                 e.printStackTrace();
             }
 
+            digest.update(S3_DATA_REQUESTS[index].getS3Data());
+
             LOG.info(
                     "Got complete for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
                             + " and length " + S3_DATA_REQUESTS[index].getS3Data().length);
@@ -149,6 +153,9 @@ public class CopyFileFromS3 {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        byte[] bytes = digest.digest();
+        return GetMD5.digestDecimalToHex(bytes);
     }
 
     /**
@@ -190,6 +197,11 @@ public class CopyFileFromS3 {
                                                         key,
                                                         lock);
             requestedFileCurrentPosition += requestLength;
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // We don't care if we are interrupted!
+            }
         }
         if (requestedFileCurrentPosition < fileSize && index != THREAD_POOL_SIZE) {
             S3_DATA_REQUESTS[index++] = new S3DataRequest(awsS3Client,
@@ -266,7 +278,7 @@ public class CopyFileFromS3 {
      */
     private static long getObjectSizePlusMetadata(String bucketName, String key) {
         GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, key);
-        ObjectMetadata objectMetadata = awsS3Client.getObjectMetadata(getObjectMetadataRequest);
+        objectMetadata = awsS3Client.getObjectMetadata(getObjectMetadataRequest);
         return objectMetadata.getContentLength();
     }
 
@@ -341,7 +353,9 @@ public class CopyFileFromS3 {
         long fileSize = getObjectSizePlusMetadata(bucketName, key);
 
         CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
-        me.go();
+        String downloadChecksum = me.go();
+        System.out.println("Checksums " + (downloadChecksum.matches(objectMetadata.getETag()) ? "matches" : "does not match")
+                + " MD5 hash is " + downloadChecksum + " and original file was " + objectMetadata.getETag());
         long finishTime = System.currentTimeMillis();
         // me.test1();
         System.out.println("At end of main, about to shutdown Executor");

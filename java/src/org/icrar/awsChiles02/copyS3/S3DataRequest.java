@@ -34,11 +34,10 @@ public class S3DataRequest {
     private final AmazonS3Client awsS3Client;
     private long startPosition;
     private int length;
-    private String bucketName;
-    private String keyName;
     private byte[] s3Data;
     private GetObjectRequest objectRequest;
     private boolean requestComplete = false;
+    private boolean failed = false;
     private final Object lock;
 
     /**
@@ -62,8 +61,6 @@ public class S3DataRequest {
         this.awsS3Client = awsS3Client;
         this.startPosition = startPostion;
         this.length = length;
-        this.bucketName = bucketName;
-        this.keyName = keyName;
         s3Data = new byte[length];
         this.lock = lock;
         objectRequest = new GetObjectRequest(bucketName, keyName);
@@ -146,6 +143,22 @@ public class S3DataRequest {
      */
     public void setRequestComplete(boolean requestComplete) {
         this.requestComplete = requestComplete;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean isFailed() {
+        return failed;
+    }
+
+    /**
+     *
+     * @param failed
+     */
+    public void setFailed(boolean failed) {
+        this.failed = failed;
     }
 
     /**

@@ -54,6 +54,20 @@ public class GetMD5 {
   }
 
   /**
+   * Calls to digest() return a decimal byte[], use this routine to convert to hex.
+   *
+   * @param bytes  has a decimal byte[]
+   * @return <code>String</code> repesentation of array.
+   */
+  public static String digestDecimalToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte aByte : bytes) {
+      sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+    }
+    return sb.toString();
+  }
+
+  /**
    * Calculate the digest with nio
    * @param digest the type of message Digest to use
    * @param file the file to check
@@ -75,13 +89,7 @@ public class GetMD5 {
     byte[] bytes = digest.digest();
 
     // This bytes[] has bytes in decimal format;
-    // Convert it to hexadecimal format
-    StringBuilder sb = new StringBuilder();
-    for (byte aByte : bytes) {
-      sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
-    }
-
-    //return complete hash
-    return sb.toString();
+    // Convert it to hexadecimal format then return complete hash
+    return digestDecimalToHex(bytes);
   }
 }

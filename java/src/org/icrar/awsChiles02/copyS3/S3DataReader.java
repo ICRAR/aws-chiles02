@@ -24,6 +24,8 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.S3Object;
 import org.icrar.awsChiles02.copyS3.S3DataRequest;
 
@@ -42,7 +44,22 @@ public class S3DataReader implements Runnable {
     }
 
     private void getData() {
-        S3Object s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
+        int tries = 3;
+        S3Object s3Object = null;
+        while (s3Object == null && tries > 0) {
+            try {
+                s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
+            } catch (Exception e) {
+                System.err.println("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
+                e.printStackTrace();
+            } // org.apache.http.NoHttpResponseException
+        }
+
+        if (s3Object == null) {
+            System.err.println("Failed connection for " + request.getStartPosition() + ".");
+            request.setFailed(true);
+            return;
+        }
         int bytesRead = 0;
         int currentPosition = 0;
         while (bytesRead != -1) {
