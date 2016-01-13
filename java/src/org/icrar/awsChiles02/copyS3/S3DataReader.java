@@ -24,10 +24,9 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.S3Object;
-import org.icrar.awsChiles02.copyS3.S3DataRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
@@ -35,6 +34,8 @@ import java.io.IOException;
  * Created by mboulton on 7/12/2015.
  */
 public class S3DataReader implements Runnable {
+    private static final Log LOG = LogFactory.getLog(S3DataReader.class);
+
     private final S3DataRequest request;
     private final Object lock;
 
@@ -57,7 +58,7 @@ public class S3DataReader implements Runnable {
         }
 
         if (s3Object == null) {
-            System.err.println("Failed connection for " + request.getStartPosition() + ".");
+            LOG.error("Failed connection for " + request.getStartPosition() + ".");
             request.setFailed(true);
             return;
         }
@@ -74,7 +75,8 @@ public class S3DataReader implements Runnable {
         }
         // We don't need to set the s3Data bytes in the original request as that was done above in the read.
         request.setRequestComplete(true);
-        System.out.println("Thread at position " + request.getStartPosition() + ", read " + currentPosition + " about to do sync/notifyAll");
+        LOG.info("Thread with index " + request.getIndex() + " position " + request.getStartPosition()
+                + ", read " + currentPosition + " about to do sync/notifyAll");
         synchronized (lock) {
             lock.notifyAll();
         }

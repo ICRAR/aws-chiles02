@@ -38,6 +38,7 @@ public class S3DataRequest {
     private GetObjectRequest objectRequest;
     private boolean requestComplete = false;
     private boolean failed = false;
+    private final int index;
     private final Object lock;
 
     /**
@@ -54,6 +55,7 @@ public class S3DataRequest {
                          int length,
                          String bucketName,
                          String keyName,
+                         int index,
                          final Object lock) {
         if (length <= 0) {
             throw new IllegalArgumentException("Length cannot be less than 1");
@@ -62,6 +64,7 @@ public class S3DataRequest {
         this.startPosition = startPostion;
         this.length = length;
         s3Data = new byte[length];
+        this.index = index;
         this.lock = lock;
         objectRequest = new GetObjectRequest(bucketName, keyName);
         objectRequest.setRange(startPostion,startPostion+length - 1);
@@ -160,6 +163,12 @@ public class S3DataRequest {
     public void setFailed(boolean failed) {
         this.failed = failed;
     }
+
+    /**
+     *
+     * @return
+     */
+    public int getIndex() { return index; }
 
     /**
      *

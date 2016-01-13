@@ -51,9 +51,10 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class CopyFileFromS3 {
+    private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
+
     private static final int THREAD_POOL_SIZE = 20;
     private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
-    private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
     private static final ExecutorService MY_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     private static final S3DataRequest[] S3_DATA_REQUESTS = new S3DataRequest[THREAD_POOL_SIZE];
 
@@ -119,7 +120,7 @@ public class CopyFileFromS3 {
                 // hence the reason to check each time we get control back from lock.wait().
                 while (!S3_DATA_REQUESTS[index].isRequestComplete()) {
                     try {
-                        System.out.println("About to do wait");
+                        LOG.info("About to do wait for " + index);
                         lock.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -174,6 +175,7 @@ public class CopyFileFromS3 {
                                                         requestSize,
                                                         bucketName,
                                                         key,
+                                                        index,
                                                         lock);
             MY_EXECUTOR.execute(new S3DataReader(S3_DATA_REQUESTS[index]));
             requestedFileCurrentPosition += requestSize;
@@ -196,6 +198,7 @@ public class CopyFileFromS3 {
                                                         requestLength,
                                                         bucketName,
                                                         key,
+                                                        index,
                                                         lock);
             requestedFileCurrentPosition += requestLength;
             try {
@@ -210,6 +213,7 @@ public class CopyFileFromS3 {
                                                           (int)(fileSize - requestedFileCurrentPosition),
                                                           bucketName,
                                                           key,
+                                                          index,
                                                           lock);
         }
 
@@ -283,13 +287,48 @@ public class CopyFileFromS3 {
         return objectMetadata.getContentLength();
     }
 
+    /**
+     * Helper method to get the MD5 checksum.
+     *
+     * NOTE: uses ETAG unless it contains a '-' as that means it is incorrect due to multipart upload.
+     * Will also look for
+     * s3cmd-attrs - search for md5:######
+     *
+     * @return MD5 hash if a valid one can be found or null otherwise.
+     */
+    private static String getMD5() {
+        String md5 = objectMetadata.getETag();
+        if (md5.contains("-")) {
+            LOG.info("ETag contained a '-' so was generated from multipart upload, looking for alternative MD5");
+            // Clear this in case we can't find a valid value
+            md5 = null;
+            // Case 1, look for s3cmd-attrs md5 param
+            String s3cmdAttrs = objectMetadata.getUserMetaDataOf("s3cmd-attrs");
+            if (s3cmdAttrs != null) {
+                for (String attr : s3cmdAttrs.split("/")) {
+                    String[] keyVal = attr.split(":");
+                    if (keyVal.length != 2) {
+                        continue;
+                    }
+                    if (keyVal[0].matches("md5")) {
+                        LOG.info("Using s3cmd-attrs user metadata md5 hash");
+                        md5 = keyVal[1];
+                    }
+                }
+            }
+        }
+        if (md5 != null && md5.length() != 32) {
+            LOG.error("MD5 checksum was not 32 characters long!");
+            md5 = null;
+        }
+        return md5;
+    }
+
     public static void main(String[] args) throws Exception {
         String bucketName = "a-c-test";
         String key = "t1";
         String destinationPath;
         int threadBufferSize = DEFAULT_REQUEST_LENGTH;
-
-        long startTime = System.currentTimeMillis();
 
         String profileName = null;
 
@@ -321,9 +360,9 @@ public class CopyFileFromS3 {
 
             if (line.hasOption("thread_buffer")) {
                 String value = line.getOptionValue("thread_buffer");
-                System.out.println("Found thread_buffer option with value " + value.toString());
+                LOG.info("Found thread_buffer option with value " + value.toString());
                 threadBufferSize = Integer.parseInt(value);
-                System.out.println("Option is integer with value " + threadBufferSize);
+                LOG.debug("Option is integer with value " + threadBufferSize);
             }
 
             List<String> mainArguments = line.getArgList();
@@ -351,20 +390,26 @@ public class CopyFileFromS3 {
 
         setupAWS(profileName);
 
+        // Start timer here so we get time of file transfer without setup time being added
+        long startTime = System.currentTimeMillis();
+
         long fileSize = getObjectSizePlusMetadata(bucketName, key);
 
         CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
         String downloadChecksum = me.go();
-        System.out.println("Checksums " + (downloadChecksum.matches(objectMetadata.getETag()) ? "matches" : "does not match")
-                + " MD5 hash is " + downloadChecksum + " and original file was " + objectMetadata.getETag());
+        String md5 = getMD5();
+        LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
+                + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
         long finishTime = System.currentTimeMillis();
         // me.test1();
-        System.out.println("At end of main, about to shutdown Executor");
+        LOG.info("At end of main, about to shutdown Executor");
+
+        // Shut down the threads
         MY_EXECUTOR.shutdown();
         if (!MY_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
-            System.out.println("Forcing Executor shutdown");
+            LOG.warn("Forcing Executor shutdown");
             MY_EXECUTOR.shutdownNow();
         }
-        System.out.println("Finished in " + (finishTime - startTime) + ".");
+        LOG.info("Finished in " + (finishTime - startTime) + ".");
     }
 }
