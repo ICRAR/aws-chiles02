@@ -49,7 +49,7 @@ public class S3DataReader implements Runnable {
         while (s3Object == null && tries > 0) {
             try {
                 s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 System.err.println("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
                 e.printStackTrace();
             } // org.apache.http.NoHttpResponseException
