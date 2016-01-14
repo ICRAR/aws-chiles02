@@ -31,7 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 
 /**
- * Created by mboulton on 7/12/2015.
+ *
  */
 public class S3DataReader implements Runnable {
     private static final Log LOG = LogFactory.getLog(S3DataReader.class);
@@ -51,7 +51,7 @@ public class S3DataReader implements Runnable {
             try {
                 s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
             } catch (Throwable e) {
-                System.err.println("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
+                LOG.error("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
                 e.printStackTrace();
             } // org.apache.http.NoHttpResponseException
             tries--;

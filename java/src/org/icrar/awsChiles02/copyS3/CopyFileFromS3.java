@@ -53,12 +53,11 @@ import org.apache.commons.logging.LogFactory;
 public class CopyFileFromS3 {
     private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
 
-    private static final int THREAD_POOL_SIZE = 20;
+    private static final int THREAD_POOL_SIZE = 16;
     private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
     private static final ExecutorService MY_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     private static final S3DataRequest[] S3_DATA_REQUESTS = new S3DataRequest[THREAD_POOL_SIZE];
 
-    private static ProfileCredentialsProvider credentialsProvider;
     private static AmazonS3Client awsS3Client;
 
     private static ObjectMetadata objectMetadata;
@@ -90,27 +89,36 @@ public class CopyFileFromS3 {
      * Do the actual download of the S3 file.
      */
     private String go() {
-        int bufferElementsLoaded = initBufferRequest();
         long currentFilePosition = 0;
         int index = 0;
+
+        initBufferRequest();
 
         File outFile = new File(destinationPath);
         if (outFile.exists()) {
             LOG.info("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
-            outFile.delete();
+            if (!outFile.delete()) {
+                LOG.error("Unable to delete file destinationPath!");
+                return null;
+            }
         }
 
         try {
-            outFile.createNewFile();
+            if (!outFile.createNewFile()) {
+                LOG.error("unable to create file destinationPath!");
+                return null;
+            }
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
 
-        FileOutputStream fos = null;
+        FileOutputStream fos;
         try {
             fos = new FileOutputStream(outFile);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            return null;
         }
         BufferedOutputStream bos = new BufferedOutputStream(fos);
 
@@ -118,7 +126,7 @@ public class CopyFileFromS3 {
             synchronized (lock) {
                 // Loop here until the next segmen of the file is ready. We can't wait on a particular thread
                 // hence the reason to check each time we get control back from lock.wait().
-                while (!S3_DATA_REQUESTS[index].isRequestComplete()) {
+                while (!S3_DATA_REQUESTS[index].isRequestComplete() || S3_DATA_REQUESTS[index].isFailed()) {
                     try {
                         LOG.info("About to do wait for " + index);
                         lock.wait();
@@ -128,10 +136,18 @@ public class CopyFileFromS3 {
                 }
             }
 
+            if (S3_DATA_REQUESTS[index].isFailed()) {
+                LOG.error("Got FAILED for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
+                        + " and length " + S3_DATA_REQUESTS[index].getS3Data().length
+                        + ". currentFilePosition is " + currentFilePosition);
+            }
+
             try {
                 bos.write(S3_DATA_REQUESTS[index].getS3Data());
             } catch (IOException e) {
                 e.printStackTrace();
+                LOG.error("Failed on write to file");
+                return null;
             }
 
             digest.update(S3_DATA_REQUESTS[index].getS3Data());
@@ -164,7 +180,7 @@ public class CopyFileFromS3 {
      * Request the next segment of the file associating it with position <code>index</code>
      * in <code>S3_DATA_REQUESTS</code>.
      *
-     * @param index
+     * @param index to do request on.
      */
     private void doNextRequest(int index) {
         if (requestedFileCurrentPosition < fileSize) {
@@ -184,7 +200,7 @@ public class CopyFileFromS3 {
 
     /**
      *
-     * @return
+     * @return the index last used.
      */
     private int initBufferRequest() {
         int index;
@@ -268,18 +284,18 @@ public class CopyFileFromS3 {
 
     /**
      *
-     * @param profileName
+     * @param profileName to use to get credentials.
      */
     private static void setupAWS(String profileName) {
-        credentialsProvider = new ProfileCredentialsProvider(profileName);
+        ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider(profileName);
         awsS3Client = new AmazonS3Client(credentialsProvider);
     }
 
     /**
      *
-     * @param bucketName
-     * @param key
-     * @return
+     * @param bucketName to find key in.
+     * @param key of object to get metada for.
+     * @return the size of the object referred to by key and bucketName.
      */
     private static long getObjectSizePlusMetadata(String bucketName, String key) {
         GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, key);
@@ -325,8 +341,8 @@ public class CopyFileFromS3 {
     }
 
     public static void main(String[] args) throws Exception {
-        String bucketName = "a-c-test";
-        String key = "t1";
+        String bucketName;
+        String key;
         String destinationPath;
         int threadBufferSize = DEFAULT_REQUEST_LENGTH;
 
@@ -360,7 +376,7 @@ public class CopyFileFromS3 {
 
             if (line.hasOption("thread_buffer")) {
                 String value = line.getOptionValue("thread_buffer");
-                LOG.info("Found thread_buffer option with value " + value.toString());
+                LOG.info("Found thread_buffer option with value " + value);
                 threadBufferSize = Integer.parseInt(value);
                 LOG.debug("Option is integer with value " + threadBufferSize);
             }
@@ -397,12 +413,16 @@ public class CopyFileFromS3 {
 
         CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
         String downloadChecksum = me.go();
-        String md5 = getMD5();
-        LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
-                + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
         long finishTime = System.currentTimeMillis();
-        // me.test1();
-        LOG.info("At end of main, about to shutdown Executor");
+        if (downloadChecksum == null) {
+            LOG.error("Download failed, exiting.");
+        } else {
+            String md5 = getMD5();
+            LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
+                    + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
+            // me.test1();
+            LOG.info("At end of main, about to shutdown Executor");
+        }
 
         // Shut down the threads
         MY_EXECUTOR.shutdown();
