@@ -39,7 +39,7 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class GetMD5 {
-  private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
+  private static final Log LOG = LogFactory.getLog(GetMD5.class);
 
   public static void main(String[] args) throws Exception {
     for (String filename : args) {
@@ -51,6 +51,20 @@ public class GetMD5 {
         Files.write(Paths.get(filename + ".md5"), md5.getBytes());
       }
     }
+  }
+
+  /**
+   * Calls to digest() return a decimal byte[], use this routine to convert to hex.
+   *
+   * @param bytes  has a decimal byte[]
+   * @return <code>String</code> repesentation of array.
+   */
+  public static String digestDecimalToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte aByte : bytes) {
+      sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+    }
+    return sb.toString();
   }
 
   /**
@@ -75,13 +89,7 @@ public class GetMD5 {
     byte[] bytes = digest.digest();
 
     // This bytes[] has bytes in decimal format;
-    // Convert it to hexadecimal format
-    StringBuilder sb = new StringBuilder();
-    for (byte aByte : bytes) {
-      sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
-    }
-
-    //return complete hash
-    return sb.toString();
+    // Convert it to hexadecimal format then return complete hash
+    return digestDecimalToHex(bytes);
   }
 }

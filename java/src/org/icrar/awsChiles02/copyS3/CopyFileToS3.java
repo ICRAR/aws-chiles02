@@ -22,7 +22,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA 02111-1307  USA
  */
-package org.icrar.awsChiles02.copyToS3;
+package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.File;

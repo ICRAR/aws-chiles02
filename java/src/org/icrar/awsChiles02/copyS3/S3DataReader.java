@@ -4,7 +4,7 @@
  *  Perth WA 6009
  *  Australia
  *
- *  Copyright by UWA, 2015-2015
+ *  Copyright by UWA, 2015-2016
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -25,14 +25,17 @@
 package org.icrar.awsChiles02.copyS3;
 
 import com.amazonaws.services.s3.model.S3Object;
-import org.icrar.awsChiles02.copyS3.S3DataRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
 /**
- * Created by mboulton on 7/12/2015.
+ *
  */
 public class S3DataReader implements Runnable {
+    private static final Log LOG = LogFactory.getLog(S3DataReader.class);
+
     private final S3DataRequest request;
     private final Object lock;
 
@@ -42,7 +45,23 @@ public class S3DataReader implements Runnable {
     }
 
     private void getData() {
-        S3Object s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
+        int tries = 3;
+        S3Object s3Object = null;
+        while (s3Object == null && tries > 0) {
+            try {
+                s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
+            } catch (Throwable e) {
+                LOG.error("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
+                e.printStackTrace();
+            } // org.apache.http.NoHttpResponseException
+            tries--;
+        }
+
+        if (s3Object == null) {
+            LOG.error("Failed connection for " + request.getStartPosition() + ".");
+            request.setFailed(true);
+            return;
+        }
         int bytesRead = 0;
         int currentPosition = 0;
         while (bytesRead != -1) {
@@ -56,7 +75,8 @@ public class S3DataReader implements Runnable {
         }
         // We don't need to set the s3Data bytes in the original request as that was done above in the read.
         request.setRequestComplete(true);
-        System.out.println("Thread at position " + request.getStartPosition() + ", read " + currentPosition + " about to do sync/notifyAll");
+        LOG.info("Thread with index " + request.getIndex() + " position " + request.getStartPosition()
+                + ", read " + currentPosition + " about to do sync/notifyAll");
         synchronized (lock) {
             lock.notifyAll();
         }

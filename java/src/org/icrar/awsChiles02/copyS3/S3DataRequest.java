@@ -4,7 +4,7 @@
  *  Perth WA 6009
  *  Australia
  *
- *  Copyright by UWA, 2015-2015
+ *  Copyright by UWA, 2015-2016
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -28,33 +28,35 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
 /**
- * Created by mboulton on 7/12/2015.
+ *
  */
 public class S3DataRequest {
     private final AmazonS3Client awsS3Client;
-    private long startPosition;
-    private int length;
-    private String bucketName;
-    private String keyName;
-    private byte[] s3Data;
-    private GetObjectRequest objectRequest;
+    private final long startPosition;
+    private final int length;
+    private final byte[] s3Data;
+    private final GetObjectRequest objectRequest;
     private boolean requestComplete = false;
+    private boolean failed = false;
+    private final int index;
     private final Object lock;
 
     /**
      *
-     * @param awsS3Client
-     * @param startPostion
-     * @param length
-     * @param bucketName
-     * @param keyName
-     * @param lock
+     * @param awsS3Client to use for download.
+     * @param startPostion is position to start download from in the object.
+     * @param length of the segment to download from object.
+     * @param bucketName to get object from.
+     * @param keyName of object in bucket.
+     * @param index of pool this request is associated with. Used only for debug output.
+     * @param lock to use for notifications.
      */
     public S3DataRequest(final AmazonS3Client awsS3Client,
                          long startPostion,
                          int length,
                          String bucketName,
                          String keyName,
+                         int index,
                          final Object lock) {
         if (length <= 0) {
             throw new IllegalArgumentException("Length cannot be less than 1");
@@ -62,9 +64,8 @@ public class S3DataRequest {
         this.awsS3Client = awsS3Client;
         this.startPosition = startPostion;
         this.length = length;
-        this.bucketName = bucketName;
-        this.keyName = keyName;
         s3Data = new byte[length];
+        this.index = index;
         this.lock = lock;
         objectRequest = new GetObjectRequest(bucketName, keyName);
         objectRequest.setRange(startPostion,startPostion+length - 1);
@@ -72,25 +73,7 @@ public class S3DataRequest {
 
     /**
      *
-     * @param startPostion
-     * @param length
-     */
-    public void ResetS3DataRequest(long startPostion, int length) {
-        if (length <= 0) {
-            throw new IllegalArgumentException("Length cannot be less than 1");
-        }
-        this.startPosition = startPostion;
-        this.length = length;
-        if (s3Data.length != length) {
-            s3Data = new byte[length];
-        }
-        objectRequest.setRange(startPostion,startPostion+length - 1);
-        requestComplete = false;
-    }
-
-    /**
-     *
-     * @return
+     * @return the AmazonS3Client for this request.
      */
     public AmazonS3Client getAwsS3Client() {
         return awsS3Client;
@@ -98,7 +81,7 @@ public class S3DataRequest {
 
     /**
      *
-     * @return
+     * @return the start position to use in this request.
      */
     public long getStartPosition() {
         return startPosition;
@@ -106,7 +89,7 @@ public class S3DataRequest {
 
     /**
      *
-     * @return
+     * @return the length of this request.
      */
     public int getLength() {
         return length;
@@ -114,19 +97,13 @@ public class S3DataRequest {
 
     /**
      *
-     * @return
+     * @return the data downloaded as part of this request from S3.
      */
     public byte[] getS3Data() { return s3Data; }
 
     /**
      *
-     * @param s3Data
-     */
-    public void setS3Data(byte[] s3Data) { this.s3Data = s3Data; }
-
-    /**
-     *
-     * @return
+     * @return the <code>GetObjectRequest</code> required during S3 SDK calls.
      */
     public GetObjectRequest getObjectRequest() {
         return objectRequest;
@@ -134,7 +111,7 @@ public class S3DataRequest {
 
     /**
      *
-     * @return
+     * @return true is complete and false otherwise.
      */
     public boolean isRequestComplete() {
         return requestComplete;
@@ -142,7 +119,7 @@ public class S3DataRequest {
 
     /**
      *
-     * @param requestComplete
+     * @param requestComplete state of this request.
      */
     public void setRequestComplete(boolean requestComplete) {
         this.requestComplete = requestComplete;
@@ -150,7 +127,29 @@ public class S3DataRequest {
 
     /**
      *
-     * @return
+     * @return true is state for this request is failed and true otherwise.
+     */
+    public boolean isFailed() {
+        return failed;
+    }
+
+    /**
+     *
+     * @param failed state of this request.
+     */
+    public void setFailed(boolean failed) {
+        this.failed = failed;
+    }
+
+    /**
+     *
+     * @return the index set during cration of this object.
+     */
+    public int getIndex() { return index; }
+
+    /**
+     *
+     * @return the lock to use for notifications on this request.
      */
     public Object getLock() { return lock; }
 }
