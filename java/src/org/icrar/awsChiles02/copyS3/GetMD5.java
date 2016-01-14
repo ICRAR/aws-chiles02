@@ -39,7 +39,7 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class GetMD5 {
-  private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
+  private static final Log LOG = LogFactory.getLog(GetMD5.class);
 
   public static void main(String[] args) throws Exception {
     for (String filename : args) {

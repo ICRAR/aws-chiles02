@@ -35,8 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -46,6 +45,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 
 /**
  *
@@ -309,10 +309,13 @@ public class CopyFileFromS3 {
      * NOTE: uses ETAG unless it contains a '-' as that means it is incorrect due to multipart upload.
      * Will also look for
      * s3cmd-attrs - search for md5:######
+     * md5 file - search for a file of the form key.md5 in the bucketName and use value stroed in it as the hash
      *
+     * @param bucketName to find key in.
+     * @param key of object to get metada for.
      * @return MD5 hash if a valid one can be found or null otherwise.
      */
-    private static String getMD5() {
+    private static String getMD5(String bucketName, String key) {
         String md5 = objectMetadata.getETag();
         if (md5.contains("-")) {
             LOG.info("ETag contained a '-' so was generated from multipart upload, looking for alternative MD5");
@@ -329,6 +332,32 @@ public class CopyFileFromS3 {
                     if (keyVal[0].matches("md5")) {
                         LOG.info("Using s3cmd-attrs user metadata md5 hash");
                         md5 = keyVal[1];
+                    }
+                }
+            } else {
+                GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key + ".md5");
+                S3Object s3Object = null;
+                try {
+                    s3Object = awsS3Client.getObject(getObjectRequest);
+                } catch (AmazonS3Exception e) {
+                    // Not good to use exception for flow control AWS does not have a "fileExists" type method.
+                    if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                        LOG.info("Could not find a .md5 file for file " + key);
+                    } else {
+                        throw e;
+                    }
+                }
+                if (s3Object != null) {
+                    byte[] bytes = new byte[32];
+                    int retValue = 0;
+                    try {
+                        retValue = s3Object.getObjectContent().read(bytes);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if (retValue == 32) {
+                        LOG.info("Getting original file hash from S3 file " + key + ".md5");
+                        md5 = new String(bytes);
                     }
                 }
             }
@@ -412,12 +441,12 @@ public class CopyFileFromS3 {
         long fileSize = getObjectSizePlusMetadata(bucketName, key);
 
         CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
-        String downloadChecksum = me.go();
+        String downloadChecksum = "a";//me.go();
         long finishTime = System.currentTimeMillis();
         if (downloadChecksum == null) {
             LOG.error("Download failed, exiting.");
         } else {
-            String md5 = getMD5();
+            String md5 = getMD5(bucketName, key);
             LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
                     + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
             // me.test1();
