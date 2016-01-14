@@ -1,8 +1,10 @@
 #!/mnt/gleam/chen/pyws/bin/python
 #
-#    ICRAR - International Centre for Radio Astronomy Research
-#    (c) UWA - The University of Western Australia, 2014
-#    Copyright by UWA (in the framework of the ICRAR)
+#    Copyright (c) UWA, The University of Western Australia
+#    M468/35 Stirling Hwy
+#    Perth WA 6009
+#    Australia
+#
 #    All rights reserved
 #
 #    This library is free software; you can redistribute it and/or
