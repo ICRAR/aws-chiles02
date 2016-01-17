@@ -29,7 +29,6 @@ import java.io.File;
 import java.util.List;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.cli.CommandLine;
@@ -43,24 +42,54 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- *
+ * The type Copy file to s 3.
  */
-public class CopyFileToS3 {
+public class CopyFileToS3 extends AbstractCopyS3 {
   private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
 
+  /**
+   * The entry point of application.
+   *
+   * @param args the input arguments
+   * @throws Exception the exception
+   */
   public static void main(String[] args) throws Exception {
+    CopyFileToS3 copy = new CopyFileToS3();
+    copy.doCopy(args);
+  }
+
+  /**
+   * Do the actual copy
+   * @param args the command line arguments
+   */
+  private void doCopy(String[] args) {
     String bucketName;
     String filePath;
     String keyName;
     String profileName = null;
+    String accessKeyId = null;
+    String secretAccessKey = null;
 
-    Option awsProfile = Option.builder("aws_profile")
-                             .hasArg()
-                             .desc("the aws profile to use")
-                             .build();
+    Option awsProfile =
+        Option.builder("aws_profile")
+              .hasArg()
+              .desc("the aws profile to use")
+              .build();
+    Option awsAccessKeyId =
+        Option.builder("aws_access_key_id")
+              .hasArg()
+              .desc("the aws_access_key_id to use")
+              .build();
+    Option awsSecretAccessKey =
+        Option.builder("aws_secret_access_key")
+              .hasArg()
+              .desc("the aws_secret_access_key to use")
+              .build();
 
     Options options = new Options();
     options.addOption(awsProfile);
+    options.addOption(awsAccessKeyId);
+    options.addOption(awsSecretAccessKey);
 
     // create the parser
     CommandLineParser parser = new DefaultParser();
@@ -68,14 +97,26 @@ public class CopyFileToS3 {
       // parse the command line arguments
       CommandLine line = parser.parse(options, args);
 
-      if (line.hasOption("aws_profile"))
+      if (line.hasOption("aws_profile")) {
         profileName = line.getOptionValue("aws_profile");
+      }
+      if (line.hasOption("aws_access_key_id")) {
+        accessKeyId = line.getOptionValue("aws_access_key_id");
+      }
+      if (line.hasOption("aws_secret_access_key")) {
+        secretAccessKey = line.getOptionValue("aws_secret_access_key");
+      }
 
       List<String> mainArguments = line.getArgList();
       if (mainArguments.size() == 3) {
         bucketName = mainArguments.get(0);
         keyName = mainArguments.get(1);
         filePath = mainArguments.get(2);
+      }
+      else if (mainArguments.size() == 2) {
+        bucketName = getBucketName(mainArguments.get(0));
+        keyName = getKeyName(mainArguments.get(0));
+        filePath = mainArguments.get(1);
       }
       else {
         // automatically generate the help statement
@@ -90,15 +131,12 @@ public class CopyFileToS3 {
 
       // automatically generate the help statement
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "CopyFileToS3", options );
+      formatter.printHelp( "CopyFileToS3 [s3://bucket/dest src]", options );
       return;
     }
 
-    ProfileCredentialsProvider credentialsProvider =
-        (profileName == null)
-        ? new ProfileCredentialsProvider()
-        : new ProfileCredentialsProvider(profileName);
-    TransferManager transferManager = new TransferManager(credentialsProvider);
+    // If we have the key id and secret access key use them
+    TransferManager transferManager = getTransferManager(profileName, accessKeyId, secretAccessKey);
 
     long startTime = System.currentTimeMillis();
 
@@ -112,6 +150,9 @@ public class CopyFileToS3 {
     catch (AmazonClientException amazonClientException) {
       LOG.error("Unable to upload file, upload aborted.", amazonClientException);
       amazonClientException.printStackTrace();
+    }
+    catch (InterruptedException e) {
+      LOG.error("Interrupted", e);
     }
     long endTime = System.currentTimeMillis();
     LOG.info("Upload took " + (endTime - startTime) / 1000 + " seconds");
