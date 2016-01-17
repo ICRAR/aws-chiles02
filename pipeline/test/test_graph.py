@@ -48,6 +48,9 @@ class TestChiles02(unittest.TestCase):
             config = ConfigObj(config_file_name)
             TestChiles02._temp = config.get('OS_X_TEMP')
 
+            if not os.path.exists(TestChiles02._temp):
+                os.makedirs(TestChiles02._temp)
+
         if TestChiles02._temp is None:
             TestChiles02._temp = '/tmp'
 

@@ -25,6 +25,7 @@ Common code to
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
+COUNTERS = {}
 
 # for bottom_freq in range(1200, 1204, FREQUENCY_WIDTH):
 for bottom_freq in range(940, 1424, FREQUENCY_WIDTH):
@@ -48,3 +49,14 @@ def make_groups_of_frequencies(group_size):
         groups.append(batch)
 
     return groups
+
+
+def get_oid(count_type):
+    count = COUNTERS.get(count_type)
+    if count is None:
+        count = 1
+    else:
+        count += 1
+    COUNTERS[count_type] = count
+
+    return '{0}__{1:06d}'.format(count_type, count)

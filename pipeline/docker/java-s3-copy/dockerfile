@@ -31,7 +31,7 @@ ENV BUILD_VERSION b17
 
 # Downloading Java
 # http://download.oracle.com/otn-pub/java/jdk/8u66-b17/jdk-8u66-linux-x64.rpm?AuthParam=1452473767_f67c638617dbf11e1e2b0060bfd1910b
-RUN wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/$JAVA_VERSION-$BUILD_VERSION/jdk-$JAVA_VERSION-linux-x64.rpm" -O /tmp/jdk-8-linux-x64.rpm
+RUN wget --quiet --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/$JAVA_VERSION-$BUILD_VERSION/jdk-$JAVA_VERSION-linux-x64.rpm" -O /tmp/jdk-8-linux-x64.rpm
 
 RUN yum -y install /tmp/jdk-8-linux-x64.rpm
 
@@ -40,3 +40,12 @@ RUN alternatives --install /usr/bin/javaws javaws /usr/java/latest/bin/javaws 20
 RUN alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 200000
 
 ENV JAVA_HOME /usr/java/latest
+
+# Copy the scripts
+COPY chiles02 /chiles02/
+
+# Make them executable
+RUN chmod oug+x /chiles02/*.sh
+
+# Update the path
+env PATH /chiles02:$JAVA_HOME/bin:$PATH

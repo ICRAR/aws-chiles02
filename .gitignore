@@ -1,3 +1,4 @@
+/pipeline/docker/java-s3-copy/chiles02/awsChiles02.jar
 /pipeline/docker/casapy/casa-release-4.5.0-el6.tar.gz
 /pipeline/pipeline.iml
 /python/python.iml
@@ -21,7 +22,5 @@ __pycache__/
 .DS_Store
 
 java/aws-chiles02.iml
-
 java/libs/jtar-2.3-javadoc.jar
-
 java/libs/jtar-2.3-sources.jar
