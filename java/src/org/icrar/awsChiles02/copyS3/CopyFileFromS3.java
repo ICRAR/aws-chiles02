@@ -73,15 +73,32 @@ public class CopyFileFromS3 {
     private final String bucketName;
     private final String key;
     private final String destinationPath;
+    private final boolean extractTar;
     private final MessageDigest digest;
 
-    private CopyFileFromS3(long fileSize, int requestLength, String bucketName, String key, String destinationPath)
+    /**
+     *
+     * @param fileSize of object to download.
+     * @param requestLength of each request, effectively the buffer size for a read.
+     * @param bucketName to get object from.
+     * @param key name of object to download.
+     * @param destinationPath to send object to or directory to extract contents of object to.
+     * @param extractTar treat object to download as tar archive and extract to <code>destinationPath</code>
+     * @throws NoSuchAlgorithmException
+     */
+    private CopyFileFromS3(long fileSize,
+                           int requestLength,
+                           String bucketName,
+                           String key,
+                           String destinationPath,
+                           boolean extractTar)
             throws NoSuchAlgorithmException {
         this.fileSize = fileSize;
         this.requestLength = requestLength;
         this.bucketName = bucketName;
         this.key = key;
         this.destinationPath = destinationPath;
+        this.extractTar = extractTar;
         this.digest = MessageDigest.getInstance("MD5");
     }
 
@@ -95,7 +112,10 @@ public class CopyFileFromS3 {
         initBufferRequest();
 
         File outFile = new File(destinationPath);
-        if (outFile.exists()) {
+        if (extractTar && !outFile.isDirectory()) {
+            LOG.error("Tar extraction requested but destination either doesn't exist or is not a directory.");
+            return null;
+        } else if (!extractTar && outFile.exists()) {
             LOG.info("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
             if (!outFile.delete()) {
                 LOG.error("Unable to delete file destinationPath!");
@@ -103,24 +123,40 @@ public class CopyFileFromS3 {
             }
         }
 
-        try {
-            if (!outFile.createNewFile()) {
-                LOG.error("unable to create file destinationPath!");
+        if (!extractTar) {
+            try {
+                if (!outFile.createNewFile()) {
+                    LOG.error("unable to create file " + destinationPath);
+                    return null;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 return null;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
 
-        FileOutputStream fos;
-        try {
-            fos = new FileOutputStream(outFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
+        FileOutputStream fos = null;
+        MultiByteArrayInputStream mbai = null;
+        TarExtractorThread tet;
+        Thread tetThread;
+        if (extractTar) {
+            mbai = new MultiByteArrayInputStream();
+            tet = new TarExtractorThread(mbai, destinationPath);
+            tetThread = new Thread(tet);
+            tetThread.start();
+        } else {
+            try {
+                fos = new FileOutputStream(outFile);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            }
         }
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
+
+        BufferedOutputStream bos = null;
+        if (!extractTar) {
+            bos = new BufferedOutputStream(fos);
+        }
 
         while (currentFilePosition < fileSize) {
             synchronized (lock) {
@@ -142,12 +178,24 @@ public class CopyFileFromS3 {
                         + ". currentFilePosition is " + currentFilePosition);
             }
 
-            try {
-                bos.write(S3_DATA_REQUESTS[index].getS3Data());
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOG.error("Failed on write to file");
-                return null;
+            if (extractTar) {
+                try {
+                    // As we create a new request we know the bytes won't get overwritten.
+                    // Also this and digest update don't change bytes so n problem them using the same object.
+                    mbai.addByteArray(S3_DATA_REQUESTS[index].getS3Data());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error("Failed adding read byte array to MultiByteArrayInputStream");
+                    return null;
+                }
+            } else {
+                try {
+                    bos.write(S3_DATA_REQUESTS[index].getS3Data());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error("Failed on write to file");
+                    return null;
+                }
             }
 
             digest.update(S3_DATA_REQUESTS[index].getS3Data());
@@ -164,12 +212,18 @@ public class CopyFileFromS3 {
                 index = 0;
             }
         }
-        try {
-            bos.flush();
-            bos.close();
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        if (extractTar) {
+            LOG.warn("Need code here to ensure tar extraction completes before quit.");
+            // TODO: must setup some kind of wait to make sure extraction finishes before return!
+        } else {
+            try {
+                bos.flush();
+                bos.close();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         byte[] bytes = digest.digest();
@@ -249,7 +303,7 @@ public class CopyFileFromS3 {
         String filePath = "t1";
         String keyName = "t1";
         File file = new File(filePath);
-        MulitPartDownloadInputStream mpdis = new MulitPartDownloadInputStream();
+        MultiPartDownloadInputStream mpdis = new MultiPartDownloadInputStream();
 
         GetObjectRequest[] objectRequests = new GetObjectRequest[1];
         objectRequests[0] = new GetObjectRequest(bucketName, keyName);
@@ -295,11 +349,21 @@ public class CopyFileFromS3 {
      *
      * @param bucketName to find key in.
      * @param key of object to get metada for.
-     * @return the size of the object referred to by key and bucketName.
+     * @return the size of the object referred to by key and bucketName, -1 if key doesn't exist.
      */
     private static long getObjectSizePlusMetadata(String bucketName, String key) {
         GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, key);
-        objectMetadata = awsS3Client.getObjectMetadata(getObjectMetadataRequest);
+        try {
+            objectMetadata = awsS3Client.getObjectMetadata(getObjectMetadataRequest);
+        } catch (AmazonS3Exception e) {
+            // Not good to use exception for flow control AWS does not have a "fileExists" type method.
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                LOG.info("Could not find metadata for " + key);
+                return -1;
+            } else {
+                throw e;
+            }
+        }
         return objectMetadata.getContentLength();
     }
 
@@ -373,6 +437,7 @@ public class CopyFileFromS3 {
         String bucketName;
         String key;
         String destinationPath;
+        boolean extractTar = false;
         int threadBufferSize = DEFAULT_REQUEST_LENGTH;
 
         String profileName = null;
@@ -389,9 +454,15 @@ public class CopyFileFromS3 {
                 .desc("number of bytes in each thread's buffer, size of each download part")
                 .build();
 
+        Option extractTarOption = Option.builder("extract_tar")
+                .hasArg(false)
+                .desc("treat file as tar archive and extract to <Destination Path> directory")
+                .build();
+
         Options options = new Options();
         options.addOption(awsProfile);
         options.addOption(threadBuffer);
+        options.addOption(extractTarOption);
 
         // create the parser
         CommandLineParser parser = new DefaultParser();
@@ -410,16 +481,19 @@ public class CopyFileFromS3 {
                 LOG.debug("Option is integer with value " + threadBufferSize);
             }
 
+            if (line.hasOption("extract_tar")) {
+                extractTar = true;
+            }
+
             List<String> mainArguments = line.getArgList();
             if (mainArguments.size() == 3) {
                 bucketName = mainArguments.get(0);
                 key = mainArguments.get(1);
                 destinationPath = mainArguments.get(2);
-            }
-            else {
+            } else {
                 // automatically generate the help statement
                 HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp( "CopyFileFromS3 [OPTIONS] <Bucket Name> <Object Name> <Destination File>", options );
+                formatter.printHelp( "CopyFileFromS3 [OPTIONS] <Bucket Name> <Object Name> <Destination Path>", options );
                 return;
             }
         } catch (ParseException exp) {
@@ -439,9 +513,13 @@ public class CopyFileFromS3 {
         long startTime = System.currentTimeMillis();
 
         long fileSize = getObjectSizePlusMetadata(bucketName, key);
+        if (fileSize < 0) {
+            // error occurred or file does not exist
+            return;
+        }
 
-        CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath);
-        String downloadChecksum = "a";//me.go();
+        CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath, extractTar);
+        String downloadChecksum = me.go();
         long finishTime = System.currentTimeMillis();
         if (downloadChecksum == null) {
             LOG.error("Download failed, exiting.");
@@ -449,7 +527,6 @@ public class CopyFileFromS3 {
             String md5 = getMD5(bucketName, key);
             LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
                     + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
-            // me.test1();
             LOG.info("At end of main, about to shutdown Executor");
         }
 
