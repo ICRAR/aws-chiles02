@@ -24,26 +24,20 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
-/**
- * Created by mboulton on 18/01/2016.
- *
- * A <code>MultiByteArrayInputStream</code> represents the logical
- * concatenation of many byte[]s into one <code>InputStream</code>.
- */
-
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+
 /**
+ * Created by mboulton on 18/01/2016.
  *
+ * A <code>MultiByteArrayInputStream</code> represents the logical
+ * concatenation of many byte[]s into one <code>InputStream</code>.
  */
 public class MultiByteArrayInputStream extends InputStream {
-    private static final class Lock { }
-    private final Object lock = new Lock();
     private static final Queue<byte[]> inputStreams = new ArrayDeque<byte[]>();
     private ByteArrayInputStream ins;
     private boolean lastStreamAdded = false;
@@ -56,7 +50,7 @@ public class MultiByteArrayInputStream extends InputStream {
     /**
      *  Continues reading in the next byte[] if an EOF is reached.
      */
-    private final void nextStream() throws IOException {
+    private void nextStream() throws IOException {
         if (ins != null) {
             ins.close();
             ins = null;
@@ -70,9 +64,7 @@ public class MultiByteArrayInputStream extends InputStream {
                     throw new NullPointerException();
                 }
                 ins = new ByteArrayInputStream(bytes);
-                if (ins == null) {
-                    throw new NullPointerException();
-                }
+                // We don't test result of ins as never null (unless OutOfMemory)
             } else {
                 ins = null;
             }
@@ -81,8 +73,8 @@ public class MultiByteArrayInputStream extends InputStream {
 
     /**
      *
-     * @param inputBytes
-     * @throws IOException
+     * @param inputBytes of array to add to the <code>InputStream</code>.
+     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
      */
     public synchronized void addByteArray(byte[] inputBytes) throws IOException {
         if (lastStreamAdded || mpdinsClosed) {
@@ -96,8 +88,8 @@ public class MultiByteArrayInputStream extends InputStream {
 
     /**
      *
-     * @param inputBytes
-     * @throws IOException
+     * @param inputBytes of array to add to the <code>InputStream</code>.
+     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
      */
     public synchronized void addLastInputStream(byte[] inputBytes) throws IOException {
         if (lastStreamAdded || mpdinsClosed) {
@@ -116,7 +108,13 @@ public class MultiByteArrayInputStream extends InputStream {
         return ins.available();
     }
 
-    private void waitForNextInputStream() throws IOException {
+    /**
+     * During read if end of one byte array is reached then get next,
+     * waiting if necessary for one to be added.
+     *
+     * @throws IOException if <code>MultiByteArrayInputStream</code>  is closed.
+     */
+    private void waitForNextByteArray() throws IOException {
         if (mpdinsClosed) {
             throw new IOException("InputStream closed");
         }
@@ -132,16 +130,13 @@ public class MultiByteArrayInputStream extends InputStream {
         nextStream();
     }
 
-    /**
-     *
-     */
     @Override
     public int read() throws IOException {
         if (ins == null) {
             if (lastStreamAdded || mpdinsClosed) {
                 return -1;
             } else {
-                waitForNextInputStream();
+                waitForNextByteArray();
             }
         }
         int c = ins.read();
@@ -152,16 +147,13 @@ public class MultiByteArrayInputStream extends InputStream {
         return c;
     }
 
-    /**
-     *
-     */
     @Override
     public int read(byte b[], int off, int len) throws IOException {
         if (ins == null) {
             if (lastStreamAdded || mpdinsClosed) {
                 return -1;
             } else {
-                waitForNextInputStream();
+                waitForNextByteArray();
             }
         } else if (b == null) {
             throw new NullPointerException();
@@ -179,9 +171,6 @@ public class MultiByteArrayInputStream extends InputStream {
         return n;
     }
 
-    /**
-     *
-     */
     @Override
     public void close() throws IOException {
         do {

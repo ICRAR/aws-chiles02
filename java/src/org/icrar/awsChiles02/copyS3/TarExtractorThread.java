@@ -24,6 +24,8 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.kamranzafar.jtar.TarEntry;
 import org.kamranzafar.jtar.TarInputStream;
 
@@ -31,19 +33,37 @@ import java.io.*;
 
 /**
  * Created by mboulton on 18/01/2016.
+ *
+ * <code>Runnable</code> class to take a <code>MultiByteArrayInputStream</code> and
+ * extract contents as a tar archive.
  */
 public class TarExtractorThread implements Runnable {
+    private static final Log LOG = LogFactory.getLog(TarExtractorThread.class);
+
     private final MultiByteArrayInputStream mbis;
     private final String destinationPath;
+    private boolean extractCompleted = false;
 
+    /**
+     *
+     * @param mbis the <code>MultiByteArrayInputStream</code> to use to read tar data from.
+     * @param destinationPath is directory to extract tar contents into.
+     */
     public TarExtractorThread (MultiByteArrayInputStream mbis, String destinationPath) {
         this.mbis = mbis;
         this.destinationPath = destinationPath;
     }
 
+    /**
+     *
+     * @return true if the extraction has completed, false otherwise.
+     */
+    public boolean isExtractCompleted() {
+        return extractCompleted;
+    }
+
     @Override
     public void run() {
-        // Create a TarInputStream
         TarInputStream tis = new TarInputStream(mbis);
         TarEntry entry;
         try {
@@ -54,9 +74,13 @@ public class TarExtractorThread implements Runnable {
                 String destination = destinationPath + "/" + entry.getName();
 
                 if (entry.isDirectory()) {
+                    // Create direcotry and skip to next entry.
                     File directory = new File(destination);
-                    directory.mkdir();
+                    if (!directory.mkdir()) {
+                        LOG.error("Could not create directory " + destination);
+                    }
                 } else {
+                    // Create file and extract data into it.
                     FileOutputStream fos = new FileOutputStream(destination);
                     BufferedOutputStream bos = new BufferedOutputStream(fos);
 
@@ -70,7 +94,9 @@ public class TarExtractorThread implements Runnable {
             }
             tis.close();
         } catch (IOException e) {
-            e.printStackTrace();;
+            LOG.error("Caught IOException, cannot continue!");
+            e.printStackTrace();
         }
+        extractCompleted = true;
     }
 }

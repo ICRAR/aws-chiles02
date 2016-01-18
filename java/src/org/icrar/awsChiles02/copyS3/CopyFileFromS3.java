@@ -137,8 +137,8 @@ public class CopyFileFromS3 {
 
         FileOutputStream fos = null;
         MultiByteArrayInputStream mbai = null;
-        TarExtractorThread tet;
-        Thread tetThread;
+        TarExtractorThread tet = null;
+        Thread tetThread = null;
         if (extractTar) {
             mbai = new MultiByteArrayInputStream();
             tet = new TarExtractorThread(mbai, destinationPath);
@@ -214,9 +214,17 @@ public class CopyFileFromS3 {
         }
 
         if (extractTar) {
-            LOG.warn("Need code here to ensure tar extraction completes before quit.");
-            // TODO: must setup some kind of wait to make sure extraction finishes before return!
+            // We need to wait for the tar extraction to complete otherwise we might prematurely stop the extractor.
+            while (!tet.isExtractCompleted()) {
+                try {
+                    // Busy wait but is it worth lock and notify code given extraction should keep up????
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
         } else {
+            // Flush and close associate streams.
             try {
                 bos.flush();
                 bos.close();
