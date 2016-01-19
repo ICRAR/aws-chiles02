@@ -140,7 +140,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         TarExtractorThread tet = null;
         Thread tetThread = null;
         if (extractTar) {
-            mbai = new MultiByteArrayInputStream();
+            mbai = new MultiByteArrayInputStream(THREAD_POOL_SIZE / 2);
             tet = new TarExtractorThread(mbai, destinationPath);
             tetThread = new Thread(tet);
             tetThread.start();

@@ -24,11 +24,14 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 
 /**
@@ -38,13 +41,15 @@ import java.util.Queue;
  * concatenation of many byte[]s into one <code>InputStream</code>.
  */
 public class MultiByteArrayInputStream extends InputStream {
-    private static final Queue<byte[]> inputStreams = new ArrayDeque<byte[]>();
+    private static final Log LOG = LogFactory.getLog(MultiByteArrayInputStream.class);
+
+    private final Queue<byte[]> inputStreams;
     private ByteArrayInputStream ins;
     private boolean lastStreamAdded = false;
     private boolean mpdinsClosed = false;
 
-    public MultiByteArrayInputStream() {
-
+    public MultiByteArrayInputStream(int maxQueueDepth) {
+        inputStreams = new ArrayBlockingQueue<byte[]>(maxQueueDepth);// ArrayDeque<byte[]>();
     }
 
     /**
@@ -69,6 +74,7 @@ public class MultiByteArrayInputStream extends InputStream {
                 ins = null;
             }
         }
+        LOG.info("There are " + inputStreams.size() + " elements in inpustStream Queue.");
     }
 
     /**
