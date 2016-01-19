@@ -14,7 +14,7 @@ abstract class AbstractCopyS3 {
    * @param s3String the s 3 string
    * @return the bucket name
    */
-  protected String getBucketName(String s3String) {
+  protected static String getBucketName(String s3String) {
     if (s3String.startsWith("s3://")) {
       int index = s3String.indexOf('/', 5);
       return s3String.substring(5, index);
@@ -28,7 +28,7 @@ abstract class AbstractCopyS3 {
    * @param s3String the s 3 string
    * @return the key name
    */
-  protected String getKeyName(String s3String) {
+  protected static String getKeyName(String s3String) {
     if (s3String.startsWith("s3://")) {
       int index = s3String.indexOf('/', 5);
       return s3String.substring(index + 1);

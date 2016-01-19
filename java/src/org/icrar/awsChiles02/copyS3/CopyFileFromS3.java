@@ -50,7 +50,7 @@ import org.apache.http.HttpStatus;
 /**
  *
  */
-public class CopyFileFromS3 {
+public class CopyFileFromS3 extends AbstractCopyS3 {
     private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
 
     private static final int THREAD_POOL_SIZE = 16;
@@ -498,10 +498,14 @@ public class CopyFileFromS3 {
                 bucketName = mainArguments.get(0);
                 key = mainArguments.get(1);
                 destinationPath = mainArguments.get(2);
+            } else if (mainArguments.size() == 2) {
+                bucketName = getBucketName(mainArguments.get(0));
+                key = getKeyName(mainArguments.get(0));
+                destinationPath = mainArguments.get(1);
             } else {
                 // automatically generate the help statement
                 HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp( "CopyFileFromS3 [OPTIONS] <Bucket Name> <Object Name> <Destination Path>", options );
+                formatter.printHelp( "CopyFileFromS3 [OPTIONS] [s3_url output][bucket key output]", options );
                 return;
             }
         } catch (ParseException exp) {
