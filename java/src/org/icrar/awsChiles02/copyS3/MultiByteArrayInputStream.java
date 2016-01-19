@@ -43,7 +43,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class MultiByteArrayInputStream extends InputStream {
     private static final Log LOG = LogFactory.getLog(MultiByteArrayInputStream.class);
 
-    private final Queue<byte[]> inputStreams;
+    private final ArrayBlockingQueue<byte[]> inputStreams;
     private ByteArrayInputStream ins;
     private boolean lastStreamAdded = false;
     private boolean mpdinsClosed = false;
@@ -61,33 +61,35 @@ public class MultiByteArrayInputStream extends InputStream {
             ins = null;
         }
 
-        synchronized (inputStreams) {
-            if (!inputStreams.isEmpty()) {
-                // This will get and remove the next stream.
-                byte[] bytes = inputStreams.poll();
-                if (bytes == null) {
-                    throw new NullPointerException();
+        if (!inputStreams.isEmpty()) {
+            // This will get and remove the next stream.
+            byte[] bytes = null;
+            while (bytes == null) {
+                try {
+                    bytes = inputStreams.take();
+                } catch (InterruptedException e) {
+                    // ignore
                 }
-                ins = new ByteArrayInputStream(bytes);
-                // We don't test result of ins as never null (unless OutOfMemory)
-            } else {
-                ins = null;
             }
+            ins = new ByteArrayInputStream(bytes);
+            // We don't test result of ins as never null (unless OutOfMemory)
+        } else {
+            ins = null;
         }
         LOG.info("There are " + inputStreams.size() + " elements in inpustStream Queue.");
     }
 
-    /**
-     *
-     * @param inputBytes of array to add to the <code>InputStream</code>.
-     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
-     */
-    public synchronized void addByteArray(byte[] inputBytes) throws IOException {
-        if (lastStreamAdded || mpdinsClosed) {
-            throw new IOException("Last stream already added or stream closed");
-        }
+    private void add(byte[] inputBytes) {
+        boolean itemAdded = false;
         synchronized (inputStreams) {
-            inputStreams.add(inputBytes);
+            while (!itemAdded) {
+                try {
+                    inputStreams.put(inputBytes);
+                    itemAdded = true;
+                } catch (InterruptedException e) {
+                    // ignore!
+                }
+            }
             inputStreams.notifyAll();
         }
     }
@@ -97,13 +99,24 @@ public class MultiByteArrayInputStream extends InputStream {
      * @param inputBytes of array to add to the <code>InputStream</code>.
      * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
      */
-    public synchronized void addLastInputStream(byte[] inputBytes) throws IOException {
+    public void addByteArray(byte[] inputBytes) throws IOException {
         if (lastStreamAdded || mpdinsClosed) {
             throw new IOException("Last stream already added or stream closed");
         }
-        inputStreams.add(inputBytes);
+        add(inputBytes);
+    }
+
+    /**
+     *
+     * @param inputBytes of array to add to the <code>InputStream</code>.
+     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
+     */
+    public void addLastInputStream(byte[] inputBytes) throws IOException {
+        if (lastStreamAdded || mpdinsClosed) {
+            throw new IOException("Last stream already added or stream closed");
+        }
+        add(inputBytes);
         lastStreamAdded = true;
-        inputStreams.notifyAll();
     }
 
     @Override

@@ -53,13 +53,12 @@ import org.apache.http.HttpStatus;
 public class CopyFileFromS3 extends AbstractCopyS3 {
     private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
 
-    private static final int THREAD_POOL_SIZE = 16;
-    private static final int DEFAULT_REQUEST_LENGTH = 10 * 1024 * 1024; // 10MBytes
-    private static final ExecutorService MY_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    private static final S3DataRequest[] S3_DATA_REQUESTS = new S3DataRequest[THREAD_POOL_SIZE];
+    private static final int DEFAULT_THREAD_POOL_SIZE = 16;
+    private static final int DEFAULT_REQUEST_LENGTH = 32 * 1024 * 1024; // 32MBytes
 
+    private static ExecutorService myExecturor = null;
+    private static S3DataRequest[] s3DataRequests = null;
     private static AmazonS3Client awsS3Client;
-
     private static ObjectMetadata objectMetadata;
 
     private static long requestedFileCurrentPosition = 0;
@@ -70,6 +69,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
 
     private final long fileSize;
     private final int requestLength;
+    private final int threadPoolSize;
     private final String bucketName;
     private final String key;
     private final String destinationPath;
@@ -80,6 +80,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
      *
      * @param fileSize of object to download.
      * @param requestLength of each request, effectively the buffer size for a read.
+     * @param threadPoolSize used for number of simulataneous downloads.
      * @param bucketName to get object from.
      * @param key name of object to download.
      * @param destinationPath to send object to or directory to extract contents of object to.
@@ -88,6 +89,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
      */
     private CopyFileFromS3(long fileSize,
                            int requestLength,
+                           int threadPoolSize,
                            String bucketName,
                            String key,
                            String destinationPath,
@@ -95,6 +97,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             throws NoSuchAlgorithmException {
         this.fileSize = fileSize;
         this.requestLength = requestLength;
+        this.threadPoolSize = threadPoolSize;
         this.bucketName = bucketName;
         this.key = key;
         this.destinationPath = destinationPath;
@@ -140,7 +143,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         TarExtractorThread tet = null;
         Thread tetThread = null;
         if (extractTar) {
-            mbai = new MultiByteArrayInputStream(THREAD_POOL_SIZE / 2);
+            mbai = new MultiByteArrayInputStream(threadPoolSize / 2);
             tet = new TarExtractorThread(mbai, destinationPath);
             tetThread = new Thread(tet);
             tetThread.start();
@@ -162,7 +165,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             synchronized (lock) {
                 // Loop here until the next segmen of the file is ready. We can't wait on a particular thread
                 // hence the reason to check each time we get control back from lock.wait().
-                while (!S3_DATA_REQUESTS[index].isRequestComplete() || S3_DATA_REQUESTS[index].isFailed()) {
+                while (!s3DataRequests[index].isRequestComplete() || s3DataRequests[index].isFailed()) {
                     try {
                         LOG.info("About to do wait for " + index);
                         lock.wait();
@@ -172,9 +175,9 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 }
             }
 
-            if (S3_DATA_REQUESTS[index].isFailed()) {
-                LOG.error("Got FAILED for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
-                        + " and length " + S3_DATA_REQUESTS[index].getS3Data().length
+            if (s3DataRequests[index].isFailed()) {
+                LOG.error("Got FAILED for index " + index + " at position " + s3DataRequests[index].getStartPosition()
+                        + " and length " + s3DataRequests[index].getS3Data().length
                         + ". currentFilePosition is " + currentFilePosition);
             }
 
@@ -182,7 +185,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 try {
                     // As we create a new request we know the bytes won't get overwritten.
                     // Also this and digest update don't change bytes so n problem them using the same object.
-                    mbai.addByteArray(S3_DATA_REQUESTS[index].getS3Data());
+                    mbai.addByteArray(s3DataRequests[index].getS3Data());
                 } catch (IOException e) {
                     e.printStackTrace();
                     LOG.error("Failed adding read byte array to MultiByteArrayInputStream");
@@ -190,7 +193,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 }
             } else {
                 try {
-                    bos.write(S3_DATA_REQUESTS[index].getS3Data());
+                    bos.write(s3DataRequests[index].getS3Data());
                 } catch (IOException e) {
                     e.printStackTrace();
                     LOG.error("Failed on write to file");
@@ -198,17 +201,17 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 }
             }
 
-            digest.update(S3_DATA_REQUESTS[index].getS3Data());
+            digest.update(s3DataRequests[index].getS3Data());
 
             LOG.info(
-                    "Got complete for index " + index + " at position " + S3_DATA_REQUESTS[index].getStartPosition()
-                            + " and length " + S3_DATA_REQUESTS[index].getS3Data().length
+                    "Got complete for index " + index + " at position " + s3DataRequests[index].getStartPosition()
+                            + " and length " + s3DataRequests[index].getS3Data().length
                             + ". currentFilePosition is " + currentFilePosition);
-            currentFilePosition += S3_DATA_REQUESTS[index].getS3Data().length;
+            currentFilePosition += s3DataRequests[index].getS3Data().length;
 
             doNextRequest(index);
             index++;
-            if (index >= S3_DATA_REQUESTS.length) {
+            if (index >= s3DataRequests.length) {
                 index = 0;
             }
         }
@@ -240,7 +243,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
 
     /**
      * Request the next segment of the file associating it with position <code>index</code>
-     * in <code>S3_DATA_REQUESTS</code>.
+     * in <code>s3DataRequests</code>.
      *
      * @param index to do request on.
      */
@@ -248,14 +251,14 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         if (requestedFileCurrentPosition < fileSize) {
             int requestSize = requestedFileCurrentPosition + requestLength < fileSize ?
                     requestLength : (int)(fileSize - requestedFileCurrentPosition);
-            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client,
+            s3DataRequests[index] = new S3DataRequest(awsS3Client,
                                                         requestedFileCurrentPosition,
                                                         requestSize,
                                                         bucketName,
                                                         key,
                                                         index,
                                                         lock);
-            MY_EXECUTOR.execute(new S3DataReader(S3_DATA_REQUESTS[index]));
+            myExecturor.execute(new S3DataReader(s3DataRequests[index]));
             requestedFileCurrentPosition += requestSize;
         }
     }
@@ -267,11 +270,11 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     private int initBufferRequest() {
         int index;
 
-        for (index=0; index<THREAD_POOL_SIZE; index++) {
+        for (index=0; index< threadPoolSize; index++) {
             if (requestedFileCurrentPosition + requestLength > fileSize) {
                 break;
             }
-            S3_DATA_REQUESTS[index] = new S3DataRequest(awsS3Client,
+            s3DataRequests[index] = new S3DataRequest(awsS3Client,
                                                         requestedFileCurrentPosition,
                                                         requestLength,
                                                         bucketName,
@@ -285,8 +288,8 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 // We don't care if we are interrupted!
             }
         }
-        if (requestedFileCurrentPosition < fileSize && index != THREAD_POOL_SIZE) {
-            S3_DATA_REQUESTS[index++] = new S3DataRequest(awsS3Client,
+        if (requestedFileCurrentPosition < fileSize && index != threadPoolSize) {
+            s3DataRequests[index++] = new S3DataRequest(awsS3Client,
                                                           requestedFileCurrentPosition,
                                                           (int)(fileSize - requestedFileCurrentPosition),
                                                           bucketName,
@@ -296,7 +299,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         }
 
         for (int i=0;i<index;i++) {
-            MY_EXECUTOR.execute(new S3DataReader(S3_DATA_REQUESTS[i]));
+            myExecturor.execute(new S3DataReader(s3DataRequests[i]));
         }
 
         return index;
@@ -447,6 +450,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         String destinationPath;
         boolean extractTar = false;
         int threadBufferSize = DEFAULT_REQUEST_LENGTH;
+        int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
         String profileName = null;
 
@@ -462,6 +466,12 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 .desc("number of bytes in each thread's buffer, size of each download part")
                 .build();
 
+        Option threadPoolSizeOption = Option.builder("thread_pool")
+                .hasArg()
+                .argName("SIZE")
+                .desc("number of simultaneous download threads")
+                .build();
+
         Option extractTarOption = Option.builder("extract_tar")
                 .hasArg(false)
                 .desc("treat file as tar archive and extract to <Destination Path> directory")
@@ -470,6 +480,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         Options options = new Options();
         options.addOption(awsProfile);
         options.addOption(threadBuffer);
+        options.addOption(threadPoolSizeOption);
         options.addOption(extractTarOption);
 
         // create the parser
@@ -486,6 +497,13 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
                 String value = line.getOptionValue("thread_buffer");
                 LOG.info("Found thread_buffer option with value " + value);
                 threadBufferSize = Integer.parseInt(value);
+                LOG.debug("Option is integer with value " + threadBufferSize);
+            }
+
+            if (line.hasOption("thread_pool")) {
+                String value = line.getOptionValue("thread_pool");
+                LOG.info("Found thread_pool option with value " + value);
+                threadPoolSize = Integer.parseInt(value);
                 LOG.debug("Option is integer with value " + threadBufferSize);
             }
 
@@ -518,6 +536,9 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             return;
         }
 
+        // Now we have options setup dependants
+        myExecturor = Executors.newFixedThreadPool(threadPoolSize);
+        s3DataRequests = new S3DataRequest[threadPoolSize];
 
         setupAWS(profileName);
 
@@ -530,7 +551,13 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             return;
         }
 
-        CopyFileFromS3 me = new CopyFileFromS3(fileSize, threadBufferSize, bucketName, key, destinationPath, extractTar);
+        CopyFileFromS3 me = new CopyFileFromS3(fileSize,
+                                               threadBufferSize,
+                                               threadPoolSize,
+                                               bucketName,
+                                               key,
+                                               destinationPath,
+                                               extractTar);
         String downloadChecksum = me.go();
         long finishTime = System.currentTimeMillis();
         if (downloadChecksum == null) {
@@ -543,10 +570,10 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         }
 
         // Shut down the threads
-        MY_EXECUTOR.shutdown();
-        if (!MY_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
+        myExecturor.shutdown();
+        if (!myExecturor.awaitTermination(5, TimeUnit.SECONDS)) {
             LOG.warn("Forcing Executor shutdown");
-            MY_EXECUTOR.shutdownNow();
+            myExecturor.shutdownNow();
         }
         LOG.info("Finished in " + (finishTime - startTime) + ".");
     }
