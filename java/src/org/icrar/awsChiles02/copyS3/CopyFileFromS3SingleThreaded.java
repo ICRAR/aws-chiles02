@@ -1,33 +1,37 @@
 /**
- *  Copyright (c) UWA, The University of Western Australia
- *  M468/35 Stirling Hwy
- *  Perth WA 6009
- *  Australia
- *
- *  All rights reserved
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA 02111-1307  USA
+ * Copyright (c) UWA, The University of Western Australia
+ * M468/35 Stirling Hwy
+ * Perth WA 6009
+ * Australia
+ * <p/>
+ * All rights reserved
+ * <p/>
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * <p/>
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * <p/>
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307  USA
  */
 package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.List;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressEventType;
+import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import org.apache.commons.cli.CommandLine;
@@ -45,6 +49,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class CopyFileFromS3SingleThreaded extends AbstractCopyS3 {
   private static final Log LOG = LogFactory.getLog(CopyFileFromS3SingleThreaded.class);
+  private static DecimalFormat FORMAT = new DecimalFormat("00.00");
 
   /**
    * The entry point of application.
@@ -120,17 +125,17 @@ public class CopyFileFromS3SingleThreaded extends AbstractCopyS3 {
       else {
         // automatically generate the help statement
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp( "CopyFileFromS3SingleThreaded [s3_url output][bucket key output]", options );
+        formatter.printHelp("CopyFileFromS3SingleThreaded [s3_url output][bucket key output]", options);
         return;
       }
     }
-    catch(ParseException exp) {
+    catch (ParseException exp) {
       // oops, something went wrong
-      LOG.error( "Parsing failed.", exp);
+      LOG.error("Parsing failed.", exp);
 
       // automatically generate the help statement
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "copy from", options );
+      formatter.printHelp("copy from", options);
       return;
     }
 
@@ -140,17 +145,40 @@ public class CopyFileFromS3SingleThreaded extends AbstractCopyS3 {
     long startTime = System.currentTimeMillis();
 
     // TransferManager processes all transfers asynchronously, so this call will return immediately.
-    Download download = transferManager.download(bucketName, keyName, new File(filePath));
+    for (int retries = 0; retries <= 3; retries++) {
+      if (retries >=1)
+        LOG.info("Retry attempt" + retries);
+      final Download download = transferManager.download(bucketName, keyName, new File(filePath));
+      download.addProgressListener(
+          new ProgressListener() {
+            private String lastValue = "";
 
-    try {
-      // Block and wait for the upload to finish
-      download.waitForCompletion();
-    }
-    catch (AmazonClientException amazonClientException) {
-      LOG.error("Unable to download file, download aborted.", amazonClientException);
-    }
-    catch (InterruptedException e) {
-      LOG.error("Interrupted", e);
+            @Override
+            public void progressChanged(ProgressEvent progressEvent) {
+              String format = FORMAT.format(download.getProgress().getPercentTransferred());
+              if (!lastValue.equals(format)) {
+                LOG.info(format + "%");
+                lastValue = format;
+              }
+
+              if (progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
+                LOG.info("Download complete!!!");
+              }
+            }
+          }
+      );
+
+      try {
+        // Block and wait for the upload to finish
+        download.waitForCompletion();
+        break;
+      }
+      catch (AmazonClientException amazonClientException) {
+        LOG.error("Unable to download file, download aborted.", amazonClientException);
+      }
+      catch (InterruptedException e) {
+        LOG.error("Interrupted", e);
+      }
     }
     long endTime = System.currentTimeMillis();
     LOG.info("download took " + (endTime - startTime) / 1000 + " seconds");

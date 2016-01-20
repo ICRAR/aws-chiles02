@@ -1,7 +1,10 @@
 package org.icrar.awsChiles02.copyS3;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.transfer.TransferManager;
 
 /**
@@ -45,18 +48,22 @@ abstract class AbstractCopyS3 {
    * @return the transfer manager
    */
   protected TransferManager getTransferManager(String profileName, String accessKeyId, String secretAccessKey) {
-    TransferManager transferManager;
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setConnectionTimeout(6 * 60 * 60 * 1000);
+    clientConfiguration.setProtocol(Protocol.HTTP);
+
+    AmazonS3Client amazonS3Client;
     if (accessKeyId != null && secretAccessKey != null) {
       BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-      transferManager = new TransferManager(awsCredentials);
+      amazonS3Client = new AmazonS3Client(awsCredentials, clientConfiguration);
     }
     else {
       ProfileCredentialsProvider credentialsProvider =
           (profileName == null)
           ? new ProfileCredentialsProvider()
           : new ProfileCredentialsProvider(profileName);
-      transferManager = new TransferManager(credentialsProvider);
+      amazonS3Client = new AmazonS3Client(credentialsProvider, clientConfiguration);
     }
-    return transferManager;
+    return new TransferManager(amazonS3Client);
   }
 }
