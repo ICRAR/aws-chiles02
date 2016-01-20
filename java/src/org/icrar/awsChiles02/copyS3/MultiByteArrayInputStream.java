@@ -4,7 +4,7 @@
  *  Perth WA 6009
  *  Australia
  *
- *  Copyright by UWA, 2015-2016
+ *  Copyright by UWA, 2016
  *  All rights reserved
  *
  *  This library is free software; you can redistribute it and/or
@@ -24,110 +24,116 @@
  */
 package org.icrar.awsChiles02.copyS3;
 
-/**
- * Created by mboulton on 9/12/2015.
- *
- * A <code>MulitPartDownloadInputStream</code> represents
- * the logical concatenation of the input streams
- * returned by S3 getObject.
- */
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
 
 /**
- * NOTE: This likely won't be needed now as highly likely that it will be more reliable to read
- * into a buffer first so that problems with readers in others Threads doesn't cause a timeout on
- * an InputStream from anothe Thread.
+ * Created by mboulton on 18/01/2016.
+ *
+ * A <code>MultiByteArrayInputStream</code> represents the logical
+ * concatenation of many byte[]s into one <code>InputStream</code>.
  */
-public class MulitPartDownloadInputStream extends InputStream {
-    private static final class Lock { }
-    private final Object lock = new Lock();
-    private static final Queue<S3ObjectInputStream> inputStreams = new ArrayDeque<S3ObjectInputStream>();
-    private S3ObjectInputStream ins;
+public class MultiByteArrayInputStream extends InputStream {
+    private static final Log LOG = LogFactory.getLog(MultiByteArrayInputStream.class);
+
+    private final ArrayBlockingQueue<byte[]> inputStreams;
+    private ByteArrayInputStream ins;
     private boolean lastStreamAdded = false;
     private boolean mpdinsClosed = false;
 
-    /**
-     *
-     * @param
-     * @see     java.util.Enumeration
-     */
-    public MulitPartDownloadInputStream() {
-
+    public MultiByteArrayInputStream(int maxQueueDepth) {
+        inputStreams = new ArrayBlockingQueue<byte[]>(maxQueueDepth);// ArrayDeque<byte[]>();
     }
 
     /**
-     *
-     * @param s3ObjectInputStream
+     *  Continues reading in the next byte[] if an EOF is reached.
      */
-    public synchronized void addStream(S3ObjectInputStream s3ObjectInputStream) {
-        inputStreams.add(s3ObjectInputStream);
-    }
-
-    /**
-     *  Continues reading in the next stream if an EOF is reached.
-     */
-    private final void nextStream() throws IOException {
+    private void nextStream() throws IOException {
         if (ins != null) {
             ins.close();
+            ins = null;
         }
 
-        synchronized (inputStreams) {
-            if (!inputStreams.isEmpty()) {
-                // This will get and remove the next stream.
-                ins = inputStreams.poll();
-                if (ins == null)
-                    throw new NullPointerException();
-            } else {
-                ins = null;
+        if (!inputStreams.isEmpty()) {
+            // This will get and remove the next stream.
+            byte[] bytes = null;
+            while (bytes == null) {
+                try {
+                    bytes = inputStreams.take();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
             }
+            ins = new ByteArrayInputStream(bytes);
+            // We don't test result of ins as never null (unless OutOfMemory)
+        } else {
+            ins = null;
+        }
+        LOG.info("There are " + inputStreams.size() + " elements in inpustStream Queue.");
+    }
+
+    private void add(byte[] inputBytes) {
+        boolean itemAdded = false;
+        synchronized (inputStreams) {
+            while (!itemAdded) {
+                try {
+                    inputStreams.put(inputBytes);
+                    itemAdded = true;
+                } catch (InterruptedException e) {
+                    // ignore!
+                }
+            }
+            inputStreams.notifyAll();
         }
     }
 
     /**
      *
-     * @param ins
-     * @throws IOException
+     * @param inputBytes of array to add to the <code>InputStream</code>.
+     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
      */
-    public synchronized void addInputStream(S3ObjectInputStream ins) throws IOException {
+    public void addByteArray(byte[] inputBytes) throws IOException {
         if (lastStreamAdded || mpdinsClosed) {
             throw new IOException("Last stream already added or stream closed");
         }
-        inputStreams.add(ins);
-        inputStreams.notifyAll();
+        add(inputBytes);
     }
 
     /**
      *
-     * @param ins
-     * @throws IOException
+     * @param inputBytes of array to add to the <code>InputStream</code>.
+     * @throws IOException if <code>MultiByteArrayInputStream</code> cannot be added to or is closed.
      */
-    public synchronized void addLastInputStream(S3ObjectInputStream ins) throws IOException {
+    public void addLastInputStream(byte[] inputBytes) throws IOException {
         if (lastStreamAdded || mpdinsClosed) {
             throw new IOException("Last stream already added or stream closed");
         }
-        inputStreams.add(ins);
+        add(inputBytes);
         lastStreamAdded = true;
-        inputStreams.notifyAll();
     }
 
-    /**
-     *
-     */
     @Override
     public int available() throws IOException {
-        if(ins == null) {
+        if (ins == null) {
             return 0; // no way to signal EOF from available()
         }
         return ins.available();
     }
 
-    private void waitForNextInputStream() throws IOException {
+    /**
+     * During read if end of one byte array is reached then get next,
+     * waiting if necessary for one to be added.
+     *
+     * @throws IOException if <code>MultiByteArrayInputStream</code>  is closed.
+     */
+    private void waitForNextByteArray() throws IOException {
         if (mpdinsClosed) {
             throw new IOException("InputStream closed");
         }
@@ -143,16 +149,13 @@ public class MulitPartDownloadInputStream extends InputStream {
         nextStream();
     }
 
-    /**
-     *
-     */
     @Override
     public int read() throws IOException {
         if (ins == null) {
             if (lastStreamAdded || mpdinsClosed) {
                 return -1;
             } else {
-                waitForNextInputStream();
+                waitForNextByteArray();
             }
         }
         int c = ins.read();
@@ -163,16 +166,13 @@ public class MulitPartDownloadInputStream extends InputStream {
         return c;
     }
 
-    /**
-     *
-     */
     @Override
     public int read(byte b[], int off, int len) throws IOException {
         if (ins == null) {
             if (lastStreamAdded || mpdinsClosed) {
                 return -1;
             } else {
-                waitForNextInputStream();
+                waitForNextByteArray();
             }
         } else if (b == null) {
             throw new NullPointerException();
@@ -190,9 +190,6 @@ public class MulitPartDownloadInputStream extends InputStream {
         return n;
     }
 
-    /**
-     *
-     */
     @Override
     public void close() throws IOException {
         do {
