@@ -39,3 +39,13 @@ RUN yum install -y \
 RUN mkdir -p /opt/chiles
 RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.0-el6.tar.gz \
     | tar -xzC /opt/chiles
+
+# Copy the scripts
+COPY scripts /scripts/
+
+# Make them executable
+RUN chmod oug+x /scripts/*.sh
+
+# Update the path
+env PATH /scripts:$PATH
+env PYTHONPATH

@@ -1,0 +1,271 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Build an EC2 instances to test Docker on AWS",
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "Can contain only ASCII characters."
+    },
+    "InstanceType" : {
+      "Description" : "Load database EC2 instance type",
+      "Type" : "String",
+      "Default" : "i2.xlarge",
+      "AllowedValues" : [
+        "i2.xlarge"
+      ],
+      "ConstraintDescription" : "Must be a valid EC2 instance type"
+    },
+    "SpotPrice" : {
+      "Description" : "Spot price",
+      "Type" : "Number",
+      "MinValue" : "0.01",
+      "MaxValue" : "2.00"
+    },
+    "Email" : {
+      "Description" : "Docker email address",
+      "Type" : "String",
+      "Default" : "a@b.com"
+    },
+    "DockerPassword" : {
+      "Description" : "Docker password",
+      "Type" : "String"
+    },
+    "AmiId" : {
+      "Description" : "Which AMI should we use",
+      "Type" : "AWS::EC2::Image::Id",
+      "ConstraintDescription" : "Must be a valid AMI Id",
+      "Default" : "ami-249f7a44"
+    }
+  },
+  "Resources" : {
+    "WorkerSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access via port 22",
+        "VpcId" : "vpc-9e6622fb",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "22",
+            "ToPort" : "22",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "CfnUser" : {
+      "Type" : "AWS::IAM::User",
+      "Properties" : {
+        "Path" : "/",
+        "Policies" : [
+          {
+            "PolicyName" : "Admin",
+            "PolicyDocument" : {
+              "Statement" : [
+                {
+                  "Effect" : "Allow",
+                  "Action" : "*",
+                  "Resource" : "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "HostKeys" : {
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : {
+          "Ref" : "CfnUser"
+        }
+      }
+    },
+    "AutoScalingGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : {
+          "Fn::GetAZs" : ""
+        },
+        "LaunchConfigurationName" : {
+          "Ref" : "LaunchConfig"
+        },
+        "VPCZoneIdentifier" : [
+          "subnet-04e68e73",
+          "subnet-bde9a3d8",
+          "subnet-628b063b"
+        ],
+        "DesiredCapacity" : "1",
+        "MinSize" : "1",
+        "MaxSize" : "1"
+      }
+    },
+    "LaunchConfig" : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "Comment" : "",
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "packages" : {
+              "yum" : {
+                "htop" : [],
+                "sysstat" : [],
+                "iotop" : []
+              }
+            },
+            "files" : {
+              "/etc/boto.cfg" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[Credentials]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "ImageId" : { "Ref" : "AmiId" },
+        "AssociatePublicIpAddress" : "true",
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdb",
+            "VirtualName" : "ephemeral0"
+          }
+        ],
+        "SpotPrice" : {
+          "Ref" : "SpotPrice"
+        },
+        "InstanceType" : {
+          "Ref" : "InstanceType"
+        },
+        "SecurityGroups" : [ { "Ref" : "WorkerSecurityGroup" } ],
+        "KeyName" : {
+          "Ref" : "KeyName"
+        },
+        "UserData" : {
+          "Fn::Base64" : {
+            "Fn::Join" : [
+              "",
+              [
+                "#!/bin/bash -ve\n",
+                "yum -y update\n",
+
+                "# Run cfn-init\n",
+                "/opt/aws/bin/cfn-init -v ",
+                "         --stack ",
+                { "Ref" : "AWS::StackName" },
+                "         --resource LaunchConfig ",
+                "         --region ",
+                { "Ref" : "AWS::Region" },
+                "\n",
+                "# Print into the logs the disk free\n",
+                "\n",
+                "df -h\n",
+                "\n",
+                "if [ -b \"/dev/xvdb\" ]; then\n",
+                "\n",
+                "    METADATA_URL_BASE=\"http://169.254.169.254/latest\"\n",
+                "\n",
+                "    yum -y -d0 install mdadm curl\n",
+                "\n",
+                "    # Configure Raid if needed - taking into account xvdb or sdb\n",
+                "    root_drive=`df -h | grep -v grep | awk 'NR==2{print $1}'`\n",
+                "\n",
+                "    if [ \"$root_drive\" == \"/dev/xvda1\" ]; then\n",
+                "      echo \"Detected 'xvd' drive naming scheme (root: $root_drive)\"\n",
+                "      DRIVE_SCHEME='xvd'\n",
+                "    else\n",
+                "      echo \"Detected 'sd' drive naming scheme (root: $root_drive)\"\n",
+                "      DRIVE_SCHEME='sd'\n",
+                "    fi\n",
+                "\n",
+                "    # figure out how many ephemerals we have by querying the metadata API, and then:\n",
+                "    #  - convert the drive name returned from the API to the hosts DRIVE_SCHEME, if necessary\n",
+                "    #  - verify a matching device is available in /dev/\n",
+                "    drives=\"\"\n",
+                "    ephemeral_count=0\n",
+                "    ephemerals=$(curl --silent $METADATA_URL_BASE/meta-data/block-device-mapping/ | grep ephemeral)\n",
+                "    for e in $ephemerals; do\n",
+                "      echo \"Probing $e ..\"\n",
+                "      device_name=$(curl --silent $METADATA_URL_BASE/meta-data/block-device-mapping/$e)\n",
+                "      # might have to convert 'sdb' -> 'xvdb'\n",
+                "      device_name=$(echo $device_name | sed \"s/sd/$DRIVE_SCHEME/\")\n",
+                "      device_path=\"/dev/$device_name\"\n",
+                "\n",
+                "      # test that the device actually exists since you can request more ephemeral drives than are available\n",
+                "      # for an instance type and the meta-data API will happily tell you it exists when it really does not.\n",
+                "      if [ -b $device_path ]; then\n",
+                "        echo \"Detected ephemeral disk: $device_path\"\n",
+                "        drives=\"$drives $device_path\"\n",
+                "        ephemeral_count=$((ephemeral_count + 1 ))\n",
+                "      else\n",
+                "        echo \"Ephemeral disk $e, $device_path is not present. skipping\"\n",
+                "      fi\n",
+                "    done\n",
+                "\n",
+                "    echo \"ephemeral_count = $ephemeral_count\"\n",
+                "    if (( ephemeral_count > 1 )); then\n",
+                "        umount /media/ephemeral0\n",
+                "        # overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input\n",
+                "        for drive in $drives; do\n",
+                "          dd if=/dev/zero of=$drive bs=4096 count=1024\n",
+                "        done\n",
+                "\n",
+                "        partprobe\n",
+                "        mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$ephemeral_count $drives\n",
+                "        blockdev --setra 65536 /dev/md0\n",
+                "        mkfs.ext4 /dev/md0\n",
+                "        mkdir -p /mnt/dfms\n",
+                "        mount -t ext4 -o noatime /dev/md0 /mnt/dfms\n",
+                "    elif (( ephemeral_count == 1 )); then\n",
+                "        if mountpoint -q \"/media/ephemeral0\" ; then\n",
+                "            # The ephemeral disk is usually mounted on /media/ephemeral0\n",
+                "            rm -f /mnt/dfms\n",
+                "            ln -s /media/ephemeral0 /mnt/dfms\n",
+                "        else\n",
+                "            # The ephemeral disk is not mounted on /media/ephemeral0 so mount it\n",
+                "            mkdir -p /mnt/dfms\n",
+                "            mkfs.ext4 /dev/xvdb\n",
+                "            mount /dev/xvdb /mnt/dfms\n",
+                "        fi\n",
+                "    else\n",
+                "        mkdir -p /mnt/dfms\n",
+                "        mkfs.ext4 /dev/xvdb\n",
+                "        mount /dev/xvdb /mnt/dfms\n",
+                "    fi\n",
+                "fi\n",
+                "chmod -R 0777 /mnt/dfms\n",
+                "\n",
+                "# Print into the logs the disk free\n",
+                "df -h\n",
+                "dd if=/dev/zero of=/mnt/dfms/swapfile bs=1M count=1024\n",
+                "chmod 0600 /mnt/dfms/swapfile\n",
+                "mkswap /mnt/dfms/swapfile\n",
+                "swapon /mnt/dfms/swapfile\n",
+                "\n",
+                "service docker start\n",
+                "\n",
+                "docker login --email=a@b.com --username=icrar --password=",
+                { "Ref" : "DockerPassword" },
+                " sdp-docker-registry.icrar.uwa.edu.au:8080\n",
+                "\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
