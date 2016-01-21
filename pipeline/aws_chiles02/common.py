@@ -26,6 +26,7 @@ Common code to
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
 COUNTERS = {}
+INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 
 # for bottom_freq in range(1200, 1204, FREQUENCY_WIDTH):
 for bottom_freq in range(940, 1424, FREQUENCY_WIDTH):

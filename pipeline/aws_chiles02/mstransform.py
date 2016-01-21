@@ -28,10 +28,12 @@ import os
 import re
 import shutil
 
+from aws_chiles02.common import INPUT_MS_SUFFIX
 from echo import echo
 from freq_map import freq_map
 from mstransform import mstransform
 
+casalog.filter('DEBUGGING')
 DEBUG = True
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
@@ -139,6 +141,16 @@ nchan=%d)'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range,
         freq1 += step_freq
         freq2 += step_freq
 
+
+@echo
+def find_file(top_dir):
+    for file_name in os.listdir(top_dir):
+        if file_name.endswith(INPUT_MS_SUFFIX):
+            return file_name
+
+    return None
+
+
 @echo
 def parse_args():
     parser = argparse.ArgumentParser('Get the arguments')
@@ -147,7 +159,7 @@ def parse_args():
     parser.add_argument('--nologger', action="store_true")
     parser.add_argument('--log2term', action="store_true")
     parser.add_argument('--logfile')
-    parser.add_argument('-c', '--cancel', action="store_true")
+    parser.add_argument('-c', '--call', action="store_true")
 
     return parser.parse_args()
 
@@ -157,7 +169,7 @@ LOG.info(args)
 
 list_arguments = args['arguments']
 do_mstransform(
-        list_arguments[0],
+        find_file(list_arguments[0]),
         list_arguments[1],
         list_arguments[2],
         list_arguments[3],
