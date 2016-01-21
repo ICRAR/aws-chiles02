@@ -33,3 +33,5 @@ RUN chmod oug+x /scripts/*.sh
 
 # Update the path
 env PATH /scripts:$PATH
+
+VOLUME /dfms_root

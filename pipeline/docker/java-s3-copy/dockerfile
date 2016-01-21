@@ -42,12 +42,12 @@ RUN alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 20000
 ENV JAVA_HOME /usr/java/latest
 
 # Copy the scripts
-COPY chiles02 /chiles02/
+COPY scripts /scripts/
 
 # Make them executable
-RUN chmod oug+x /chiles02/*.sh
+RUN chmod oug+x /scripts/*.sh
 
 # Update the path
-env PATH /chiles02:$JAVA_HOME/bin:$PATH
+env PATH /scripts:$JAVA_HOME/bin:$PATH
 
 VOLUME /dfms_root

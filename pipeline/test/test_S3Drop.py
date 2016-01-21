@@ -24,7 +24,7 @@ Test the S3 Drop
 """
 import unittest
 
-from aws_chile02.s3_drop import S3DROP
+from aws_chiles02.s3_drop import S3DROP
 
 PROFILE = 'aws-chiles02'
 

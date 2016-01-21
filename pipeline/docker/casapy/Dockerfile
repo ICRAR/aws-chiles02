@@ -19,6 +19,17 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
+#
+#   .oooooo.                                ooooooooo.
+#  d8P'  `Y8b                               `888   `Y88.
+# 888           .oooo.    .oooo.o  .oooo.    888   .d88' oooo    ooo
+# 888          `P  )88b  d88(  "8 `P  )88b   888ooo88P'   `88.  .8'
+# 888           .oP"888  `"Y88b.   .oP"888   888           `88..8'
+# `88b    ooo  d8(  888  o.  )88b d8(  888   888            `888'
+#  `Y8bood8P'  `Y888""8o 8""888P' `Y888""8o o888o            .8'
+#                                                        .o..P'
+#                                                        `Y8P'
+#
 # Create a container to run the latest version of CasaPy
 
 FROM centos:latest
@@ -35,17 +46,17 @@ RUN yum install -y \
     libXrandr \
     libXfixes \
     libXrender \
-    libxslt
-RUN mkdir -p /opt/chiles
+    libxslt \
+    which \
+    xauth \
+    xorg-x11-server-Xvfb
+
+RUN mkdir -p /opt/casapy
 RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.0-el6.tar.gz \
-    | tar -xzC /opt/chiles
+    | tar -xzC /opt/casapy
 
-# Copy the scripts
-COPY scripts /scripts/
-
-# Make them executable
-RUN chmod oug+x /scripts/*.sh
+RUN ulimit -n 2048
+RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 
 # Update the path
-env PATH /scripts:$PATH
-env PYTHONPATH
+env PATH $PATH:/opt/casapy/casa-release-4.5.0-el6/bin
