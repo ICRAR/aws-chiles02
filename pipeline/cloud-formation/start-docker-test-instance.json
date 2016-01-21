@@ -244,6 +244,8 @@
                 "df -h\n",
                 "\n",
                 "# Move the docker volumes to the ephemeral drive\n",
+                "service docker stop\n",
+                "sleep 10\n",
                 "rm -rf /var/lib/docker/vfs\n",
                 "rm -rf /var/lib/docker/volumes\n",
                 "mkdir -p /mnt/dfms/docker-volumes/vfs\n",
@@ -269,7 +271,8 @@
                 " sdp-docker-registry.icrar.uwa.edu.au:8080\n",
                 "\n",
                 "# Get the docker containers now to prevent a race condition later\n",
-                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n"
+                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n",
+                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n"
               ]
             ]
           }

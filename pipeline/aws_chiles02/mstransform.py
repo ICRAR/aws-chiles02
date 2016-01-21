@@ -103,7 +103,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
 
         no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-        outfile = outdir + 'vis_' + freq_range
+        outfile = os.path.join(outdir, 'vis_' + freq_range)
         LOG.info('working on: {0}'.format(outfile))
         if not DEBUG:
             if os.path.exists(outfile):
@@ -133,12 +133,12 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
                 LOG.exception('*********\nSplit exception: %s\n***********')
         else:
             LOG.info('''
-mstransform(vis=%s,
-outputvis=%s,
-start=%s,
-width=%s,
-spw=%s,
-nchan=%d)'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range, no_chan))
+mstransform(vis={0},
+outputvis={1},
+start={2},
+width={3},
+spw={4},
+nchan={5})'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range, no_chan))
 
         freq1 += step_freq
         freq2 += step_freq

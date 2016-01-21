@@ -29,7 +29,7 @@ import argparse
 from common import get_oid, make_groups_of_frequencies
 from s3_drop import S3DROP
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import FileDROP, BarrierAppDROP
+from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
 
 
 def build_graph(args):
@@ -43,9 +43,9 @@ def build_graph(args):
             get_oid('app'),
             uuid.uuid4(),
             image='java-s3-copy:latest',
-            command='copy_from_s3.sh %iDataURL0 %o0 {0} {1}'.format(args.aws_access_key_id, args.aws_secret_access_key),
+            command='copy_from_s3.sh %iDataURL0 /dfms_root/%o0 {0} {1}'.format(args.aws_access_key_id, args.aws_secret_access_key),
             user='root')
-    measurement_set = FileDROP(get_oid('file'), uuid.uuid4(), dirname=args.volume)
+    measurement_set = DirectoryContainer(get_oid('dir'), uuid.uuid4(), dirname=args.volume)
 
     copy_from_s3.addInput(s3_drop)
     copy_from_s3.addOutput(measurement_set)
