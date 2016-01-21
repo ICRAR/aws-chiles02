@@ -72,6 +72,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
     if bottom_edge:
         bedge = bottom_edge.group(0)
         bedge = int(bedge[1:4])
+    else:
+        bedge = None
 
     if not sel_freq:
         steps = 1
