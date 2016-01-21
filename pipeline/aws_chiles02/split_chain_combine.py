@@ -26,8 +26,8 @@ import uuid
 
 import argparse
 
-from aws_chile02.common import get_oid, make_groups_of_frequencies
-from aws_chile02.s3_drop import S3DROP
+from common import get_oid, make_groups_of_frequencies
+from s3_drop import S3DROP
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import FileDROP, BarrierAppDROP
 

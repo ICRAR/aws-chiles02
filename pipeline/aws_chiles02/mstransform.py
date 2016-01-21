@@ -28,8 +28,8 @@ import os
 import re
 import shutil
 
-from aws_chile02.echo import echo
-from aws_chile02.freq_map import freq_map
+from echo import echo
+from freq_map import freq_map
 from mstransform import mstransform
 
 DEBUG = True
@@ -139,7 +139,7 @@ nchan=%d)'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range,
         freq1 += step_freq
         freq2 += step_freq
 
-
+@echo
 def parse_args():
     parser = argparse.ArgumentParser('Get the arguments')
     parser.add_argument('arguments', nargs='+', help='the arguments')
@@ -155,4 +155,13 @@ def parse_args():
 args = parse_args()
 LOG.info(args)
 
-do_mstransform
+list_arguments = args['arguments']
+do_mstransform(
+        list_arguments[0],
+        list_arguments[1],
+        list_arguments[2],
+        list_arguments[3],
+        list_arguments[4],
+        list_arguments[5],
+        list_arguments[6],
+        list_arguments[7])
