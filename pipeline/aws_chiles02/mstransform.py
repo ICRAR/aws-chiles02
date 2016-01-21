@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 
 @echo
-def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, sel_freq, spec_window):
+def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, sel_freq, spec_window=''):
     """
     Perform the MS_TRANSFORM step
 
@@ -174,5 +174,4 @@ do_mstransform(
         args.arguments[3],
         args.arguments[4],
         args.arguments[5],
-        args.arguments[6],
-        args.arguments[7])
+        args.arguments[6])
