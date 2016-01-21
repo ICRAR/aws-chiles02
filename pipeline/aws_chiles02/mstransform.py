@@ -167,13 +167,12 @@ def parse_args():
 args = parse_args()
 LOG.info(args)
 
-list_arguments = args['arguments']
 do_mstransform(
-        find_file(list_arguments[0]),
-        list_arguments[1],
-        list_arguments[2],
-        list_arguments[3],
-        list_arguments[4],
-        list_arguments[5],
-        list_arguments[6],
-        list_arguments[7])
+        find_file(args.arguments[0]),
+        args.arguments[1],
+        args.arguments[2],
+        args.arguments[3],
+        args.arguments[4],
+        args.arguments[5],
+        args.arguments[6],
+        args.arguments[7])
