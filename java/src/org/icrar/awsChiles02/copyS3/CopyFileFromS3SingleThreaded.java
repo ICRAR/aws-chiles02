@@ -49,7 +49,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class CopyFileFromS3SingleThreaded extends AbstractCopyS3 {
   private static final Log LOG = LogFactory.getLog(CopyFileFromS3SingleThreaded.class);
-  private static DecimalFormat FORMAT = new DecimalFormat("00.00");
+  private static DecimalFormat FORMAT = new DecimalFormat("00.0");
 
   /**
    * The entry point of application.
@@ -76,19 +76,19 @@ public class CopyFileFromS3SingleThreaded extends AbstractCopyS3 {
 
     Option awsProfile =
         Option.builder("aws_profile")
-              .hasArg()
-              .desc("the aws profile to use")
-              .build();
+            .hasArg()
+            .desc("the aws profile to use")
+            .build();
     Option awsAccessKeyId =
         Option.builder("aws_access_key_id")
-              .hasArg()
-              .desc("the aws_access_key_id to use")
-              .build();
+            .hasArg()
+            .desc("the aws_access_key_id to use")
+            .build();
     Option awsSecretAccessKey =
         Option.builder("aws_secret_access_key")
-              .hasArg()
-              .desc("the aws_secret_access_key to use")
-              .build();
+            .hasArg()
+            .desc("the aws_secret_access_key to use")
+            .build();
 
     Options options = new Options();
     options.addOption(awsProfile);
