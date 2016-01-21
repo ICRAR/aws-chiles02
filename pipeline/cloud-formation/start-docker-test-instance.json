@@ -22,11 +22,6 @@
       "MinValue" : "0.01",
       "MaxValue" : "2.00"
     },
-    "Email" : {
-      "Description" : "Docker email address",
-      "Type" : "String",
-      "Default" : "a@b.com"
-    },
     "DockerPassword" : {
       "Description" : "Docker password",
       "Type" : "String"
@@ -245,21 +240,36 @@
                 "        mount /dev/xvdb /mnt/dfms\n",
                 "    fi\n",
                 "fi\n",
+                "# Print free disk space\n",
+                "df -h\n",
+                "\n",
+                "# Move the docker volumes to the ephemeral drive\n",
+                "rm -rf /var/lib/docker/vfs\n",
+                "rm -rf /var/lib/docker/volumes\n",
+                "mkdir -p /mnt/dfms/docker-volumes/vfs\n",
+                "ln -s /mnt/dfms/docker-volumes/vfs /var/lib/docker/vfs\n",
+                "mkdir -p /mnt/dfms/docker-volumes/volumes\n",
+                "ln -s /mnt/dfms/docker-volumes/volumes /var/lib/docker/volumes\n",
+                "\n",
+                "# Create the DFMS root\n",
+                "mkdir -p /mnt/dfms/dfms_root\n",
+                "\n",
                 "chmod -R 0777 /mnt/dfms\n",
                 "\n",
-                "# Print into the logs the disk free\n",
-                "df -h\n",
                 "dd if=/dev/zero of=/mnt/dfms/swapfile bs=1M count=1024\n",
-                "chmod 0600 /mnt/dfms/swapfile\n",
                 "mkswap /mnt/dfms/swapfile\n",
                 "swapon /mnt/dfms/swapfile\n",
+                "chmod 0600 /mnt/dfms/swapfile\n",
                 "\n",
                 "service docker start\n",
+                "sleep 10\n",
                 "\n",
                 "docker login --email=a@b.com --username=icrar --password=",
                 { "Ref" : "DockerPassword" },
                 " sdp-docker-registry.icrar.uwa.edu.au:8080\n",
-                "\n"
+                "\n",
+                "# Get the docker containers now to prevent a race condition later\n",
+                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n"
               ]
             ]
           }

@@ -49,3 +49,5 @@ RUN chmod oug+x /chiles02/*.sh
 
 # Update the path
 env PATH /chiles02:$JAVA_HOME/bin:$PATH
+
+VOLUME /dfms_root

@@ -59,7 +59,7 @@ class TestChiles02(unittest.TestCase):
 
     def test_start_graph(self):
         s3_drop = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='key123', profile_name='aws-profile')
-        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 %o0', user='root')
+        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 /dfms_root/%o0', user='root')
         measurement_set = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
 
         copy_from_s3.addInput(s3_drop)
@@ -70,7 +70,7 @@ class TestChiles02(unittest.TestCase):
 
     def test_to_first_split(self):
         s3_drop = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='key123', profile_name='aws-profile')
-        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 %o0', user='root')
+        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 /dfms_root/%o0', user='root')
         measurement_set = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
 
         copy_from_s3.addInput(s3_drop)
@@ -80,9 +80,9 @@ class TestChiles02(unittest.TestCase):
         frequencies = make_groups_of_frequencies(5)
         frequencies = frequencies[0]
         for group in frequencies:
-            casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh %i0 %o0 {0} {1}'.format(group[0], group[1]), user='root')
+            casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh /dfms_root/%i0 /dfms_root/%o0 {0} {1}'.format(group[0], group[1]), user='root')
             result = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
-            copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh %i0 %oDataURL0', user='root')
+            copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh /dfms_root/%i0 %oDataURL0', user='root')
             s3_drop_out = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='{0}_{1}/key123'.format(group[0], group[1]), profile_name='aws-profile')
 
             casa_py_drop.addInput(measurement_set)
@@ -102,7 +102,7 @@ class TestChiles02(unittest.TestCase):
 
     def test_to_split_combine(self):
         s3_drop = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='key123', profile_name='aws-profile')
-        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 %o0', user='root')
+        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 /dfms_root/%o0', user='root')
         measurement_set = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
 
         copy_from_s3.addInput(s3_drop)
@@ -112,9 +112,9 @@ class TestChiles02(unittest.TestCase):
         for group in make_groups_of_frequencies(5):
             outputs = []
             for frequeny_pairs in group:
-                casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh %i0 %o0 {0} {1}'.format(frequeny_pairs[0], frequeny_pairs[1]), user='root')
+                casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh /dfms_root/%i0 /dfms_root/%o0 {0} {1}'.format(frequeny_pairs[0], frequeny_pairs[1]), user='root')
                 result = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
-                copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh %i0 %oDataURL0', user='root')
+                copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh /dfms_root/%i0 %oDataURL0', user='root')
                 s3_drop_out = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='{0}_{1}/key123'.format(frequeny_pairs[0], frequeny_pairs[1]), profile_name='aws-profile')
 
                 casa_py_drop.addInput(measurement_set)
@@ -134,7 +134,7 @@ class TestChiles02(unittest.TestCase):
 
     def test_to_split_chain_combine(self):
         s3_drop = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='key123', profile_name='aws-profile')
-        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 %o0', user='root')
+        copy_from_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_from_s3.sh %iDataURL0 /dfms_root/%o0', user='root')
         measurement_set = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
 
         copy_from_s3.addInput(s3_drop)
@@ -145,9 +145,9 @@ class TestChiles02(unittest.TestCase):
             first = True
             end_of_last_element = None
             for frequeny_pairs in group:
-                casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh %i0 %o0 {0} {1}'.format(frequeny_pairs[0], frequeny_pairs[1]), user='root')
+                casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh /dfms_root/%i0 /dfms_root/%o0 {0} {1}'.format(frequeny_pairs[0], frequeny_pairs[1]), user='root')
                 result = FileDROP(self.get_oid('file'), uuid.uuid4(), dirname=TestChiles02._temp)
-                copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh %i0 %oDataURL0', user='root')
+                copy_to_s3 = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='copy_to_s3.sh /dfms_root/%i0 %oDataURL0', user='root')
                 s3_drop_out = MockS3DROP(self.get_oid('s3'), uuid.uuid4(), bucket='mock', key='{0}_{1}/key123'.format(frequeny_pairs[0], frequeny_pairs[1]), profile_name='aws-profile')
 
                 casa_py_drop.addInput(measurement_set)
