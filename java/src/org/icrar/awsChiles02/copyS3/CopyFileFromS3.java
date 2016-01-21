@@ -37,11 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -395,6 +391,67 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
   }
 
   /**
+   * Given the bucketName and originaloFileKey of a downloaded object determine, if it exists,
+   * the original MD5 hash based on the contents of a separate originaloFileKey.md5 file.
+   *
+   * @param bucketName to look for the md5 file.
+   * @param originalFileKey of the file downloaded.
+   * @return null if no md5 hash found and the md5 hash otherwise.
+   */
+  private static String getMD5FromSeparateMD5File(String bucketName, String originalFileKey) {
+    String key = originalFileKey + ".md5";
+
+    GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, key);
+    ObjectMetadata objMetadata ;
+    try {
+      objMetadata = amazonS3Client.getObjectMetadata(getObjectMetadataRequest);
+    }
+    catch (AmazonS3Exception e) {
+      LOG.info("Could not find metadata for " + key);
+      e.printStackTrace();
+      return null;
+    }
+
+    // If storage class is null then assume in STANDARD so continue!
+    if (objMetadata.getStorageClass() != null && objMetadata.getStorageClass().equals(StorageClass.Glacier.toString())) {
+      LOG.warn("MD5 file is in glacier, cannot get the MD5 value.");
+      return null;
+    }
+
+    GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key);
+    S3Object s3Object = null;
+    try {
+      s3Object = amazonS3Client.getObject(getObjectRequest);
+    }
+    catch (AmazonS3Exception e) {
+      // Not good to use exception for flow control AWS does not have a "fileExists" type method.
+      if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        LOG.info("Could not find a .md5 file for file " + originalFileKey);
+      }
+      else {
+        e.printStackTrace();
+        return null;
+      }
+    }
+
+    if (s3Object != null) {
+      byte[] bytes = new byte[32];
+      int retValue = 0;
+      try {
+        retValue = s3Object.getObjectContent().read(bytes);
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+      if (retValue == 32) {
+        LOG.info("Getting original file hash from S3 file " + key);
+        return new String(bytes);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Helper method to get the MD5 checksum.
    *
    * NOTE: uses ETAG unless it contains a '-' as that means it is incorrect due to multipart upload.
@@ -427,34 +484,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         }
       }
       else {
-        GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key + ".md5");
-        S3Object s3Object = null;
-        try {
-          s3Object = amazonS3Client.getObject(getObjectRequest);
-        }
-        catch (AmazonS3Exception e) {
-          // Not good to use exception for flow control AWS does not have a "fileExists" type method.
-          if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-            LOG.info("Could not find a .md5 file for file " + key);
-          }
-          else {
-            throw e;
-          }
-        }
-        if (s3Object != null) {
-          byte[] bytes = new byte[32];
-          int retValue = 0;
-          try {
-            retValue = s3Object.getObjectContent().read(bytes);
-          }
-          catch (IOException e) {
-            e.printStackTrace();
-          }
-          if (retValue == 32) {
-            LOG.info("Getting original file hash from S3 file " + key + ".md5");
-            md5 = new String(bytes);
-          }
-        }
+        md5 = getMD5FromSeparateMD5File(bucketName, key);
       }
     }
     if (md5 != null && md5.length() != 32) {
@@ -584,46 +614,48 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     }
 
     // Now we have options setup dependants
-    myExecturor = Executors.newFixedThreadPool(threadPoolSize);
-    s3DataRequests = new S3DataRequest[threadPoolSize];
-
     setupAWS(profileName, accessKeyId, secretAccessKey);
 
-    // Start timer here so we get time of file transfer without setup time being added
-    long startTime = System.currentTimeMillis();
+    myExecturor = Executors.newFixedThreadPool(threadPoolSize);
+    try {
+      // From here on we always want to shut down the threads so we can exit gracefully, ie not hang!
+      s3DataRequests = new S3DataRequest[threadPoolSize];
 
-    long fileSize = getObjectSizePlusMetadata(bucketName, key);
-    if (fileSize < 0) {
-      // error occurred or file does not exist
-      return;
-    }
+      // Start timer here so we get time of file transfer without setup time being added
+      long startTime = System.currentTimeMillis();
 
-    CopyFileFromS3 me = new CopyFileFromS3(
-        fileSize,
-        threadBufferSize,
-        threadPoolSize,
-        bucketName,
-        key,
-        destinationPath,
-        extractTar);
-    String downloadChecksum = me.go();
-    long finishTime = System.currentTimeMillis();
-    if (downloadChecksum == null) {
-      LOG.error("Download failed, exiting.");
-    }
-    else {
-      String md5 = getMD5(bucketName, key);
-      LOG.info("Checksums " + (downloadChecksum.matches(md5) ? "matches" : "does not match")
-                   + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
-      LOG.info("At end of main, about to shutdown Executor");
-    }
+      long fileSize = getObjectSizePlusMetadata(bucketName, key);
+      if (fileSize < 0) {
+        // error occurred or file does not exist
+        return;
+      }
 
-    // Shut down the threads
-    myExecturor.shutdown();
-    if (!myExecturor.awaitTermination(5, TimeUnit.SECONDS)) {
-      LOG.warn("Forcing Executor shutdown");
-      myExecturor.shutdownNow();
+      CopyFileFromS3 me = new CopyFileFromS3(
+              fileSize,
+              threadBufferSize,
+              threadPoolSize,
+              bucketName,
+              key,
+              destinationPath,
+              extractTar);
+      String downloadChecksum = me.go();
+      long finishTime = System.currentTimeMillis();
+      if (downloadChecksum == null) {
+        LOG.error("Download failed, exiting.");
+      } else {
+        String md5 = getMD5(bucketName, key);
+        LOG.info("Checksums " + (downloadChecksum.equals(md5) ? "matches" : "does not match")
+                + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
+        LOG.info("At end of main, about to shutdown Executor");
+      }
+      LOG.info("Finished in " + (finishTime - startTime) + ".");
+    } finally {
+      // Shut down the threads
+      myExecturor.shutdown();
+      if (!myExecturor.awaitTermination(5, TimeUnit.SECONDS)) {
+        LOG.warn("Forcing Executor shutdown");
+        myExecturor.shutdownNow();
+      }
     }
-    LOG.info("Finished in " + (finishTime - startTime) + ".");
   }
 }
