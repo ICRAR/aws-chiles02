@@ -170,8 +170,8 @@ LOG.info(args)
 do_mstransform(
         find_file(args.arguments[0]),
         args.arguments[1],
-        args.arguments[2],
-        args.arguments[3],
-        args.arguments[4],
-        args.arguments[5],
-        args.arguments[6])
+        int(args.arguments[2]),
+        int(args.arguments[3]),
+        int(args.arguments[4]),
+        float(args.arguments[5]),
+        int(args.arguments[6]))
