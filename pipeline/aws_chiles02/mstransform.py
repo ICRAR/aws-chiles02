@@ -28,7 +28,7 @@ import os
 import re
 import shutil
 
-from aws_chiles02.common import INPUT_MS_SUFFIX
+from common import INPUT_MS_SUFFIX
 from echo import echo
 from freq_map import freq_map
 from mstransform import mstransform
