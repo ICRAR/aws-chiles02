@@ -175,8 +175,8 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         // hence the reason to check each time we get control back from lock.wait().
         while (!s3DataRequests[index].isRequestComplete() || s3DataRequests[index].isFailed()) {
           try {
-            LOG.info("About to do wait for " + index);
-            lock.wait();
+            LOG.info("Waiting for request index " + index);
+            lock.wait(30000);
           }
           catch (InterruptedException e) {
             e.printStackTrace();
