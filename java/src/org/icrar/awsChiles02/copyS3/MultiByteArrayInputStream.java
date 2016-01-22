@@ -76,7 +76,7 @@ public class MultiByteArrayInputStream extends InputStream {
         } else {
             ins = null;
         }
-        LOG.info("There are " + inputStreams.size() + " elements in inpustStream Queue.");
+        LOG.debug("There are " + inputStreams.size() + " elements in inpustStream Queue.");
     }
 
     private void add(byte[] inputBytes) {

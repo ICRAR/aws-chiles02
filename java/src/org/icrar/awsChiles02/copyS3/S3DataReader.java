@@ -75,7 +75,7 @@ public class S3DataReader implements Runnable {
         }
         // We don't need to set the s3Data bytes in the original request as that was done above in the read.
         request.setRequestComplete(true);
-        LOG.info("Thread with index " + request.getIndex() + " position " + request.getStartPosition()
+        LOG.debug("Thread with index " + request.getIndex() + " position " + request.getStartPosition()
                 + ", read " + currentPosition + " about to do sync/notifyAll");
         synchronized (lock) {
             lock.notifyAll();
