@@ -18,4 +18,4 @@ As the container is over 2.5GB start the container and use git to update the cod
   
 `docker run -i -t -v /mnt/dfms/dfms_root:/dfms_root sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest /bin/bash`  
 
-`mstransform.sh /dfms_root/123456/ /dfms_root/output_test/ /dfms_root/log_dir/log.log 980 984`
+`mstransform.sh /dfms_root/123456 /dfms_root/output_test /dfms_root/log_dir/log.log 980 984`

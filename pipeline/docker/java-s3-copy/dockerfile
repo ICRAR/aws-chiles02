@@ -43,6 +43,7 @@ ENV JAVA_HOME /usr/java/latest
 
 # Copy the scripts
 COPY scripts /scripts/
+COPY chiles02 /chiles02/
 
 # Make them executable
 RUN chmod oug+x /scripts/*.sh

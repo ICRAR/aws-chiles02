@@ -34,7 +34,7 @@ from freq_map import freq_map
 from mstransform import mstransform
 
 casalog.filter('DEBUGGING')
-DEBUG = True
+DEBUG = False
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
 
@@ -64,6 +64,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
 
     steps = (max_freq - min_freq) / step_freq
     rem = (max_freq - min_freq) % step_freq
+    LOG.info('steps: {0} rem: {1}'.format(steps, rem))
     if rem:
         steps += 1
     freq1 = min_freq
@@ -77,6 +78,15 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
 
     if not sel_freq:
         steps = 1
+
+    LOG.info('''
+steps: {0}
+rem: {1}
+freq1: {2}
+freq2: {3}
+bottom_edge: {4}
+bedge: {5}
+sel_freq: {6}'''.format(steps, rem, freq1, freq2, bottom_edge, bedge, sel_freq))
 
     for i in range(steps):
         if sel_freq:
