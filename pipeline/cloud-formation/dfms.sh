@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
-sudo yum install git
+sudo yum -y update
+sudo yum -y install git
 git clone https://github.com/SKA-ScienceDataProcessor/dfms
 
-sudo yum install gcc gcc-c++ boost-python boost-system boost-devel
+sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel
 
-sudo python setup.py install
+virtualenv ~/virtualenv/dfms
+source ~/virtualenv/dfms/bin/activate
+
+cd dfms
+python setup.py install

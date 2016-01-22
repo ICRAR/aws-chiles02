@@ -30,7 +30,7 @@
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
-      "Default" : "ami-249f7a44"
+      "Default" : "ami-79896d19"
     }
   },
   "Resources" : {
@@ -44,6 +44,12 @@
             "IpProtocol" : "tcp",
             "FromPort" : "22",
             "ToPort" : "22",
+            "CidrIp" : "0.0.0.0/0"
+          },
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "8000",
+            "ToPort" : "8000",
             "CidrIp" : "0.0.0.0/0"
           }
         ]
@@ -246,11 +252,8 @@
                 "# Move the docker volumes to the ephemeral drive\n",
                 "service docker stop\n",
                 "sleep 10\n",
-                "rm -rf /var/lib/docker/devicemapper\n",
                 "rm -rf /var/lib/docker/vfs\n",
                 "rm -rf /var/lib/docker/volumes\n",
-                "mkdir -p /mnt/dfms/docker-volumes/devicemapper\n",
-                "ln -s /mnt/dfms/docker-volumes/devicemapper /var/lib/docker/devicemapper\n",
                 "mkdir -p /mnt/dfms/docker-volumes/vfs\n",
                 "ln -s /mnt/dfms/docker-volumes/vfs /var/lib/docker/vfs\n",
                 "mkdir -p /mnt/dfms/docker-volumes/volumes\n",
@@ -275,7 +278,8 @@
                 "\n",
                 "# Get the docker containers now to prevent a race condition later\n",
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n",
-                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n"
+                "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n",
+                "\n"
               ]
             ]
           }

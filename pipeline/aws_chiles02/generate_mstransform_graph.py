@@ -23,6 +23,7 @@
 Build a dictionary for the execution graph
 """
 import argparse
+import json
 import logging
 import uuid
 
@@ -30,7 +31,7 @@ from aws_chiles02.common import get_oid, get_module_name, CONTAINER_JAVA_S3_COPY
 from dfms.apps.dockerapp import DockerApp
 from dfms.ddap_protocol import DROPLinkType
 from dfms.drop import DirectoryContainer
-from dfms.graph_loader import createGraphFromDropSpecList, addLink
+from dfms.graph_loader import addLink
 
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
@@ -43,7 +44,7 @@ def build_graph(args):
         "type": 'plain',
         "storage": 's3',
         "oid": get_oid('s3'),
-        "uid": uuid.uuid4(),
+        "uid": str(uuid.uuid4()),
         "bucket": args.bucket,
         "key": args.ms_set,
         "aws_access_key_id": args.aws_access_key_id,
@@ -53,7 +54,7 @@ def build_graph(args):
         "type": 'app',
         "app": get_module_name(DockerApp),
         "oid": get_oid('app'),
-        "uid": uuid.uuid4(),
+        "uid": str(uuid.uuid4()),
         "image": CONTAINER_JAVA_S3_COPY,
         "command": 'copy_from_s3_mt.sh %iDataURL0 /dfms_root/%o0 {0} {1}'.format(args.aws_access_key_id, args.aws_secret_access_key),
         "user": 'root'
@@ -62,7 +63,7 @@ def build_graph(args):
         "type": 'container',
         "container": get_module_name(DirectoryContainer),
         "oid": get_oid('dir'),
-        "uid": uuid.uuid4(),
+        "uid": str(uuid.uuid4()),
         "dirname": args.volume
     }
 
@@ -77,7 +78,7 @@ def build_graph(args):
         "type": 'app',
         "app": get_module_name(DockerApp),
         "oid": get_oid('app'),
-        "uid": uuid.uuid4(),
+        "uid": str(uuid.uuid4()),
         "image": CONTAINER_CHILES02,
         "command": 'mstransform.sh /dfms_root/%i0 /dfms_root/%o0 /dfms_root/%o0 980 984',
         "user": 'root'
@@ -86,7 +87,7 @@ def build_graph(args):
         "type": 'container',
         "container": get_module_name(DirectoryContainer),
         "oid": get_oid('dir'),
-        "uid": uuid.uuid4(),
+        "uid": str(uuid.uuid4()),
         "dirname": args.volume
     }
 
@@ -96,8 +97,7 @@ def build_graph(args):
     drop_list.append(casa_py_drop)
     drop_list.append(result)
 
-    result = createGraphFromDropSpecList(drop_list)
-    LOG.info(result)
+    print (json.dumps(drop_list, indent=2))
 
 
 def parser_arguments():
