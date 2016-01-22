@@ -158,7 +158,7 @@ nchan={5})'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range
 def find_file(top_dir):
     for file_name in os.listdir(top_dir):
         if file_name.endswith(INPUT_MS_SUFFIX):
-            return file_name
+            return os.path.join(top_dir, file_name)
 
     return None
 
