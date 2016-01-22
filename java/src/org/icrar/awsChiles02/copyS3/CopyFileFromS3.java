@@ -124,7 +124,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       return null;
     }
     else if (!extractTar && outFile.exists()) {
-      LOG.info("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
+      LOG.debug("Output file " + outFile.getAbsolutePath() + " exists, overwritting!");
       if (!outFile.delete()) {
         LOG.error("Unable to delete file destinationPath!");
         return null;
@@ -175,8 +175,8 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         // hence the reason to check each time we get control back from lock.wait().
         while (!s3DataRequests[index].isRequestComplete() || s3DataRequests[index].isFailed()) {
           try {
-            LOG.info("About to do wait for " + index);
-            lock.wait();
+            LOG.debug("Waiting for request index " + index);
+            lock.wait(30000);
           }
           catch (InterruptedException e) {
             e.printStackTrace();
@@ -215,11 +215,12 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
 
       digest.update(s3DataRequests[index].getS3Data());
 
-      LOG.info(
+      LOG.debug(
           "Got complete for index " + index + " at position " + s3DataRequests[index].getStartPosition()
               + " and length " + s3DataRequests[index].getS3Data().length
               + ". currentFilePosition is " + currentFilePosition);
       currentFilePosition += s3DataRequests[index].getS3Data().length;
+      LOG.info("Download " + (currentFilePosition + 1) * 100L / fileSize + "%");
 
       doNextRequest(index);
       index++;
@@ -380,7 +381,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     catch (AmazonS3Exception e) {
       // Not good to use exception for flow control AWS does not have a "fileExists" type method.
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-        LOG.info("Could not find metadata for " + key);
+        LOG.debug("Could not find metadata for " + key);
         return -1;
       }
       else {
@@ -407,7 +408,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       objMetadata = amazonS3Client.getObjectMetadata(getObjectMetadataRequest);
     }
     catch (AmazonS3Exception e) {
-      LOG.info("Could not find metadata for " + key);
+      LOG.debug("Could not find metadata for " + key);
       e.printStackTrace();
       return null;
     }
@@ -426,7 +427,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     catch (AmazonS3Exception e) {
       // Not good to use exception for flow control AWS does not have a "fileExists" type method.
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-        LOG.info("Could not find a .md5 file for file " + originalFileKey);
+        LOG.debug("Could not find a .md5 file for file " + originalFileKey);
       }
       else {
         e.printStackTrace();
@@ -444,7 +445,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         e.printStackTrace();
       }
       if (retValue == 32) {
-        LOG.info("Getting original file hash from S3 file " + key);
+        LOG.debug("Getting original file hash from S3 file " + key);
         return new String(bytes);
       }
     }
@@ -466,7 +467,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
   private static String getMD5(String bucketName, String key) {
     String md5 = objectMetadata.getETag();
     if (md5.contains("-")) {
-      LOG.info("ETag contained a '-' so was generated from multipart upload, looking for alternative MD5");
+      LOG.debug("ETag contained a '-' so was generated from multipart upload, looking for alternative MD5");
       // Clear this in case we can't find a valid value
       md5 = null;
       // Case 1, look for s3cmd-attrs md5 param
@@ -478,7 +479,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             continue;
           }
           if (keyVal[0].matches("md5")) {
-            LOG.info("Using s3cmd-attrs user metadata md5 hash");
+            LOG.debug("Using s3cmd-attrs user metadata md5 hash");
             md5 = keyVal[1];
           }
         }
@@ -563,14 +564,14 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
 
       if (line.hasOption("thread_buffer")) {
         String value = line.getOptionValue("thread_buffer");
-        LOG.info("Found thread_buffer option with value " + value);
+        LOG.debug("Found thread_buffer option with value " + value);
         threadBufferSize = Integer.parseInt(value);
         LOG.debug("Option is integer with value " + threadBufferSize);
       }
 
       if (line.hasOption("thread_pool")) {
         String value = line.getOptionValue("thread_pool");
-        LOG.info("Found thread_pool option with value " + value);
+        LOG.debug("Found thread_pool option with value " + value);
         threadPoolSize = Integer.parseInt(value);
         LOG.debug("Option is integer with value " + threadBufferSize);
       }
@@ -630,6 +631,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         return;
       }
 
+      LOG.info("Download file size is " + fileSize);
       CopyFileFromS3 me = new CopyFileFromS3(
               fileSize,
               threadBufferSize,
@@ -646,9 +648,9 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         String md5 = getMD5(bucketName, key);
         LOG.info("Checksums " + (downloadChecksum.equals(md5) ? "matches" : "does not match")
                 + " MD5 hash is " + downloadChecksum + " and original file was " + md5);
-        LOG.info("At end of main, about to shutdown Executor");
+        LOG.debug("At end of main, about to shutdown Executor");
       }
-      LOG.info("Finished in " + (finishTime - startTime) + ".");
+      LOG.debug("Finished in " + (finishTime - startTime) + ".");
     } finally {
       // Shut down the threads
       myExecturor.shutdown();
