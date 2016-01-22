@@ -19,7 +19,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-from aws_chile02.s3_drop import S3DROP
+from dfms.s3_drop import S3DROP
 
 
 class MockS3DROP(S3DROP):

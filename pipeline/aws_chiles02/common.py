@@ -28,6 +28,9 @@ FREQUENCY_GROUPS = []
 COUNTERS = {}
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 
+CONTAINER_JAVA_S3_COPY = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
+CONTAINER_CHILES02 = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
+
 # for bottom_freq in range(1200, 1204, FREQUENCY_WIDTH):
 for bottom_freq in range(940, 1424, FREQUENCY_WIDTH):
     FREQUENCY_GROUPS.append([bottom_freq, bottom_freq + FREQUENCY_WIDTH])
@@ -61,3 +64,7 @@ def get_oid(count_type):
     COUNTERS[count_type] = count
 
     return '{0}__{1:06d}'.format(count_type, count)
+
+
+def get_module_name(item):
+    return item.__module__ + '.' + item.__name__

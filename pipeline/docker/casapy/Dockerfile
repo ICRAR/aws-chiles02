@@ -59,4 +59,7 @@ RUN ulimit -n 2048
 RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 
 # Update the path
-env PATH $PATH:/opt/casapy/casa-release-4.5.0-el6/bin
+ENV PATH $PATH:/opt/casapy/casa-release-4.5.0-el6/bin
+
+# Make sure CasaPy is initialised
+RUN echo exit | casapy --nologger --log2term
