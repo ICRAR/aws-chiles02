@@ -56,9 +56,9 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
   private static final Log LOG = LogFactory.getLog(CopyFileFromS3.class);
 
   private static final int DEFAULT_THREAD_POOL_SIZE = 16;
-  private static final int DEFAULT_REQUEST_LENGTH = 32 * 1024 * 1024; // 32MBytes
+  private static final int DEFAULT_REQUEST_LENGTH = 128 * 1024 * 1024; // 128 MBytes
 
-  private static ExecutorService myExecturor = null;
+  private static ExecutorService myExecutor = null;
   private static S3DataRequest[] s3DataRequests = null;
   private static ObjectMetadata objectMetadata;
 
@@ -139,7 +139,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         }
       }
       catch (IOException e) {
-        e.printStackTrace();
+        LOG.error("Exception", e);
         return null;
       }
     }
@@ -147,11 +147,10 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     FileOutputStream fos = null;
     MultiByteArrayInputStream mbai = null;
     TarExtractorThread tet = null;
-    Thread tetThread = null;
     if (extractTar) {
       mbai = new MultiByteArrayInputStream(threadPoolSize / 2);
       tet = new TarExtractorThread(mbai, destinationPath);
-      tetThread = new Thread(tet);
+      Thread tetThread = new Thread(tet);
       tetThread.start();
     }
     else {
@@ -159,7 +158,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         fos = new FileOutputStream(outFile);
       }
       catch (FileNotFoundException e) {
-        e.printStackTrace();
+        LOG.error("Exception", e);
         return null;
       }
     }
@@ -179,7 +178,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
             lock.wait(30000);
           }
           catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
           }
         }
       }
@@ -197,8 +196,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
           mbai.addByteArray(s3DataRequests[index].getS3Data());
         }
         catch (IOException e) {
-          e.printStackTrace();
-          LOG.error("Failed adding read byte array to MultiByteArrayInputStream");
+          LOG.error("Failed adding read byte array to MultiByteArrayInputStream", e);
           return null;
         }
       }
@@ -207,8 +205,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
           bos.write(s3DataRequests[index].getS3Data());
         }
         catch (IOException e) {
-          e.printStackTrace();
-          LOG.error("Failed on write to file");
+          LOG.error("Failed on write to file", e);
           return null;
         }
       }
@@ -249,7 +246,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         fos.close();
       }
       catch (IOException e) {
-        e.printStackTrace();
+        LOG.error("Exception", e);
       }
     }
 
@@ -275,7 +272,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
           key,
           index,
           lock);
-      myExecturor.execute(new S3DataReader(s3DataRequests[index]));
+      myExecutor.execute(new S3DataReader(s3DataRequests[index]));
       requestedFileCurrentPosition += requestSize;
     }
   }
@@ -319,7 +316,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     }
 
     for (int i = 0; i < index; i++) {
-      myExecturor.execute(new S3DataReader(s3DataRequests[i]));
+      myExecutor.execute(new S3DataReader(s3DataRequests[i]));
     }
 
     return index;
@@ -408,8 +405,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       objMetadata = amazonS3Client.getObjectMetadata(getObjectMetadataRequest);
     }
     catch (AmazonS3Exception e) {
-      LOG.debug("Could not find metadata for " + key);
-      e.printStackTrace();
+      LOG.debug("Could not find metadata for " + key, e);
       return null;
     }
 
@@ -430,7 +426,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         LOG.debug("Could not find a .md5 file for file " + originalFileKey);
       }
       else {
-        e.printStackTrace();
+        LOG.error("Exception", e);
         return null;
       }
     }
@@ -442,7 +438,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         retValue = s3Object.getObjectContent().read(bytes);
       }
       catch (IOException e) {
-        e.printStackTrace();
+        LOG.error("Exception", e);
       }
       if (retValue == 32) {
         LOG.debug("Getting original file hash from S3 file " + key);
@@ -617,7 +613,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
     // Now we have options setup dependants
     setupAWS(profileName, accessKeyId, secretAccessKey);
 
-    myExecturor = Executors.newFixedThreadPool(threadPoolSize);
+    myExecutor = Executors.newFixedThreadPool(threadPoolSize);
     try {
       // From here on we always want to shut down the threads so we can exit gracefully, ie not hang!
       s3DataRequests = new S3DataRequest[threadPoolSize];
@@ -653,10 +649,10 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       LOG.debug("Finished in " + (finishTime - startTime) + ".");
     } finally {
       // Shut down the threads
-      myExecturor.shutdown();
-      if (!myExecturor.awaitTermination(5, TimeUnit.SECONDS)) {
+      myExecutor.shutdown();
+      if (!myExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
         LOG.warn("Forcing Executor shutdown");
-        myExecturor.shutdownNow();
+        myExecutor.shutdownNow();
       }
     }
   }
