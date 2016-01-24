@@ -12,7 +12,8 @@
       "Type" : "String",
       "Default" : "i2.xlarge",
       "AllowedValues" : [
-        "i2.xlarge"
+        "i2.xlarge",
+        "i2.2xlarge"
       ],
       "ConstraintDescription" : "Must be a valid EC2 instance type"
     },
@@ -30,7 +31,7 @@
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
-      "Default" : "ami-79896d19"
+      "Default" : "ami-58947038"
     }
   },
   "Resources" : {
