@@ -34,7 +34,7 @@ import time
 from aws_chiles02.common import get_oid, get_module_name, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import DirectoryContainer, dropdict
-from dfms.manager.client import NodeManagerClient
+from dfms.manager.client import NodeManagerClient, SetEncoder
 
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
@@ -42,7 +42,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 def get_session_id():
     return '{0}-{1}'.format(
-            getpass.getuser() + round(time.time())
+        getpass.getuser(),
+        round(time.time())
     )
 
 
@@ -107,7 +108,10 @@ def build_graph(args):
     casa_py_drop.addInput(measurement_set)
     casa_py_drop.addOutput(result)
 
-    json_dump = json.dumps(drop_list, indent=2)
+    drop_list.append(casa_py_drop)
+    drop_list.append(result)
+
+    json_dump = json.dumps(drop_list, indent=2, cls=SetEncoder)
     LOG.info(json_dump)
     client = NodeManagerClient(args.host, int(args.port))
 
@@ -125,7 +129,7 @@ def parser_arguments():
     parser.add_argument('ms_set', help='the measurement set key')
     parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     parser.add_argument('host', help='the host the dfms is running on')
-    parser.add_argument('port', help='the port to bind to', default=8000)
+    parser.add_argument('-p', '--port', help='the port to bind to', default=8000)
 
     args = parser.parse_args()
     return args
