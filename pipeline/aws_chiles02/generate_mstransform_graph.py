@@ -27,7 +27,7 @@ import json
 import logging
 import os
 
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02
+from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies
 from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
@@ -78,66 +78,75 @@ def build_graph(args):
     drop_list.append(measurement_set)
 
     outputs = []
-    for frequency_pairs in [[980, 984], [984, 988], [988, 992]]:
-        casa_py_drop = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerMsTransform),
-            "oid": get_oid('app'),
-            "uid": get_uid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'mstransform',
-            "min_frequency": frequency_pairs[0],
-            "max_frequency": frequency_pairs[1],
-            "user": 'root'
-        })
-        oid = get_oid('dir')
-        result = dropdict({
-            "type": 'container',
-            "container": get_module_name(DirectoryContainer),
-            "oid": oid,
-            "uid": get_uid(),
-            "dirname": os.path.join(args.volume, oid),
-            "check_exists": False,
-            "expiryAfterUse": True
-        })
+    for group in make_groups_of_frequencies(8):
+        first = True
+        end_of_last_element = None
+        for frequency_pairs in group:
+            casa_py_drop = dropdict({
+                "type": 'app',
+                "app": get_module_name(DockerMsTransform),
+                "oid": get_oid('app'),
+                "uid": get_uid(),
+                "image": CONTAINER_CHILES02,
+                "command": 'mstransform',
+                "min_frequency": frequency_pairs[0],
+                "max_frequency": frequency_pairs[1],
+                "user": 'root'
+            })
+            oid = get_oid('dir')
+            result = dropdict({
+                "type": 'container',
+                "container": get_module_name(DirectoryContainer),
+                "oid": oid,
+                "uid": get_uid(),
+                "dirname": os.path.join(args.volume, oid),
+                "check_exists": False,
+                "expiryAfterUse": True
+            })
 
-        casa_py_drop.addInput(measurement_set)
-        casa_py_drop.addOutput(result)
+            casa_py_drop.addInput(measurement_set)
+            if first:
+                first = False
+            else:
+                casa_py_drop.addInput(end_of_last_element)
+            casa_py_drop.addOutput(result)
 
-        drop_list.append(casa_py_drop)
-        drop_list.append(result)
+            drop_list.append(casa_py_drop)
+            drop_list.append(result)
 
-        copy_to_s3 = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerCopyToS3),
-            "oid": get_oid('app'),
-            "uid": get_uid(),
-            "image": CONTAINER_JAVA_S3_COPY,
-            "command": 'copy_to_s3',
-            "user": 'root'
-        })
-        s3_drop_out = dropdict({
-            "type": 'plain',
-            "storage": 's3',
-            "oid": get_oid('s3'),
-            "uid": get_uid(),
-            "expiryAfterUse": True,
-            "bucket": args.bucket,
-            "key": '{0}_{1}/{2}'.format(
-                    frequency_pairs[0],
-                    frequency_pairs[1],
-                    get_observation(s3_drop['key'])
-            ),
-            "aws_access_key_id": args.aws_access_key_id,
-            "aws_secret_access_key": args.aws_secret_access_key
+            copy_to_s3 = dropdict({
+                "type": 'app',
+                "app": get_module_name(DockerCopyToS3),
+                "oid": get_oid('app'),
+                "uid": get_uid(),
+                "image": CONTAINER_JAVA_S3_COPY,
+                "command": 'copy_to_s3',
+                "user": 'root'
+            })
+            s3_drop_out = dropdict({
+                "type": 'plain',
+                "storage": 's3',
+                "oid": get_oid('s3'),
+                "uid": get_uid(),
+                "expiryAfterUse": True,
+                "bucket": args.bucket,
+                "key": '{0}_{1}/{2}'.format(
+                        frequency_pairs[0],
+                        frequency_pairs[1],
+                        get_observation(s3_drop['key'])
+                ),
+                "aws_access_key_id": args.aws_access_key_id,
+                "aws_secret_access_key": args.aws_secret_access_key
 
-        })
-        copy_to_s3.addInput(result)
-        copy_to_s3.addOutput(s3_drop_out)
+            })
+            copy_to_s3.addInput(result)
+            copy_to_s3.addOutput(s3_drop_out)
 
-        drop_list.append(copy_to_s3)
-        drop_list.append(s3_drop_out)
-        outputs.append(s3_drop_out)
+            drop_list.append(copy_to_s3)
+            drop_list.append(s3_drop_out)
+            end_of_last_element = s3_drop_out
+
+        outputs.append(end_of_last_element)
 
     barrier_drop = dropdict({
         "type": 'app',

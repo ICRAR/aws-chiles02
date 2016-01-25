@@ -31,6 +31,13 @@ LOG = logging.getLogger(__name__)
 
 class DockerCopyFromS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        """
+        initial the class, make sure super is called after the event as it calls initialize
+        :param oid:
+        :param uid:
+        :param kwargs:
+        :return:
+        """
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
@@ -56,6 +63,7 @@ class DockerCopyToS3(DockerApp):
         self._key = None
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
+        self._set_name = None
         self._command = None
         super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
 
@@ -65,6 +73,7 @@ class DockerCopyToS3(DockerApp):
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
+        self._set_name = self._getArg(kwargs, 'set_name', None)
         self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
 
     def dataURL(self):
