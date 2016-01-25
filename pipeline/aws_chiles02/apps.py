@@ -22,12 +22,16 @@
 """
 My Docker Apps
 """
+import logging
+
 from dfms.apps.dockerapp import DockerApp
+
+LOG = logging.getLogger(__name__)
 
 
 class DockerCopyFromS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
+        super(DockerCopyFromS3, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
@@ -40,7 +44,7 @@ class DockerCopyFromS3(DockerApp):
 
         :param kwargs: the dictionary of arguments
         """
-        super(DockerApp, self).initialize(**kwargs)
+        super(DockerCopyFromS3, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
@@ -48,7 +52,7 @@ class DockerCopyFromS3(DockerApp):
 
     def run(self):
         self._command = 'copy_from_s3_mt.sh %iDataURL0 %o0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
-        super(DockerApp, self).run()
+        super(DockerCopyFromS3, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
@@ -56,7 +60,7 @@ class DockerCopyFromS3(DockerApp):
 
 class DockerCopyToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
+        super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
@@ -69,7 +73,7 @@ class DockerCopyToS3(DockerApp):
 
         :param kwargs: the dictionary of arguments
         """
-        super(DockerApp, self).initialize(**kwargs)
+        super(DockerCopyToS3, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
@@ -77,7 +81,7 @@ class DockerCopyToS3(DockerApp):
 
     def run(self):
         self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
-        super(DockerApp, self).run()
+        super(DockerCopyToS3, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
@@ -85,7 +89,7 @@ class DockerCopyToS3(DockerApp):
 
 class DockerMsTransform(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
+        super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
@@ -95,13 +99,13 @@ class DockerMsTransform(DockerApp):
 
         :param kwargs: the dictionary of arguments
         """
-        super(DockerApp, self).initialize(**kwargs)
+        super(DockerMsTransform, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
 
     def run(self):
         self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1}'.format(self._min_frequency, self._max_frequency)
-        super(DockerApp, self).run()
+        super(DockerMsTransform, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
