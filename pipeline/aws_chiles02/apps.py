@@ -31,13 +31,12 @@ LOG = logging.getLogger(__name__)
 
 class DockerCopyFromS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerCopyFromS3, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
-        self._s3 = None
         self._command = None
+        super(DockerCopyFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerCopyFromS3, self).initialize(**kwargs)
@@ -53,13 +52,12 @@ class DockerCopyFromS3(DockerApp):
 
 class DockerCopyToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
-        self._s3 = None
         self._command = None
+        super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerCopyToS3, self).initialize(**kwargs)
@@ -75,10 +73,10 @@ class DockerCopyToS3(DockerApp):
 
 class DockerMsTransform(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
+        super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerMsTransform, self).initialize(**kwargs)
