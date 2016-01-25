@@ -22,7 +22,6 @@
 """
 My Docker Apps
 """
-from aws_chiles02.common import CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02
 from dfms.apps.dockerapp import DockerApp
 
 
@@ -34,7 +33,6 @@ class DockerCopyFromS3(DockerApp):
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
         self._s3 = None
-        self._image = None
         self._command = None
 
     def initialize(self, **kwargs):
@@ -47,7 +45,6 @@ class DockerCopyFromS3(DockerApp):
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
-        self._image = CONTAINER_JAVA_S3_COPY
 
     def run(self):
         self._command = 'copy_from_s3_mt.sh %iDataURL0 %o0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
@@ -65,7 +62,6 @@ class DockerCopyToS3(DockerApp):
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
         self._s3 = None
-        self._image = None
         self._command = None
 
     def initialize(self, **kwargs):
@@ -78,7 +74,6 @@ class DockerCopyToS3(DockerApp):
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
-        self._image = CONTAINER_JAVA_S3_COPY
 
     def run(self):
         self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
@@ -93,7 +88,6 @@ class DockerMsTransform(DockerApp):
         super(DockerApp, self).__init__(oid, uid, **kwargs)
         self._max_frequency = None
         self._min_frequency = None
-        self._image = None
         self._command = None
 
     def initialize(self, **kwargs):
@@ -104,7 +98,6 @@ class DockerMsTransform(DockerApp):
         super(DockerApp, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._image = CONTAINER_CHILES02
 
     def run(self):
         self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1}'.format(self._min_frequency, self._max_frequency)

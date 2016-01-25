@@ -27,9 +27,9 @@ import uuid
 import argparse
 
 from common import get_oid, make_groups_of_frequencies
-from s3_drop import S3DROP
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
+from dfms.s3_drop import S3DROP
 
 
 def build_graph(args):

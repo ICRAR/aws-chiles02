@@ -27,8 +27,8 @@ import json
 import logging
 import os
 
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation
-from aws_chiles02.docker_apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform
+from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02
+from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -54,6 +54,8 @@ def build_graph(args):
         "app": get_module_name(DockerCopyFromS3),
         "oid": get_oid('app'),
         "uid": get_uid(),
+        "image": CONTAINER_JAVA_S3_COPY,
+        "command": 'copy_from_s3',
         "aws_access_key_id": args.aws_access_key_id,
         "aws_secret_access_key": args.aws_secret_access_key,
         "user": 'root'
@@ -82,6 +84,8 @@ def build_graph(args):
             "app": get_module_name(DockerMsTransform),
             "oid": get_oid('app'),
             "uid": get_uid(),
+            "image": CONTAINER_CHILES02,
+            "command": 'mstransform',
             "min_frequency": frequency_pairs[0],
             "max_frequency": frequency_pairs[1],
             "user": 'root'
@@ -108,6 +112,8 @@ def build_graph(args):
             "app": get_module_name(DockerCopyToS3),
             "oid": get_oid('app'),
             "uid": get_uid(),
+            "image": CONTAINER_JAVA_S3_COPY,
+            "command": 'copy_to_s3',
             "user": 'root'
         })
         s3_drop_out = dropdict({
