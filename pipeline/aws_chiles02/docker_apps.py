@@ -28,6 +28,7 @@ from dfms.apps.dockerapp import DockerApp
 
 class DockerCopyFromS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        super(DockerApp, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
@@ -35,13 +36,13 @@ class DockerCopyFromS3(DockerApp):
         self._s3 = None
         self._image = None
         self._command = None
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         """
 
         :param kwargs: the dictionary of arguments
         """
+        super(DockerApp, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
@@ -58,6 +59,7 @@ class DockerCopyFromS3(DockerApp):
 
 class DockerCopyToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        super(DockerApp, self).__init__(oid, uid, **kwargs)
         self._bucket = None
         self._key = None
         self._aws_access_key_id = None
@@ -65,13 +67,13 @@ class DockerCopyToS3(DockerApp):
         self._s3 = None
         self._image = None
         self._command = None
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         """
 
         :param kwargs: the dictionary of arguments
         """
+        super(DockerApp, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
@@ -88,17 +90,18 @@ class DockerCopyToS3(DockerApp):
 
 class DockerMsTransform(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        super(DockerApp, self).__init__(oid, uid, **kwargs)
         self._max_frequency = None
         self._min_frequency = None
         self._image = None
         self._command = None
-        super(DockerApp, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         """
 
         :param kwargs: the dictionary of arguments
         """
+        super(DockerApp, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._image = CONTAINER_CHILES02

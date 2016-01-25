@@ -286,7 +286,7 @@
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n",
                 "\n",
                 "cd /home/ec2-user\n",
-                "source ~/virtualenv/dfms/bin/activate\n",
+                "source virtualenv/dfms/bin/activate\n",
                 "cd dfms\n",
                 "runuser -l ec2-user -c 'git pull\n",
                 "runuser -l ec2-user -c 'python setup.py install\n",
