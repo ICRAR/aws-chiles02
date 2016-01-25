@@ -280,6 +280,9 @@
                 "# Get the docker containers now to prevent a race condition later\n",
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n",
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n",
+                "\n",
+                "yum -y install git\n",
+                "git clone https://github.com/ICRAR/aws-chiles02.git\n",
                 "\n"
               ]
             ]

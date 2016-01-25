@@ -22,6 +22,10 @@
 """
 Common code to
 """
+import getpass
+import uuid
+
+import time
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
@@ -66,5 +70,27 @@ def get_oid(count_type):
     return '{0}__{1:06d}'.format(count_type, count)
 
 
+def get_uid():
+    return str(uuid.uuid4())
+
+
 def get_module_name(item):
     return item.__module__ + '.' + item.__name__
+
+
+def get_session_id():
+    return '{0}-{1}'.format(
+            getpass.getuser(),
+            int(time.time())
+    )
+
+
+def get_observation(s3_path):
+    """
+
+    :param s3_path:
+    :return:
+    """
+    elements = s3_path[5:-len(INPUT_MS_SUFFIX)]
+    elements = elements.split('/')
+    return elements[1]
