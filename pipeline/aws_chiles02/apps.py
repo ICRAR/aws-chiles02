@@ -40,19 +40,12 @@ class DockerCopyFromS3(DockerApp):
         self._command = None
 
     def initialize(self, **kwargs):
-        """
-
-        :param kwargs: the dictionary of arguments
-        """
         super(DockerCopyFromS3, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
-
-    def run(self):
         self._command = 'copy_from_s3_mt.sh %iDataURL0 %o0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
-        super(DockerCopyFromS3, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
@@ -69,19 +62,12 @@ class DockerCopyToS3(DockerApp):
         self._command = None
 
     def initialize(self, **kwargs):
-        """
-
-        :param kwargs: the dictionary of arguments
-        """
         super(DockerCopyToS3, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
-
-    def run(self):
         self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
-        super(DockerCopyToS3, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
@@ -95,17 +81,10 @@ class DockerMsTransform(DockerApp):
         self._command = None
 
     def initialize(self, **kwargs):
-        """
-
-        :param kwargs: the dictionary of arguments
-        """
         super(DockerMsTransform, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-
-    def run(self):
         self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1}'.format(self._min_frequency, self._max_frequency)
-        super(DockerMsTransform, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
