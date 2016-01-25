@@ -27,7 +27,7 @@ import json
 import logging
 import os
 
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies
+from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
 from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
@@ -37,6 +37,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 
 def build_graph(args):
+    number_in_chain = len(FREQUENCY_GROUPS) / 4
     drop_list = []
 
     s3_drop = dropdict({
@@ -78,7 +79,7 @@ def build_graph(args):
     drop_list.append(measurement_set)
 
     outputs = []
-    for group in make_groups_of_frequencies(8):
+    for group in make_groups_of_frequencies(number_in_chain):
         first = True
         end_of_last_element = None
         for frequency_pairs in group:
