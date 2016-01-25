@@ -91,6 +91,7 @@ def get_observation(s3_path):
     :param s3_path:
     :return:
     """
-    elements = s3_path[5:-len(INPUT_MS_SUFFIX)]
-    elements = elements.split('/')
-    return elements[1]
+    if s3_path.endswith('.tar'):
+        s3_path = s3_path[:-4]
+    elements = s3_path[:-len(INPUT_MS_SUFFIX)]
+    return elements

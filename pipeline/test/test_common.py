@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestCommon(unittest.TestCase):
     def test_get_observation(self):
-        observation = get_observation('s3://13b-266/13B-266.sb28624226.eb28625769.56669.43262586805_calibrated_deepfield.ms')
+        observation = get_observation('13B-266.sb28624226.eb28625769.56669.43262586805_calibrated_deepfield.ms')
         self.assertEquals('13B-266.sb28624226.eb28625769.56669.43262586805', observation)
 
 if __name__ == '__main__':

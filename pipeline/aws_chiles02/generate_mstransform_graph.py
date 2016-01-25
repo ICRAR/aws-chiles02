@@ -120,12 +120,15 @@ def build_graph(args):
             "key": '{0}_{1}/{2}'.format(
                     frequency_pairs[0],
                     frequency_pairs[1],
-                    get_observation(s3_drop)
+                    get_observation(s3_drop['key'])
             ),
             "aws_access_key_id": args.aws_access_key_id,
             "aws_secret_access_key": args.aws_secret_access_key
 
         })
+        copy_to_s3.addInput(result)
+        copy_to_s3.addOutput(s3_drop_out)
+
         drop_list.append(copy_to_s3)
         drop_list.append(s3_drop_out)
         outputs.append(s3_drop_out)

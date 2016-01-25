@@ -27,6 +27,10 @@
       "Description" : "Docker password",
       "Type" : "String"
     },
+    "DfmsId" : {
+      "Description" : "DFMS Id - blank will not start DFMS",
+      "Type" : "String"
+    },
     "AmiId" : {
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
@@ -281,8 +285,19 @@
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest\n",
                 "docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest\n",
                 "\n",
-                "yum -y install git\n",
-                "git clone https://github.com/ICRAR/aws-chiles02.git\n",
+                "cd /home/ec2-user\n",
+                "source ~/virtualenv/dfms/bin/activate\n",
+                "cd dfms\n",
+                "runuser -l ec2-user -c 'git pull\n",
+                "runuser -l ec2-user -c 'python setup.py install\n",
+                "runuser -l ec2-user -c 'git clone https://github.com/ICRAR/aws-chiles02.git'\n",
+                "\n",
+                "dfms_id = '",
+                { "Ref" : "DfmsId" },
+                "'\n",
+                "if [ -z \"$dfms_id\"]\n",
+                "  dfmsNM  --rest -v --daemon --dfms-path=~/aws-chiles02/pipeline --id=$dfms_id\n",
+                "fi\n",
                 "\n"
               ]
             ]
