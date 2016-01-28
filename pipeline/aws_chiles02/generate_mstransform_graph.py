@@ -45,6 +45,7 @@ def build_graph(args):
         "storage": 's3',
         "oid": get_oid('s3'),
         "uid": get_uid(),
+        "precious": False,
         "bucket": args.bucket,
         "key": args.ms_set,
         "aws_access_key_id": args.aws_access_key_id,
@@ -67,6 +68,7 @@ def build_graph(args):
         "container": get_module_name(DirectoryContainer),
         "oid": oid,
         "uid": get_uid(),
+        "precious": False,
         "dirname": os.path.join(args.volume, oid),
         "check_exists": False
     })
@@ -100,6 +102,7 @@ def build_graph(args):
                 "container": get_module_name(DirectoryContainer),
                 "oid": oid,
                 "uid": get_uid(),
+                "precious": False,
                 "dirname": os.path.join(args.volume, oid),
                 "check_exists": False,
                 "expireAfterUse": True
@@ -130,6 +133,7 @@ def build_graph(args):
                 "oid": get_oid('s3'),
                 "uid": get_uid(),
                 "expireAfterUse": True,
+                "precious": False,
                 "bucket": args.bucket,
                 "key": '{0}_{1}/{2}'.format(
                         frequency_pairs[0],

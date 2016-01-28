@@ -1,0 +1,365 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Build a group of EC2 worker instances listening to a SQS queue",
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "Can contain only ASCII characters."
+    },
+    "SpotPriceXlarge" : {
+      "Description" : "Spot price for i2.xlarge",
+      "Type" : "Number",
+      "MinValue" : "0.05",
+      "MaxValue" : "1.00",
+      "Default" : "0.10"
+    },
+    "SpotPrice2Xlarge" : {
+      "Description" : "Spot price for i2.2xlarge",
+      "Type" : "Number",
+      "MinValue" : "0.10",
+      "MaxValue" : "5.00",
+      "Default" : "0.25"
+    },
+    "SpotPrice4Xlarge" : {
+      "Description" : "Spot price for i2.4xlarge",
+      "Type" : "Number",
+      "MinValue" : "0.10",
+      "MaxValue" : "5.00",
+      "Default" : "0.40"
+    },
+    "AmiId" : {
+      "Description" : "Which AMI should we use",
+      "Type" : "AWS::EC2::Image::Id",
+      "ConstraintDescription" : "Must be a valid AMI Id",
+      "Default" : "ami-cfed0aaf"
+    },
+    "DockerPassword" : {
+      "Description" : "Docker password",
+      "Type" : "String"
+    },
+    "DfmsId" : {
+      "Description" : "DFMS Id (blank will not start DFMS)",
+      "Type" : "String"
+    }
+  },
+  "Resources" : {
+    "WorkerSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access via port 22",
+        "VpcId" : "vpc-e2859f87",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "22",
+            "ToPort" : "22",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "CfnUser" : {
+      "Type" : "AWS::IAM::User",
+      "Properties" : {
+        "Path" : "/",
+        "Policies" : [
+          {
+            "PolicyName" : "Admin",
+            "PolicyDocument" : {
+              "Statement" : [
+                {
+                  "Effect" : "Allow",
+                  "Action" : "*",
+                  "Resource" : "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "HostKeys" : {
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : {
+          "Ref" : "CfnUser"
+        }
+      }
+    },
+    "InputQueueMain" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "MessageRetentionPeriod" : 1209600,
+        "QueueName" : "normalise-data"
+      }
+    },
+    "InputQueueXlarge" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "MessageRetentionPeriod" : 1209600,
+        "QueueName" : "xlarge"
+      }
+    },
+    "InputQueue2Xlarge" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "MessageRetentionPeriod" : 1209600,
+        "QueueName" : "2xlarge"
+      }
+    },
+    "InputQueue4Xlarge" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "MessageRetentionPeriod" : 1209600,
+        "QueueName" : "4xlarge"
+      }
+    },
+    "InputQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "DependsOn" : "LaunchConfig",
+      "Properties" : {
+        "Queues" : [
+          { "Ref" : "InputQueueMain" },
+          { "Ref" : "InputQueueXlarge" },
+          { "Ref" : "InputQueue2Xlarge" },
+          { "Ref" : "InputQueue4Xlarge" }
+        ],
+        "PolicyDocument" :  {
+          "Version" : "2012-10-17",
+          "Id" : "ReadFromQueuePolicy",
+          "Statement" : [
+            {
+              "Sid" : "ConsumeMessages",
+              "Effect" : "Allow",
+              "Principal" : { "AWS" : {"Fn::GetAtt" : ["CfnUser", "Arn"]} },
+              "Action" : ["sqs:ReceiveMessage", "sqs:DeleteMessage"],
+              "Resource" : [
+                { "Fn::GetAtt" : [ "InputQueueMain", "Arn" ] },
+                { "Fn::GetAtt" : [ "InputQueueXlarge", "Arn" ] },
+                { "Fn::GetAtt" : [ "InputQueue2Xlarge", "Arn" ] },
+                { "Fn::GetAtt" : [ "InputQueue4Xlarge", "Arn" ] }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "WorkerGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : {
+          "Fn::GetAZs" : ""
+        },
+        "LaunchConfigurationName" : {
+          "Ref" : "LaunchConfig"
+        },
+        "VPCZoneIdentifier" : [
+          "subnet-79041c43",
+          "subnet-b3b59dc4",
+          "subnet-3a195b63",
+          "subnet-13552238"
+        ],
+        "MinSize" : "0",
+        "MaxSize" : "1"
+      }
+    },
+    "LaunchConfig" : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "Comment" : "Install a simple python application",
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "packages" : {
+              "yum" : {
+                "htop" : [],
+                "sysstat" : [],
+                "iotop" : []
+              }
+            },
+            "files" : {
+              "/etc/boto.cfg" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[Credentials]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
+              },
+              "/home/ec2-user/aws-pogs/src/configuration/load.settings" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "aws_pogs_user_id = \"root\"\n",
+                      "aws_pogs_password = \"", { "Ref" : "PogsPassword"}, "\"\n",
+                      "aws_pogs_hostname = \"", { "Ref" : "PogsHostname"}, "\"\n",
+                      "aws_pogs_name = \"pogs_analysis\"\n",
+                      "aws_pogs_port = \"3306\"\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000500",
+                "owner"  : "ec2-user",
+                "group"  : "ec2-user"
+              },
+              "/etc/logrotate.d/create-galaxy-details" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "/media/ephemeral0/worker.log {\n",
+                      "  notifempty\n",
+                      "  daily\n",
+                      "  compress\n",
+                      "  rotate 4\n",
+                      "  dateext\n",
+                      "  copytruncate\n",
+                      "}\n"
+                    ]
+                  ]
+                },
+                "mode"    : "000644",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/etc/cron.d/worker.cron" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "*/1 * * * * ec2-user python /home/ec2-user/aws-pogs/src/normalise_data.py sqs >> /media/ephemeral0/worker.log 2>&1\n"
+                    ]
+                  ]
+                },
+                "mode"    : "000644",
+                "owner"   : "root",
+                "group"   : "root"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "ImageId" : {
+          "Ref" : "AmiId"
+        },
+        "AssociatePublicIpAddress" : "true",
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdb",
+            "VirtualName" : "ephemeral0"
+          }
+        ],
+        "SpotPrice" : {
+          "Ref" : "SpotPrice"
+        },
+        "InstanceType" : {
+          "Ref" : "InstanceType"
+        },
+        "SecurityGroups" : [
+          { "Ref" : "WorkerSecurityGroup" }
+        ],
+        "KeyName" : {
+          "Ref" : "KeyName"
+        },
+        "UserData" : {
+          "Fn::Base64" : {
+            "Fn::Join" : [
+              "",
+              [
+                "#!/bin/bash -ve\n",
+                "date > /home/ec2-user/starttime\n",
+                "yum -y update\n",
+                "chmod oug+rwx /media/ephemeral0\n",
+                "dd if=/dev/zero of=/media/ephemeral0/swapfile bs=1M count=1024\n",
+                "chmod 0600 /media/ephemeral0/swapfile\n",
+                "mkswap /media/ephemeral0/swapfile\n",
+                "swapon /media/ephemeral0/swapfile\n",
+
+                "cd /home/ec2-user/aws-pogs\n",
+                "git pull\n",
+
+                "# Run cfn-init\n",
+                "/opt/aws/bin/cfn-init -v ",
+                "         --stack ",
+                {
+                  "Ref" : "AWS::StackName"
+                },
+                "         --resource LaunchConfig ",
+                "         --region ",
+                {
+                  "Ref" : "AWS::Region"
+                },
+                "\n",
+
+                "date > /home/ec2-user/stoptime\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "WorkerScaleUpPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "WorkerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "5"
+      }
+    },
+    "WorkerScaleDownPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "WorkerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "-5"
+      }
+    },
+    "TooManyMessagesAlarm" : {
+      "Type" : "AWS::CloudWatch::Alarm",
+      "Properties" : {
+        "AlarmDescription" : "Scale-Up if queue depth grows beyond 1 messages",
+        "Namespace" : "AWS/SQS",
+        "MetricName" : "ApproximateNumberOfMessagesVisible",
+        "Dimensions" : [{ "Name" : "QueueName", "Value" : { "Fn::GetAtt" : ["InputQueue", "QueueName"] } }],
+        "Statistic" : "Sum",
+        "Period" : "60",
+        "EvaluationPeriods" : "2",
+        "Threshold" : "1",
+        "ComparisonOperator" : "GreaterThanThreshold",
+        "AlarmActions" : [ { "Ref" : "WorkerScaleUpPolicy" } ]
+      }
+    },
+    "NotEnoughMessagesAlarm" : {
+      "Type" : "AWS::CloudWatch::Alarm",
+      "Properties" : {
+        "AlarmDescription" : "Scale-down if there are too many empty polls, indicating there is not enough work",
+        "Namespace" : "AWS/SQS",
+        "MetricName" : "NumberOfEmptyReceives",
+        "Dimensions" : [{ "Name" : "QueueName", "Value" : { "Fn::GetAtt" : ["InputQueue", "QueueName"] } }],
+        "Statistic" : "Sum",
+        "Period" : "60",
+        "EvaluationPeriods" : "5",
+        "Threshold" : "3",
+        "ComparisonOperator" : "GreaterThanThreshold",
+        "AlarmActions" : [ { "Ref" : "WorkerScaleDownPolicy" } ]
+      }
+    }
+  },
+  "Outputs" : {
+    "QueueURL" : {
+      "Description" : "URL of input queue",
+      "Value" : { "Ref" : "InputQueue" }
+    }
+  }
+}
