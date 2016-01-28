@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 
 @echo
-def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, sel_freq, spec_window=''):
+def do_mstransform(infile, outdir, min_freq, max_freq, width_freq=15.625):
     """
     Perform the MS_TRANSFORM step
 
@@ -48,10 +48,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
     :param outdir:
     :param min_freq:
     :param max_freq:
-    :param step_freq:
     :param width_freq:
-    :param sel_freq
-    :param spec_window:
     :return:
     Adapted from loop.split.py with changes
     (1) deal with (max_freq - min_freq) % step_freq > 0
@@ -62,13 +59,6 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    steps = (max_freq - min_freq) / step_freq
-    rem = (max_freq - min_freq) % step_freq
-    LOG.info('steps: {0} rem: {1}'.format(steps, rem))
-    if rem:
-        steps += 1
-    freq1 = min_freq
-    freq2 = min_freq + step_freq
     bottom_edge = re.search('_[0-9]{3}_', infile)
     if bottom_edge:
         bedge = bottom_edge.group(0)
@@ -76,82 +66,53 @@ def do_mstransform(infile, outdir, min_freq, max_freq, step_freq, width_freq, se
     else:
         bedge = None
 
-    if not sel_freq:
-        steps = 1
-
     LOG.info('''
-steps: {0}
-rem: {1}
-freq1: {2}
-freq2: {3}
-bottom_edge: {4}
-bedge: {5}
-sel_freq: {6}'''.format(steps, rem, freq1, freq2, bottom_edge, bedge, sel_freq))
+max_freq: {0}
+min_freq: {1}
+bottom_edge: {2}
+bedge: {3}
+sel_freq: {4}'''.format(max_freq, min_freq, bottom_edge, bedge))
 
-    for i in range(steps):
-        if sel_freq:
-            if rem and i == steps - 1:
-                freq_range = '%d~%d' % (min_freq + i * step_freq, max_freq)
-                cvel_freq_range = '%f~%f' % (min_freq - 2 + i * step_freq, max_freq + 2)
-            else:
-                freq_range = str(freq1) + '~' + str(freq2)
-                cvel_freq_range = str(int(freq1-2)) + '~' + str(int(freq2+2))
-            spw_range = spec_window + ':' + freq_range + 'MHz'
-            ms_spw_range = spec_window + ':' + cvel_freq_range + 'MHz'
-            LOG.info('spw_range: {0}, mst_spw_range: {1}'.format(spw_range, ms_spw_range))
-            # spanning spectral windows and selecting freq fails
-            # so use freq_map
-            # THEREFORE ~10 lines above are IGNORED!!
-            ms_spw_range = freq_map(freq1, freq2, bedge)
-        else:
-            freq_range = 'min~max'
-            spw_range = spec_window
+    ms_spw_range = '{0}~{1}MHz'.format(min_freq, max_freq)
+    step_freq = max_freq - min_freq
+    no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-        # If no spw is given then calculate from the max and min range
-        if spec_window == '':
-            spw_range = freq_map(freq1, freq2)
+    outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
+    LOG.info('working on: {0}'.format(outfile))
+    if not DEBUG:
+        if os.path.exists(outfile):
+            shutil.rmtree(outfile)
+        print 'working on: ' + outfile
+        try:
+            # dump_all()
+            mstransform(
+                    vis=infile,
+                    outputvis=outfile,
+                    regridms=True,
+                    restfreq='1420.405752MHz',
+                    mode='frequency',
+                    nchan=no_chan,
+                    outframe='lsrk',
+                    interpolation='linear',
+                    veltype='radio',
+                    start='{0}MHz'.format(min_freq),
+                    width='{0}kHz'.format(width_freq),
+                    spw=ms_spw_range,
+                    combinespws=True,
+                    nspw=1,
+                    createmms=False,
+                    datacolumn="data")
 
-        no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
-
-        outfile = os.path.join(outdir, 'vis_' + freq_range)
-        LOG.info('working on: {0}'.format(outfile))
-        if not DEBUG:
-            if os.path.exists(outfile):
-                shutil.rmtree(outfile)
-            print 'working on: ' + outfile
-            try:
-                # dump_all()
-                mstransform(
-                        vis=infile,
-                        outputvis=outfile,
-                        regridms=True,
-                        restfreq='1420.405752MHz',
-                        mode='frequency',
-                        nchan=no_chan,
-                        outframe='lsrk',
-                        interpolation='linear',
-                        veltype='radio',
-                        start=str(freq1) + 'MHz',
-                        width=str(width_freq) + 'kHz',
-                        spw=ms_spw_range,
-                        combinespws=True,
-                        nspw=1,
-                        createmms=False,
-                        datacolumn="data")
-
-            except Exception:
-                LOG.exception('*********\nSplit exception: %s\n***********')
-        else:
-            LOG.info('''
+        except Exception:
+            LOG.exception('*********\nmstransform exception:\n***********')
+    else:
+        LOG.info('''
 mstransform(vis={0},
 outputvis={1},
-start={2},
+start={2}MHz,
 width={3},
 spw={4},
-nchan={5})'''.format(infile, outfile, str(freq1)+'MHz', width_freq, ms_spw_range, no_chan))
-
-        freq1 += step_freq
-        freq2 += step_freq
+nchan={5})'''.format(infile, outfile, min_freq, width_freq, ms_spw_range, no_chan))
 
 
 @echo
@@ -183,7 +144,4 @@ do_mstransform(
         find_file(args.arguments[0]),
         args.arguments[1],
         int(args.arguments[2]),
-        int(args.arguments[3]),
-        int(args.arguments[4]),
-        float(args.arguments[5]),
-        int(args.arguments[6]))
+        int(args.arguments[3]))

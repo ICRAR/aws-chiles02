@@ -41,6 +41,9 @@ def freq_map(low_req, hi_req, *args):
     :param low_req:
     :param hi_req:
 
+    >>> freq_map(1360, 1364)
+    '12~13'
+
     >>> freq_map(951, 956)
     '0~0'
 
@@ -67,6 +70,7 @@ def freq_map(low_req, hi_req, *args):
 
     >>> freq_map(1400, 1404)
     '14~14'
+
     """
 
     # SpwID  Name           #Chans   Frame   Ch0(MHz)   Ch0(MHz)   Ch0(MHz)ChanWid(kHz)  TotBW(kHz) BBC Num  Corrs

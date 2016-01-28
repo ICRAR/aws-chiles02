@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 
 def build_graph(args):
-    number_in_chain = len(FREQUENCY_GROUPS) / 4
+    number_in_chain = len(FREQUENCY_GROUPS) / args.cores
     drop_list = []
 
     s3_drop = dropdict({
@@ -102,7 +102,7 @@ def build_graph(args):
                 "uid": get_uid(),
                 "dirname": os.path.join(args.volume, oid),
                 "check_exists": False,
-                "expiryAfterUse": True
+                "expireAfterUse": True
             })
 
             casa_py_drop.addInput(measurement_set)
@@ -129,7 +129,7 @@ def build_graph(args):
                 "storage": 's3',
                 "oid": get_oid('s3'),
                 "uid": get_uid(),
-                "expiryAfterUse": True,
+                "expireAfterUse": True,
                 "bucket": args.bucket,
                 "key": '{0}_{1}/{2}'.format(
                         frequency_pairs[0],
@@ -173,7 +173,7 @@ def command_json(args):
 def command_run(args):
     drop_list, start_uids = build_graph(args)
 
-    client = NodeManagerClient(args.host, int(args.port))
+    client = NodeManagerClient(args.host, args.port)
 
     session_id = get_session_id()
     client.create_session(session_id)
@@ -201,7 +201,8 @@ def parser_arguments():
     parser_run.add_argument('ms_set', help='the measurement set key')
     parser_run.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     parser_run.add_argument('host', help='the host the dfms is running on')
-    parser_run.add_argument('-p', '--port', help='the port to bind to', default=8000)
+    parser_run.add_argument('cores', type=int, help='the number of cores')
+    parser_run.add_argument('-p', '--port', type=int, help='the port to bind to', default=8000)
     parser_run.set_defaults(func=command_run)
 
     args = parser.parse_args()

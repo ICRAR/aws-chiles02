@@ -13,7 +13,8 @@
       "Default" : "i2.xlarge",
       "AllowedValues" : [
         "i2.xlarge",
-        "i2.2xlarge"
+        "i2.2xlarge",
+        "i2.4xlarge"
       ],
       "ConstraintDescription" : "Must be a valid EC2 instance type"
     },
@@ -21,21 +22,21 @@
       "Description" : "Spot price",
       "Type" : "Number",
       "MinValue" : "0.01",
-      "MaxValue" : "2.00"
+      "MaxValue" : "5.00"
     },
     "DockerPassword" : {
       "Description" : "Docker password",
       "Type" : "String"
     },
     "DfmsId" : {
-      "Description" : "DFMS Id - blank will not start DFMS",
+      "Description" : "DFMS Id (blank will not start DFMS)",
       "Type" : "String"
     },
     "AmiId" : {
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
-      "Default" : "ami-58947038"
+      "Default" : "ami-cfed0aaf"
     }
   },
   "Resources" : {
@@ -143,12 +144,13 @@
       "Properties" : {
         "ImageId" : { "Ref" : "AmiId" },
         "AssociatePublicIpAddress" : "true",
-        "BlockDeviceMappings" : [
-          {
-            "DeviceName" : "/dev/sdb",
-            "VirtualName" : "ephemeral0"
-          }
-        ],
+        "BlockDeviceMappings" : {
+          "Fn::FindInMap" : [
+            "EphemeralDisks",
+            { "Ref": "InstanceType" },
+            "BlockDeviceMappings"
+          ]
+        },
         "SpotPrice" : {
           "Ref" : "SpotPrice"
         },
@@ -222,13 +224,11 @@
                 "\n",
                 "    echo \"ephemeral_count = $ephemeral_count\"\n",
                 "    if (( ephemeral_count > 1 )); then\n",
-                "        umount /media/ephemeral0\n",
                 "        # overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input\n",
                 "        for drive in $drives; do\n",
                 "          dd if=/dev/zero of=$drive bs=4096 count=1024\n",
                 "        done\n",
                 "\n",
-                "        partprobe\n",
                 "        mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$ephemeral_count $drives\n",
                 "        blockdev --setra 65536 /dev/md0\n",
                 "        mkfs.ext4 /dev/md0\n",
@@ -287,22 +287,67 @@
                 "\n",
                 "cd /home/ec2-user\n",
                 "source virtualenv/dfms/bin/activate\n",
-                "cd dfms\n",
+                "cd /home/ec2-user/dfms\n",
                 "runuser -l ec2-user -c 'git pull\n",
                 "runuser -l ec2-user -c 'python setup.py install\n",
+                "cd /home/ec2-user\n",
                 "runuser -l ec2-user -c 'git clone https://github.com/ICRAR/aws-chiles02.git'\n",
                 "\n",
                 "dfms_id = '",
                 { "Ref" : "DfmsId" },
                 "'\n",
                 "if [ -z \"$dfms_id\"]\n",
-                "  dfmsNM  --rest -v --daemon --dfms-path=~/aws-chiles02/pipeline --id=$dfms_id\n",
+                "  dfmsNM  --rest -v --daemon --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=$dfms_id\n",
                 "fi\n",
                 "\n"
               ]
             ]
           }
         }
+      }
+    }
+  },
+  "Mappings" : {
+    "EphemeralDisks" : {
+      "i2.xlarge" : {
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdb",
+            "VirtualName" : "ephemeral0"
+          }
+        ]
+      },
+      "i2.2xlarge" : {
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdb",
+            "VirtualName" : "ephemeral0"
+          },
+          {
+            "DeviceName" : "/dev/sdc",
+            "VirtualName" : "ephemeral1"
+          }
+        ]
+      },
+      "i2.4xlarge" : {
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdb",
+            "VirtualName" : "ephemeral0"
+          },
+          {
+            "DeviceName" : "/dev/sdc",
+            "VirtualName" : "ephemeral1"
+          },
+          {
+            "DeviceName" : "/dev/sdd",
+            "VirtualName" : "ephemeral2"
+          },
+          {
+            "DeviceName" : "/dev/sde",
+            "VirtualName" : "ephemeral3"
+          }
+        ]
       }
     }
   }
