@@ -50,28 +50,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, width_freq=15.625):
     :param max_freq:
     :param width_freq:
     :return:
-    Adapted from loop.split.py with changes
-    (1) deal with (max_freq - min_freq) % step_freq > 0
-    (2) some debug info
-
-    If spec_window is blank ('') then freq_map is called to define the spw selection
     """
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-
-    bottom_edge = re.search('_[0-9]{3}_', infile)
-    if bottom_edge:
-        bedge = bottom_edge.group(0)
-        bedge = int(bedge[1:4])
-    else:
-        bedge = None
-
-    LOG.info('''
-max_freq: {0}
-min_freq: {1}
-bottom_edge: {2}
-bedge: {3}
-sel_freq: {4}'''.format(max_freq, min_freq, bottom_edge, bedge))
 
     ms_spw_range = '{0}~{1}MHz'.format(min_freq, max_freq)
     step_freq = max_freq - min_freq
@@ -82,7 +63,6 @@ sel_freq: {4}'''.format(max_freq, min_freq, bottom_edge, bedge))
     if not DEBUG:
         if os.path.exists(outfile):
             shutil.rmtree(outfile)
-        print 'working on: ' + outfile
         try:
             # dump_all()
             mstransform(
