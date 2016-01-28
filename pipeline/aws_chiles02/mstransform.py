@@ -25,12 +25,10 @@
 import argparse
 import logging
 import os
-import re
 import shutil
 
 from common import INPUT_MS_SUFFIX
 from echo import echo
-from freq_map import freq_map
 from mstransform import mstransform
 
 casalog.filter('DEBUGGING')
