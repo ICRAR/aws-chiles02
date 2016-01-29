@@ -172,13 +172,13 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       synchronized (lock) {
         // Loop here until the next segmen of the file is ready. We can't wait on a particular thread
         // hence the reason to check each time we get control back from lock.wait().
-        while (!s3DataRequests[index].isRequestComplete() || s3DataRequests[index].isFailed()) {
+        while (!s3DataRequests[index].isRequestComplete() && !s3DataRequests[index].isFailed()) {
           try {
             LOG.debug("Waiting for request index " + index);
             lock.wait(30000);
           }
           catch (InterruptedException e) {
-            LOG.error("Exception", e);
+            LOG.warn("Exception", e);
           }
         }
       }
@@ -187,6 +187,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
         LOG.error("Got FAILED for index " + index + " at position " + s3DataRequests[index].getStartPosition()
                       + " and length " + s3DataRequests[index].getS3Data().length
                       + ". currentFilePosition is " + currentFilePosition);
+        return null;
       }
 
       if (extractTar) {
@@ -610,6 +611,8 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       return;
     }
 
+    boolean downloadFailed = false;
+
     // Now we have options setup dependants
     setupAWS(profileName, accessKeyId, secretAccessKey);
 
@@ -640,6 +643,7 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       long finishTime = System.currentTimeMillis();
       if (downloadChecksum == null) {
         LOG.error("Download failed, exiting.");
+        downloadFailed = true;
       } else {
         String md5 = getMD5(bucketName, key);
         LOG.info("Checksums " + (downloadChecksum.equals(md5) ? "matches" : "does not match")
@@ -653,6 +657,9 @@ public class CopyFileFromS3 extends AbstractCopyS3 {
       if (!myExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
         LOG.warn("Forcing Executor shutdown");
         myExecutor.shutdownNow();
+      }
+      if (downloadFailed) {
+        System.exit(1);
       }
     }
   }

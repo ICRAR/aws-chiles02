@@ -48,7 +48,7 @@ public class MultiByteArrayInputStream extends InputStream {
   private boolean mpdinsClosed = false;
 
   public MultiByteArrayInputStream(int maxQueueDepth) {
-    inputStreams = new ArrayBlockingQueue<>(maxQueueDepth);// ArrayDeque<byte[]>();
+    inputStreams = new ArrayBlockingQueue<byte[]>(maxQueueDepth);// ArrayDeque<byte[]>();
   }
 
   /**

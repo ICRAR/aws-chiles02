@@ -44,23 +44,26 @@ public class S3DataReader implements Runnable {
     lock = request.getLock();
   }
 
-  private void getData() {
-    int tries = 3;
+  private void getData(int currentRetries) {
+    int tries = 3 - currentRetries;
     S3Object s3Object = null;
     while (s3Object == null && tries > 0) {
       try {
         s3Object = request.getAwsS3Client().getObject(request.getObjectRequest());
       }
       catch (Throwable e) {
-        LOG.error("Caught exception at " + request.getStartPosition() + ", retrying count " + tries + ".");
+        LOG.error("Caught exception at index " + request.getIndex() + " position " + request.getStartPosition() + ", retrying count " + tries + ".");
         e.printStackTrace();
       } // org.apache.http.NoHttpResponseException
       tries--;
     }
 
     if (s3Object == null) {
-      LOG.error("Failed connection for " + request.getStartPosition() + ".");
+      LOG.error("Failed connection for index " + request.getIndex() + " position " + request.getStartPosition() + ".");
       request.setFailed(true);
+      synchronized (lock) {
+        lock.notifyAll();
+      }
       return;
     }
     int bytesRead = 0;
@@ -71,8 +74,23 @@ public class S3DataReader implements Runnable {
             request.getS3Data(), currentPosition, request.getLength() - currentPosition);
         currentPosition += bytesRead;
       }
-      catch (IOException e) {
+      catch (Exception e) {
+        LOG.warn("Unexpected exception caught. Thread with index " + request.getIndex() + " position " + request.getStartPosition()
+                + ", read " + currentPosition);
         e.printStackTrace();
+
+        // Stop if currentRetries is 2 as we have tried 2 times before plus this one
+        if (currentRetries < 2) {
+          LOG.warn("Restarting thread with index " + request.getIndex());
+          getData(currentRetries+1);
+        } else {
+          LOG.error("Retry count exceeded, giving up on index " + request.getIndex());
+          request.setFailed(true);
+          synchronized (lock) {
+            lock.notifyAll();
+          }
+        }
+        return;
       }
     }
     // We don't need to set the s3Data bytes in the original request as that was done above in the read.
@@ -86,6 +104,6 @@ public class S3DataReader implements Runnable {
 
   @Override
   public void run() {
-    getData();
+    getData(0);
   }
 }
