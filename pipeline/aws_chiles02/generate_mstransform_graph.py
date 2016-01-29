@@ -28,7 +28,7 @@ import logging
 import os
 
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform
+from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -80,6 +80,32 @@ def build_graph(args):
     drop_list.append(copy_from_s3)
     drop_list.append(measurement_set)
 
+    casa_py_drop = dropdict({
+        "type": 'app',
+        "app": get_module_name(DockerListobs),
+        "oid": get_oid('app'),
+        "uid": get_uid(),
+        "image": CONTAINER_CHILES02,
+        "command": 'listobs',
+        "user": 'root'
+    })
+
+    properties = dropdict({
+        "type": 'plain',
+        "storage": 'json',
+        "oid": get_oid('json'),
+        "uid": get_uid(),
+        "precious": False,
+        "dirname": os.path.join(args.volume, oid),
+        "check_exists": False
+    })
+
+    casa_py_drop.addInput(measurement_set)
+    casa_py_drop.addOutput(properties)
+
+    drop_list.append(casa_py_drop)
+    drop_list.append(properties)
+
     outputs = []
     for group in make_groups_of_frequencies(number_in_chain):
         first = True
@@ -109,6 +135,7 @@ def build_graph(args):
             })
 
             casa_py_drop.addInput(measurement_set)
+            casa_py_drop.addInput(properties)
             if first:
                 first = False
             else:

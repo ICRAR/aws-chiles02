@@ -20,15 +20,15 @@
 #    MA 02111-1307  USA
 #
 """
-
+Perform the MS Transform
 """
-import argparse
 import logging
 import os
 import shutil
 
-from common import INPUT_MS_SUFFIX
-from echo import echo
+from aws_chiles02.freq_map import freq_map
+from aws_chiles02.casa_common import find_file, parse_args
+from aws_chiles02.echo import echo
 from mstransform import mstransform
 
 casalog.filter('DEBUGGING')
@@ -38,7 +38,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC
 
 
 @echo
-def do_mstransform(infile, outdir, min_freq, max_freq, width_freq=15.625):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):
     """
     Perform the MS_TRANSFORM step
 
@@ -46,13 +46,14 @@ def do_mstransform(infile, outdir, min_freq, max_freq, width_freq=15.625):
     :param outdir:
     :param min_freq:
     :param max_freq:
+    :param bottom_edge
     :param width_freq:
     :return:
     """
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    ms_spw_range = '{0}~{1}MHz'.format(min_freq, max_freq)
+    spw_range = freq_map(min_freq, max_freq, bottom_edge)
     step_freq = max_freq - min_freq
     no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
@@ -75,7 +76,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, width_freq=15.625):
                     veltype='radio',
                     start='{0}MHz'.format(min_freq),
                     width='{0}kHz'.format(width_freq),
-                    spw=ms_spw_range,
+                    spw=spw_range,
                     combinespws=True,
                     nspw=1,
                     createmms=False,
@@ -90,29 +91,7 @@ outputvis={1},
 start={2}MHz,
 width={3},
 spw={4},
-nchan={5})'''.format(infile, outfile, min_freq, width_freq, ms_spw_range, no_chan))
-
-
-@echo
-def find_file(top_dir):
-    for file_name in os.listdir(top_dir):
-        if file_name.endswith(INPUT_MS_SUFFIX):
-            return os.path.join(top_dir, file_name)
-
-    return None
-
-
-@echo
-def parse_args():
-    parser = argparse.ArgumentParser('Get the arguments')
-    parser.add_argument('arguments', nargs='+', help='the arguments')
-
-    parser.add_argument('--nologger', action="store_true")
-    parser.add_argument('--log2term', action="store_true")
-    parser.add_argument('--logfile')
-    parser.add_argument('-c', '--call')
-
-    return parser.parse_args()
+nchan={5})'''.format(infile, outfile, min_freq, width_freq, spw_range, no_chan))
 
 
 args = parse_args()
@@ -122,4 +101,5 @@ do_mstransform(
         find_file(args.arguments[0]),
         args.arguments[1],
         int(args.arguments[2]),
-        int(args.arguments[3]))
+        int(args.arguments[3]),
+        float(args.arguments[4]))
