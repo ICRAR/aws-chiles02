@@ -36,6 +36,9 @@ def freq_map(low_req,hi_req,*args):
     Future: We could use the _actual_ spectral windows for each day to return a smaller range.
     Additional parameters would need to be passed (just the data file name?)
 
+    >>> freq_map(1360, 1364)
+    '12~13'
+
     >>> freq_map(951,956)
     '0~0'
 

@@ -101,7 +101,7 @@ def build_scripts(args):
 
 
 def main():
-    parser = argparse.ArgumentParser('Get the MD5 of a file')
+    parser = argparse.ArgumentParser('Get files and move them to S3')
     parser.add_argument('directory_in', help='the input directory to scan')
     parser.add_argument('directory_out', help='where to write the files')
     args = parser.parse_args()

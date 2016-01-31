@@ -90,14 +90,20 @@ class DockerMsTransform(DockerApp):
     def initialize(self, **kwargs):
         super(DockerMsTransform, self).initialize(**kwargs)
 
-        json_drop = self.inputs[1]
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'
+
+    def run(self):
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        json_drop = self.inputs[1]
         self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 json_drop['Bottom edge']
         )
+        super(DockerMsTransform, self).run()
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
