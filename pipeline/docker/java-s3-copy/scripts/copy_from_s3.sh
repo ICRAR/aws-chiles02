@@ -8,7 +8,7 @@ if [ $? == 0 ] && [ -f $2.tar ] ; then
     mkdir -p $2
     tar -xvf $2.tar -C $2
     rm $2.tar
-    return $?
+    exit $?
 fi
 
-return 1
+exit 1

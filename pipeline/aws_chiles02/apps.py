@@ -116,7 +116,7 @@ class DockerListobs(DockerApp):
 
     def initialize(self, **kwargs):
         super(DockerListobs, self).initialize(**kwargs)
-        self._command = 'listobjs.sh %i0 %o0 %oDataURL0'
+        self._command = 'listobs.sh %i0 %o0'
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
