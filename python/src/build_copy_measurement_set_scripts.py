@@ -41,7 +41,7 @@ def write_script(full_script_filename, full_measurement_set):
     (script_directory, script_filename) = split(full_script_filename)
     (measurement_set_directory, measurement_set_filename) = split(full_measurement_set)
     output_file = open(full_script_filename, 'w')
-    output_file.write('''#!/bin/bash
+    output_file.write('''#!/bin/bash -xv
 
 ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.ExistsS3BucketKey 13b-266 {2}.tar
 
