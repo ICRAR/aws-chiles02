@@ -122,7 +122,7 @@ public class ExistsS3BucketKey extends AbstractCopyS3 {
     long fileSize = CopyFileFromS3.getObjectSizePlusMetadata(bucketName, key);
     if (fileSize < 0) {
       // error occurred or file does not exist
-      System.exit(1);
+      System.exit(99);
     }
 
     LOG.info("Download file size is " + fileSize);
