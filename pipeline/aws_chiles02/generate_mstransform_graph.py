@@ -62,14 +62,14 @@ def build_graph(args):
         "aws_secret_access_key": args.aws_secret_access_key,
         "user": 'root'
     })
-    oid = get_oid('dir')
+    oid01 = get_oid('dir')
     measurement_set = dropdict({
         "type": 'container',
         "container": get_module_name(DirectoryContainer),
-        "oid": oid,
+        "oid": oid01,
         "uid": get_uid(),
         "precious": False,
-        "dirname": os.path.join(args.volume, oid),
+        "dirname": os.path.join(args.volume, oid01),
         "check_exists": False
     })
 
@@ -90,13 +90,14 @@ def build_graph(args):
         "user": 'root'
     })
 
+    oid02 = get_oid('json')
     properties = dropdict({
         "type": 'plain',
         "storage": 'json',
-        "oid": get_oid('json'),
+        "oid": oid02,
         "uid": get_uid(),
         "precious": False,
-        "dirname": os.path.join(args.volume, oid),
+        "dirname": os.path.join(args.volume, oid02),
         "check_exists": False
     })
 
@@ -122,14 +123,14 @@ def build_graph(args):
                 "max_frequency": frequency_pairs[1],
                 "user": 'root'
             })
-            oid = get_oid('dir')
+            oid03 = get_oid('dir')
             result = dropdict({
                 "type": 'container',
                 "container": get_module_name(DirectoryContainer),
-                "oid": oid,
+                "oid": oid03,
                 "uid": get_uid(),
                 "precious": False,
-                "dirname": os.path.join(args.volume, oid),
+                "dirname": os.path.join(args.volume, oid03),
                 "check_exists": False,
                 "expireAfterUse": True
             })
