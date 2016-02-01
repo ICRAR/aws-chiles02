@@ -43,7 +43,7 @@ def write_script(full_script_filename, full_measurement_set):
     output_file = open(full_script_filename, 'w')
     output_file.write('''#!/bin/bash -xv
 
-~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.ExistsS3BucketKey 13b-266 {2}.tar
+~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.ExistsS3BucketKey -aws_profile aws-chiles02 13b-266 {2}.tar
 
 if [ $? == 0 ]; then
     # Tar up the measurement set - find the MD5 and copy it to S3
