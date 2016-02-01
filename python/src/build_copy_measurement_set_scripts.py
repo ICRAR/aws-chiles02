@@ -43,7 +43,7 @@ def write_script(full_script_filename, full_measurement_set):
     output_file = open(full_script_filename, 'w')
     output_file.write('''#!/bin/bash -xv
 
-~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.ExistsS3BucketKey 13b-266 {2}.tar
+~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.ExistsS3BucketKey 13b-266 {2}.tar
 
 if [ $? == 0 ]; then
     # Tar up the measurement set - find the MD5 and copy it to S3
@@ -51,11 +51,11 @@ if [ $? == 0 ]; then
     tar -cvf {1}/{2}.tar {2}
 
     # Now make the MD5 file
-    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.GetMD5 {1}/{2}.tar
+    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.GetMD5 {1}/{2}.tar
 
     # Copy the files to S3
-    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar {1}/{2}.tar
-    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyToS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar.md5 {1}/{2}.tar.md5
+    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar {1}/{2}.tar
+    ~/jre1.8.0_65/bin/java -cp ~/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3 -aws_profile aws-chiles02 13b-266 {2}.tar.md5 {1}/{2}.tar.md5
 
     rm {1}/{2}.tar
     rm {1}/{2}.tar.md5
