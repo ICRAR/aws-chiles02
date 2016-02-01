@@ -167,7 +167,7 @@ def build_graph(args):
                 "expireAfterUse": True,
                 "precious": False,
                 "bucket": args.bucket,
-                "key": '{0}_{1}/{2}'.format(
+                "key": 'split/{0}_{1}/{2}'.format(
                         frequency_pairs[0],
                         frequency_pairs[1],
                         get_observation(s3_drop['key'])
@@ -227,6 +227,7 @@ def parser_arguments():
     parser_json.add_argument('bucket', help='the bucket to access')
     parser_json.add_argument('ms_set', help='the measurement set key')
     parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    parser_json.add_argument('cores', type=int, help='the number of cores')
     parser_json.set_defaults(func=command_json)
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
@@ -235,8 +236,8 @@ def parser_arguments():
     parser_run.add_argument('bucket', help='the bucket to access')
     parser_run.add_argument('ms_set', help='the measurement set key')
     parser_run.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    parser_run.add_argument('host', help='the host the dfms is running on')
     parser_run.add_argument('cores', type=int, help='the number of cores')
+    parser_run.add_argument('host', help='the host the dfms is running on')
     parser_run.add_argument('-p', '--port', type=int, help='the port to bind to', default=8000)
     parser_run.set_defaults(func=command_run)
 
