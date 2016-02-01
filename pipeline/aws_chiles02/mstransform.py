@@ -46,7 +46,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
     :param outdir:
     :param min_freq:
     :param max_freq:
-    :param bottom_edge
+    :param bottom_edge:
     :param width_freq:
     :return:
     """
@@ -54,45 +54,47 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
         os.makedirs(outdir)
 
     spw_range = freq_map(min_freq, max_freq, bottom_edge)
-    step_freq = max_freq - min_freq
-    no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
+    if spw_range == '-1~-1':
+        step_freq = max_freq - min_freq
+        no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-    outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
-    LOG.info('working on: {0}'.format(outfile))
-    if not DEBUG:
-        if os.path.exists(outfile):
-            shutil.rmtree(outfile)
-        try:
-            # dump_all()
-            mstransform(
-                    vis=infile,
-                    outputvis=outfile,
-                    regridms=True,
-                    restfreq='1420.405752MHz',
-                    mode='frequency',
-                    nchan=no_chan,
-                    outframe='lsrk',
-                    interpolation='linear',
-                    veltype='radio',
-                    start='{0}MHz'.format(min_freq),
-                    width='{0}kHz'.format(width_freq),
-                    spw=spw_range,
-                    combinespws=True,
-                    nspw=1,
-                    createmms=False,
-                    datacolumn="data")
+        outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
+        LOG.info('working on: {0}'.format(outfile))
+        if not DEBUG:
+            if os.path.exists(outfile):
+                shutil.rmtree(outfile)
+            try:
+                # dump_all()
+                mstransform(
+                        vis=infile,
+                        outputvis=outfile,
+                        regridms=True,
+                        restfreq='1420.405752MHz',
+                        mode='frequency',
+                        nchan=no_chan,
+                        outframe='lsrk',
+                        interpolation='linear',
+                        veltype='radio',
+                        start='{0}MHz'.format(min_freq),
+                        width='{0}kHz'.format(width_freq),
+                        spw=spw_range,
+                        combinespws=True,
+                        nspw=1,
+                        createmms=False,
+                        datacolumn="data")
 
-        except Exception:
-            LOG.exception('*********\nmstransform exception:\n***********')
-    else:
-        LOG.info('''
+            except Exception:
+                LOG.exception('*********\nmstransform exception:\n***********')
+        else:
+            LOG.info('''
 mstransform(vis={0},
 outputvis={1},
 start={2}MHz,
 width={3},
 spw={4},
 nchan={5})'''.format(infile, outfile, min_freq, width_freq, spw_range, no_chan))
-
+    else:
+        LOG.info('Outside spectral window')
 
 args = parse_args()
 LOG.info(args)

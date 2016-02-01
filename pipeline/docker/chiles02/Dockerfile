@@ -41,6 +41,11 @@ RUN mkdir -p /opt/chiles02
 WORKDIR /opt/chiles02
 RUN git clone https://github.com/ICRAR/aws-chiles02.git
 
+# Docker uses a clever caching system that won't get the latest code
+# unless you do an explicit pull
+WORKDIR /opt/chiles02/aws-chiles02
+RUN git pull
+
 # Copy the scripts
 COPY scripts /opt/chiles02/scripts/
 
@@ -49,6 +54,6 @@ RUN chmod oug+x /opt/chiles02/scripts/*.sh
 
 # Update the path
 env PATH /opt/chiles02/scripts:$PATH
-env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline/aws_chiles02
+env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline
 
 VOLUME /dfms_root

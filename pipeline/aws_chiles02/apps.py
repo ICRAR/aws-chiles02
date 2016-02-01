@@ -64,6 +64,8 @@ class DockerCopyToS3(DockerApp):
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
         self._set_name = None
+        self._max_frequency = None
+        self._min_frequency = None
         self._command = None
         super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
 
@@ -73,8 +75,15 @@ class DockerCopyToS3(DockerApp):
         self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._set_name = self._getArg(kwargs, 'set_name', None)
-        self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
+        self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1} {2} {3}'.format(
+                self._aws_access_key_id,
+                self._aws_secret_access_key,
+                self._min_frequency,
+                self._max_frequency,
+        )
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
