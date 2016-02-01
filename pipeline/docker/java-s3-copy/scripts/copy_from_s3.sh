@@ -1,6 +1,12 @@
 #!/bin/bash -xv
 # copy_from_s3
 
+# Does the file exist
+if [ -d $2 ] ; then
+  # We already have the file
+  exit 0
+fi
+
 java -classpath /chiles02/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3 -aws_access_key_id $3 -aws_secret_access_key $4 $1 $2.tar
 
 if [ $? == 0 ] && [ -f $2.tar ] ; then

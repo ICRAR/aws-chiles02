@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Build an EC2 instances to test Docker on AWS",
+  "Description" : "Build a group of EC2 worker instances listening to a SQS queue to run Docker instances",
   "Parameters" : {
     "KeyName" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
@@ -28,11 +28,40 @@
       "Description" : "Docker password",
       "Type" : "String"
     },
+    "DfmsId" : {
+      "Description" : "DFMS Id",
+      "Type" : "String"
+    },
     "AmiId" : {
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
       "Default" : "ami-cfed0aaf"
+    },
+    "MinInstances" : {
+      "Description" : "The minimum number of Workers",
+      "Type" : "Number",
+      "MinValue" : "0",
+      "Default"  : "0",
+      "ConstraintDescription" : "Enter a number >=0"
+    },
+    "MaxInstances" : {
+      "Description" : "The maximum number of Workers (units of 5)",
+      "Type" : "Number",
+      "MinValue" : "1",
+      "Default"  : "30",
+      "ConstraintDescription" : "Enter a number >1"
+    },
+    "QueueName" : {
+      "Description" : "The queue to create",
+      "Type" : "String",
+      "Default" : "2xlarge",
+      "AllowedValues" : [
+        "xlarge",
+        "2xlarge",
+        "4xlarge"
+      ],
+      "ConstraintDescription" : "Must be a valid EC2 instance type"
     }
   },
   "Resources" : {
@@ -85,7 +114,32 @@
         }
       }
     },
-    "AutoScalingGroup" : {
+    "InputQueue" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "MessageRetentionPeriod" : 1209600,
+        "QueueName" : { "Ref" : "QueueName" }
+      }
+    },
+    "InputQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "DependsOn" : "LaunchConfig",
+      "Properties" : {
+        "Queues" : [ { "Ref" : "InputQueue" } ],
+        "PolicyDocument" :  {
+          "Version" : "2012-10-17",
+          "Id" : "ReadFromQueuePolicy",
+          "Statement" : [ {
+            "Sid" : "ConsumeMessages",
+            "Effect" : "Allow",
+            "Principal" : { "AWS" : {"Fn::GetAtt" : ["CfnUser", "Arn"]} },
+            "Action" : ["sqs:ReceiveMessage", "sqs:DeleteMessage"],
+            "Resource" : { "Fn::GetAtt" : [ "InputQueue", "Arn" ] }
+          } ]
+        }
+      }
+    },
+    "WorkerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
         "AvailabilityZones" : {
@@ -99,15 +153,14 @@
           "subnet-bde9a3d8",
           "subnet-628b063b"
         ],
-        "DesiredCapacity" : "1",
-        "MinSize" : "1",
-        "MaxSize" : "1"
+        "MinSize" : { "Ref" : "MinInstances" },
+        "MaxSize" : { "Ref" : "MaxInstances" }
       }
     },
     "LaunchConfig" : {
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
-        "Comment" : "",
+        "Comment" : "Install a simple python application",
         "AWS::CloudFormation::Init" : {
           "config" : {
             "packages" : {
@@ -121,7 +174,9 @@
         }
       },
       "Properties" : {
-        "ImageId" : { "Ref" : "AmiId" },
+        "ImageId" : {
+          "Ref" : "AmiId"
+        },
         "AssociatePublicIpAddress" : "true",
         "BlockDeviceMappings" : {
           "Fn::FindInMap" : [
@@ -136,7 +191,9 @@
         "InstanceType" : {
           "Ref" : "InstanceType"
         },
-        "SecurityGroups" : [ { "Ref" : "WorkerSecurityGroup" } ],
+        "SecurityGroups" : [
+          { "Ref" : "WorkerSecurityGroup" }
+        ],
         "KeyName" : {
           "Ref" : "KeyName"
         },
@@ -269,11 +326,65 @@
                 "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && python setup.py install'\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'\n",
                 "\n",
-                "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM  --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv'\n"
+                "\n",
+                "\n",
+                "\n",
+                "\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM  --rest -v --daemon --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=",
+                { "Ref" : "DfmsId" },
+                "'\n"
               ]
             ]
           }
         }
+      }
+    },
+    "WorkerScaleUpPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "WorkerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "1"
+      }
+    },
+    "WorkerScaleDownPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "WorkerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "-1"
+      }
+    },
+    "TooManyMessagesAlarm" : {
+      "Type" : "AWS::CloudWatch::Alarm",
+      "Properties" : {
+        "AlarmDescription" : "Scale-Up if queue depth grows beyond 1 messages",
+        "Namespace" : "AWS/SQS",
+        "MetricName" : "ApproximateNumberOfMessagesVisible",
+        "Dimensions" : [{ "Name" : "QueueName", "Value" : { "Fn::GetAtt" : ["InputQueue", "QueueName"] } }],
+        "Statistic" : "Sum",
+        "Period" : "60",
+        "EvaluationPeriods" : "2",
+        "Threshold" : "1",
+        "ComparisonOperator" : "GreaterThanThreshold",
+        "AlarmActions" : [ { "Ref" : "WorkerScaleUpPolicy" } ]
+      }
+    },
+    "NotEnoughMessagesAlarm" : {
+      "Type" : "AWS::CloudWatch::Alarm",
+      "Properties" : {
+        "AlarmDescription" : "Scale-down if there are too many empty polls, indicating there is not enough work",
+        "Namespace" : "AWS/SQS",
+        "MetricName" : "NumberOfEmptyReceives",
+        "Dimensions" : [{ "Name" : "QueueName", "Value" : { "Fn::GetAtt" : ["InputQueue", "QueueName"] } }],
+        "Statistic" : "Sum",
+        "Period" : "60",
+        "EvaluationPeriods" : "5",
+        "Threshold" : "3",
+        "ComparisonOperator" : "GreaterThanThreshold",
+        "AlarmActions" : [ { "Ref" : "WorkerScaleDownPolicy" } ]
       }
     }
   },
@@ -319,6 +430,12 @@
           }
         ]
       }
+    }
+  },
+  "Outputs" : {
+    "QueueURL" : {
+      "Description" : "URL of input queue",
+      "Value" : { "Ref" : "InputQueue" }
     }
   }
 }
