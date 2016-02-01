@@ -28,7 +28,6 @@ import logging
 from types import InstanceType, NoneType
 
 LOG = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
 
 
 def format_arg_value(arg_val):

@@ -24,7 +24,6 @@ import logging
 from echo import echo
 
 LOG = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
 
 
 @echo
