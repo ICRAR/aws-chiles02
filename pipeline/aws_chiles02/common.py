@@ -23,9 +23,11 @@
 Common code to
 """
 import getpass
-import uuid
-
+import logging
+import shlex
+import subprocess
 import time
+import uuid
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
@@ -95,3 +97,16 @@ def get_observation(s3_path):
         s3_path = s3_path[:-4]
     elements = s3_path[:-len(INPUT_MS_SUFFIX)]
     return elements
+
+
+def run_command(command):
+    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    while True:
+        output = process.stdout.readline()
+        if output == '' and process.poll() is not None:
+            break
+        if output:
+            # Don't use logging as we'll get double log headers
+            print output.strip()
+    return_code = process.poll()
+    return return_code

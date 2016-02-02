@@ -26,9 +26,13 @@ package org.icrar.awsChiles02.copyS3;
 
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.List;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressEventType;
+import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.cli.CommandLine;
@@ -46,6 +50,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class CopyFileToS3 extends AbstractCopyS3 {
   private static final Log LOG = LogFactory.getLog(CopyFileToS3.class);
+  private static DecimalFormat FORMAT = new DecimalFormat("00.0");
 
   /**
    * The entry point of application.
@@ -141,8 +146,25 @@ public class CopyFileToS3 extends AbstractCopyS3 {
     long startTime = System.currentTimeMillis();
 
     // TransferManager processes all transfers asynchronously, so this call will return immediately.
-    Upload upload = transferManager.upload(bucketName, keyName, new File(filePath));
+    final Upload upload = transferManager.upload(bucketName, keyName, new File(filePath));
+    upload.addProgressListener(
+        new ProgressListener() {
+          private String lastValue = "";
 
+          @Override
+          public void progressChanged(ProgressEvent progressEvent) {
+            String format = FORMAT.format(upload.getProgress().getPercentTransferred());
+            if (!lastValue.equals(format)) {
+              LOG.info(format + "%");
+              lastValue = format;
+            }
+
+            if (progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
+              LOG.info("Upload complete!!!");
+            }
+          }
+        }
+    );
     try {
       // Block and wait for the upload to finish
       upload.waitForCompletion();
