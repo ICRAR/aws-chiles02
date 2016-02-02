@@ -38,8 +38,6 @@ class DockerCopyFromS3(DockerApp):
         :param kwargs:
         :return:
         """
-        self._bucket = None
-        self._key = None
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
         self._command = None
@@ -47,11 +45,12 @@ class DockerCopyFromS3(DockerApp):
 
     def initialize(self, **kwargs):
         super(DockerCopyFromS3, self).initialize(**kwargs)
-        self._bucket = self._getArg(kwargs, 'bucket', None)
-        self._key = self._getArg(kwargs, 'key', None)
         self._aws_access_key_id = self._getArg(kwargs, 'aws_access_key_id', None)
         self._aws_secret_access_key = self._getArg(kwargs, 'aws_secret_access_key', None)
-        self._command = 'copy_from_s3.sh %iDataURL0 %o0 {0} {1}'.format(self._aws_access_key_id, self._aws_secret_access_key)
+        self._command = 'copy_from_s3.sh %iDataURL0 %o0 {0} {1}'.format(
+            self._aws_access_key_id,
+            self._aws_secret_access_key,
+        )
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'

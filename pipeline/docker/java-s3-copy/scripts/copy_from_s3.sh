@@ -1,8 +1,9 @@
 #!/bin/bash -xv
 # copy_from_s3
 
-# Does the file exist
-if [ -d $2 ] ; then
+s3_name=$(basename "$1")
+measurement_set="${s3_name%.*}"
+if [ -d $2/${measurement_set} ] ; then
   # We already have the file
   exit 0
 fi
