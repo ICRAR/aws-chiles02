@@ -40,6 +40,7 @@ def parser_arguments():
     parser.add_argument('aws_secret_access_key', help="the AWS aws_secret_access_key to use")
 
     args = parser.parse_args()
+    LOG.info(args)
     return args
 
 
