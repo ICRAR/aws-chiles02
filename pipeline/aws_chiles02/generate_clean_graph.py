@@ -27,8 +27,8 @@ import json
 import logging
 import os
 
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
+from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
+from aws_chiles02.apps import DockerCopyToS3, DockerClean, DockerCopyAllFromS3Folder
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -39,85 +39,65 @@ def build_graph(args):
     number_in_chain = len(FREQUENCY_GROUPS) / args.cores
     drop_list = []
 
-    s3_drop = dropdict({
-        "type": 'plain',
-        "storage": 's3',
-        "oid": get_oid('s3'),
-        "uid": get_uid(),
-        "precious": False,
-        "bucket": args.bucket,
-        "key": args.ms_set,
-        "aws_access_key_id": args.aws_access_key_id,
-        "aws_secret_access_key": args.aws_secret_access_key
-    })
-    copy_from_s3 = dropdict({
-        "type": 'app',
-        "app": get_module_name(DockerCopyFromS3),
-        "oid": get_oid('app'),
-        "uid": get_uid(),
-        "image": CONTAINER_JAVA_S3_COPY,
-        "command": 'copy_from_s3',
-        "aws_access_key_id": args.aws_access_key_id,
-        "aws_secret_access_key": args.aws_secret_access_key,
-        "user": 'root'
-    })
     oid01 = get_oid('dir')
-    measurement_set = dropdict({
-        "type": 'container',
-        "container": get_module_name(DirectoryContainer),
+    file_drop = ({
+        "type": 'plain',
+        "storage": 'file',
         "oid": oid01,
         "uid": get_uid(),
         "precious": False,
         "dirname": os.path.join(args.volume, oid01),
         "check_exists": False
     })
-
-    copy_from_s3.addInput(s3_drop)
-    copy_from_s3.addOutput(measurement_set)
-
-    drop_list.append(s3_drop)
-    drop_list.append(copy_from_s3)
-    drop_list.append(measurement_set)
-
-    casa_py_drop = dropdict({
-        "type": 'app',
-        "app": get_module_name(DockerListobs),
-        "oid": get_oid('app'),
-        "uid": get_uid(),
-        "image": CONTAINER_CHILES02,
-        "command": 'listobs',
-        "user": 'root'
-    })
-
-    oid02 = get_oid('json')
-    properties = dropdict({
-        "type": 'plain',
-        "storage": 'json',
-        "oid": oid02,
-        "uid": get_uid(),
-        "precious": False,
-        "dirname": os.path.join(args.volume, oid02),
-        "check_exists": False
-    })
-
-    casa_py_drop.addInput(measurement_set)
-    casa_py_drop.addOutput(properties)
-
-    drop_list.append(casa_py_drop)
-    drop_list.append(properties)
+    drop_list.append(file_drop)
 
     outputs = []
     for group in make_groups_of_frequencies(number_in_chain):
         first = True
         end_of_last_element = None
         for frequency_pairs in group:
+            copy_from_s3 = dropdict({
+                "type": 'app',
+                "app": get_module_name(DockerCopyAllFromS3Folder),
+                "oid": get_oid('app'),
+                "uid": get_uid(),
+                "image": CONTAINER_JAVA_S3_COPY,
+                "command": 'copy_from_all_from_s3_folder',
+                "aws_access_key_id": args.aws_access_key_id,
+                "aws_secret_access_key": args.aws_secret_access_key,
+                "min_frequency": frequency_pairs[0],
+                "max_frequency": frequency_pairs[1],
+                "user": 'root'
+            })
+
+            oid02 = get_oid('dir')
+            measurement_sets = dropdict({
+                "type": 'container',
+                "container": get_module_name(DirectoryContainer),
+                "oid": oid02,
+                "uid": get_uid(),
+                "precious": False,
+                "dirname": os.path.join(args.volume, oid02),
+                "check_exists": False
+            })
+
+            if first:
+                copy_from_s3.addInput(file_drop)
+                first = False
+            else:
+                copy_from_s3.addInput(end_of_last_element)
+            copy_from_s3.addOutput(measurement_sets)
+
+            drop_list.append(copy_from_s3)
+            drop_list.append(measurement_sets)
+
             casa_py_drop = dropdict({
                 "type": 'app',
-                "app": get_module_name(DockerMsTransform),
+                "app": get_module_name(DockerClean),
                 "oid": get_oid('app'),
                 "uid": get_uid(),
                 "image": CONTAINER_CHILES02,
-                "command": 'mstransform',
+                "command": 'clean',
                 "min_frequency": frequency_pairs[0],
                 "max_frequency": frequency_pairs[1],
                 "user": 'root'
@@ -134,16 +114,8 @@ def build_graph(args):
                 "expireAfterUse": True
             })
 
-            casa_py_drop.addInput(measurement_set)
-            casa_py_drop.addInput(properties)
-            if first:
-                first = False
-            else:
-                casa_py_drop.addInput(end_of_last_element)
+            casa_py_drop.addInput(measurement_sets)
             casa_py_drop.addOutput(result)
-
-            drop_list.append(casa_py_drop)
-            drop_list.append(result)
 
             copy_to_s3 = dropdict({
                 "type": 'app',
@@ -166,10 +138,9 @@ def build_graph(args):
                 "expireAfterUse": True,
                 "precious": False,
                 "bucket": args.bucket,
-                "key": 'split/{0}_{1}/{2}.tar'.format(
+                "key": 'clean/{0}_{1}/{0}_{1}.tar'.format(
                         frequency_pairs[0],
-                        frequency_pairs[1],
-                        get_observation(s3_drop['key'])
+                        frequency_pairs[1]
                 ),
                 "aws_access_key_id": args.aws_access_key_id,
                 "aws_secret_access_key": args.aws_secret_access_key
@@ -195,7 +166,7 @@ def build_graph(args):
     for output in outputs:
         barrier_drop.addInput(output)
 
-    return drop_list, [s3_drop['uid']]
+    return drop_list, [file_drop['uid']]
 
 
 def command_json(args):
@@ -215,7 +186,7 @@ def command_run(args):
 
 
 def parser_arguments():
-    parser = argparse.ArgumentParser('Build the MSTRANSFORM physical graph for a day')
+    parser = argparse.ArgumentParser('Build the CLEAN physical graph for a day')
 
     subparsers = parser.add_subparsers()
 
