@@ -100,7 +100,7 @@ def get_observation(s3_path):
 
 
 def run_command(command):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, env=os.environ.copy())
     while True:
         output = process.stdout.readline()
         if output == '' and process.poll() is not None:
