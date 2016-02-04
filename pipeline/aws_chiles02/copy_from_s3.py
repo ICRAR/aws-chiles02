@@ -30,6 +30,7 @@ import sys
 from aws_chiles02.common import run_command
 
 LOG = logging.getLogger(__name__)
+TAR_FILE = 'ms.tar'
 
 
 def parser_arguments():
@@ -59,15 +60,24 @@ def copy_from_s3(args):
     # The -d64 is to make sure we are using a 64bit JVM.
     # When extracting to the tar we need even more
     bash = 'java -d64 -Xms10g -Xmx10g -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3' \
-           ' -thread_buffer 262144000 -thread_pool 16 -extract_tar -aws_profile aws-chiles02' \
-           ' {0} {1}'.format(
+           ' -thread_buffer 262144000 -thread_pool 16 -aws_profile aws-chiles02' \
+           ' {0} {1}/ms.tar'.format(
                 args.s3_url,
                 args.directory,
             )
     return_code = run_command(bash)
 
-    if return_code != 0 or not os.path.exists(args.measurement_set):
+    full_path_tar_file = os.path.join(args.directory, TAR_FILE)
+    if return_code != 0 or not os.path.exists(full_path_tar_file):
         return 1
+
+    bash = 'tar -xvf {0}'.format(full_path_tar_file)
+    return_code = run_command(bash)
+
+    if return_code != 0 or not os.path.exists(os.path.join(args.directory, args.measurement_set)):
+        return 1
+
+    os.remove(full_path_tar_file)
 
     return 0
 
