@@ -23,6 +23,7 @@
 Common code to
 """
 import getpass
+import os
 import shlex
 import subprocess
 import time
@@ -99,7 +100,7 @@ def get_observation(s3_path):
 
 
 def run_command(command):
-    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     while True:
         output = process.stdout.readline()
         if output == '' and process.poll() is not None:
