@@ -59,15 +59,16 @@ def copy_from_s3(args):
     # Note setting minimum as well as maximum heap results in OutOfMemory errors at times!
     # The -d64 is to make sure we are using a 64bit JVM.
     # When extracting to the tar we need even more
+    full_path_tar_file = os.path.join(args.directory, TAR_FILE)
+    LOG.info('Tar: {0}'.format(full_path_tar_file))
     bash = 'java -d64 -Xms10g -Xmx10g -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3' \
            ' -thread_buffer 262144000 -thread_pool 16 -aws_profile aws-chiles02' \
-           ' {0} {1}/ms.tar'.format(
+           ' {0} {1}'.format(
                 args.s3_url,
-                args.directory,
+                full_path_tar_file,
             )
     return_code = run_command(bash)
 
-    full_path_tar_file = os.path.join(args.directory, TAR_FILE)
     if return_code != 0 or not os.path.exists(full_path_tar_file):
         return 1
 
