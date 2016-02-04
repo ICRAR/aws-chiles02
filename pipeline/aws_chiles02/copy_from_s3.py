@@ -72,7 +72,7 @@ def copy_from_s3(args):
     if return_code != 0 or not os.path.exists(full_path_tar_file):
         return 1
 
-    bash = 'tar -xvf {0}'.format(full_path_tar_file)
+    bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, args.directory)
     return_code = run_command(bash)
 
     if return_code != 0 or not os.path.exists(os.path.join(args.directory, args.measurement_set)):
