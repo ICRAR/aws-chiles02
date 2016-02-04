@@ -47,8 +47,7 @@ def build_graph(args):
         "precious": False,
         "bucket": args.bucket,
         "key": args.ms_set,
-        "aws_access_key_id": args.aws_access_key_id,
-        "aws_secret_access_key": args.aws_secret_access_key
+        "profile_name": 'aws-chiles02',
     })
     copy_from_s3 = dropdict({
         "type": 'app',
@@ -57,9 +56,8 @@ def build_graph(args):
         "uid": get_uid(),
         "image": CONTAINER_JAVA_S3_COPY,
         "command": 'copy_from_s3',
-        "aws_access_key_id": args.aws_access_key_id,
-        "aws_secret_access_key": args.aws_secret_access_key,
-        "user": 'root'
+        "additionalBindings": ['/root/.aws/credentials', '/home/ec2-user/.aws/credentials'],
+        "user": 'root',
     })
     oid01 = get_oid('dir')
     measurement_set = dropdict({
@@ -70,7 +68,7 @@ def build_graph(args):
         "precious": False,
         "dirname": os.path.join(args.volume, oid01),
         "check_exists": False,
-        "clean_up": True
+        "clean_up": True,
     })
 
     copy_from_s3.addInput(s3_drop)
@@ -99,7 +97,7 @@ def build_graph(args):
         "precious": False,
         "dirname": os.path.join(args.volume, oid02),
         "check_exists": False,
-        "clean_up": True
+        "clean_up": True,
     })
 
     casa_py_drop.addInput(measurement_set)
@@ -122,7 +120,7 @@ def build_graph(args):
                 "command": 'mstransform',
                 "min_frequency": frequency_pairs[0],
                 "max_frequency": frequency_pairs[1],
-                "user": 'root'
+                "user": 'root',
             })
             oid03 = get_oid('dir')
             result = dropdict({
@@ -134,7 +132,7 @@ def build_graph(args):
                 "dirname": os.path.join(args.volume, oid03),
                 "check_exists": False,
                 "expireAfterUse": True,
-                "clean_up": True
+                "clean_up": True,
             })
 
             casa_py_drop.addInput(measurement_set)
@@ -158,8 +156,7 @@ def build_graph(args):
                 "user": 'root',
                 "min_frequency": frequency_pairs[0],
                 "max_frequency": frequency_pairs[1],
-                "aws_access_key_id": args.aws_access_key_id,
-                "aws_secret_access_key": args.aws_secret_access_key
+                "additionalBindings": ['/root/.aws/credentials', '/home/ec2-user/.aws/credentials'],
             })
             s3_drop_out = dropdict({
                 "type": 'plain',
@@ -174,8 +171,7 @@ def build_graph(args):
                         frequency_pairs[1],
                         get_observation(s3_drop['key'])
                 ),
-                "aws_access_key_id": args.aws_access_key_id,
-                "aws_secret_access_key": args.aws_secret_access_key
+                "profile_name": 'aws-chiles02',
             })
             copy_to_s3.addInput(result)
             copy_to_s3.addOutput(s3_drop_out)
@@ -191,7 +187,7 @@ def build_graph(args):
         "app": get_module_name(BarrierAppDROP),
         "oid": get_oid('app'),
         "uid": get_uid(),
-        "user": 'root'
+        "user": 'root',
     })
     drop_list.append(barrier_drop)
 
@@ -203,7 +199,7 @@ def build_graph(args):
         "app": get_module_name(CleanUpApp),
         "oid": get_oid('app'),
         "uid": get_uid(),
-        "user": 'root'
+        "user": 'root',
     })
     drop_list.append(clean_up_app)
 
@@ -237,8 +233,6 @@ def parser_arguments():
     subparsers = parser.add_subparsers()
 
     parser_json = subparsers.add_parser('json', help='display the json')
-    parser_json.add_argument('aws_access_key_id', help="the AWS aws_access_key_id to use")
-    parser_json.add_argument('aws_secret_access_key', help="the AWS aws_secret_access_key to use")
     parser_json.add_argument('bucket', help='the bucket to access')
     parser_json.add_argument('ms_set', help='the measurement set key')
     parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
@@ -246,8 +240,6 @@ def parser_arguments():
     parser_json.set_defaults(func=command_json)
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
-    parser_run.add_argument('aws_access_key_id', help="the AWS aws_access_key_id to use")
-    parser_run.add_argument('aws_secret_access_key', help="the AWS aws_secret_access_key to use")
     parser_run.add_argument('bucket', help='the bucket to access')
     parser_run.add_argument('ms_set', help='the measurement set key')
     parser_run.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
