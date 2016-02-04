@@ -145,7 +145,7 @@
                     "",
                     [
                       "VG=dfms-group\n",
-                      "DATA_SIZE=40GB\n"
+                      "DATA_SIZE=100GB\n"
                     ]
                   ]
                 }

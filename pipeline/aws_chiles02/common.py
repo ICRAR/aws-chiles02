@@ -24,10 +24,11 @@ Common code to
 """
 import getpass
 import os
-import shlex
 import subprocess
 import time
 import uuid
+from Queue import Queue, Empty
+from threading import Thread
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
@@ -100,14 +101,37 @@ def get_observation(s3_path):
 
 
 def run_command(command):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=os.environ.copy(), bufsize=1)
+    io_q = Queue()
 
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            # Don't use logging as we'll get double log headers
-            print output.strip()
+    def stream_watcher(identifier, stream):
+        for line in stream:
+            io_q.put((identifier, line))
+
+        if not stream.closed:
+            stream.close()
+
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+
+    Thread(target=stream_watcher,
+           name='stdout-watcher',
+           args=('STDOUT', process.stdout)).start()
+    Thread(target=stream_watcher,
+           name='stderr-watcher',
+           args=('STDERR', process.stderr)).start()
+
+    def printer():
+        while True:
+            try:
+                # Block for 1 second.
+                item = io_q.get(True, 1)
+            except Empty:
+                # No output in either streams for a second. Are we done?
+                if process.poll() is not None:
+                    break
+            else:
+                identifier, line = item
+                print line
+
+    Thread(target=printer, name='printer').start()
     return_code = process.poll()
     return return_code
