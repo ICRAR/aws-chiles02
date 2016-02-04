@@ -59,7 +59,7 @@ def copy_from_s3(args):
     # Note setting minimum as well as maximum heap results in OutOfMemory errors at times!
     # The -d64 is to make sure we are using a 64bit JVM.
     bash = 'java -d64 -Xms6g -Xmx6g -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3' \
-           ' -thread_buffer 262144000 -thread_pool 16 -extract_tar -aws_access_key_id {3} -aws_secret_access_key {4}' \
+           ' -thread_buffer 262144000 -thread_pool 16 -extract_tar -aws_access_key_id {2} -aws_secret_access_key {3}' \
            ' {0} {1}'.format(
                 args.s3_url,
                 args.directory,
