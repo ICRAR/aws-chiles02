@@ -24,7 +24,9 @@
 FROM centos:latest
 
 RUN yum update -y
-RUN yum -y install wget
+RUN yum -y install \
+    git \
+    wget
 
 ENV JAVA_VERSION 8u66
 ENV BUILD_VERSION b17
@@ -41,14 +43,23 @@ RUN alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 20000
 
 ENV JAVA_HOME /usr/java/latest
 
+RUN mkdir -p /opt/chiles02
+WORKDIR /opt/chiles02
+RUN git clone https://github.com/ICRAR/aws-chiles02.git
+
+# Docker uses a clever caching system that won't get the latest code
+# unless you do an explicit pull
+WORKDIR /opt/chiles02/aws-chiles02
+RUN git pull
+
 # Copy the scripts
-COPY scripts /scripts/
-COPY chiles02 /chiles02/
+COPY scripts /opt/chiles02/scripts/
 
 # Make them executable
-RUN chmod oug+x /scripts/*.sh
+RUN chmod oug+x /opt/chiles02/scripts/*.sh
 
 # Update the path
-env PATH /scripts:$JAVA_HOME/bin:$PATH
+env PATH /opt/chiles02/scripts:$PATH
+env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline
 
 VOLUME /dfms_root

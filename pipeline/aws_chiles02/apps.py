@@ -23,8 +23,11 @@
 My Docker Apps
 """
 import logging
+import os
 
 from dfms.apps.dockerapp import DockerApp
+from dfms.drop import BarrierAppDROP, DirectoryContainer
+from dfms.json_drop import JsonDROP
 
 LOG = logging.getLogger(__name__)
 
@@ -189,3 +192,16 @@ class DockerListobs(DockerApp):
 
     def dataURL(self):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
+
+
+class CleanUpApp(BarrierAppDROP):
+    def dataURL(self):
+        return 'CleanUpApp'
+
+    def run(self):
+        for input_item in self.inputs:
+            if type(input_item) is DirectoryContainer:
+                if os.path.exists(input_item.path) and os.path.isdir(input_item.path):
+                    input_item.delete()
+            elif type(input_item) is JsonDROP:
+                input_item.delete()

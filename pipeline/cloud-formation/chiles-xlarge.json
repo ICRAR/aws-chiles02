@@ -28,29 +28,11 @@
       "Description" : "Docker password",
       "Type" : "String"
     },
-    "DfmsId" : {
-      "Description" : "DFMS Id",
-      "Type" : "String"
-    },
     "AmiId" : {
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
       "Default" : "ami-cfed0aaf"
-    },
-    "MinInstances" : {
-      "Description" : "The minimum number of Workers",
-      "Type" : "Number",
-      "MinValue" : "0",
-      "Default"  : "0",
-      "ConstraintDescription" : "Enter a number >=0"
-    },
-    "MaxInstances" : {
-      "Description" : "The maximum number of Workers (units of 5)",
-      "Type" : "Number",
-      "MinValue" : "1",
-      "Default"  : "30",
-      "ConstraintDescription" : "Enter a number >1"
     },
     "QueueName" : {
       "Description" : "The queue to create",
@@ -61,7 +43,7 @@
         "2xlarge",
         "4xlarge"
       ],
-      "ConstraintDescription" : "Must be a valid EC2 instance type"
+      "ConstraintDescription" : "Must be a valid Queue name"
     }
   },
   "Resources" : {
@@ -153,8 +135,8 @@
           "subnet-bde9a3d8",
           "subnet-628b063b"
         ],
-        "MinSize" : { "Ref" : "MinInstances" },
-        "MaxSize" : { "Ref" : "MaxInstances" }
+        "MinSize" : "0",
+        "MaxSize" : "1"
       }
     },
     "LaunchConfig" : {
@@ -168,6 +150,70 @@
                 "htop" : [],
                 "sysstat" : [],
                 "iotop" : []
+              }
+            },
+            "files" : {
+              "/etc/sysconfig/docker": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "# The max number of open files for the daemon itself, and all\n",
+                      "# running containers.  The default value of 1048576 mirrors the value\n",
+                      "# used by the systemd service unit.\n",
+                      "DAEMON_MAXFILES=1048576\n",
+                      "\n",
+                      "# Additional startup options for the Docker daemon, for example:\n",
+                      "# OPTIONS=\"--ip-forward=true --iptables=true\"\n",
+                      "# By default we limit the number of open files per container\n",
+                      "OPTIONS=\"-D --default-ulimit nofile=1024:4096\"\n"
+                    ]
+                  ]
+                },
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/sysconfig/docker-storage-setup": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "VG=dfms-group\n",
+                      "DATA_SIZE=40GB\n"
+                    ]
+                  ]
+                }
+              },
+              "/home/ec2-user/.aws/credentials" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[aws-chiles02]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
+              },
+              "/root/.aws/credentials" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[aws-chiles02]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
               }
             }
           }
@@ -217,11 +263,15 @@
                 "\n",
                 "df -h\n",
                 "\n",
+                "# Move the docker volumes to the ephemeral drive\n",
+                "service docker stop\n",
+                "sleep 10\n",
+                "\n",
                 "if [ -b \"/dev/xvdb\" ]; then\n",
                 "\n",
                 "    METADATA_URL_BASE=\"http://169.254.169.254/latest\"\n",
                 "\n",
-                "    yum -y -d0 install mdadm curl\n",
+                "    yum -y -d0 install docker-storage-setup curl\n",
                 "\n",
                 "    # Configure Raid if needed - taking into account xvdb or sdb\n",
                 "    root_drive=`df -h | grep -v grep | awk 'NR==2{print $1}'`\n",
@@ -259,57 +309,53 @@
                 "    done\n",
                 "\n",
                 "    echo \"ephemeral_count = $ephemeral_count\"\n",
-                "    if (( ephemeral_count > 1 )); then\n",
-                "        # overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input\n",
-                "        for drive in $drives; do\n",
-                "          dd if=/dev/zero of=$drive bs=4096 count=1024\n",
-                "        done\n",
+                "    if (( ephemeral_count >= 1 )); then\n",
+                "      if mountpoint -q \"/media/ephemeral0\" ; then\n",
+                "        umount /media/ephemeral0\n",
+                "      fi\n",
+                "      # overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input\n",
+                "      for drive in $drives; do\n",
+                "        dd if=/dev/zero of=$drive bs=4096 count=1024\n",
+                "      done\n",
                 "\n",
+                "      if (( ephemeral_count > 1 )); then\n",
                 "        mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$ephemeral_count $drives\n",
                 "        blockdev --setra 65536 /dev/md0\n",
-                "        mkfs.ext4 /dev/md0\n",
-                "        mkdir -p /mnt/dfms\n",
-                "        mount -t ext4 -o noatime /dev/md0 /mnt/dfms\n",
-                "    elif (( ephemeral_count == 1 )); then\n",
-                "        if mountpoint -q \"/media/ephemeral0\" ; then\n",
-                "            # The ephemeral disk is usually mounted on /media/ephemeral0\n",
-                "            rm -f /mnt/dfms\n",
-                "            ln -s /media/ephemeral0 /mnt/dfms\n",
-                "        else\n",
-                "            # The ephemeral disk is not mounted on /media/ephemeral0 so mount it\n",
-                "            mkdir -p /mnt/dfms\n",
-                "            mkfs.ext4 /dev/xvdb\n",
-                "            mount /dev/xvdb /mnt/dfms\n",
-                "        fi\n",
+                "        pvcreate /dev/md0\n",
+                "        vgcreate dfms-group /dev/md0\n",
+                "      else\n",
+                "        pvcreate $drives\n",
+                "        vgcreate dfms-group $drives\n",
+                "      fi\n",
+                "      lvcreate -L 5G --name swap dfms-group\n",
+                "      docker-storage-setup\n",
+                "      lvcreate --extents 100%FREE --name data dfms-group\n",
+                "\n",
+                "      mkfs.xfs /dev/dfms-group/data\n",
+                "      mkdir -p /mnt/dfms\n",
+                "      mount /dev/dfms-group/data /mnt/dfms\n",
+                "\n",
+                "      mkswap /dev/dfms-group/swap\n",
+                "      swapon /dev/dfms-group/swap\n",
                 "    else\n",
-                "        mkdir -p /mnt/dfms\n",
-                "        mkfs.ext4 /dev/xvdb\n",
-                "        mount /dev/xvdb /mnt/dfms\n",
+                "      mkdir -p /mnt/dfms\n",
+                "      mkfs.xfs /dev/xvdb\n",
+                "\n",
+                "      mount /dev/xvdb /mnt/dfms\n",
+                "      dd if=/dev/zero of=/mnt/swapfile bs=1M count=1024\n",
+                "      mkswap /mnt/swapfile\n",
+                "      swapon /mnt/swapfile\n",
+                "      chmod 0600 /mnt/swapfile\n",
                 "    fi\n",
                 "fi\n",
                 "# Print free disk space\n",
                 "df -h\n",
                 "\n",
-                "# Move the docker volumes to the ephemeral drive\n",
-                "service docker stop\n",
-                "sleep 10\n",
-                "rm -rf /var/lib/docker/vfs\n",
-                "rm -rf /var/lib/docker/volumes\n",
-                "mkdir -p /mnt/dfms/docker-volumes/vfs\n",
-                "ln -s /mnt/dfms/docker-volumes/vfs /var/lib/docker/vfs\n",
-                "mkdir -p /mnt/dfms/docker-volumes/volumes\n",
-                "ln -s /mnt/dfms/docker-volumes/volumes /var/lib/docker/volumes\n",
-                "\n",
                 "# Create the DFMS root\n",
                 "mkdir -p /mnt/dfms/dfms_root\n",
-                "\n",
                 "chmod -R 0777 /mnt/dfms\n",
                 "\n",
-                "dd if=/dev/zero of=/mnt/dfms/swapfile bs=1M count=1024\n",
-                "mkswap /mnt/dfms/swapfile\n",
-                "swapon /mnt/dfms/swapfile\n",
-                "chmod 0600 /mnt/dfms/swapfile\n",
-                "\n",
+                "rm -rf /var/lib/docker\n",
                 "service docker start\n",
                 "sleep 10\n",
                 "\n",
@@ -330,9 +376,9 @@
                 "\n",
                 "\n",
                 "\n",
-                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM  --rest -v --daemon --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=",
-                { "Ref" : "DfmsId" },
-                "'\n"
+                "\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --rest -v --daemon --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=chiles02'\n",
+                "\n"
               ]
             ]
           }

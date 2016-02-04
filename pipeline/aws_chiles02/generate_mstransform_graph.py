@@ -28,7 +28,7 @@ import logging
 import os
 
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
+from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs, CleanUpApp
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -69,7 +69,8 @@ def build_graph(args):
         "uid": get_uid(),
         "precious": False,
         "dirname": os.path.join(args.volume, oid01),
-        "check_exists": False
+        "check_exists": False,
+        "clean_up": True
     })
 
     copy_from_s3.addInput(s3_drop)
@@ -97,7 +98,8 @@ def build_graph(args):
         "uid": get_uid(),
         "precious": False,
         "dirname": os.path.join(args.volume, oid02),
-        "check_exists": False
+        "check_exists": False,
+        "clean_up": True
     })
 
     casa_py_drop.addInput(measurement_set)
@@ -131,7 +133,8 @@ def build_graph(args):
                 "precious": False,
                 "dirname": os.path.join(args.volume, oid03),
                 "check_exists": False,
-                "expireAfterUse": True
+                "expireAfterUse": True,
+                "clean_up": True
             })
 
             casa_py_drop.addInput(measurement_set)
@@ -195,6 +198,20 @@ def build_graph(args):
     for output in outputs:
         barrier_drop.addInput(output)
 
+    clean_up_app = dropdict({
+        "type": 'app',
+        "app": get_module_name(CleanUpApp),
+        "oid": get_oid('app'),
+        "uid": get_uid(),
+        "user": 'root'
+    })
+    drop_list.append(clean_up_app)
+
+    clean_up_app.addInput(barrier_drop)
+    for drop in drop_list:
+        if 'clean_up' in drop and drop['clean_up']:
+            clean_up_app.addInput(drop)
+
     return drop_list, [s3_drop['uid']]
 
 
@@ -244,5 +261,6 @@ def parser_arguments():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)

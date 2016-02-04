@@ -82,6 +82,7 @@ def copy_from_s3(args):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     error_code = copy_from_s3(arguments)
     sys.exit(error_code)

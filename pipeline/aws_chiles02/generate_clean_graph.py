@@ -215,5 +215,6 @@ def parser_arguments():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)

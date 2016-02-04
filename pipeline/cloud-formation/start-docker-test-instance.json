@@ -149,6 +149,36 @@
                     ]
                   ]
                 }
+              },
+              "/home/ec2-user/.aws/credentials" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[aws-chiles02]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
+              },
+              "/root/.aws/credentials" : {
+                "content" : {
+                  "Fn::Join" : [
+                    "",
+                    [
+                      "[aws-chiles02]\n",
+                      "aws_access_key_id = ", { "Ref" : "HostKeys" }, "\n",
+                      "aws_secret_access_key = ", {"Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]}, "\n"
+                    ]
+                  ]
+                },
+                "mode"   : "000544",
+                "owner"  : "root",
+                "group"  : "root"
               }
             }
           }
@@ -303,7 +333,7 @@
                 "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && python setup.py install'\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'\n",
                 "\n",
-                "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM  --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv'\n"
+                "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv'\n"
               ]
             ]
           }

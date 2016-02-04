@@ -23,7 +23,6 @@
 Common code to
 """
 import getpass
-import logging
 import shlex
 import subprocess
 import time
