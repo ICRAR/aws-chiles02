@@ -56,7 +56,7 @@ def build_graph(args):
         "uid": get_uid(),
         "image": CONTAINER_JAVA_S3_COPY,
         "command": 'copy_from_s3',
-        "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials', '/home/ec2-user/.aws/credentials'],
+        "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
         "user": 'root',
     })
     oid01 = get_oid('dir')
@@ -156,7 +156,7 @@ def build_graph(args):
                 "user": 'root',
                 "min_frequency": frequency_pairs[0],
                 "max_frequency": frequency_pairs[1],
-                "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials', '/home/ec2-user/.aws/credentials'],
+                "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             })
             s3_drop_out = dropdict({
                 "type": 'plain',

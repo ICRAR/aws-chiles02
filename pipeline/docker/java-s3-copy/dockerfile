@@ -37,20 +37,11 @@ RUN wget --quiet --no-cookies --no-check-certificate --header "Cookie: oraclelic
 
 RUN yum -y install /tmp/jdk-8-linux-x64.rpm
 
-RUN alternatives --install /usr/bin/java jar /usr/java/latest/bin/java 200000
-RUN alternatives --install /usr/bin/javaws javaws /usr/java/latest/bin/javaws 200000
-RUN alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 200000
-
-ENV JAVA_HOME /usr/java/latest
+ENV JAVA_HOME /usr/java/default
 
 RUN mkdir -p /opt/chiles02
 WORKDIR /opt/chiles02
 RUN git clone https://github.com/ICRAR/aws-chiles02.git
-
-# Docker uses a clever caching system that won't get the latest code
-# unless you do an explicit pull
-WORKDIR /opt/chiles02/aws-chiles02
-RUN git pull
 
 # Copy the scripts
 COPY scripts /opt/chiles02/scripts/

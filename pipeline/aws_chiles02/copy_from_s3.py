@@ -57,7 +57,8 @@ def copy_from_s3(args):
     # The following will need (16 + 1) * 262144000 bytes of heap space, ie approximately 4.5G.
     # Note setting minimum as well as maximum heap results in OutOfMemory errors at times!
     # The -d64 is to make sure we are using a 64bit JVM.
-    bash = 'java -d64 -Xms6g -Xmx6g -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3' \
+    # When extracting to the tar we need even more
+    bash = 'java -d64 -Xms10g -Xmx10g -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileFromS3' \
            ' -thread_buffer 262144000 -thread_pool 16 -extract_tar -aws_profile aws-chiles02' \
            ' {0} {1}'.format(
                 args.s3_url,

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build --tag java-s3-copy:latest .
+docker build --no-cache --tag java-s3-copy:latest .
