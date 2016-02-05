@@ -138,7 +138,7 @@ class AsynchronousFileReader(threading.Thread):
 
 def run_command(command):
 
-    process = subprocess.Popen(command, bufsize=100, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+    process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
     # Launch the asynchronous readers of the processes stdout and stderr.
     stdout_queue = Queue.Queue()
@@ -153,12 +153,12 @@ def run_command(command):
         # Show what we received from standard output.
         while not stdout_queue.empty():
             line = stdout_queue.get()
-            print repr(line).rstrip()
+            print line.rstrip()
 
         # Show what we received from standard error.
         while not stderr_queue.empty():
             line = stderr_queue.get()
-            print repr(line).rstrip()
+            print line.rstrip()
 
         # Sleep a bit before asking the readers again.
         time.sleep(2)
