@@ -105,7 +105,7 @@ def run_command(command):
         if not stream.closed:
             stream.close()
 
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+    process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
     Thread(target=stream_watcher,
            name='stdout-watcher',
@@ -127,7 +127,7 @@ def run_command(command):
                     break
             else:
                 identifier, line = item
-                print line
+                print line.rstrip()
 
     Thread(target=printer,
            name='printer'

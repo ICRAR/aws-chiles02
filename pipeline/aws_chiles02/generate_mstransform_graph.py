@@ -74,7 +74,7 @@ def build_graph(args):
     first_drop = None
     clean_up_app = None
 
-    for day_to_process in list_measurement_sets:
+    for day_to_process in list_measurement_sets[:2]:
         drop_list = []
         s3_drop = dropdict({
             "type": 'plain',
@@ -89,7 +89,7 @@ def build_graph(args):
         if first_drop is None:
             first_drop = s3_drop
         elif clean_up_app is not None:
-            s3_drop.addInput(clean_up_app)
+            clean_up_app.addOutput(s3_drop)
 
         copy_from_s3 = dropdict({
             "type": 'app',
