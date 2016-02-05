@@ -45,11 +45,11 @@ def parser_arguments():
     return args
 
 
-def get_s3_size(args):
+def get_s3_size(s3_url):
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 
-    bucket_name, key = split_s3_url(args.s3_url)
+    bucket_name, key = split_s3_url(s3_url)
     object_summary = s3.ObjectSummary(bucket_name,key)
     return object_summary.size
 
