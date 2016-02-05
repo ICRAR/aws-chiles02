@@ -64,9 +64,10 @@ def get_s3_size(s3_url):
 def copy_from_s3(args):
     # Does the file exists
     head, tail = os.path.split(args.s3_url)
-    measurement_set = os.path.join(args.directory, tail)
+    measurement_set = os.path.join(args.directory, tail)[:-4]
+    LOG.info('Checking {0} exists'.format(measurement_set))
     if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-        LOG.info('File: {0} exists'.format(measurement_set))
+        LOG.info('Measurement Set: {0} exists'.format(measurement_set))
         return 0
 
     # Make the directory

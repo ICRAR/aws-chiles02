@@ -84,7 +84,7 @@ def build_graph(args):
     first_drop = None
     clean_up_app = None
 
-    for day_to_process in sorted_list_measurement_sets[:2]:
+    for day_to_process in sorted_list_measurement_sets:
         drop_list = []
         s3_drop = dropdict({
             "type": 'plain',
