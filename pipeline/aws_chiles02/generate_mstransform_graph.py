@@ -65,9 +65,9 @@ def build_graph(args):
 
             if ok_to_queue:
                 # For testing
-                # if key.size <= 200 * _1GB:
-                #    queue = 'xlarge'
-                if key.size <= 400 * _1GB:
+                if key.size <= 200 * _1GB:
+                    queue = 'xlarge'
+                elif key.size <= 400 * _1GB:
                     queue = '2xlarge'
                 else:
                     queue = '4xlarge'
