@@ -22,13 +22,13 @@
 """
 Common code to
 """
+import Queue
 import getpass
 import os
 import subprocess
+import threading
 import time
 import uuid
-from Queue import Queue, Empty
-from threading import Thread
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
@@ -109,42 +109,67 @@ def get_observation(s3_path):
     return elements
 
 
+class AsynchronousFileReader(threading.Thread):
+    """
+    Helper class to implement asynchronous reading of a file
+    in a separate thread. Pushes read lines on a queue to
+    be consumed in another thread.
+    """
+    def __init__(self, fd, queue):
+        assert isinstance(queue, Queue.Queue)
+        assert callable(fd.readline)
+        threading.Thread.__init__(self)
+        self._fd = fd
+        self._queue = queue
+
+    def run(self):
+        """
+        The body of the tread: read lines and put them on the queue.
+        """
+        for line in iter(self._fd.readline, ''):
+            self._queue.put(line)
+
+    def eof(self):
+        """
+        Check whether there is no more content to expect.
+        """
+        return not self.is_alive() and self._queue.empty()
+
+
 def run_command(command):
-    io_queue = Queue()
 
-    def stream_watcher(identifier, stream):
-        for line in stream:
-            io_queue.put((identifier, line))
+    process = subprocess.Popen(command, bufsize=100, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
-        if not stream.closed:
-            stream.close()
+    # Launch the asynchronous readers of the processes stdout and stderr.
+    stdout_queue = Queue.Queue()
+    stdout_reader = AsynchronousFileReader(process.stdout, stdout_queue)
+    stdout_reader.start()
+    stderr_queue = Queue.Queue()
+    stderr_reader = AsynchronousFileReader(process.stderr, stderr_queue)
+    stderr_reader.start()
 
-    process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+    # Check the queues if we received some output (until there is nothing more to get).
+    while not stdout_reader.eof() or not stderr_reader.eof():
+        # Show what we received from standard output.
+        while not stdout_queue.empty():
+            line = stdout_queue.get()
+            print repr(line).rstrip()
 
-    Thread(target=stream_watcher,
-           name='stdout-watcher',
-           args=('STDOUT', process.stdout)
-           ).start()
-    Thread(target=stream_watcher,
-           name='stderr-watcher',
-           args=('STDERR', process.stderr)
-           ).start()
+        # Show what we received from standard error.
+        while not stderr_queue.empty():
+            line = stderr_queue.get()
+            print repr(line).rstrip()
 
-    def printer():
-        while True:
-            try:
-                # Block for 2 seconds.
-                item = io_queue.get(True, 2)
-            except Empty:
-                # No output in either streams for two seconds. Are we done?
-                if process.poll() is not None:
-                    break
-            else:
-                identifier, line = item
-                print line.rstrip()
+        # Sleep a bit before asking the readers again.
+        time.sleep(2)
 
-    Thread(target=printer,
-           name='printer'
-           ).start()
+    # Let's be tidy and join the threads we've started.
+    stdout_reader.join()
+    stderr_reader.join()
+
+    # Close subprocess' file descriptors.
+    process.stdout.close()
+    process.stderr.close()
+
     return_code = process.poll()
     return return_code
