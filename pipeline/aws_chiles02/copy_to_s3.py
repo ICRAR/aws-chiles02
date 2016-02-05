@@ -27,7 +27,6 @@ import argparse
 import os
 import shutil
 import sys
-import tarfile
 
 from aws_chiles02.common import run_command
 
@@ -66,8 +65,8 @@ def copy_from_s3(args):
 
     bash = 'java -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
            ' -aws_profile aws-chiles02 {0} vis.tar'.format(
-            args.s3_url,
-    )
+                args.s3_url,
+            )
     return_code = run_command(bash)
 
     # Clean up
