@@ -31,7 +31,7 @@ import boto3
 import operator
 
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs, CleanUpApp
+from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -64,9 +64,10 @@ def build_graph(args):
                     ok_to_queue = False
 
             if ok_to_queue:
-                if key.size <= 200 * _1GB:
-                    queue = 'xlarge'
-                elif key.size <= 500 * _1GB:
+                # For testing
+                # if key.size <= 200 * _1GB:
+                #    queue = 'xlarge'
+                if key.size <= 400 * _1GB:
                     queue = '2xlarge'
                 else:
                     queue = '4xlarge'
@@ -82,9 +83,9 @@ def build_graph(args):
     number_in_chain = len(FREQUENCY_GROUPS) / args.cores
     full_drop_list = []
     first_drop = None
-    clean_up_app = None
+    barrier_drop = None
 
-    for day_to_process in sorted_list_measurement_sets[:1]:
+    for day_to_process in sorted_list_measurement_sets:
         drop_list = []
         s3_drop = dropdict({
             "type": 'plain',
@@ -98,8 +99,8 @@ def build_graph(args):
         })
         if first_drop is None:
             first_drop = s3_drop
-        elif clean_up_app is not None:
-            clean_up_app.addOutput(s3_drop)
+        elif barrier_drop is not None:
+            barrier_drop.addOutput(s3_drop)
 
         copy_from_s3 = dropdict({
             "type": 'app',
@@ -245,20 +246,6 @@ def build_graph(args):
 
         for output in outputs:
             barrier_drop.addInput(output)
-
-        clean_up_app = dropdict({
-            "type": 'app',
-            "app": get_module_name(CleanUpApp),
-            "oid": get_oid('app'),
-            "uid": get_uid(),
-            "user": 'root',
-        })
-        drop_list.append(clean_up_app)
-
-        clean_up_app.addInput(barrier_drop)
-        for drop in drop_list:
-            if 'clean_up' in drop and drop['clean_up']:
-                clean_up_app.addInput(drop)
 
         full_drop_list.extend(drop_list)
 

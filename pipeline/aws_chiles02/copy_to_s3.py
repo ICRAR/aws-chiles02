@@ -25,6 +25,7 @@ Copy files to S3
 import logging
 import argparse
 import os
+import shutil
 import sys
 import tarfile
 
@@ -70,8 +71,7 @@ def copy_from_s3(args):
     return_code = run_command(bash)
 
     # Clean up
-    if os.path.exists(tar_filename):
-        os.remove(tar_filename)
+    shutil.rmtree(args.directory, ignore_errors=True)
 
     return return_code
 
