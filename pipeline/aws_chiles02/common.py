@@ -24,11 +24,14 @@ Common code to
 """
 import Queue
 import getpass
+import logging
 import os
 import subprocess
 import threading
 import time
 import uuid
+
+LOG = logging.getLogger(__name__)
 
 FREQUENCY_WIDTH = 4
 FREQUENCY_GROUPS = []
@@ -137,7 +140,7 @@ class AsynchronousFileReader(threading.Thread):
 
 
 def run_command(command):
-
+    LOG.info(command)
     process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
     # Launch the asynchronous readers of the processes stdout and stderr.

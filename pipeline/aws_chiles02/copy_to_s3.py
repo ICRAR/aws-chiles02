@@ -56,8 +56,12 @@ def copy_from_s3(args):
 
     # Make the tar file
     tar_filename = os.path.join(args.directory, 'vis.tar')
-    with tarfile.open(tar_filename, "w") as tar:
-        tar.add(measurement_set, arcname=os.path.basename(measurement_set))
+    os.chdir(args.directory)
+    bash = 'tar -cvf {0} {1}'.format(tar_filename, directory_name)
+    return_code = run_command(bash)
+    path_exists = os.path.exists(tar_filename)
+    if return_code != 0 or not path_exists:
+        LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
 
     bash = 'java -classpath /chiles02/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
            ' -aws_access_key_id aws-chiles02 {0} vis.tar'.format(
@@ -65,14 +69,11 @@ def copy_from_s3(args):
     )
     return_code = run_command(bash)
 
-    if return_code != 0 or not os.path.exists(args.measurement_set):
-        if os.path.exists(tar_filename):
-            os.remove(tar_filename)
-        return 1
-
+    # Clean up
     if os.path.exists(tar_filename):
         os.remove(tar_filename)
-    return 0
+
+    return return_code
 
 
 if __name__ == '__main__':
