@@ -96,11 +96,11 @@ def get_observation(s3_path):
 
 
 def run_command(command):
-    io_q = Queue()
+    io_queue = Queue()
 
     def stream_watcher(identifier, stream):
         for line in stream:
-            io_q.put((identifier, line))
+            io_queue.put((identifier, line))
 
         if not stream.closed:
             stream.close()
@@ -119,10 +119,10 @@ def run_command(command):
     def printer():
         while True:
             try:
-                # Block for 1 second.
-                item = io_q.get(True, 1)
+                # Block for 2 seconds.
+                item = io_queue.get(True, 2)
             except Empty:
-                # No output in either streams for a second. Are we done?
+                # No output in either streams for two seconds. Are we done?
                 if process.poll() is not None:
                     break
             else:

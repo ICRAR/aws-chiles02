@@ -28,6 +28,7 @@ import logging
 import os
 
 import boto3
+import operator
 
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, FREQUENCY_GROUPS
 from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs, CleanUpApp
@@ -36,6 +37,12 @@ from dfms.manager.client import NodeManagerClient, SetEncoder
 
 LOG = logging.getLogger(__name__)
 _1GB = 1073741824
+
+
+class MeasurementSetData:
+    def __init__(self, name, size):
+        self.name = name
+        self.size = size
 
 
 def build_graph(args):
@@ -67,14 +74,17 @@ def build_graph(args):
                 LOG.info('{0}, {1}, {2}'.format(key.key, key.size, queue))
 
                 if queue == args.ami_size:
-                    list_measurement_sets.append(key.key)
+                    list_measurement_sets.append(MeasurementSetData(key.key, key.size))
+
+    # Make sure the smallest is first
+    sorted_list_measurement_sets = sorted(list_measurement_sets, key=operator.attrgetter('size'))
 
     number_in_chain = len(FREQUENCY_GROUPS) / args.cores
     full_drop_list = []
     first_drop = None
     clean_up_app = None
 
-    for day_to_process in list_measurement_sets[:2]:
+    for day_to_process in sorted_list_measurement_sets[:2]:
         drop_list = []
         s3_drop = dropdict({
             "type": 'plain',
@@ -83,7 +93,7 @@ def build_graph(args):
             "uid": get_uid(),
             "precious": False,
             "bucket": args.bucket,
-            "key": day_to_process,
+            "key": day_to_process.name,
             "profile_name": 'aws-chiles02',
         })
         if first_drop is None:
