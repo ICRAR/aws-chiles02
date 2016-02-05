@@ -27,7 +27,9 @@ import logging
 import os
 import sys
 
-from aws_chiles02.common import run_command
+import boto3
+
+from aws_chiles02.common import run_command, split_s3_url
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -41,6 +43,15 @@ def parser_arguments():
     args = parser.parse_args()
     LOG.info(args)
     return args
+
+
+def get_s3_size(args):
+    session = boto3.Session(profile_name='aws-chiles02')
+    s3 = session.resource('s3', use_ssl=False)
+
+    bucket_name, key = split_s3_url(args.s3_url)
+    object_summary = s3.ObjectSummary(bucket_name,key)
+    return object_summary.size
 
 
 def copy_from_s3(args):
@@ -67,11 +78,20 @@ def copy_from_s3(args):
                 args.s3_url,
                 full_path_tar_file,
             )
-    return_code = run_command(bash)
+    run_command(bash)
 
-    if return_code != 0 or not os.path.exists(full_path_tar_file):
+    if not os.path.exists(full_path_tar_file):
+        LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
         return 1
 
+    # Check the sizes match
+    s3_size = get_s3_size(args.s3_url)
+    tar_size = os.path.getsize(full_path_tar_file)
+    if s3_size != tar_size:
+        LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size))
+        return 1
+
+    # The tar file exists and is the same size
     bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, args.directory)
     return_code = run_command(bash)
 

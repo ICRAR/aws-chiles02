@@ -88,6 +88,20 @@ def get_session_id():
     )
 
 
+def split_s3_url(s3_url):
+    """
+    Split the s3 url into bucket and key
+    :param s3_url:
+    :return:
+
+    >>>> split_s3_url('s3://bucket_name/key/morekey/ms.tar')
+    'bucket_name', 'key/morekey/ms.tar'
+    """
+    body = s3_url[5:]
+    index = body.find('/')
+    return body[:index], body[index:]
+
+
 def get_observation(s3_path):
     if s3_path.endswith('.tar'):
         s3_path = s3_path[:-4]
