@@ -94,12 +94,12 @@ def split_s3_url(s3_url):
     :param s3_url:
     :return:
 
-    >>>> split_s3_url('s3://bucket_name/key/morekey/ms.tar')
-    'bucket_name', 'key/morekey/ms.tar'
+    >>> split_s3_url('s3://bucket_name/key/morekey/ms.tar')
+    ('bucket_name', 'key/morekey/ms.tar')
     """
     body = s3_url[5:]
     index = body.find('/')
-    return body[:index], body[index:]
+    return body[:index], body[index+1:]
 
 
 def get_observation(s3_path):
