@@ -46,12 +46,19 @@ def parser_arguments():
 
 
 def get_s3_size(s3_url):
+    """
+    Get the size of an s3 object
+    :param s3_url:
+    :return:
+    >>> get_s3_size('s3://13b-266/13B-266.sb28624226.eb28625769.56669.43262586805_calibrated_deepfield.ms.tar')
+    46726881280
+    """
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 
     bucket_name, key = split_s3_url(s3_url)
-    object_summary = s3.ObjectSummary(bucket_name,key)
-    return object_summary.size
+    s3_object = s3.Object(bucket_name, key)
+    return s3_object.content_length
 
 
 def copy_from_s3(args):
