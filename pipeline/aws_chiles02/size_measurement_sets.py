@@ -31,9 +31,8 @@ LOG = logging.getLogger(__name__)
 
 
 def parser_arguments():
-    parser = argparse.ArgumentParser('Copy files from Glacier back to S3')
+    parser = argparse.ArgumentParser('Size of files in Glacier')
     parser.add_argument('bucket', help='the s3 bucket')
-    parser.add_argument('days', type=int, help='the number of days')
 
     args = parser.parse_args()
     LOG.info(args)
@@ -45,21 +44,17 @@ def retrieve_files(args):
     s3 = session.resource('s3', use_ssl=False)
 
     bucket = s3.Bucket(args.bucket)
+    size = 0
     for key in bucket.objects.all():
         if key.key.endswith('_calibrated_deepfield.ms.tar'):
             obj = s3.Object(key.bucket_name, key.key)
             storage_class = obj.storage_class
             restore = obj.restore
+            size += key.size
+            LOG.info('{0}, {1}, {2}, {3}'.format(key.key, storage_class, restore, size))
 
-            if 'GLACIER' == storage_class:
-                if restore is None:
-                    key.restore_object(
-                        RestoreRequest={
-                            'Days': args.days
-                        },
-                    )
-
-            LOG.info('{0}, {1}, {2}'.format(key.key, storage_class, restore))
+    size /= 1073741824.0
+    LOG.info('Size = {0}GB'.format(size))
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

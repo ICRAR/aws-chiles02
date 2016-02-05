@@ -89,11 +89,6 @@ def get_session_id():
 
 
 def get_observation(s3_path):
-    """
-
-    :param s3_path:
-    :return:
-    """
     if s3_path.endswith('.tar'):
         s3_path = s3_path[:-4]
     elements = s3_path[:-len(INPUT_MS_SUFFIX)]
@@ -114,10 +109,12 @@ def run_command(command):
 
     Thread(target=stream_watcher,
            name='stdout-watcher',
-           args=('STDOUT', process.stdout)).start()
+           args=('STDOUT', process.stdout)
+           ).start()
     Thread(target=stream_watcher,
            name='stderr-watcher',
-           args=('STDERR', process.stderr)).start()
+           args=('STDERR', process.stderr)
+           ).start()
 
     def printer():
         while True:
@@ -132,6 +129,8 @@ def run_command(command):
                 identifier, line = item
                 print line
 
-    Thread(target=printer, name='printer').start()
+    Thread(target=printer,
+           name='printer'
+           ).start()
     return_code = process.poll()
     return return_code
