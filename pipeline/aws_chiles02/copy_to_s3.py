@@ -63,8 +63,8 @@ def copy_from_s3(args):
     if return_code != 0 or not path_exists:
         LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
 
-    bash = 'java -classpath /chiles02/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
-           ' -aws_access_key_id aws-chiles02 {0} vis.tar'.format(
+    bash = 'java -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
+           ' -aws_profile aws-chiles02 {0} vis.tar'.format(
             args.s3_url,
     )
     return_code = run_command(bash)
