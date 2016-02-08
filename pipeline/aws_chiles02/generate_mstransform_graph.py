@@ -317,7 +317,10 @@ def build_graph(args):
 
 def command_json(args):
     drop_list, start_uids = build_graph(args)
-    LOG.info(json.dumps(drop_list, indent=2, cls=SetEncoder))
+    json_dumps = json.dumps(drop_list, indent=2, cls=SetEncoder)
+    LOG.info(json_dumps)
+    with open("/tmp/json.txt", "w") as json_file:
+        json_file.write(json_dumps)
 
 
 def command_run(args):
