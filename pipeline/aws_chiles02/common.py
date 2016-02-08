@@ -33,34 +33,75 @@ import uuid
 
 LOG = logging.getLogger(__name__)
 
-FREQUENCY_WIDTH = 4
-FREQUENCY_GROUPS = []
 COUNTERS = {}
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
-
+INPUT_MS_SUFFIX_TAR = '_calibrated_deepfield.ms.tar'
 CONTAINER_JAVA_S3_COPY = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
 CONTAINER_CHILES02 = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
 
-# for bottom_freq in range(1200, 1204, FREQUENCY_WIDTH):
-for bottom_freq in range(940, 1424, FREQUENCY_WIDTH):
-    FREQUENCY_GROUPS.append([bottom_freq, bottom_freq + FREQUENCY_WIDTH])
+
+class FrequencyPair:
+    def __init__(self, bottom_frequency, top_frequency):
+        self.bottom_frequency = bottom_frequency
+        self.top_frequency = top_frequency
+        self.name = '{0}_{1}'.format(bottom_frequency, top_frequency)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
-def make_groups_of_frequencies(group_size):
+def get_list_frequency_groups(frequency_width):
+    list_frequencies = []
+    for bottom_frequency in range(940, 1424, frequency_width):
+        list_frequencies.append(FrequencyPair(bottom_frequency, bottom_frequency + frequency_width))
+    return list_frequencies
+
+
+def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
+    """
+
+    :param frequencies_to_batch_up:
+    :param number_of_groups:
+    :return:
+    >>> make_groups_of_frequencies(get_list_frequency_groups(4), 8)
+    [\
+[940_944, 972_976, 1004_1008, 1036_1040, 1068_1072, 1100_1104, 1132_1136, 1164_1168, 1196_1200, 1228_1232, 1260_1264, 1292_1296, 1324_1328, 1356_1360, 1388_1392, 1420_1424], \
+[944_948, 976_980, 1008_1012, 1040_1044, 1072_1076, 1104_1108, 1136_1140, 1168_1172, 1200_1204, 1232_1236, 1264_1268, 1296_1300, 1328_1332, 1360_1364, 1392_1396], \
+[948_952, 980_984, 1012_1016, 1044_1048, 1076_1080, 1108_1112, 1140_1144, 1172_1176, 1204_1208, 1236_1240, 1268_1272, 1300_1304, 1332_1336, 1364_1368, 1396_1400], \
+[952_956, 984_988, 1016_1020, 1048_1052, 1080_1084, 1112_1116, 1144_1148, 1176_1180, 1208_1212, 1240_1244, 1272_1276, 1304_1308, 1336_1340, 1368_1372, 1400_1404], \
+[956_960, 988_992, 1020_1024, 1052_1056, 1084_1088, 1116_1120, 1148_1152, 1180_1184, 1212_1216, 1244_1248, 1276_1280, 1308_1312, 1340_1344, 1372_1376, 1404_1408], \
+[960_964, 992_996, 1024_1028, 1056_1060, 1088_1092, 1120_1124, 1152_1156, 1184_1188, 1216_1220, 1248_1252, 1280_1284, 1312_1316, 1344_1348, 1376_1380, 1408_1412], \
+[964_968, 996_1000, 1028_1032, 1060_1064, 1092_1096, 1124_1128, 1156_1160, 1188_1192, 1220_1224, 1252_1256, 1284_1288, 1316_1320, 1348_1352, 1380_1384, 1412_1416], \
+[968_972, 1000_1004, 1032_1036, 1064_1068, 1096_1100, 1128_1132, 1160_1164, 1192_1196, 1224_1228, 1256_1260, 1288_1292, 1320_1324, 1352_1356, 1384_1388, 1416_1420]]
+    >>> make_groups_of_frequencies(get_list_frequency_groups(8), 12)
+    [\
+[940_948, 1036_1044, 1132_1140, 1228_1236, 1324_1332, 1420_1428], \
+[948_956, 1044_1052, 1140_1148, 1236_1244, 1332_1340], \
+[956_964, 1052_1060, 1148_1156, 1244_1252, 1340_1348], \
+[964_972, 1060_1068, 1156_1164, 1252_1260, 1348_1356], \
+[972_980, 1068_1076, 1164_1172, 1260_1268, 1356_1364], \
+[980_988, 1076_1084, 1172_1180, 1268_1276, 1364_1372], \
+[988_996, 1084_1092, 1180_1188, 1276_1284, 1372_1380], \
+[996_1004, 1092_1100, 1188_1196, 1284_1292, 1380_1388], \
+[1004_1012, 1100_1108, 1196_1204, 1292_1300, 1388_1396], \
+[1012_1020, 1108_1116, 1204_1212, 1300_1308, 1396_1404], \
+[1020_1028, 1116_1124, 1212_1220, 1308_1316, 1404_1412], \
+[1028_1036, 1124_1132, 1220_1228, 1316_1324, 1412_1420]]
+    """
     groups = []
+    for group in range(0, number_of_groups):
+        groups.append([])
     count = 0
-    batch = []
-    for frequency_group in FREQUENCY_GROUPS:
-        batch.append(frequency_group)
-
+    for frequency_group in frequencies_to_batch_up:
+        mod = count % number_of_groups
+        groups[mod].append(frequency_group)
         count += 1
-        if count == group_size:
-            groups.append(batch)
-            batch = []
-            count = 0
-
-    if len(batch) > 0:
-        groups.append(batch)
 
     return groups
 

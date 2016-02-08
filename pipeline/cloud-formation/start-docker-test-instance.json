@@ -288,7 +288,7 @@
                 "        pvcreate $drives\n",
                 "        vgcreate dfms-group $drives\n",
                 "      fi\n",
-                "      lvcreate -L 5G --name swap dfms-group\n",
+                "      lvcreate -L 10G --name swap dfms-group\n",
                 "      docker-storage-setup\n",
                 "      lvcreate --extents 100%FREE --name data dfms-group\n",
                 "\n",

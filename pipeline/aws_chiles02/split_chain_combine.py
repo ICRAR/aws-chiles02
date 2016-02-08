@@ -26,7 +26,7 @@ import uuid
 
 import argparse
 
-from common import get_oid, make_groups_of_frequencies
+from common import get_oid, make_groups_of_frequencies, get_list_frequency_groups
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
 from dfms.s3_drop import S3DROP
@@ -51,7 +51,7 @@ def build_graph(args):
     copy_from_s3.addOutput(measurement_set)
 
     outputs = []
-    for group in make_groups_of_frequencies(8):
+    for group in make_groups_of_frequencies(get_list_frequency_groups(), 8):
         first = True
         end_of_last_element = None
         for frequency_pairs in group:

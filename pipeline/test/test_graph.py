@@ -29,7 +29,7 @@ import uuid
 
 from configobj import ConfigObj
 
-from aws_chiles02.common import make_groups_of_frequencies
+from aws_chiles02.common import make_groups_of_frequencies, FREQUENCY_GROUPS
 from dfms import droputils
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
@@ -75,7 +75,7 @@ class TestChiles02(unittest.TestCase):
         copy_from_s3.addOutput(measurement_set)
 
         outputs = []
-        frequencies = make_groups_of_frequencies(5)
+        frequencies = make_groups_of_frequencies(FREQUENCY_GROUPS, 5)
         frequencies = frequencies[0]
         for group in frequencies:
             casa_py_drop = DockerApp(self.get_oid('app'), uuid.uuid4(), image='mock:latest', command='casa_py.sh /dfms_root/%i0 /dfms_root/%o0 {0} {1}'.format(group[0], group[1]), user='root')
@@ -106,7 +106,7 @@ class TestChiles02(unittest.TestCase):
         copy_from_s3.addOutput(measurement_set)
 
         barrier_drop = None
-        for group in make_groups_of_frequencies(5):
+        for group in make_groups_of_frequencies(FREQUENCY_GROUPS, 5):
             outputs = []
             for frequeny_pairs in group:
                 casa_py_drop = DockerApp(
@@ -138,7 +138,7 @@ class TestChiles02(unittest.TestCase):
         copy_from_s3.addOutput(measurement_set)
 
         outputs = []
-        for group in make_groups_of_frequencies(8):
+        for group in make_groups_of_frequencies(FREQUENCY_GROUPS, 8):
             first = True
             end_of_last_element = None
             for frequeny_pairs in group:
