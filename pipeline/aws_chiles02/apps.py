@@ -23,11 +23,11 @@
 My Docker Apps
 """
 import logging
-import os
+
+import sqlite3
 
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP, DirectoryContainer
-from dfms.json_drop import JsonDROP
+from dfms.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 
@@ -181,14 +181,25 @@ class DockerListobs(DockerApp):
         return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
 
 
-class CleanUpApp(BarrierAppDROP):
+class InitializeSqliteApp(BarrierAppDROP):
+    def __init__(self, oid, uid, **kwargs):
+        self._connection = None
+        super(InitializeSqliteApp, self).__init__(oid, uid, **kwargs)
+
     def dataURL(self):
-        return 'CleanUpApp'
+        return 'InitializeSqliteApp'
 
     def run(self):
-        for input_item in self.inputs:
-            if type(input_item) is DirectoryContainer:
-                if os.path.exists(input_item.path) and os.path.isdir(input_item.path):
-                    input_item.delete()
-            elif type(input_item) is JsonDROP:
-                input_item.delete()
+        self._connection = sqlite3.connect(self.inputs[0].path)
+        self._create_tables()
+        self._connection.close()
+
+    def _create_tables(self):
+        self._connection.execute('''CREATE TABLE `mstransform_times` (
+`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+`bottom_frequency`	INTEGER NOT NULL,
+`top_frequency`	INTEGER NOT NULL,
+`measurement_set`	TEXT NOT NULL,
+`time`	REAL NOT NULL
+)
+''')

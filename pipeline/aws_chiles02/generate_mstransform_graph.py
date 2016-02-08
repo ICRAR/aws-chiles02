@@ -32,7 +32,7 @@ import operator
 
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, INPUT_MS_SUFFIX_TAR, \
     get_list_frequency_groups, FrequencyPair
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
+from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs, InitializeSqliteApp
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -85,7 +85,6 @@ def ignore_day(list_frequency_groups, frequency_width):
         return False
 
     # Check if we have the first groups
-    frequencies_we_can_ignore = []
     count_bottom = 0
     for bottom_frequency in range(940, 952, frequency_width):
         frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
@@ -135,8 +134,49 @@ def build_graph(args):
     work_already_done = get_work_already_done(bucket)
 
     full_drop_list = []
-    first_drop = None
     barrier_drop = None
+    properties = None
+
+    sqlite01 = get_oid('sqlite')
+    sqlite_drop = dropdict({
+        "type": 'plain',
+        "storage": 'file',
+        "oid": sqlite01,
+        "uid": get_uid(),
+        "precious": False,
+        "dirname": os.path.join(args.volume, sqlite01),
+        "check_exists": False,
+    })
+    sqlite_s3_drop = dropdict({
+        "type": 'plain',
+        "storage": 's3',
+        "oid": get_oid('s3'),
+        "uid": get_uid(),
+        "precious": False,
+        "bucket": args.bucket,
+        "key": 'database.sqlite',
+        "profile_name": 'aws-chiles02',
+    })
+    initialize_sqlite = dropdict({
+        "type": 'app',
+        "app": get_module_name(InitializeSqliteApp),
+        "oid": get_oid('app'),
+        "uid": get_uid(),
+        "user": 'root',
+    })
+    sqlite_in_memory = dropdict({
+        "type": 'plain',
+        "storage": 'memory',
+        "oid": get_oid('memory'),
+        "uid": get_uid(),
+        "precious": False,
+    })
+    initialize_sqlite.addInput(sqlite_drop)
+    initialize_sqlite.addOutput(sqlite_in_memory)
+
+    full_drop_list.append(sqlite_drop)
+    full_drop_list.append(sqlite_s3_drop)
+    full_drop_list.append(initialize_sqlite)
 
     for day_to_process in sorted_list_measurement_sets:
         day_work_already_done = work_already_done.get(day_to_process.short_name)
@@ -158,10 +198,10 @@ def build_graph(args):
                 "key": day_to_process.full_tar_name,
                 "profile_name": 'aws-chiles02',
             })
-            if first_drop is None:
-                first_drop = s3_drop
-            elif barrier_drop is not None:
-                barrier_drop.addOutput(s3_drop)
+            if properties is not None:
+                s3_drop.addInput(properties)
+            else:
+                s3_drop.addInput(sqlite_in_memory)
 
             copy_from_s3 = dropdict({
                 "type": 'app',
@@ -182,7 +222,6 @@ def build_graph(args):
                 "precious": False,
                 "dirname": os.path.join(args.volume, oid01),
                 "check_exists": False,
-                "clean_up": True,
             })
 
             copy_from_s3.addInput(s3_drop)
@@ -192,7 +231,7 @@ def build_graph(args):
             drop_list.append(copy_from_s3)
             drop_list.append(measurement_set)
 
-            casa_py_drop = dropdict({
+            drop_listobs = dropdict({
                 "type": 'app',
                 "app": get_module_name(DockerListobs),
                 "oid": get_oid('app'),
@@ -211,13 +250,14 @@ def build_graph(args):
                 "precious": False,
                 "dirname": os.path.join(args.volume, oid02),
                 "check_exists": False,
-                "clean_up": True,
             })
 
-            casa_py_drop.addInput(measurement_set)
-            casa_py_drop.addOutput(properties)
+            drop_listobs.addInput(measurement_set)
+            drop_listobs.addOutput(properties)
+            if barrier_drop is not None:
+                barrier_drop.addOutput(properties)
 
-            drop_list.append(casa_py_drop)
+            drop_list.append(drop_listobs)
             drop_list.append(properties)
 
             outputs = []
@@ -246,7 +286,6 @@ def build_graph(args):
                         "dirname": os.path.join(args.volume, oid03),
                         "check_exists": False,
                         "expireAfterUse": True,
-                        "clean_up": True,
                     })
 
                     casa_py_drop.addInput(measurement_set)
@@ -312,7 +351,7 @@ def build_graph(args):
 
             full_drop_list.extend(drop_list)
 
-    return full_drop_list, [first_drop['uid']]
+    return full_drop_list, [sqlite_drop['uid']]
 
 
 def command_json(args):

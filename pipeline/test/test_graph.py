@@ -29,7 +29,7 @@ import uuid
 
 from configobj import ConfigObj
 
-from aws_chiles02.common import make_groups_of_frequencies, FREQUENCY_GROUPS
+from aws_chiles02.common import make_groups_of_frequencies
 from dfms import droputils
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
