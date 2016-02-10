@@ -52,7 +52,6 @@ class AbstractBuildGraph:
     def append(self, drop):
         self._drop_list.append(drop)
 
-
     @abstractmethod
     def build_graph(self):
         """

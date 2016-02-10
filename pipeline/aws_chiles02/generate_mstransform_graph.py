@@ -212,6 +212,7 @@ class BuildGraph(AbstractBuildGraph):
             "user": 'root',
             "input_error_threshold": 100,
             "node": self._node_name,
+            "n_tries": 2,
         })
         oid03 = get_oid('dir_split')
         result = dropdict({
@@ -246,6 +247,7 @@ class BuildGraph(AbstractBuildGraph):
             "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             "input_error_threshold": 100,
             "node": self._node_name,
+            "n_tries": 2,
         })
         s3_drop_out = dropdict({
             "type": 'plain',
@@ -299,6 +301,7 @@ class BuildGraph(AbstractBuildGraph):
             "user": 'root',
             "input_error_threshold": 100,
             "node": self._node_name,
+            "n_tries": 2,
         })
         oid01 = get_oid('dir_in_ms')
         measurement_set = dropdict({
@@ -329,6 +332,7 @@ class BuildGraph(AbstractBuildGraph):
             "user": 'root',
             "input_error_threshold": 100,
             "node": self._node_name,
+            "n_tries": 2,
         })
         oid02 = get_oid('json')
         properties = dropdict({

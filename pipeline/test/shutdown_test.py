@@ -29,16 +29,16 @@ import argparse
 
 from aws_chiles02.apps import BashShellApp
 from aws_chiles02.common import get_session_id, get_oid, get_uid, get_module_name
-from aws_chiles02.generate_common import AbstractBuildGraph
 from dfms.drop import dropdict
 from dfms.manager.client import SetEncoder, NodeManagerClient
 
 LOG = logging.getLogger(__name__)
 
 
-class BuildGraph(AbstractBuildGraph):
-    def __init__(self, command_line_args):
-        super(BuildGraph, self).__init__(command_line_args)
+class BuildGraph:
+    def __init__(self):
+        self._drop_list = []
+        self._start_oids = []
 
     def build_graph(self):
         start_drop = dropdict({
@@ -62,9 +62,21 @@ class BuildGraph(AbstractBuildGraph):
         shutdown_drop.addInput(start_drop)
         self.append(shutdown_drop)
 
+    @property
+    def drop_list(self):
+        return self._drop_list
+
+    @property
+    def start_oids(self):
+        return self._start_oids
+
+    def append(self, drop):
+        self._drop_list.append(drop)
+
 
 def command_json(args):
-    graph = BuildGraph(args)
+    LOG.info(args)
+    graph = BuildGraph()
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
     LOG.info(json_dumps)
@@ -73,7 +85,8 @@ def command_json(args):
 
 
 def command_run(args):
-    graph = BuildGraph(args)
+    LOG.info(args)
+    graph = BuildGraph()
     graph.build_graph()
 
     client = NodeManagerClient(args.host, args.port)
