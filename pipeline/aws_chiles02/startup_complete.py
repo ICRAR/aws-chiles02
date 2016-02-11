@@ -44,7 +44,7 @@ def build_file(args):
     session = boto3.Session(profile_name='aws-chiles02')
     sqs = session.resource('sqs', region_name=args.region)
     queue = sqs.get_queue_by_name(QueueName=args.queue)
-    message = str(socket.gethostbyname(socket.gethostname()))
+    message = str(socket.gethostbyname(socket.gethostname())) + ' ' + socket.gethostname()
     queue.send_message(MessageBody=message)
 
 if __name__ == '__main__':
