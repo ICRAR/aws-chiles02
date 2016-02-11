@@ -1,6 +1,4 @@
-/pipeline/docker/chiles02/python
-/pipeline/docker/java-s3-copy/chiles02/awsChiles02.jar
-/pipeline/docker/casapy/casa-release-4.5.0-el6.tar.gz
+/pipeline/aws_chiles02/graph.settings
 /pipeline/pipeline.iml
 /python/python.iml
 /java/java.iml
