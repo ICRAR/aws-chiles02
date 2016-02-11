@@ -24,11 +24,10 @@ Test shutting down a server from DFMS
 """
 import json
 import logging
-
 import argparse
 
-from aws_chiles02.apps import BashShellApp
-from aws_chiles02.common import get_session_id, get_oid, get_uid, get_module_name
+from aws_chiles02.common import get_oid, get_uid, get_module_name, get_session_id
+from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
 from dfms.manager.client import SetEncoder, NodeManagerClient
 
@@ -55,7 +54,7 @@ class BuildGraph:
             "app": get_module_name(BashShellApp),
             "oid": get_oid('app_bash_shell_app'),
             "uid": get_uid(),
-            "command": 'sudo shutdown -h +5 "DFMS node shutting down"',
+            "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
             "user": 'root',
             "input_error_threshold": 100,
         })

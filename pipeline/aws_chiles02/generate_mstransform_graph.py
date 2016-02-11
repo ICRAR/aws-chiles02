@@ -35,6 +35,7 @@ from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransfor
 from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, INPUT_MS_SUFFIX_TAR, \
     get_list_frequency_groups, FrequencyPair
 from aws_chiles02.generate_common import AbstractBuildGraph
+from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
@@ -66,6 +67,7 @@ class BuildGraph(AbstractBuildGraph):
             self._config = ConfigObj(config_file_name)
         else:
             self._config = None
+        self._map_carry_over_data = {}
 
     @staticmethod
     def get_details_for_measurement_set(splits_done, list_frequencies):
@@ -139,9 +141,8 @@ class BuildGraph(AbstractBuildGraph):
         list_frequencies = get_list_frequency_groups(self._width)
         work_already_done = self.get_work_already_done()
 
-        map_carry_over_data = {}
         for node_id in range(0, self._nodes):
-            map_carry_over_data[node_id] = CarryOverData()
+            self._map_carry_over_data[node_id] = CarryOverData()
 
         node_id = 0
         for day_to_process in sorted_list_measurement_sets:
@@ -153,7 +154,7 @@ class BuildGraph(AbstractBuildGraph):
             else:
                 self.setup_node_name(node_id)
 
-                carry_over_data = map_carry_over_data[node_id]
+                carry_over_data = self._map_carry_over_data[node_id]
                 frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._cores)
 
                 add_output_s3 = []
@@ -198,6 +199,38 @@ class BuildGraph(AbstractBuildGraph):
 
                 node_id += 1
                 node_id = node_id % self._nodes
+
+        # Should we add a shutdown drop
+        if self._shutdown:
+            self.add_shutdown()
+
+    def add_shutdown(self):
+        for node_id in range(0, self._nodes):
+            self.setup_node_name(node_id)
+            carry_over_data = self._map_carry_over_data[node_id]
+            if carry_over_data.barrier_drop is not None:
+                memory_drop = dropdict({
+                    "type": 'plain',
+                    "storage": 'memory',
+                    "oid": get_oid('memory_in'),
+                    "uid": get_uid(),
+                    "node": self._node_name,
+                })
+                self.append(memory_drop)
+                carry_over_data.barrier_drop.addOutput(memory_drop)
+
+                shutdown_drop = dropdict({
+                    "type": 'app',
+                    "app": get_module_name(BashShellApp),
+                    "oid": get_oid('app_bash_shell_app'),
+                    "uid": get_uid(),
+                    "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
+                    "user": 'root',
+                    "input_error_threshold": 100,
+                    "node": self._node_name,
+                })
+                shutdown_drop.addInput(memory_drop)
+                self.append(shutdown_drop)
 
     def split(self, last_element, frequency_pairs, measurement_set, properties, observation_name):
         casa_py_drop = dropdict({
@@ -353,7 +386,11 @@ class BuildGraph(AbstractBuildGraph):
 
     def setup_node_name(self, node_id):
         if self._config is not None:
-            self._node_name = self._config['node_{0}'.format(node_id)]
+            key = 'node_{0}'.format(node_id)
+            if self._config.get(key) is not None:
+                self._node_name = self._config[key]
+            else:
+                self._node_name = key
         else:
             self._node_name = 'localhost'
 
@@ -390,6 +427,7 @@ def parser_arguments():
     parser_json.add_argument('cores', type=int, help='the number of cores')
     parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_json.set_defaults(func=command_json)
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
@@ -400,6 +438,7 @@ def parser_arguments():
     parser_run.add_argument('-p', '--port', type=int, help='the port to bind to', default=8000)
     parser_run.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_run.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_run.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_run.set_defaults(func=command_run)
 
     args = parser.parse_args()

@@ -39,6 +39,7 @@ class AbstractBuildGraph:
         self._width = command_line_args.width
         self._nodes = command_line_args.nodes
         self._bucket_name = command_line_args.bucket
+        self._shutdown = command_line_args.shutdown
         self._bucket = None
 
     @property

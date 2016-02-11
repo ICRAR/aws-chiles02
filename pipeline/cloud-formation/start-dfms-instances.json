@@ -28,6 +28,10 @@
       "Description" : "Docker password",
       "Type" : "String"
     },
+    "Owner" : {
+      "Description" : "Who is running this",
+      "Type" : "String"
+    },
     "Instances" : {
       "Description" : "The number of Workers",
       "Type" : "Number",
@@ -39,7 +43,7 @@
       "Description" : "Which AMI should we use",
       "Type" : "AWS::EC2::Image::Id",
       "ConstraintDescription" : "Must be a valid AMI Id",
-      "Default" : "ami-cfed0aaf"
+      "Default" : "ami-24be5e44"
     }
   },
   "Resources" : {
@@ -108,13 +112,17 @@
         ],
         "DesiredCapacity" : {"Ref" : "Instances"} ,
         "MinSize" : {"Ref" : "Instances"},
-        "MaxSize" : {"Ref" : "Instances"}
+        "MaxSize" : {"Ref" : "Instances"},
+        "Tags": [
+          {"PropagateAtLaunch": true, "Key" : "Name", "Value" : "DFMS Instance"},
+          {"PropagateAtLaunch": true, "Key" : "Owner", "Value" : { "Ref" : "Owner" }}
+        ]
       }
     },
     "LaunchConfig" : {
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
-        "Comment" : "",
+        "Comment" : "Create a new instance",
         "AWS::CloudFormation::Init" : {
           "config" : {
             "packages" : {
@@ -340,6 +348,8 @@
                 "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && python setup.py install'\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'\n",
                 "\n",
+                "cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && python startup_complete.py startup_complete us-west-2'\n",
                 "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv'\n",
                 "#nohup dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv > /mnt/dfms/dfms_root/logfile.log 2>&1 &\n"
               ]
