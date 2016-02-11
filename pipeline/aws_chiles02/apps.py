@@ -50,7 +50,7 @@ class DockerCopyFromS3(DockerApp):
         self._command = 'copy_from_s3.sh %iDataURL0 %o0'
 
     def dataURL(self):
-        return 'kevinvinsen/java-s3-copy:latest'
+        return 'docker container java-s3-copy:latest'
 
 
 class DockerCopyToS3(DockerApp):
@@ -78,7 +78,7 @@ class DockerCopyToS3(DockerApp):
         )
 
     def dataURL(self):
-        return 'kevinvinsen/java-s3-copy:latest'
+        return 'docker container java-s3-copy:latest'
 
 
 class DockerCopyAllFromS3Folder(DockerApp):
@@ -106,7 +106,7 @@ class DockerCopyAllFromS3Folder(DockerApp):
         )
 
     def dataURL(self):
-        return 'kevinvinsen/java-s3-copy:latest'
+        return 'docker container java-s3-copy:latest'
 
 
 class DockerMsTransform(DockerApp):
@@ -135,7 +135,7 @@ class DockerMsTransform(DockerApp):
         super(DockerMsTransform, self).run()
 
     def dataURL(self):
-        return 'kevinvinsen/chiles02:latest'
+        return 'docker container chiles02:latest'
 
 
 class DockerClean(DockerApp):
@@ -164,7 +164,7 @@ class DockerClean(DockerApp):
         super(DockerClean, self).run()
 
     def dataURL(self):
-        return 'kevinvinsen/chiles02:latest'
+        return 'docker container chiles02:latest'
 
 
 class DockerListobs(DockerApp):
@@ -177,7 +177,7 @@ class DockerListobs(DockerApp):
         self._command = 'listobs.sh %i0 %o0'
 
     def dataURL(self):
-        return 'kevinvinsen/chiles02:latest'
+        return 'docker container chiles02:latest'
 
 
 class InitializeSqliteApp(BarrierAppDROP):

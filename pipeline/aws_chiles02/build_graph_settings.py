@@ -56,7 +56,7 @@ def build_file(args):
                     node_id += 1
                     list_ips.append(instance.public_ip_address)
 
-    LOG.info(str(list_ips))
+    LOG.info(','.join(list_ips))
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

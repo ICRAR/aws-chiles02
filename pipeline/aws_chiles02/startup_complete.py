@@ -24,7 +24,7 @@ Startup is complete so put a message on the queue
 """
 import logging
 import argparse
-import socket
+import urllib2
 
 import boto3
 
@@ -44,7 +44,9 @@ def build_file(args):
     session = boto3.Session(profile_name='aws-chiles02')
     sqs = session.resource('sqs', region_name=args.region)
     queue = sqs.get_queue_by_name(QueueName=args.queue)
-    message = str(socket.gethostbyname(socket.gethostname())) + ' ' + socket.gethostname()
+
+    # Load the public IP address
+    message = urllib2.urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
     queue.send_message(MessageBody=message)
 
 if __name__ == '__main__':
