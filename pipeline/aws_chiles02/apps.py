@@ -23,14 +23,10 @@
 My Docker Apps
 """
 import logging
-import os
-import subprocess
-import time
 import sqlite3
 
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
-from dfms import utils
+from dfms.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 
@@ -54,7 +50,7 @@ class DockerCopyFromS3(DockerApp):
         self._command = 'copy_from_s3.sh %iDataURL0 %o0'
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
+        return 'kevinvinsen/java-s3-copy:latest'
 
 
 class DockerCopyToS3(DockerApp):
@@ -82,7 +78,7 @@ class DockerCopyToS3(DockerApp):
         )
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
+        return 'kevinvinsen/java-s3-copy:latest'
 
 
 class DockerCopyAllFromS3Folder(DockerApp):
@@ -110,7 +106,7 @@ class DockerCopyAllFromS3Folder(DockerApp):
         )
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
+        return 'kevinvinsen/java-s3-copy:latest'
 
 
 class DockerMsTransform(DockerApp):
@@ -139,7 +135,7 @@ class DockerMsTransform(DockerApp):
         super(DockerMsTransform, self).run()
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
+        return 'kevinvinsen/chiles02:latest'
 
 
 class DockerClean(DockerApp):
@@ -168,7 +164,7 @@ class DockerClean(DockerApp):
         super(DockerClean, self).run()
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
+        return 'kevinvinsen/chiles02:latest'
 
 
 class DockerListobs(DockerApp):
@@ -181,7 +177,7 @@ class DockerListobs(DockerApp):
         self._command = 'listobs.sh %i0 %o0'
 
     def dataURL(self):
-        return 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
+        return 'kevinvinsen/chiles02:latest'
 
 
 class InitializeSqliteApp(BarrierAppDROP):

@@ -52,7 +52,7 @@ def build_file(args):
             for tag in instance.tags:
                 if tag['Key'] == args.key and tag['Value'] == args.value:
                     LOG.info('Found {0}, {1}, {2}'.format(instance.id, instance.instance_type, instance.public_ip_address))
-                    settings_file.write('node_{0}  = "{1}"'.format(node_id, instance.public_ip_address))
+                    settings_file.write('node_{0}  = "{1}"\n'.format(node_id, instance.public_ip_address))
                     node_id += 1
                     list_ips.append(instance.public_ip_address)
 
