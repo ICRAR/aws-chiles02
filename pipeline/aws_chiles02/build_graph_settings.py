@@ -31,6 +31,17 @@ import boto3
 LOG = logging.getLogger(__name__)
 
 
+SORT_ORDER = {
+    'i2.xlarge': 0,
+    'i2.2xlarge': 1,
+    'i2.4xlarge': 2,
+}
+
+
+def by_instance_type(instance):
+    return SORT_ORDER[instance.instance_type]
+
+
 def parser_arguments():
     parser = argparse.ArgumentParser('Build the graph.settings file')
     parser.add_argument('key', help='the key on the EC2 instance we are looking for')
@@ -45,17 +56,23 @@ def build_file(args):
     session = boto3.Session(profile_name='aws-chiles02')
     ec2 = session.resource('ec2', region_name=args.region)
     instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
-    node_id = 0
-    list_ips = []
-    with open('{0}/graph.settings'.format(os.path.dirname(__file__)), "w") as settings_file:
-        for instance in instances:
-            for tag in instance.tags:
-                if tag['Key'] == args.key and tag['Value'] == args.value:
-                    LOG.info('Found {0}, {1}, {2}'.format(instance.id, instance.instance_type, instance.public_ip_address))
-                    settings_file.write('node_{0}  = "{1}"\n'.format(node_id, instance.public_ip_address))
-                    node_id += 1
-                    list_ips.append(instance.public_ip_address)
+    list_instances = []
+    for instance in instances:
+        for tag in instance.tags:
+            if tag['Key'] == args.key and tag['Value'] == args.value:
+                LOG.info('Found {0}, {1}, {2}'.format(instance.id, instance.instance_type, instance.public_ip_address))
+                list_instances.append(instance)
 
+    # Now sort based on instance type
+    sorted_list = sorted(list_instances, key=by_instance_type)
+
+    node_id = 0
+    with open('{0}/graph.settings'.format(os.path.dirname(__file__)), "w") as settings_file:
+        for instance in sorted_list:
+            settings_file.write('node_{0}  = "{1}"\n'.format(node_id, instance.public_ip_address))
+            node_id += 1
+
+    list_ips = [instance.public_ip_address for instance in sorted_list]
     LOG.info(','.join(list_ips))
 
 if __name__ == '__main__':
