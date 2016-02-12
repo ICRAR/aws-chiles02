@@ -134,7 +134,7 @@ class BuildGraph(AbstractBuildGraph):
                 if ok_to_queue:
                     list_measurement_sets.append(MeasurementSetData(key.key, key.size))
 
-        # Make sure the smallest is first
+        # Make sure the smallest is first as the list of
         sorted_list_measurement_sets = sorted(list_measurement_sets, key=operator.attrgetter('size'))
 
         # Get work we've already done

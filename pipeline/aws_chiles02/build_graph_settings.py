@@ -75,6 +75,7 @@ def build_file(args):
     list_ips = [instance.public_ip_address for instance in sorted_list]
     LOG.info(','.join(list_ips))
 
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()

@@ -76,6 +76,12 @@
             "FromPort" : "4000",
             "ToPort" : "4000",
             "CidrIp" : "0.0.0.0/0"
+          },
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "32000",
+            "ToPort" : "64000",
+            "CidrIp" : "0.0.0.0/0"
           }
         ]
       }
@@ -364,8 +370,8 @@
                 "\n",
                 "cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py startup_complete us-west-2'\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'\n",
                 "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0'\n",
-                "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'\n",
                 "#dfmsDIM --rest -v --id=kv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes NODES\n"
               ]
             ]
