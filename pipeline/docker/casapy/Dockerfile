@@ -34,7 +34,9 @@
 
 FROM centos:latest
 
-RUN yum update -y
+RUN yum update -y; \
+    yum clean all
+
 RUN yum install -y \
     fontconfig \
     freetype \
@@ -49,7 +51,8 @@ RUN yum install -y \
     libxslt \
     which \
     xauth \
-    xorg-x11-server-Xvfb
+    xorg-x11-server-Xvfb; \
+    yum clean all
 
 RUN mkdir -p /opt/casapy
 RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.0-el6.tar.gz \
