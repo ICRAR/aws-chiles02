@@ -1,9 +1,10 @@
-/pipeline/aws_chiles02/graph.settings
 /pipeline/pipeline.iml
 /python/python.iml
 /java/java.iml
 /old-pipeline/old-pipeline.iml
 /.idea
+/pipeline/aws_chiles02/chiles02.settings
+/pipeline/aws_chiles02/generate_mstransform_graph.settings
 /java/.idea
 /out
 

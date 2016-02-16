@@ -23,6 +23,7 @@
 Common code to
 """
 import Queue
+import base64
 import getpass
 import logging
 import os
@@ -30,16 +31,17 @@ import subprocess
 import threading
 import time
 import uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from os.path import dirname, join, expanduser
+
+from configobj import ConfigObj
+
+from aws_chiles02.settings_file import INPUT_MS_SUFFIX
 
 LOG = logging.getLogger(__name__)
-
 COUNTERS = {}
-INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
-INPUT_MS_SUFFIX_TAR = '_calibrated_deepfield.ms.tar'
-#CONTAINER_JAVA_S3_COPY = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest'
-#CONTAINER_CHILES02 = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
-CONTAINER_JAVA_S3_COPY = 'kevinvinsen/java-s3-copy:latest'
-CONTAINER_CHILES02 = 'kevinvinsen/chiles02:latest'
 
 
 class FrequencyPair:
@@ -219,3 +221,69 @@ def run_command(command):
 
     return_code = process.poll()
     return return_code
+
+
+def get_argument(config, key, prompt, help_text=None, data_type=None, default=None):
+    if key in config:
+        default = config[key]
+
+    if default is not None:
+        prompt = '{0} [{1}]:'.format(prompt, default)
+    else:
+        prompt = '{0}:'.format(prompt)
+
+    data = None
+
+    while data is None:
+        data = raw_input(prompt)
+        if data == '?':
+            if help_text is not None:
+                print '\n' + help_text + '\n'
+            else:
+                print '\nNo help available\n'
+
+            data = None
+        elif data == '':
+            data = default
+
+    if data_type is not None:
+        if data_type == int:
+            config[key] = int(data)
+        elif data_type == float:
+            config[key] = float(data)
+        elif data_type == bool:
+            config[key] = bool(data)
+    else:
+        config[key] = data
+
+
+def get_user_data(cloud_init_data):
+    user_data = MIMEMultipart()
+    for cloud_init in cloud_init_data:
+        user_data.attach(MIMEText(cloud_init))
+
+    encode = user_data.as_string().encode("ascii")
+    encoded_data = base64.b64encode(encode).decode('ascii')
+
+    return encoded_data
+
+
+def get_file_contents(file_name):
+    here = dirname(__file__)
+    bash = join(here, '../user_data', file_name)
+    with open(bash, 'r') as my_file:
+        data = my_file.read()
+    return data
+
+
+def get_aws_credentials(profile_name):
+    data = None
+    dot_boto = join(expanduser('~'), '.aws', 'credentials')
+    if os.path.exists(dot_boto):
+        config = ConfigObj(dot_boto)
+        if profile_name in config:
+            data = [
+                config[profile_name]['aws_access_key_id'],
+                config[profile_name]['aws_secret_access_key'],
+            ]
+    return data

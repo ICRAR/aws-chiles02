@@ -49,9 +49,9 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def get_split(bucket):
+def get_split(bucket, width):
     split_data = []
-    for key in bucket.objects.filter(Prefix='split'):
+    for key in bucket.objects.filter(Prefix='split_{0}'.format(width)):
         elements = key.key.split('/')
         split_data.append([elements[2][:-4], elements[1]])
 
@@ -101,7 +101,7 @@ def main():
 
     # Get the data we need
     measurement_sets = get_measurement_sets(bucket)
-    split_entries = get_split(bucket)
+    split_entries = get_split(bucket, arguments.width)
 
     analyse_data(measurement_sets, split_entries, arguments.width)
 

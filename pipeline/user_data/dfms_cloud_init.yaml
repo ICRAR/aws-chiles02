@@ -1,0 +1,48 @@
+#cloud-config
+package_upgrade: all
+
+# Install additional packages on first boot
+packages:
+  - htop
+  - sysstat
+  - iotop
+
+# Write the boto file
+write_files:
+  - path: "/etc/sysconfig/docker"
+    permissions: "0644"
+    owner: "root"
+    content: |
+      # The max number of open files for the daemon itself, and all
+      # running containers.  The default value of 1048576 mirrors the value
+      # used by the systemd service unit.
+      DAEMON_MAXFILES=1048576
+
+      # Additional startup options for the Docker daemon, for example:
+      # OPTIONS="--ip-forward=true --iptables=true"
+      # By default we limit the number of open files per container
+      OPTIONS="-D --default-ulimit nofile=1024:4096"
+  - path: "/etc/sysconfig/docker-storage-setup"
+    content: |
+      VG=dfms-group
+      DATA_SIZE=100GB
+  - path: "/root/.aws/credentials"
+    permissions: "0544"
+    owner: "root"
+    content: |
+      [{0}]
+      aws_access_key_id = {1}
+      aws_secret_access_key = {2}
+  - path: "/home/ec2-user/.aws/credentials"
+    permissions: "0544"
+    owner: "ec2-user:ec2-user"
+    content: |
+      [{0}]
+      aws_access_key_id = {1}
+      aws_secret_access_key = {2}
+
+# Log all cloud-init process output (info & errors) to a logfile
+output : {{ all : ">> /var/log/aws-chiles02-output.log" }}
+
+# Final_message written to log when cloud-init processes are finished
+final_message: "System boot (via cloud-init) is COMPLETE, after $UPTIME seconds. Finished at $TIMESTAMP"

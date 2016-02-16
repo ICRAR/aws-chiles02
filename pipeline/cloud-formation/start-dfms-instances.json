@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Build an EC2 instances to test Docker on AWS",
+  "Description" : "Build an EC2 instances to test Docker on AWS - DON'T use for 100's of instances",
   "Parameters" : {
     "KeyName" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
@@ -129,7 +129,7 @@
           "subnet-628b063b"
         ],
         "DesiredCapacity" : {"Ref" : "Instances"} ,
-        "MinSize" : {"Ref" : "Instances"},
+        "MinSize" : 1,
         "MaxSize" : {"Ref" : "Instances"},
         "Tags": [
           {"PropagateAtLaunch": true, "Key" : "Name", "Value" : "DFMS Instance"},

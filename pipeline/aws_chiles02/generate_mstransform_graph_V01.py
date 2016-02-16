@@ -32,11 +32,9 @@ import boto3
 from configobj import ConfigObj
 
 from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, make_groups_of_frequencies,  get_list_frequency_groups, FrequencyPair, \
-    get_argument, get_user_data, get_aws_credentials
-from aws_chiles02.ec2_controller import EC2Controller
+from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, INPUT_MS_SUFFIX_TAR, \
+    get_list_frequency_groups, FrequencyPair
 from aws_chiles02.generate_common import AbstractBuildGraph
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, AWS_REGION, AWS_AMI_ID
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
 from dfms.manager.client import NodeManagerClient, SetEncoder
@@ -52,18 +50,6 @@ class MeasurementSetData:
         # Get rid of the '_calibrated_deepfield.ms.tar'
         self.short_name = full_tar_name[:-len(INPUT_MS_SUFFIX_TAR)]
 
-    def __str__(self):
-        return '{0}: {1}'.format(self.short_name, self.size)
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __hash__(self):
-        return hash((self.full_tar_name, self.size))
-
-    def __eq__(self, other):
-        return (self.full_tar_name, self.size) == (other.full_tar_name, other.size)
-
 
 class CarryOverData:
     def __init__(self):
@@ -71,17 +57,63 @@ class CarryOverData:
         self.barrier_drop = None
 
 
-class WorkToDo:
-    def __init__(self, width, bucket_name, s3_split_name):
-        self._width = width
-        self._bucket_name = bucket_name
-        self._s3_split_name = s3_split_name
-        self._work_already_done = None
-        self._bucket = None
-        self._list_frequencies = None
-        self._work_to_do = {}
+class BuildGraph(AbstractBuildGraph):
+    def __init__(self, command_line_args):
+        super(BuildGraph, self).__init__()
+        self._s3_split_name = 'split_{}'.format(self._width)
+        self._node_name = None
+        config_file_name = '{0}/graph.settings'.format(os.path.dirname(__file__))
+        if os.path.exists(config_file_name):
+            self._config = ConfigObj(config_file_name)
+        else:
+            self._config = None
+        self._map_carry_over_data = {}
 
-    def calculate_work_to_do(self):
+    @staticmethod
+    def get_details_for_measurement_set(splits_done, list_frequencies):
+        frequency_groups = []
+        if splits_done is None:
+            frequency_groups.extend(list_frequencies)
+        else:
+            # Remove the groups we've processed
+            for frequency_group in list_frequencies:
+                if frequency_group.name not in splits_done:
+                    frequency_groups.append(frequency_group)
+
+        return frequency_groups
+
+    def get_work_already_done(self):
+        frequencies_per_day = {}
+        for key in self._bucket.objects.filter(Prefix=self._s3_split_name):
+            elements = key.key.split('/')
+
+            day_key = elements[2]
+            # Remove the .tar
+            day_key = day_key[:-4]
+
+            frequencies = frequencies_per_day.get(day_key)
+            if frequencies is None:
+                frequencies = []
+                frequencies_per_day[day_key] = frequencies
+
+            frequencies.append(elements[1])
+
+        return frequencies_per_day
+
+    def ignore_day(self, list_frequency_groups):
+        if len(list_frequency_groups) >= 4:
+            return False
+
+        # Check if we have the first groups
+        count_bottom = 0
+        for bottom_frequency in range(940, 952, self._width):
+            frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
+            if frequency_group in list_frequency_groups:
+                count_bottom += 1
+
+        return len(list_frequency_groups) - count_bottom <= 0
+
+    def build_graph(self):
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
 
@@ -102,152 +134,79 @@ class WorkToDo:
                 if ok_to_queue:
                     list_measurement_sets.append(MeasurementSetData(key.key, key.size))
 
+        # Make sure the smallest is first as the list of
+        sorted_list_measurement_sets = sorted(list_measurement_sets, key=operator.attrgetter('size'))
+
         # Get work we've already done
-        self._list_frequencies = get_list_frequency_groups(self._width)
-        self._work_already_done = self._get_work_already_done()
+        list_frequencies = get_list_frequency_groups(self._width)
+        work_already_done = self.get_work_already_done()
 
-        for day_to_process in list_measurement_sets:
-            day_work_already_done = self._work_already_done.get(day_to_process.short_name)
-            list_frequency_groups = self._get_details_for_measurement_set(day_work_already_done)
-
-            if self._ignore_day(list_frequency_groups):
-                LOG.info('{0} has already been process.'.format(day_to_process.full_tar_name))
-            else:
-                self._work_to_do[day_to_process] = list_frequency_groups
-
-    def _get_work_already_done(self):
-        frequencies_per_day = {}
-        for key in self._bucket.objects.filter(Prefix=self._s3_split_name):
-            elements = key.key.split('/')
-
-            day_key = elements[2]
-            # Remove the .tar
-            day_key = day_key[:-4]
-
-            frequencies = frequencies_per_day.get(day_key)
-            if frequencies is None:
-                frequencies = []
-                frequencies_per_day[day_key] = frequencies
-
-            frequencies.append(elements[1])
-
-        return frequencies_per_day
-
-    def _get_details_for_measurement_set(self, splits_done):
-        frequency_groups = []
-        if splits_done is None:
-            frequency_groups.extend(self._list_frequencies)
-        else:
-            # Remove the groups we've processed
-            for frequency_group in self._list_frequencies:
-                if frequency_group.name not in splits_done:
-                    frequency_groups.append(frequency_group)
-
-        return frequency_groups
-
-    def _ignore_day(self, list_frequency_groups):
-        if len(list_frequency_groups) >= 4:
-            return False
-
-        # Check if we have the first groups
-        count_bottom = 0
-        for bottom_frequency in range(940, 952, self._width):
-            frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
-            if frequency_group in list_frequency_groups:
-                count_bottom += 1
-
-        return len(list_frequency_groups) - count_bottom <= 0
-
-    @property
-    def work_to_do(self):
-        return self._work_to_do
-
-
-class BuildGraph(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, nodes, shutdown, width):
-        super(BuildGraph, self).__init__()
-        self._work_to_do = work_to_do
-        self._volume = volume
-        self._parallel_streams = parallel_streams
-        self._nodes = nodes
-        self._bucket_name = bucket_name
-        self._shutdown = shutdown
-        self._bucket = None
-        self._s3_split_name = 'split_{}'.format(width)
-        self._node_name = None
-        config_file_name = '{0}/graph.settings'.format(os.path.dirname(__file__))
-        if os.path.exists(config_file_name):
-            self._config = ConfigObj(config_file_name)
-        else:
-            self._config = None
-        self._map_carry_over_data = {}
-
-    def build_graph(self):
         for node_id in range(0, self._nodes):
             self._map_carry_over_data[node_id] = CarryOverData()
 
-        # Get a sorted list of the keys
-        keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
         node_id = 0
+        for day_to_process in sorted_list_measurement_sets:
+            day_work_already_done = work_already_done.get(day_to_process.short_name)
+            list_frequency_groups = self.get_details_for_measurement_set(day_work_already_done, list_frequencies)
 
-        for day_to_process in keys:
-            self._setup_node_name(node_id)
+            if self.ignore_day(list_frequency_groups):
+                LOG.info('{0} has already been process.'.format(day_to_process.full_tar_name))
+            else:
+                self.setup_node_name(node_id)
 
-            carry_over_data = self._map_carry_over_data[node_id]
-            list_frequency_groups = self._work_to_do[day_to_process]
-            frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._parallel_streams)
+                carry_over_data = self._map_carry_over_data[node_id]
+                frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._cores)
 
-            add_output_s3 = []
-            if carry_over_data.drop_listobs is not None:
-                add_output_s3.append(carry_over_data.drop_listobs)
+                add_output_s3 = []
+                if carry_over_data.drop_listobs is not None:
+                    add_output_s3.append(carry_over_data.drop_listobs)
 
-            measurement_set, properties, drop_listobs = \
-                self._setup_measurement_set(
-                        day_to_process,
-                        carry_over_data.barrier_drop,
-                        add_output_s3)
+                measurement_set, properties, drop_listobs = \
+                    self.setup_measurement_set(
+                            day_to_process,
+                            carry_over_data.barrier_drop,
+                            add_output_s3)
 
-            carry_over_data.drop_listobs = drop_listobs
+                carry_over_data.drop_listobs = drop_listobs
 
-            outputs = []
-            for group in frequency_groups:
-                last_element = None
-                for frequency_pairs in group:
-                    last_element = self._split(
-                            last_element,
-                            frequency_pairs,
-                            measurement_set,
-                            properties,
-                            get_observation(day_to_process.full_tar_name))
+                outputs = []
+                for group in frequency_groups:
+                    last_element = None
+                    for frequency_pairs in group:
+                        last_element = self.split(
+                                last_element,
+                                frequency_pairs,
+                                measurement_set,
+                                properties,
+                                get_observation(day_to_process.full_tar_name))
 
-                if last_element is not None:
                     outputs.append(last_element)
 
-            barrier_drop = dropdict({
-                "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
-                "oid": get_oid('app_barrier'),
-                "uid": get_uid(),
-                "user": 'root',
-                "input_error_threshold": 100,
-                "node": self._node_name,
-            })
-            carry_over_data.barrier_drop = barrier_drop
-            self.append(barrier_drop)
+                barrier_drop = dropdict({
+                    "type": 'app',
+                    "app": get_module_name(BarrierAppDROP),
+                    "oid": get_oid('app_barrier'),
+                    "uid": get_uid(),
+                    "user": 'root',
+                    "input_error_threshold": 100,
+                    "node": self._node_name,
+                })
+                carry_over_data.barrier_drop = barrier_drop
+                self.append(barrier_drop)
 
-            for output in outputs:
-                barrier_drop.addInput(output)
+                for output in outputs:
+                    barrier_drop.addInput(output)
 
-            node_id += 1
-            node_id = node_id % self._nodes
+                node_id += 1
+                node_id = node_id % self._nodes
 
         # Should we add a shutdown drop
         if self._shutdown:
-            self._add_shutdown()
+            self.add_shutdown()
 
-    def _add_shutdown(self):
+    def add_shutdown(self):
         for node_id in range(0, self._nodes):
-            self._setup_node_name(node_id)
+            self.setup_node_name(node_id)
             carry_over_data = self._map_carry_over_data[node_id]
             if carry_over_data.barrier_drop is not None:
                 memory_drop = dropdict({
@@ -273,7 +232,7 @@ class BuildGraph(AbstractBuildGraph):
                 shutdown_drop.addInput(memory_drop)
                 self.append(shutdown_drop)
 
-    def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name):
+    def split(self, last_element, frequency_pairs, measurement_set, properties, observation_name):
         casa_py_drop = dropdict({
             "type": 'app',
             "app": get_module_name(DockerMsTransform),
@@ -346,7 +305,7 @@ class BuildGraph(AbstractBuildGraph):
         self.append(s3_drop_out)
         return s3_drop_out
 
-    def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3):
+    def setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3):
         s3_drop = dropdict({
             "type": 'plain',
             "storage": 's3',
@@ -425,7 +384,7 @@ class BuildGraph(AbstractBuildGraph):
         self.append(properties)
         return measurement_set, properties, drop_listobs
 
-    def _setup_node_name(self, node_id):
+    def setup_node_name(self, node_id):
         if self._config is not None:
             key = 'node_{0}'.format(node_id)
             if self._config.get(key) is not None:
@@ -436,58 +395,8 @@ class BuildGraph(AbstractBuildGraph):
             self._node_name = 'localhost'
 
 
-def get_s3_split_name(width):
-    return 'split_{}'.format(width)
-
-
-def run_the_generate(bucket_name, frequency_width, ami_id, instance_type, spot_price, volume, days_per_node, add_shutdown):
-    boto_data = get_aws_credentials('aws-chiles02')
-    if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
-        work_to_do.calculate_work_to_do()
-
-        days = work_to_do.work_to_do.keys()
-        nodes_required = len(days) / days_per_node
-
-        ec2_data = EC2Controller(
-            ami_id,
-            nodes_required,
-            instance_type,
-            get_user_data('dfms_cloud_init.yaml', 'node_manager_start_up.bash', boto_data),
-            spot_price,
-            AWS_REGION,
-            tags=[
-                {
-                    'Key': 'Owner',
-                    'Value': 'Kevin',
-                },
-                {
-                    'Key': 'Name',
-                    'Value': 'DFMS Node',
-                }
-            ]
-
-        )
-        ec2_data.start_instances()
-
-        graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, ec2_data.running_nodes, add_shutdown, frequency_width)
-        graph.build_graph()
-
-        client = NodeManagerClient(args.host, args.port)
-
-        session_id = get_session_id()
-        client.create_session(session_id)
-        client.append_graph(session_id, graph.drop_list)
-        client.deploy_session(session_id, graph.start_oids)
-    else:
-        LOG.error('Unable to find the AWS credentials')
-
-
 def command_json(args):
-    work_to_do = WorkToDo(args.width, args.bucket, get_s3_split_name(args.width))
-    work_to_do.calculate_work_to_do()
-
-    graph = BuildGraph(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, args.nodes, args.shutdown, args.width)
+    graph = BuildGraph(args)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
     LOG.info(json_dumps)
@@ -496,52 +405,15 @@ def command_json(args):
 
 
 def command_run(args):
-    run_the_generate(
-        args.bucket,
-        args.width,
-        args.ami,
-        args.instance,
-        args.spot_price,
-        args.volume,
-        args.days_per_node,
-        args.shutdown,
-    )
+    graph = BuildGraph(args)
+    graph.build_graph()
 
+    client = NodeManagerClient(args.host, args.port)
 
-def command_interactive(args):
-    LOG.info(args)
-    path_dirname, filename = os.path.split(__file__)
-    root, ext = os.path.splitext(filename)
-    config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
-    if os.path.exists(config_file_name):
-        config = ConfigObj(config_file_name)
-    else:
-        config = ConfigObj()
-        config.filename = config_file_name
-
-    get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-    get_argument(config, 'instance_type', 'EC2 Instance type', help_text='the EC2 Instance type to use', default='i2.2xlarge')
-    get_argument(config, 'spot_price', 'Spot Price', help_text='the spot price')
-    get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-    get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-    get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-    get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
-    get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-
-    # Write the arguments
-    config.write()
-
-    # Run the command
-    run_the_generate(
-        config['bucket_name'],
-        config['width'],
-        config['ami'],
-        config['instance_type'],
-        config['spot_price'],
-        config['volume'],
-        config['days_per_node'],
-        config['shutdown'],
-    )
+    session_id = get_session_id()
+    client.create_session(session_id)
+    client.append_graph(session_id, graph.drop_list)
+    client.deploy_session(session_id, graph.start_oids)
 
 
 def parser_arguments():
@@ -552,33 +424,28 @@ def parser_arguments():
     parser_json = subparsers.add_parser('json', help='display the json')
     parser_json.add_argument('bucket', help='the bucket to access')
     parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
+    parser_json.add_argument('cores', type=int, help='the number of cores')
     parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
     parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_json.set_defaults(func=command_json)
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
-    parser_run.add_argument('ami', help='the ami to use')
-    parser_run.add_argument('instance', help='the EC2 instance type')
-    parser_run.add_argument('spot_price', type=float, help='the spot price')
     parser_run.add_argument('bucket', help='the bucket to access')
     parser_run.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    parser_run.add_argument('cores', type=int, help='the number of cores')
+    parser_run.add_argument('host', help='the host the dfms is running on')
+    parser_run.add_argument('-p', '--port', type=int, help='the port to bind to', default=8000)
     parser_run.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser_run.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
+    parser_run.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
     parser_run.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_run.set_defaults(func=command_run)
-
-    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
-    parser_interactive.set_defaults(func=command_interactive)
 
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
-    # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
-    # interactive
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)

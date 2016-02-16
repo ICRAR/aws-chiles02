@@ -74,6 +74,7 @@ def build_file(args):
 
     list_ips = [instance.public_ip_address for instance in sorted_list]
     LOG.info(','.join(list_ips))
+    LOG.info('Number of nodes: {0}'.format(len(list_ips)))
 
 
 if __name__ == '__main__':

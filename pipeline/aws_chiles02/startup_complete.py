@@ -22,6 +22,7 @@
 """
 Startup is complete so put a message on the queue
 """
+import json
 import logging
 import argparse
 import urllib2
@@ -35,6 +36,7 @@ def parser_arguments():
     parser = argparse.ArgumentParser('Put a message on the queue')
     parser.add_argument('queue', help='the queue')
     parser.add_argument('region', help='the region')
+    parser.add_argument('message', help='the message')
 
     args = parser.parse_args()
     return args
@@ -46,8 +48,13 @@ def build_file(args):
     queue = sqs.get_queue_by_name(QueueName=args.queue)
 
     # Load the public IP address
-    message = urllib2.urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
-    queue.send_message(MessageBody=message)
+    ip_address = urllib2.urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
+    message = {
+        'ip_address': ip_address,
+        'message': args.message
+    }
+    json_message = json.dumps(message, indent=2)
+    queue.send_message(MessageBody=json_message)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

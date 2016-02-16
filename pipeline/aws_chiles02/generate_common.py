@@ -31,16 +31,9 @@ class AbstractBuildGraph:
     #  - Subclasses implement methods decorated with @abstractmethod
     __metaclass__ = ABCMeta
 
-    def __init__(self, command_line_args):
+    def __init__(self):
         self._drop_list = []
         self._start_oids = []
-        self._volume = command_line_args.volume
-        self._cores = command_line_args.cores
-        self._width = command_line_args.width
-        self._nodes = command_line_args.nodes
-        self._bucket_name = command_line_args.bucket
-        self._shutdown = command_line_args.shutdown
-        self._bucket = None
 
     @property
     def drop_list(self):
