@@ -35,7 +35,8 @@ FROM casapy:latest
 
 RUN yum install -y \
     git \
-    vim
+    vim; \
+    yum clean all
 
 RUN mkdir -p /opt/chiles02
 WORKDIR /opt/chiles02
