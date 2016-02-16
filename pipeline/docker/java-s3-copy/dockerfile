@@ -23,19 +23,23 @@
 
 FROM centos:latest
 
-RUN yum update -y
+RUN yum update -y; \
+    yum clean all
+
 RUN yum -y install \
     git \
-    wget
+    wget; \
+    yum clean all
 
 ENV JAVA_VERSION 8u66
 ENV BUILD_VERSION b17
 
 # Downloading Java
 # http://download.oracle.com/otn-pub/java/jdk/8u66-b17/jdk-8u66-linux-x64.rpm?AuthParam=1452473767_f67c638617dbf11e1e2b0060bfd1910b
-RUN wget --quiet --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/$JAVA_VERSION-$BUILD_VERSION/jdk-$JAVA_VERSION-linux-x64.rpm" -O /tmp/jdk-8-linux-x64.rpm
-
-RUN yum -y install /tmp/jdk-8-linux-x64.rpm
+RUN wget --quiet --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/$JAVA_VERSION-$BUILD_VERSION/jdk-$JAVA_VERSION-linux-x64.rpm" -O /tmp/jdk-8-linux-x64.rpm; \
+    yum -y install /tmp/jdk-8-linux-x64.rpm; \
+    yum clean all; \
+    rm -f /tmp/jdk-8-linux-x64.rpm
 
 ENV JAVA_HOME /usr/java/default
 
