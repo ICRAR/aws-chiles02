@@ -36,7 +36,7 @@ def parser_arguments():
     parser = argparse.ArgumentParser('Put a message on the queue')
     parser.add_argument('queue', help='the queue')
     parser.add_argument('region', help='the region')
-    parser.add_argument('message', help='the message')
+    parser.add_argument('session_id', help='the session id')
 
     args = parser.parse_args()
     return args
@@ -49,12 +49,22 @@ def build_file(args):
 
     # Load the public IP address
     ip_address = urllib2.urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
+    instance_type = urllib2.urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
     message = {
         'ip_address': ip_address,
-        'message': args.message
+        'session_id': args.session_id,
+        'instance_type': instance_type,
     }
     json_message = json.dumps(message, indent=2)
-    queue.send_message(MessageBody=json_message)
+    queue.send_message(
+        MessageBody=json_message,
+        MessageAttributes={
+            'session_id': {
+                'StringValue': args.session_id,
+                'DataType': 'String'
+            }
+        }
+    )
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

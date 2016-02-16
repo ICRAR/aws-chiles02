@@ -7,7 +7,7 @@ packages:
   - sysstat
   - iotop
 
-# Write the boto file
+# Write the docker config files
 write_files:
   - path: "/etc/sysconfig/docker"
     permissions: "0644"
@@ -26,23 +26,6 @@ write_files:
     content: |
       VG=dfms-group
       DATA_SIZE=100GB
-  - path: "/root/.aws/credentials"
-    permissions: "0544"
-    owner: "root"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-  - path: "/home/ec2-user/.aws/credentials"
-    permissions: "0544"
-    owner: "ec2-user:ec2-user"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-
-# Log all cloud-init process output (info & errors) to a logfile
-output : {{ all : ">> /var/log/aws-chiles02-output.log" }}
 
 # Final_message written to log when cloud-init processes are finished
 final_message: "System boot (via cloud-init) is COMPLETE, after $UPTIME seconds. Finished at $TIMESTAMP"

@@ -50,12 +50,10 @@ class BidPriceException(Exception):
 
 
 class EC2Controller:
-    def __init__(self, ami_id, number_instances, instance_type, user_data, spot_price, region, tags=None):
+    def __init__(self, ami_id, instances_required, user_data, region, tags=None):
         self._ami_id = ami_id
-        self._number_instances = number_instances
-        self._instance_type = instance_type
+        self._instances_required = instances_required
         self._user_data = user_data
-        self._spot_price = spot_price
         self._tags = tags
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -63,23 +61,27 @@ class EC2Controller:
         self._ec2_client = self._ec2.meta.client
 
     def start_instances(self):
-        for node_id in range(0, self._number_instances, STEP):
-            if node_id + STEP < self._number_instances:
+        for instance_required in self._instances_required:
+            self._start_instances(instance_required['instance_type'], instance_required['number_instances'], instance_required['spot_price'])
+
+    def _start_instances(self, instance_type, total_number_instances, spot_price):
+        for node_id in range(0, total_number_instances, STEP):
+            if node_id + STEP < total_number_instances:
                 number_instances = STEP
             else:
-                number_instances = self._number_instances - node_id
+                number_instances = total_number_instances - node_id
 
-            zone = self._get_cheapest_availability_zone()
+            zone = self._get_cheapest_availability_zone(instance_type, spot_price)
 
             if zone is None:
                 raise BidPriceException('Bid price too low')
 
             now_plus = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
             spot_request = self._ec2_client.request_spot_instances(
-                SpotPrice=str(self._spot_price),
-                InstanceCount=number_instances,
-                ValidUntil=now_plus.isoformat(),
-                LaunchSpecification=self._build_launch_specification(zone)
+                    SpotPrice=str(spot_price),
+                    InstanceCount=number_instances,
+                    ValidUntil=now_plus.isoformat(),
+                    LaunchSpecification=self._build_launch_specification(zone, instance_type)
             )
             # Wait for EC2 to provision the instance
             time.sleep(10)
@@ -90,7 +92,7 @@ class EC2Controller:
             while len(filter(lambda x: x is None, instance_ids)) > 0 and error_count < 3:
                 try:
                     requests = self._ec2_client.describe_spot_instance_requests(
-                        SpotInstanceRequestIds=spot_instance_request_ids
+                            SpotInstanceRequestIds=spot_instance_request_ids
                     )
                 except Exception:
                     LOG.exception('Error count = {0}'.format(error_count))
@@ -106,17 +108,17 @@ class EC2Controller:
                             instance_ids[count] = request_status['InstanceId']
                         elif request_status['State'] == 'cancelled':
                             LOG.warning('Request {0} cancelled. Status: {1}'.format(
-                                request_status['SpotInstanceRequestId'],
-                                request_status['Status']['Code']))
+                                    request_status['SpotInstanceRequestId'],
+                                    request_status['Status']['Code']))
                             if request_status['Status']['Code'] == 'request-canceled-and-instance-running':
                                 instance_ids[count] = request_status['InstanceId']
                             else:
                                 instance_ids[count] = 'cancelled'
                         elif request_status['State'] == 'failed':
                             LOG.warning('Request {0} failed. Status: {1}. Fault: {2}'.format(
-                                request_status['SpotInstanceRequestId'],
-                                request_status['Status']['Code'],
-                                request_status['Status']['Message'])
+                                    request_status['SpotInstanceRequestId'],
+                                    request_status['Status']['Code'],
+                                    request_status['Status']['Message'])
                             )
                             instance_ids[count] = 'failed'
                         else:
@@ -129,11 +131,11 @@ class EC2Controller:
                 valid_instance_ids = filter(lambda x: x != 'failed' and x != 'cancelled', instance_ids)
                 if len(valid_instance_ids) > 0:
                     self._ec2_client.create_tags(
-                        Resources=valid_instance_ids,
-                        Tags=self._tags
+                            Resources=valid_instance_ids,
+                            Tags=self._tags
                     )
 
-    def _get_cheapest_availability_zone(self):
+    def _get_cheapest_availability_zone(self, instance_type, spot_price):
         # Get the zones we have subnets in
         availability_zones = []
         for key, value in AWS_SUBNETS.iteritems():
@@ -141,7 +143,7 @@ class EC2Controller:
 
         prices = self._ec2_client.describe_spot_price_history(
             StartTime=datetime.datetime.now().isoformat(),
-            InstanceTypes=[self._instance_type],
+            InstanceTypes=[instance_type],
             ProductDescriptions=['Linux/UNIX (Amazon VPC)'],
         )
 
@@ -158,23 +160,23 @@ class EC2Controller:
         if best_price is None:
             LOG.info('No Spot Price')
             return None
-        elif float(best_price['SpotPrice']) > self._spot_price:
+        elif float(best_price['SpotPrice']) > spot_price:
             LOG.info('Spot Price higher than bid price')
             return None
 
-        LOG.info('bid_price: {0}, spot_price: {1}, zone: {2}'.format(self._spot_price, best_price['SpotPrice'], best_price['AvailabilityZone']))
+        LOG.info('bid_price: {0}, spot_price: {1}, zone: {2}'.format(spot_price, best_price['SpotPrice'], best_price['AvailabilityZone']))
         return best_price['AvailabilityZone']
 
-    def _build_launch_specification(self, zone):
+    def _build_launch_specification(self, zone, instance_type):
         specification = {
             'ImageId': self._ami_id,
             'KeyName': AWS_KEY_NAME,
             'SecurityGroupIds': [AWS_SECURITY_GROUPS],
             'UserData': self._user_data,
-            'InstanceType': self._instance_type,
+            'InstanceType': instance_type,
             'SubnetId': AWS_SUBNETS[zone],
         }
-        if self._instance_type == 'i2.2xlarge':
+        if instance_type == 'i2.2xlarge':
             specification['BlockDeviceMappings'] = [
                 {
                     "DeviceName": "/dev/sdb",

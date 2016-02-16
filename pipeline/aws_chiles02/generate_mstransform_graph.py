@@ -25,24 +25,21 @@ Build a dictionary for the execution graph
 import argparse
 import json
 import logging
-import operator
 import os
 
 import boto3
+import time
 from configobj import ConfigObj
 
-from aws_chiles02.apps import DockerCopyFromS3, DockerCopyToS3, DockerMsTransform, DockerListobs
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, get_observation, make_groups_of_frequencies,  get_list_frequency_groups, FrequencyPair, \
-    get_argument, get_user_data, get_aws_credentials
+from aws_chiles02.build_graph import BuildGraph
+from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_user_data, get_aws_credentials, get_file_contents
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import AbstractBuildGraph
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, AWS_REGION, AWS_AMI_ID
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
+from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, AWS_REGION, AWS_AMI_ID
 from dfms.manager.client import NodeManagerClient, SetEncoder
 
 LOG = logging.getLogger(__name__)
 _1GB = 1073741824
+QUEUE = 'startup_complete'
 
 
 class MeasurementSetData:
@@ -63,12 +60,6 @@ class MeasurementSetData:
 
     def __eq__(self, other):
         return (self.full_tar_name, self.size) == (other.full_tar_name, other.size)
-
-
-class CarryOverData:
-    def __init__(self):
-        self.drop_listobs = None
-        self.barrier_drop = None
 
 
 class WorkToDo:
@@ -163,322 +154,137 @@ class WorkToDo:
         return self._work_to_do
 
 
-class BuildGraph(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, nodes, shutdown, width):
-        super(BuildGraph, self).__init__()
-        self._work_to_do = work_to_do
-        self._volume = volume
-        self._parallel_streams = parallel_streams
-        self._nodes = nodes
-        self._bucket_name = bucket_name
-        self._shutdown = shutdown
-        self._bucket = None
-        self._s3_split_name = 'split_{}'.format(width)
-        self._node_name = None
-        config_file_name = '{0}/graph.settings'.format(os.path.dirname(__file__))
-        if os.path.exists(config_file_name):
-            self._config = ConfigObj(config_file_name)
-        else:
-            self._config = None
-        self._map_carry_over_data = {}
-
-    def build_graph(self):
-        for node_id in range(0, self._nodes):
-            self._map_carry_over_data[node_id] = CarryOverData()
-
-        # Get a sorted list of the keys
-        keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
-        node_id = 0
-
-        for day_to_process in keys:
-            self._setup_node_name(node_id)
-
-            carry_over_data = self._map_carry_over_data[node_id]
-            list_frequency_groups = self._work_to_do[day_to_process]
-            frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._parallel_streams)
-
-            add_output_s3 = []
-            if carry_over_data.drop_listobs is not None:
-                add_output_s3.append(carry_over_data.drop_listobs)
-
-            measurement_set, properties, drop_listobs = \
-                self._setup_measurement_set(
-                        day_to_process,
-                        carry_over_data.barrier_drop,
-                        add_output_s3)
-
-            carry_over_data.drop_listobs = drop_listobs
-
-            outputs = []
-            for group in frequency_groups:
-                last_element = None
-                for frequency_pairs in group:
-                    last_element = self._split(
-                            last_element,
-                            frequency_pairs,
-                            measurement_set,
-                            properties,
-                            get_observation(day_to_process.full_tar_name))
-
-                if last_element is not None:
-                    outputs.append(last_element)
-
-            barrier_drop = dropdict({
-                "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
-                "oid": get_oid('app_barrier'),
-                "uid": get_uid(),
-                "user": 'root',
-                "input_error_threshold": 100,
-                "node": self._node_name,
-            })
-            carry_over_data.barrier_drop = barrier_drop
-            self.append(barrier_drop)
-
-            for output in outputs:
-                barrier_drop.addInput(output)
-
-            node_id += 1
-            node_id = node_id % self._nodes
-
-        # Should we add a shutdown drop
-        if self._shutdown:
-            self._add_shutdown()
-
-    def _add_shutdown(self):
-        for node_id in range(0, self._nodes):
-            self._setup_node_name(node_id)
-            carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.barrier_drop is not None:
-                memory_drop = dropdict({
-                    "type": 'plain',
-                    "storage": 'memory',
-                    "oid": get_oid('memory_in'),
-                    "uid": get_uid(),
-                    "node": self._node_name,
-                })
-                self.append(memory_drop)
-                carry_over_data.barrier_drop.addOutput(memory_drop)
-
-                shutdown_drop = dropdict({
-                    "type": 'app',
-                    "app": get_module_name(BashShellApp),
-                    "oid": get_oid('app_bash_shell_app'),
-                    "uid": get_uid(),
-                    "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                    "user": 'root',
-                    "input_error_threshold": 100,
-                    "node": self._node_name,
-                })
-                shutdown_drop.addInput(memory_drop)
-                self.append(shutdown_drop)
-
-    def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name):
-        casa_py_drop = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerMsTransform),
-            "oid": get_oid('app_ms_transform'),
-            "uid": get_uid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'mstransform',
-            "min_frequency": frequency_pairs.bottom_frequency,
-            "max_frequency": frequency_pairs.top_frequency,
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": self._node_name,
-            "n_tries": 2,
-        })
-        oid03 = get_oid('dir_split')
-        result = dropdict({
-            "type": 'container',
-            "container": get_module_name(DirectoryContainer),
-            "oid": oid03,
-            "uid": get_uid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid03),
-            "check_exists": False,
-            "expireAfterUse": True,
-            "node": self._node_name,
-        })
-        casa_py_drop.addInput(measurement_set)
-        casa_py_drop.addInput(properties)
-        if last_element is not None:
-            casa_py_drop.addInput(last_element)
-
-        casa_py_drop.addOutput(result)
-        self.append(casa_py_drop)
-        self.append(result)
-        copy_to_s3 = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerCopyToS3),
-            "oid": get_oid('app_copy_to_s3'),
-            "uid": get_uid(),
-            "image": CONTAINER_JAVA_S3_COPY,
-            "command": 'copy_to_s3',
-            "user": 'root',
-            "min_frequency": frequency_pairs.bottom_frequency,
-            "max_frequency": frequency_pairs.top_frequency,
-            "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
-            "input_error_threshold": 100,
-            "node": self._node_name,
-            "n_tries": 2,
-        })
-        s3_drop_out = dropdict({
-            "type": 'plain',
-            "storage": 's3',
-            "oid": get_oid('s3_out'),
-            "uid": get_uid(),
-            "expireAfterUse": True,
-            "precious": False,
-            "bucket": self._bucket_name,
-            "key": '{3}/{0}_{1}/{2}.tar'.format(
-                    frequency_pairs.bottom_frequency,
-                    frequency_pairs.top_frequency,
-                    observation_name,
-                    self._s3_split_name
-            ),
-            "profile_name": 'aws-chiles02',
-            "node": self._node_name,
-        })
-        copy_to_s3.addInput(result)
-        copy_to_s3.addOutput(s3_drop_out)
-        self.append(copy_to_s3)
-        self.append(s3_drop_out)
-        return s3_drop_out
-
-    def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3):
-        s3_drop = dropdict({
-            "type": 'plain',
-            "storage": 's3',
-            "oid": get_oid('s3_in'),
-            "uid": get_uid(),
-            "precious": False,
-            "bucket": self._bucket_name,
-            "key": day_to_process.full_tar_name,
-            "profile_name": 'aws-chiles02',
-            "node": self._node_name,
-        })
-        if len(add_output_s3) == 0:
-            self._start_oids.append(s3_drop['uid'])
-        else:
-            for drop in add_output_s3:
-                drop.addOutput(s3_drop)
-
-        copy_from_s3 = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerCopyFromS3),
-            "oid": get_oid('app_copy_from_s3'),
-            "uid": get_uid(),
-            "image": CONTAINER_JAVA_S3_COPY,
-            "command": 'copy_from_s3',
-            "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": self._node_name,
-            "n_tries": 2,
-        })
-        oid01 = get_oid('dir_in_ms')
-        measurement_set = dropdict({
-            "type": 'container',
-            "container": get_module_name(DirectoryContainer),
-            "oid": oid01,
-            "uid": get_uid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid01),
-            "check_exists": False,
-            "node": self._node_name,
-        })
-
-        if barrier_drop is not None:
-            barrier_drop.addOutput(measurement_set)
-        copy_from_s3.addInput(s3_drop)
-        copy_from_s3.addOutput(measurement_set)
-        self.append(s3_drop)
-        self.append(copy_from_s3)
-        self.append(measurement_set)
-        drop_listobs = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerListobs),
-            "oid": get_oid('app_listobs'),
-            "uid": get_uid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'listobs',
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": self._node_name,
-            "n_tries": 2,
-        })
-        oid02 = get_oid('json')
-        properties = dropdict({
-            "type": 'plain',
-            "storage": 'json',
-            "oid": oid02,
-            "uid": get_uid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid02),
-            "check_exists": False,
-            "node": self._node_name,
-        })
-        drop_listobs.addInput(measurement_set)
-        drop_listobs.addOutput(properties)
-        self.append(drop_listobs)
-        self.append(properties)
-        return measurement_set, properties, drop_listobs
-
-    def _setup_node_name(self, node_id):
-        if self._config is not None:
-            key = 'node_{0}'.format(node_id)
-            if self._config.get(key) is not None:
-                self._node_name = self._config[key]
-            else:
-                self._node_name = key
-        else:
-            self._node_name = 'localhost'
-
-
 def get_s3_split_name(width):
     return 'split_{}'.format(width)
 
 
-def run_the_generate(bucket_name, frequency_width, ami_id, instance_type, spot_price, volume, days_per_node, add_shutdown):
+def get_all_user_data(boto_data, session_id):
+    cloud_init = get_file_contents('dfms_cloud_init.yaml')
+    cloud_init_dynamic = '''#cloud-config
+# Write the boto file
+write_files:
+  - path: "/root/.aws/credentials"
+    permissions: "0544"
+    owner: "root"
+    content: |
+      [{0}]
+      aws_access_key_id = {1}
+      aws_secret_access_key = {2}
+  - path: "/home/ec2-user/.aws/credentials"
+    permissions: "0544"
+    owner: "ec2-user:ec2-user"
+    content: |
+      [{0}]
+      aws_access_key_id = {1}
+      aws_secret_access_key = {2}
+'''.format(
+        'aws-chiles02',
+        boto_data[0],
+        boto_data[1],
+    )
+    user_script = get_file_contents('node_manager_start_up.bash')
+    dynamic_script = '''#!/bin/bash -vx
+runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"'''\
+        .format(session_id, QUEUE)
+    user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
+    return user_data
+
+
+def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
+    nodes = []
+    counts = [0, 0]
+    for day in days:
+        if day.size <= 500 * _1GB:
+            counts[0] += 1
+        else:
+            counts[1] += 1
+
+    if counts[0] > 0:
+        nodes.append({
+            'number_instances': max(counts[0] / days_per_node, 1),
+            'instance_type': 'i2.2xlarge',
+            'spot_price': spot_price1
+        })
+    if counts[1] > 0:
+        nodes.append({
+            'number_instances': max(counts[1] / days_per_node, 1),
+            'instance_type': 'i2.4xlarge',
+            'spot_price': spot_price2
+        })
+
+    return nodes
+
+
+def get_reported_running(session_id):
+    session = boto3.Session(profile_name='aws-chiles02')
+    sqs = session.resource('sqs', region_name=AWS_REGION)
+    queue = sqs.get_queue_by_name(QueueName=QUEUE)
+    nodes_running ={}
+
+    for message in queue.receive_messages(MessageAttributeNames=['session_id']):
+        if message.message_attributes is not None:
+            message_session_id = message.message_attributes.get('session_id').get('StringValue')
+            if message_session_id == session_id:
+                json_message = message.body
+                message_details = json.loads(json_message)
+
+                ip_addresses = nodes_running.get(message_details['instance_type'])
+                if ip_addresses is None:
+                    ip_addresses = []
+                    nodes_running[message_details['instance_type']] = ip_addresses
+                ip_addresses.append(message_details['ip_address'])
+
+                message.delete()
+
+    return nodes_running
+
+
+def run_the_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
+        session_id = get_session_id()
+
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
         work_to_do.calculate_work_to_do()
 
         days = work_to_do.work_to_do.keys()
-        nodes_required = len(days) / days_per_node
+        nodes_required = get_nodes_required(days, days_per_node, spot_price1, spot_price2)
 
-        ec2_data = EC2Controller(
-            ami_id,
-            nodes_required,
-            instance_type,
-            get_user_data('dfms_cloud_init.yaml', 'node_manager_start_up.bash', boto_data),
-            spot_price,
-            AWS_REGION,
-            tags=[
-                {
-                    'Key': 'Owner',
-                    'Value': 'Kevin',
-                },
-                {
-                    'Key': 'Name',
-                    'Value': 'DFMS Node',
-                }
-            ]
+        if len(nodes_required) > 0:
+            ec2_data = EC2Controller(
+                ami_id,
+                nodes_required,
+                get_all_user_data(boto_data, session_id),
+                AWS_REGION,
+                tags=[
+                    {
+                        'Key': 'Owner',
+                        'Value': 'Kevin',
+                    },
+                    {
+                        'Key': 'Name',
+                        'Value': 'DFMS Node',
+                    },
+                    {
+                        'Key': 'SessionId',
+                        'Value': session_id,
+                    }
+                ]
 
-        )
-        ec2_data.start_instances()
+            )
+            ec2_data.start_instances()
 
-        graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, ec2_data.running_nodes, add_shutdown, frequency_width)
-        graph.build_graph()
+            time.sleep(100)
+            reported_running = get_reported_running(session_id)
 
-        client = NodeManagerClient(args.host, args.port)
+            graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, ec2_data.running_nodes, add_shutdown, frequency_width)
+            graph.build_graph()
 
-        session_id = get_session_id()
-        client.create_session(session_id)
-        client.append_graph(session_id, graph.drop_list)
-        client.deploy_session(session_id, graph.start_oids)
+            client = NodeManagerClient(args.host, args.port)
+
+            client.create_session(session_id)
+            client.append_graph(session_id, graph.drop_list)
+            client.deploy_session(session_id, graph.start_oids)
     else:
         LOG.error('Unable to find the AWS credentials')
 
@@ -500,8 +306,8 @@ def command_run(args):
         args.bucket,
         args.width,
         args.ami,
-        args.instance,
-        args.spot_price,
+        args.spot_price1,
+        args.spot_price2,
         args.volume,
         args.days_per_node,
         args.shutdown,
@@ -520,8 +326,8 @@ def command_interactive(args):
         config.filename = config_file_name
 
     get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-    get_argument(config, 'instance_type', 'EC2 Instance type', help_text='the EC2 Instance type to use', default='i2.2xlarge')
-    get_argument(config, 'spot_price', 'Spot Price', help_text='the spot price')
+    get_argument(config, 'spot_price1', 'Spot Price for i2.2xlarge', help_text='the spot price')
+    get_argument(config, 'spot_price2', 'Spot Price for i2.4xlarge', help_text='the spot price')
     get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
@@ -536,8 +342,8 @@ def command_interactive(args):
         config['bucket_name'],
         config['width'],
         config['ami'],
-        config['instance_type'],
-        config['spot_price'],
+        config['spot_price1'],
+        config['spot_price2'],
         config['volume'],
         config['days_per_node'],
         config['shutdown'],
@@ -560,8 +366,8 @@ def parser_arguments():
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
     parser_run.add_argument('ami', help='the ami to use')
-    parser_run.add_argument('instance', help='the EC2 instance type')
-    parser_run.add_argument('spot_price', type=float, help='the spot price')
+    parser_run.add_argument('spot_price1', type=float, help='the spot price')
+    parser_run.add_argument('spot_price2', type=float, help='the spot price')
     parser_run.add_argument('bucket', help='the bucket to access')
     parser_run.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     parser_run.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
@@ -579,6 +385,6 @@ def parser_arguments():
 if __name__ == '__main__':
     # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
     # interactive
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)
