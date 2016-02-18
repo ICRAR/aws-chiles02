@@ -38,7 +38,7 @@ from os.path import dirname, join, expanduser
 
 from configobj import ConfigObj
 
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX
+from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
 LOG = logging.getLogger(__name__)
 COUNTERS = {}
@@ -58,6 +58,26 @@ class FrequencyPair:
 
     def __eq__(self, other):
         return self.name == other.name
+
+
+class MeasurementSetData:
+    def __init__(self, full_tar_name, size):
+        self.full_tar_name = full_tar_name
+        self.size = size
+        # Get rid of the '_calibrated_deepfield.ms.tar'
+        self.short_name = full_tar_name[:-len(INPUT_MS_SUFFIX_TAR)]
+
+    def __str__(self):
+        return '{0}: {1}'.format(self.short_name, self.size)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __hash__(self):
+        return hash((self.full_tar_name, self.size))
+
+    def __eq__(self, other):
+        return (self.full_tar_name, self.size) == (other.full_tar_name, other.size)
 
 
 def get_list_frequency_groups(frequency_width):
@@ -121,7 +141,7 @@ def get_oid(count_type):
     return '{0}__{1:06d}'.format(count_type, count)
 
 
-def get_uid():
+def get_uuid():
     return str(uuid.uuid4())
 
 
@@ -223,7 +243,7 @@ def run_command(command):
     return return_code
 
 
-def get_argument(config, key, prompt, help_text=None, data_type=None, default=None):
+def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None):
     if key in config:
         default = config[key]
 
@@ -245,6 +265,10 @@ def get_argument(config, key, prompt, help_text=None, data_type=None, default=No
             data = None
         elif data == '':
             data = default
+
+        if allowed is not None:
+            if data not in allowed:
+                data = None
 
     if data_type is not None:
         if data_type == int:

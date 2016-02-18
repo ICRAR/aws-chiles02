@@ -36,7 +36,7 @@ def parser_arguments():
     parser = argparse.ArgumentParser('Put a message on the queue')
     parser.add_argument('queue', help='the queue')
     parser.add_argument('region', help='the region')
-    parser.add_argument('session_id', help='the session id')
+    parser.add_argument('uuid', help='the uuid')
 
     args = parser.parse_args()
     return args
@@ -52,16 +52,16 @@ def build_file(args):
     instance_type = urllib2.urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
     message = {
         'ip_address': ip_address,
-        'session_id': args.session_id,
+        'uuid': args.uuid,
         'instance_type': instance_type,
     }
     json_message = json.dumps(message, indent=2)
     queue.send_message(
         MessageBody=json_message,
         MessageAttributes={
-            'session_id': {
-                'StringValue': args.session_id,
-                'DataType': 'String'
+            'uuid': {
+                'StringValue': args.uuid,
+                'DataType': 'String',
             }
         }
     )

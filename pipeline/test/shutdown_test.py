@@ -26,7 +26,7 @@ import json
 import logging
 import argparse
 
-from aws_chiles02.common import get_oid, get_uid, get_module_name, get_session_id
+from aws_chiles02.common import get_oid, get_uuid, get_module_name, get_session_id
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
 from dfms.manager.client import SetEncoder, NodeManagerClient
@@ -44,7 +44,7 @@ class BuildGraph:
             "type": 'plain',
             "storage": 'memory',
             "oid": get_oid('memory_in'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
         })
         self._start_oids.append(start_drop['uid'])
         self.append(start_drop)
@@ -53,7 +53,7 @@ class BuildGraph:
             "type": 'app',
             "app": get_module_name(BashShellApp),
             "oid": get_oid('app_bash_shell_app'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
             "user": 'root',
             "input_error_threshold": 100,

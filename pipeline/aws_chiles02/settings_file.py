@@ -32,6 +32,7 @@ INPUT_MS_SUFFIX_TAR = '_calibrated_deepfield.ms.tar'
 #CONTAINER_CHILES02 = 'sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest'
 CONTAINER_JAVA_S3_COPY = 'kevinvinsen/java-s3-copy:latest'
 CONTAINER_CHILES02 = 'kevinvinsen/chiles02:latest'
+SIZE_1GB = 1073741824
 
 AWS_KEY = expanduser('~/.ssh/aws-chiles02-oregon.pem')
 USERNAME = 'ec2-user'

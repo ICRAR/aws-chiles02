@@ -29,7 +29,7 @@ import unittest
 from configobj import ConfigObj
 
 from aws_chiles02.apps import InitializeSqliteApp
-from aws_chiles02.common import get_oid, get_uid
+from aws_chiles02.common import get_oid, get_uuid
 from dfms import droputils
 from dfms.drop import FileDROP, InMemoryDROP
 
@@ -56,19 +56,19 @@ class TestSqlite(unittest.TestCase):
         sqlite01 = get_oid('sqlite')
         sqlite_drop = FileDROP(
             sqlite01,
-            get_uid(),
+            get_uuid(),
             precious=False,
             dirname=os.path.join(TestSqlite._temp, sqlite01),
             check_exists=False,
         )
         initialize_sqlite = InitializeSqliteApp(
             get_oid('app'),
-            get_uid(),
+            get_uuid(),
             user='root',
         )
         sqlite_in_memory = InMemoryDROP(
             get_oid('memory'),
-            get_uid(),
+            get_uuid(),
             precious=False,
         )
         initialize_sqlite.addInput(sqlite_drop)

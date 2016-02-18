@@ -29,7 +29,7 @@ import os
 
 import boto3
 
-from aws_chiles02.common import get_oid, get_module_name, get_uid, get_session_id, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, get_list_frequency_groups
+from aws_chiles02.common import get_oid, get_module_name, get_uuid, get_session_id, CONTAINER_JAVA_S3_COPY, CONTAINER_CHILES02, make_groups_of_frequencies, get_list_frequency_groups
 from aws_chiles02.apps import DockerCopyToS3, DockerClean, DockerCopyAllFromS3Folder
 from aws_chiles02.generate_common import AbstractBuildGraph
 from dfms.drop import DirectoryContainer, dropdict, BarrierAppDROP
@@ -48,7 +48,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'plain',
             "storage": 'file',
             "oid": oid01,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid01),
             "check_exists": False
@@ -77,7 +77,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(BarrierAppDROP),
             "oid": get_oid('app'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "user": 'root'
         })
         self.append(barrier_drop)
@@ -90,7 +90,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerCopyAllFromS3Folder),
             "oid": get_oid('app'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_JAVA_S3_COPY,
             "command": 'copy_from_all_from_s3_folder',
             "min_frequency": frequency_pairs[0],
@@ -102,7 +102,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
             "oid": oid02,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid02),
             "check_exists": False
@@ -117,7 +117,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerClean),
             "oid": get_oid('app'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_CHILES02,
             "command": 'clean',
             "min_frequency": frequency_pairs[0],
@@ -129,7 +129,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
             "oid": oid03,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid03),
             "check_exists": False,
@@ -141,7 +141,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerCopyToS3),
             "oid": get_oid('app'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_JAVA_S3_COPY,
             "command": 'copy_to_s3',
             "user": 'root',
@@ -152,7 +152,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'plain',
             "storage": 's3',
             "oid": get_oid('s3'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "expireAfterUse": True,
             "precious": False,
             "bucket": self._bucket_name,

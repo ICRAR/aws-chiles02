@@ -23,14 +23,12 @@
 Build the physical graph
 """
 import os
-
 import operator
-from configobj import ConfigObj
 
 from aws_chiles02.apps import DockerMsTransform, DockerCopyToS3, DockerCopyFromS3, DockerListobs
-from aws_chiles02.common import get_module_name, get_oid, get_uid, get_observation, make_groups_of_frequencies
+from aws_chiles02.common import get_module_name, get_oid, get_uuid, get_observation, make_groups_of_frequencies
 from aws_chiles02.generate_common import AbstractBuildGraph
-from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY
+from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, SIZE_1GB
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, BarrierAppDROP, DirectoryContainer
 
@@ -42,35 +40,28 @@ class CarryOverData:
 
 
 class BuildGraph(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, nodes, shutdown, width):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width):
         super(BuildGraph, self).__init__()
         self._work_to_do = work_to_do
         self._volume = volume
         self._parallel_streams = parallel_streams
-        self._nodes = nodes
+        self._node_details = node_details
         self._bucket_name = bucket_name
         self._shutdown = shutdown
         self._bucket = None
         self._s3_split_name = 'split_{}'.format(width)
-        self._node_name = None
-        config_file_name = '{0}/graph.settings'.format(os.path.dirname(__file__))
-        if os.path.exists(config_file_name):
-            self._config = ConfigObj(config_file_name)
-        else:
-            self._config = None
         self._map_carry_over_data = {}
 
     def build_graph(self):
-        for node_id in range(0, self._nodes):
-            self._map_carry_over_data[node_id] = CarryOverData()
-
         # Get a sorted list of the keys
         keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
-        node_id = 0
+
+        for key, list_ips in self._node_details.iter():
+            for node_id in list_ips:
+                self._map_carry_over_data[node_id] = CarryOverData()
 
         for day_to_process in keys:
-            self._setup_node_name(node_id)
-
+            node_id = self._get_next_node(day_to_process)
             carry_over_data = self._map_carry_over_data[node_id]
             list_frequency_groups = self._work_to_do[day_to_process]
             frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._parallel_streams)
@@ -81,9 +72,11 @@ class BuildGraph(AbstractBuildGraph):
 
             measurement_set, properties, drop_listobs = \
                 self._setup_measurement_set(
-                        day_to_process,
-                        carry_over_data.barrier_drop,
-                        add_output_s3)
+                    day_to_process,
+                    carry_over_data.barrier_drop,
+                    add_output_s3,
+                    node_id
+                )
 
             carry_over_data.drop_listobs = drop_listobs
 
@@ -92,11 +85,13 @@ class BuildGraph(AbstractBuildGraph):
                 last_element = None
                 for frequency_pairs in group:
                     last_element = self._split(
-                            last_element,
-                            frequency_pairs,
-                            measurement_set,
-                            properties,
-                            get_observation(day_to_process.full_tar_name))
+                        last_element,
+                        frequency_pairs,
+                        measurement_set,
+                        properties,
+                        get_observation(day_to_process.full_tar_name),
+                        node_id
+                    )
 
                 if last_element is not None:
                     outputs.append(last_element)
@@ -105,10 +100,10 @@ class BuildGraph(AbstractBuildGraph):
                 "type": 'app',
                 "app": get_module_name(BarrierAppDROP),
                 "oid": get_oid('app_barrier'),
-                "uid": get_uid(),
+                "uid": get_uuid(),
                 "user": 'root',
                 "input_error_threshold": 100,
-                "node": self._node_name,
+                "node": node_id,
             })
             carry_over_data.barrier_drop = barrier_drop
             self.append(barrier_drop)
@@ -116,54 +111,51 @@ class BuildGraph(AbstractBuildGraph):
             for output in outputs:
                 barrier_drop.addInput(output)
 
-            node_id += 1
-            node_id = node_id % self._nodes
-
         # Should we add a shutdown drop
         if self._shutdown:
             self._add_shutdown()
 
     def _add_shutdown(self):
-        for node_id in range(0, self._nodes):
-            self._setup_node_name(node_id)
-            carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.barrier_drop is not None:
-                memory_drop = dropdict({
-                    "type": 'plain',
-                    "storage": 'memory',
-                    "oid": get_oid('memory_in'),
-                    "uid": get_uid(),
-                    "node": self._node_name,
-                })
-                self.append(memory_drop)
-                carry_over_data.barrier_drop.addOutput(memory_drop)
+        for list_ips in self._node_details.values():
+            for node_id in list_ips:
+                carry_over_data = self._map_carry_over_data[node_id]
+                if carry_over_data.barrier_drop is not None:
+                    memory_drop = dropdict({
+                        "type": 'plain',
+                        "storage": 'memory',
+                        "oid": get_oid('memory_in'),
+                        "uid": get_uuid(),
+                        "node": node_id,
+                    })
+                    self.append(memory_drop)
+                    carry_over_data.barrier_drop.addOutput(memory_drop)
 
-                shutdown_drop = dropdict({
-                    "type": 'app',
-                    "app": get_module_name(BashShellApp),
-                    "oid": get_oid('app_bash_shell_app'),
-                    "uid": get_uid(),
-                    "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                    "user": 'root',
-                    "input_error_threshold": 100,
-                    "node": self._node_name,
-                })
-                shutdown_drop.addInput(memory_drop)
-                self.append(shutdown_drop)
+                    shutdown_drop = dropdict({
+                        "type": 'app',
+                        "app": get_module_name(BashShellApp),
+                        "oid": get_oid('app_bash_shell_app'),
+                        "uid": get_uuid(),
+                        "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
+                        "user": 'root',
+                        "input_error_threshold": 100,
+                        "node": node_id,
+                    })
+                    shutdown_drop.addInput(memory_drop)
+                    self.append(shutdown_drop)
 
-    def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name):
+    def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
         casa_py_drop = dropdict({
             "type": 'app',
             "app": get_module_name(DockerMsTransform),
             "oid": get_oid('app_ms_transform'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_CHILES02,
             "command": 'mstransform',
             "min_frequency": frequency_pairs.bottom_frequency,
             "max_frequency": frequency_pairs.top_frequency,
             "user": 'root',
             "input_error_threshold": 100,
-            "node": self._node_name,
+            "node": node_id,
             "n_tries": 2,
         })
         oid03 = get_oid('dir_split')
@@ -171,12 +163,12 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
             "oid": oid03,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid03),
             "check_exists": False,
             "expireAfterUse": True,
-            "node": self._node_name,
+            "node": node_id,
         })
         casa_py_drop.addInput(measurement_set)
         casa_py_drop.addInput(properties)
@@ -190,7 +182,7 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerCopyToS3),
             "oid": get_oid('app_copy_to_s3'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_JAVA_S3_COPY,
             "command": 'copy_to_s3',
             "user": 'root',
@@ -198,14 +190,14 @@ class BuildGraph(AbstractBuildGraph):
             "max_frequency": frequency_pairs.top_frequency,
             "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             "input_error_threshold": 100,
-            "node": self._node_name,
+            "node": node_id,
             "n_tries": 2,
         })
         s3_drop_out = dropdict({
             "type": 'plain',
             "storage": 's3',
             "oid": get_oid('s3_out'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "expireAfterUse": True,
             "precious": False,
             "bucket": self._bucket_name,
@@ -216,7 +208,7 @@ class BuildGraph(AbstractBuildGraph):
                     self._s3_split_name
             ),
             "profile_name": 'aws-chiles02',
-            "node": self._node_name,
+            "node": node_id,
         })
         copy_to_s3.addInput(result)
         copy_to_s3.addOutput(s3_drop_out)
@@ -224,17 +216,17 @@ class BuildGraph(AbstractBuildGraph):
         self.append(s3_drop_out)
         return s3_drop_out
 
-    def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3):
+    def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3, node_id):
         s3_drop = dropdict({
             "type": 'plain',
             "storage": 's3',
             "oid": get_oid('s3_in'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "bucket": self._bucket_name,
             "key": day_to_process.full_tar_name,
             "profile_name": 'aws-chiles02',
-            "node": self._node_name,
+            "node": node_id,
         })
         if len(add_output_s3) == 0:
             self._start_oids.append(s3_drop['uid'])
@@ -246,13 +238,13 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerCopyFromS3),
             "oid": get_oid('app_copy_from_s3'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_JAVA_S3_COPY,
             "command": 'copy_from_s3',
             "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             "user": 'root',
             "input_error_threshold": 100,
-            "node": self._node_name,
+            "node": node_id,
             "n_tries": 2,
         })
         oid01 = get_oid('dir_in_ms')
@@ -260,11 +252,11 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
             "oid": oid01,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid01),
             "check_exists": False,
-            "node": self._node_name,
+            "node": node_id,
         })
 
         if barrier_drop is not None:
@@ -278,12 +270,12 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'app',
             "app": get_module_name(DockerListobs),
             "oid": get_oid('app_listobs'),
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "image": CONTAINER_CHILES02,
             "command": 'listobs',
             "user": 'root',
             "input_error_threshold": 100,
-            "node": self._node_name,
+            "node": node_id,
             "n_tries": 2,
         })
         oid02 = get_oid('json')
@@ -291,11 +283,11 @@ class BuildGraph(AbstractBuildGraph):
             "type": 'plain',
             "storage": 'json',
             "oid": oid02,
-            "uid": get_uid(),
+            "uid": get_uuid(),
             "precious": False,
             "dirname": os.path.join(self._volume, oid02),
             "check_exists": False,
-            "node": self._node_name,
+            "node": node_id,
         })
         drop_listobs.addInput(measurement_set)
         drop_listobs.addOutput(properties)
@@ -303,12 +295,8 @@ class BuildGraph(AbstractBuildGraph):
         self.append(properties)
         return measurement_set, properties, drop_listobs
 
-    def _setup_node_name(self, node_id):
-        if self._config is not None:
-            key = 'node_{0}'.format(node_id)
-            if self._config.get(key) is not None:
-                self._node_name = self._config[key]
-            else:
-                self._node_name = key
+    def _get_next_node(self, day_to_process):
+        if day_to_process.size <= 500 * SIZE_1GB:
+            pass
         else:
-            self._node_name = 'localhost'
+            pass
