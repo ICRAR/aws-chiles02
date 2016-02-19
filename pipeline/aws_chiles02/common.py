@@ -48,13 +48,16 @@ class FrequencyPair:
     def __init__(self, bottom_frequency, top_frequency):
         self.bottom_frequency = bottom_frequency
         self.top_frequency = top_frequency
-        self.name = '{0}_{1}'.format(bottom_frequency, top_frequency)
+        self.name = 'FrequencyPair({0}, {1})'.format(bottom_frequency, top_frequency)
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
         return self.__str__()
+
+    def __hash__(self):
+        return hash((self.bottom_frequency, self.top_frequency))
 
     def __eq__(self, other):
         return self.name == other.name
@@ -68,7 +71,7 @@ class MeasurementSetData:
         self.short_name = full_tar_name[:-len(INPUT_MS_SUFFIX_TAR)]
 
     def __str__(self):
-        return '{0}: {1}'.format(self.short_name, self.size)
+        return 'MeasurementSetData(\'{0}\', {1})'.format(self.short_name, self.size)
 
     def __repr__(self):
         return self.__str__()
@@ -94,29 +97,9 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
     :param number_of_groups:
     :return:
     >>> make_groups_of_frequencies(get_list_frequency_groups(4), 8)
-    [\
-[940_944, 972_976, 1004_1008, 1036_1040, 1068_1072, 1100_1104, 1132_1136, 1164_1168, 1196_1200, 1228_1232, 1260_1264, 1292_1296, 1324_1328, 1356_1360, 1388_1392, 1420_1424], \
-[944_948, 976_980, 1008_1012, 1040_1044, 1072_1076, 1104_1108, 1136_1140, 1168_1172, 1200_1204, 1232_1236, 1264_1268, 1296_1300, 1328_1332, 1360_1364, 1392_1396], \
-[948_952, 980_984, 1012_1016, 1044_1048, 1076_1080, 1108_1112, 1140_1144, 1172_1176, 1204_1208, 1236_1240, 1268_1272, 1300_1304, 1332_1336, 1364_1368, 1396_1400], \
-[952_956, 984_988, 1016_1020, 1048_1052, 1080_1084, 1112_1116, 1144_1148, 1176_1180, 1208_1212, 1240_1244, 1272_1276, 1304_1308, 1336_1340, 1368_1372, 1400_1404], \
-[956_960, 988_992, 1020_1024, 1052_1056, 1084_1088, 1116_1120, 1148_1152, 1180_1184, 1212_1216, 1244_1248, 1276_1280, 1308_1312, 1340_1344, 1372_1376, 1404_1408], \
-[960_964, 992_996, 1024_1028, 1056_1060, 1088_1092, 1120_1124, 1152_1156, 1184_1188, 1216_1220, 1248_1252, 1280_1284, 1312_1316, 1344_1348, 1376_1380, 1408_1412], \
-[964_968, 996_1000, 1028_1032, 1060_1064, 1092_1096, 1124_1128, 1156_1160, 1188_1192, 1220_1224, 1252_1256, 1284_1288, 1316_1320, 1348_1352, 1380_1384, 1412_1416], \
-[968_972, 1000_1004, 1032_1036, 1064_1068, 1096_1100, 1128_1132, 1160_1164, 1192_1196, 1224_1228, 1256_1260, 1288_1292, 1320_1324, 1352_1356, 1384_1388, 1416_1420]]
+    [[FrequencyPair(940, 944), FrequencyPair(972, 976), FrequencyPair(1004, 1008), FrequencyPair(1036, 1040), FrequencyPair(1068, 1072), FrequencyPair(1100, 1104), FrequencyPair(1132, 1136), FrequencyPair(1164, 1168), FrequencyPair(1196, 1200), FrequencyPair(1228, 1232), FrequencyPair(1260, 1264), FrequencyPair(1292, 1296), FrequencyPair(1324, 1328), FrequencyPair(1356, 1360), FrequencyPair(1388, 1392), FrequencyPair(1420, 1424)], [FrequencyPair(944, 948), FrequencyPair(976, 980), FrequencyPair(1008, 1012), FrequencyPair(1040, 1044), FrequencyPair(1072, 1076), FrequencyPair(1104, 1108), FrequencyPair(1136, 1140), FrequencyPair(1168, 1172), FrequencyPair(1200, 1204), FrequencyPair(1232, 1236), FrequencyPair(1264, 1268), FrequencyPair(1296, 1300), FrequencyPair(1328, 1332), FrequencyPair(1360, 1364), FrequencyPair(1392, 1396)], [FrequencyPair(948, 952), FrequencyPair(980, 984), FrequencyPair(1012, 1016), FrequencyPair(1044, 1048), FrequencyPair(1076, 1080), FrequencyPair(1108, 1112), FrequencyPair(1140, 1144), FrequencyPair(1172, 1176), FrequencyPair(1204, 1208), FrequencyPair(1236, 1240), FrequencyPair(1268, 1272), FrequencyPair(1300, 1304), FrequencyPair(1332, 1336), FrequencyPair(1364, 1368), FrequencyPair(1396, 1400)], [FrequencyPair(952, 956), FrequencyPair(984, 988), FrequencyPair(1016, 1020), FrequencyPair(1048, 1052), FrequencyPair(1080, 1084), FrequencyPair(1112, 1116), FrequencyPair(1144, 1148), FrequencyPair(1176, 1180), FrequencyPair(1208, 1212), FrequencyPair(1240, 1244), FrequencyPair(1272, 1276), FrequencyPair(1304, 1308), FrequencyPair(1336, 1340), FrequencyPair(1368, 1372), FrequencyPair(1400, 1404)], [FrequencyPair(956, 960), FrequencyPair(988, 992), FrequencyPair(1020, 1024), FrequencyPair(1052, 1056), FrequencyPair(1084, 1088), FrequencyPair(1116, 1120), FrequencyPair(1148, 1152), FrequencyPair(1180, 1184), FrequencyPair(1212, 1216), FrequencyPair(1244, 1248), FrequencyPair(1276, 1280), FrequencyPair(1308, 1312), FrequencyPair(1340, 1344), FrequencyPair(1372, 1376), FrequencyPair(1404, 1408)], [FrequencyPair(960, 964), FrequencyPair(992, 996), FrequencyPair(1024, 1028), FrequencyPair(1056, 1060), FrequencyPair(1088, 1092), FrequencyPair(1120, 1124), FrequencyPair(1152, 1156), FrequencyPair(1184, 1188), FrequencyPair(1216, 1220), FrequencyPair(1248, 1252), FrequencyPair(1280, 1284), FrequencyPair(1312, 1316), FrequencyPair(1344, 1348), FrequencyPair(1376, 1380), FrequencyPair(1408, 1412)], [FrequencyPair(964, 968), FrequencyPair(996, 1000), FrequencyPair(1028, 1032), FrequencyPair(1060, 1064), FrequencyPair(1092, 1096), FrequencyPair(1124, 1128), FrequencyPair(1156, 1160), FrequencyPair(1188, 1192), FrequencyPair(1220, 1224), FrequencyPair(1252, 1256), FrequencyPair(1284, 1288), FrequencyPair(1316, 1320), FrequencyPair(1348, 1352), FrequencyPair(1380, 1384), FrequencyPair(1412, 1416)], [FrequencyPair(968, 972), FrequencyPair(1000, 1004), FrequencyPair(1032, 1036), FrequencyPair(1064, 1068), FrequencyPair(1096, 1100), FrequencyPair(1128, 1132), FrequencyPair(1160, 1164), FrequencyPair(1192, 1196), FrequencyPair(1224, 1228), FrequencyPair(1256, 1260), FrequencyPair(1288, 1292), FrequencyPair(1320, 1324), FrequencyPair(1352, 1356), FrequencyPair(1384, 1388), FrequencyPair(1416, 1420)]]
     >>> make_groups_of_frequencies(get_list_frequency_groups(8), 12)
-    [\
-[940_948, 1036_1044, 1132_1140, 1228_1236, 1324_1332, 1420_1428], \
-[948_956, 1044_1052, 1140_1148, 1236_1244, 1332_1340], \
-[956_964, 1052_1060, 1148_1156, 1244_1252, 1340_1348], \
-[964_972, 1060_1068, 1156_1164, 1252_1260, 1348_1356], \
-[972_980, 1068_1076, 1164_1172, 1260_1268, 1356_1364], \
-[980_988, 1076_1084, 1172_1180, 1268_1276, 1364_1372], \
-[988_996, 1084_1092, 1180_1188, 1276_1284, 1372_1380], \
-[996_1004, 1092_1100, 1188_1196, 1284_1292, 1380_1388], \
-[1004_1012, 1100_1108, 1196_1204, 1292_1300, 1388_1396], \
-[1012_1020, 1108_1116, 1204_1212, 1300_1308, 1396_1404], \
-[1020_1028, 1116_1124, 1212_1220, 1308_1316, 1404_1412], \
-[1028_1036, 1124_1132, 1220_1228, 1316_1324, 1412_1420]]
+    [[FrequencyPair(940, 948), FrequencyPair(1036, 1044), FrequencyPair(1132, 1140), FrequencyPair(1228, 1236), FrequencyPair(1324, 1332), FrequencyPair(1420, 1428)], [FrequencyPair(948, 956), FrequencyPair(1044, 1052), FrequencyPair(1140, 1148), FrequencyPair(1236, 1244), FrequencyPair(1332, 1340)], [FrequencyPair(956, 964), FrequencyPair(1052, 1060), FrequencyPair(1148, 1156), FrequencyPair(1244, 1252), FrequencyPair(1340, 1348)], [FrequencyPair(964, 972), FrequencyPair(1060, 1068), FrequencyPair(1156, 1164), FrequencyPair(1252, 1260), FrequencyPair(1348, 1356)], [FrequencyPair(972, 980), FrequencyPair(1068, 1076), FrequencyPair(1164, 1172), FrequencyPair(1260, 1268), FrequencyPair(1356, 1364)], [FrequencyPair(980, 988), FrequencyPair(1076, 1084), FrequencyPair(1172, 1180), FrequencyPair(1268, 1276), FrequencyPair(1364, 1372)], [FrequencyPair(988, 996), FrequencyPair(1084, 1092), FrequencyPair(1180, 1188), FrequencyPair(1276, 1284), FrequencyPair(1372, 1380)], [FrequencyPair(996, 1004), FrequencyPair(1092, 1100), FrequencyPair(1188, 1196), FrequencyPair(1284, 1292), FrequencyPair(1380, 1388)], [FrequencyPair(1004, 1012), FrequencyPair(1100, 1108), FrequencyPair(1196, 1204), FrequencyPair(1292, 1300), FrequencyPair(1388, 1396)], [FrequencyPair(1012, 1020), FrequencyPair(1108, 1116), FrequencyPair(1204, 1212), FrequencyPair(1300, 1308), FrequencyPair(1396, 1404)], [FrequencyPair(1020, 1028), FrequencyPair(1116, 1124), FrequencyPair(1212, 1220), FrequencyPair(1308, 1316), FrequencyPair(1404, 1412)], [FrequencyPair(1028, 1036), FrequencyPair(1124, 1132), FrequencyPair(1220, 1228), FrequencyPair(1316, 1324), FrequencyPair(1412, 1420)]]
     """
     groups = []
     for group in range(0, number_of_groups):

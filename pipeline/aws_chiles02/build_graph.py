@@ -52,15 +52,18 @@ class BuildGraph(AbstractBuildGraph):
         self._s3_split_name = 'split_{}'.format(width)
         self._map_carry_over_data = {}
 
-    def build_graph(self):
         # Get a sorted list of the keys
-        keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
+        self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
+        self._map_day_to_node = None
 
-        for key, list_ips in self._node_details.iter():
-            for node_id in list_ips:
-                self._map_carry_over_data[node_id] = CarryOverData()
+    def build_graph(self):
+        self._build_node_map()
 
-        for day_to_process in keys:
+        for key, list_ips in self._node_details.iteritems():
+            for instance_details in list_ips:
+                self._map_carry_over_data[instance_details['ip_address']] = CarryOverData()
+
+        for day_to_process in self._keys:
             node_id = self._get_next_node(day_to_process)
             carry_over_data = self._map_carry_over_data[node_id]
             list_frequency_groups = self._work_to_do[day_to_process]
@@ -117,7 +120,8 @@ class BuildGraph(AbstractBuildGraph):
 
     def _add_shutdown(self):
         for list_ips in self._node_details.values():
-            for node_id in list_ips:
+            for instance_details in list_ips:
+                node_id = instance_details['ip_address']
                 carry_over_data = self._map_carry_over_data[node_id]
                 if carry_over_data.barrier_drop is not None:
                     memory_drop = dropdict({
@@ -296,7 +300,97 @@ class BuildGraph(AbstractBuildGraph):
         return measurement_set, properties, drop_listobs
 
     def _get_next_node(self, day_to_process):
-        if day_to_process.size <= 500 * SIZE_1GB:
-            pass
-        else:
-            pass
+        return self._map_day_to_node[day_to_process]
+
+    def _build_node_map(self):
+        # Set up the allocation directory
+        allocation = {}
+        for key, values in self._node_details.iteritems():
+            allocation_dictionary = {}
+            allocation[key] = allocation_dictionary
+            for value in values:
+                allocation_dictionary[value['ip_address']] = []
+
+        for day_to_process in self._work_to_do.keys():
+            if day_to_process.size <= 500 * SIZE_1GB:
+                allocation_dictionary = allocation['i2.2xlarge']
+                self._add_to_shortest_list(allocation_dictionary, day_to_process)
+            else:
+                allocation_dictionary = allocation['i2.4xlarge']
+                self._add_to_shortest_list(allocation_dictionary, day_to_process)
+
+        # Now balance the nodes a bit if needed
+        if allocation.get('i2.2xlarge') is not None and allocation.get('i2.4xlarge') is not None:
+            max_2xlarge = self._get_max(allocation['i2.2xlarge'])
+            min_4xlarge = self._get_min(allocation['i2.4xlarge'])
+
+            if max_2xlarge > min_4xlarge + 1:
+                self._move_nodes(allocation['i2.2xlarge'], allocation['i2.4xlarge'])
+
+        # Build the map
+        self._map_day_to_node = {}
+        for values in allocation.values():
+            for key, days in values.iteritems():
+                for day in days:
+                    self._map_day_to_node[day] = key
+
+    @property
+    def map_day_to_node(self):
+        return self._map_day_to_node
+
+    @staticmethod
+    def _add_to_shortest_list(allocation_dictionary, day_to_process):
+        shortest_list = None
+        for allocation_list in allocation_dictionary.values():
+            if shortest_list is None:
+                shortest_list = allocation_list
+            elif len(allocation_list) < len(shortest_list):
+                shortest_list = allocation_list
+
+        shortest_list.append(day_to_process)
+
+    @staticmethod
+    def _get_biggest_list(i2_2xlists):
+        biggest_list = None
+        for allocation_list in i2_2xlists.values():
+            if biggest_list is None:
+                biggest_list = allocation_list
+            elif len(allocation_list) > len(biggest_list):
+                biggest_list = allocation_list
+
+        return biggest_list
+
+    @staticmethod
+    def _get_max(allocation_dictionary):
+        max_list_size = None
+        for allocation_list in allocation_dictionary.values():
+            if max_list_size is None:
+                max_list_size = len(allocation_list)
+            elif len(allocation_list) > max_list_size:
+                max_list_size = len(allocation_list)
+
+        return max_list_size
+
+    @staticmethod
+    def _get_min(allocation_dictionary):
+        min_list_size = None
+        for allocation_list in allocation_dictionary.values():
+            if min_list_size is None:
+                min_list_size = len(allocation_list)
+            elif len(allocation_list) < min_list_size:
+                min_list_size = len(allocation_list)
+
+        return min_list_size
+
+    def _move_nodes(self, i2_2xlists, i2_4xlists):
+        max_2xlarge = None
+        min_4xlarge = None
+
+        while max_2xlarge is None or max_2xlarge > min_4xlarge + 1:
+            biggest_list = self._get_biggest_list(i2_2xlists)
+            day_to_process = biggest_list.pop()
+            self._add_to_shortest_list(i2_4xlists, day_to_process)
+
+            max_2xlarge = self._get_max(i2_2xlists)
+            min_4xlarge = self._get_min(i2_4xlists)
+

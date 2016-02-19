@@ -58,12 +58,6 @@ def build_file(args):
     json_message = json.dumps(message, indent=2)
     queue.send_message(
         MessageBody=json_message,
-        MessageAttributes={
-            'uuid': {
-                'StringValue': args.uuid,
-                'DataType': 'String',
-            }
-        }
     )
 
 if __name__ == '__main__':

@@ -30,8 +30,6 @@ import boto3
 
 from aws_chiles02.settings_file import AWS_SUBNETS, AWS_SECURITY_GROUPS, AWS_KEY_NAME
 
-STEP = 5
-
 LOG = logging.getLogger(__name__)
 
 
@@ -64,10 +62,10 @@ class EC2Controller:
         for instance_required in self._instances_required:
             self._start_instances(instance_required['instance_type'], instance_required['number_instances'], instance_required['spot_price'])
 
-    def _start_instances(self, instance_type, total_number_instances, spot_price):
-        for node_id in range(0, total_number_instances, STEP):
-            if node_id + STEP < total_number_instances:
-                number_instances = STEP
+    def _start_instances(self, instance_type, total_number_instances, spot_price, start_spots_step=5):
+        for node_id in range(0, total_number_instances, start_spots_step):
+            if node_id + start_spots_step < total_number_instances:
+                number_instances = start_spots_step
             else:
                 number_instances = total_number_instances - node_id
 
@@ -121,6 +119,12 @@ class EC2Controller:
                                     request_status['Status']['Message'])
                             )
                             instance_ids[count] = 'failed'
+                        elif request_status['State'] == 'open':
+                            LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
+                            if request_status['Status']['Code'] == 'capacity-oversubscribed':
+                                instance_ids[count] = 'failed'
+                            else:
+                                instance_ids[count] = None
                         else:
                             LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
                             instance_ids[count] = None

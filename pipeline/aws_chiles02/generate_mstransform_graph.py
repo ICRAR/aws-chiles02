@@ -23,6 +23,8 @@
 Build a dictionary for the execution graph
 """
 import argparse
+import getpass
+import httplib
 import json
 import logging
 import os
@@ -39,6 +41,7 @@ from dfms.manager.client import NodeManagerClient, SetEncoder
 
 LOG = logging.getLogger(__name__)
 QUEUE = 'startup_complete'
+DIM_PORT = 8001
 
 
 class WorkToDo:
@@ -163,13 +166,13 @@ write_files:
     )
     user_script = get_file_contents('node_manager_start_up.bash')
     dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"' '''\
-            .format(uuid, QUEUE)
+runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"'
+'''.format(uuid, QUEUE)
     user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
     return user_data
 
 
-def get_data_island_manager_user_data(boto_data, uuid):
+def get_data_island_manager_user_data(boto_data, hosts, uuid):
     cloud_init = get_file_contents('dfms_cloud_init.yaml')
     cloud_init_dynamic = '''#cloud-config
 # Write the boto file
@@ -195,8 +198,10 @@ write_files:
     )
     user_script = get_file_contents('island_manager_start_up.bash')
     dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"' ''' \
-        .format(uuid, QUEUE)
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsDIM --rest -v --id=kv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes {0} > /tmp/logfile.log 2>&1 &'
+
+runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{2}"'
+'''.format(hosts, QUEUE, uuid)
     user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
     return user_data
 
@@ -238,32 +243,36 @@ def get_reported_running(uuid, count, wait=600):
     nodes_running = {}
     stop_time = time.time() + wait
     messages_received = 0
-    while time.time() <= stop_time and count < messages_received:
-        for message in queue.receive_messages(MessageAttributeNames=['uuid']):
-            if message.message_attributes is not None:
-                message_uuid = message.message_attributes.get('uuid').get('StringValue')
-                if message_uuid == uuid:
-                    json_message = message.body
-                    message_details = json.loads(json_message)
-
-                    ip_addresses = nodes_running.get(message_details['instance_type'])
-                    if ip_addresses is None:
-                        ip_addresses = []
-                        nodes_running[message_details['instance_type']] = ip_addresses
-                    ip_addresses.append(message_details['ip_address'])
-                    LOG.info('{0} - {1} has started successfully'.format(message_details['ip_address'], message_details['instance_type']))
-                    messages_received += 1
-                    message.delete()
-
-        time.sleep(15)
+    while time.time() <= stop_time and messages_received < count:
+        for message in queue.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=100, WaitTimeSeconds=10):
+            json_message = message.body
+            message_details = json.loads(json_message)
+            if message_details['uuid'] == uuid:
+                ip_addresses = nodes_running.get(message_details['instance_type'])
+                if ip_addresses is None:
+                    ip_addresses = []
+                    nodes_running[message_details['instance_type']] = ip_addresses
+                ip_addresses.append(message_details)
+                LOG.info('{0} - {1} has started successfully'.format(message_details['ip_address'], message_details['instance_type']))
+                messages_received += 1
+                message.delete()
+                LOG.info('{0} of {1} started'.format(messages_received, count))
 
     return nodes_running
+
+
+def build_hosts(reported_running):
+    hosts = []
+    for values in reported_running.values():
+        for value in values:
+            hosts.append(value['ip_address'])
+
+    return ','.join(hosts)
 
 
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
         work_to_do.calculate_work_to_do()
 
@@ -280,7 +289,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 tags=[
                     {
                         'Key': 'Owner',
-                        'Value': 'Kevin',
+                        'Value': getpass.getuser(),
                     },
                     {
                         'Key': 'Name',
@@ -300,6 +309,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 node_count,
                 wait=600
             )
+            hosts = build_hosts(reported_running)
 
             # Create the Data Island Manager
             uuid = get_uuid()
@@ -312,12 +322,12 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                         'spot_price': spot_price1
                     }
                 ],
-                get_data_island_manager_user_data(boto_data, uuid),
+                get_data_island_manager_user_data(boto_data, hosts, uuid),
                 AWS_REGION,
                 tags=[
                     {
                         'Key': 'Owner',
-                        'Value': 'Kevin',
+                        'Value': getpass.getuser(),
                     },
                     {
                         'Key': 'Name',
@@ -336,12 +346,13 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 wait=600
             )
 
-            if len(data_island_manager_running['i2.xlarge']) == 1:
+            if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
                 graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width)
                 graph.build_graph()
 
-                client = NodeManagerClient(data_island_manager_running['m4.large'][0], 8001)
+                instance_details = data_island_manager_running['m4.large'][0]
+                client = NodeManagerClient(instance_details['ip_address'], DIM_PORT)
 
                 session_id = get_session_id()
                 client.create_session(session_id)
@@ -351,8 +362,58 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate():
-    pass
+def get_nodes_running(host_list):
+    session = boto3.Session(profile_name='aws-chiles02')
+    ec2 = session.resource('ec2', region_name=AWS_REGION)
+    nodes_running = {}
+    for instance in ec2.instances.filter():
+        if instance.public_ip_address in host_list and instance.state['Name'] == 'running':
+            message_details = {
+                'ip_address': instance.public_ip_address,
+                'instance_type': instance.instance_type
+            }
+            ip_addresses = nodes_running.get(instance.instance_type)
+            if ip_addresses is None:
+                ip_addresses = []
+                nodes_running[instance.instance_type] = ip_addresses
+            ip_addresses.append(message_details)
+
+
+    return nodes_running
+
+
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
+    boto_data = get_aws_credentials('aws-chiles02')
+    if boto_data is not None:
+        connection = httplib.HTTPConnection(host, port)
+        connection.request('GET', '/api', None, {})
+        response = connection.getresponse()
+        if response.status != httplib.OK:
+            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(host, port, response.status, response.read())
+            raise Exception(msg)
+
+        json_data = response.read()
+        message_details = json.loads(json_data)
+        host_list = message_details['hosts']
+
+        nodes_running = get_nodes_running(host_list)
+        if len(nodes_running) > 0:
+            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
+            work_to_do.calculate_work_to_do()
+
+            # Now build the graph
+            graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width)
+            graph.build_graph()
+
+            client = NodeManagerClient(host, port)
+
+            session_id = get_session_id()
+            client.create_session(session_id)
+            client.append_graph(session_id, graph.drop_list)
+            client.deploy_session(session_id, graph.start_oids)
+
+        else:
+            LOG.warning('No nodes are running')
 
 
 def command_json(args):
@@ -385,7 +446,12 @@ def command_create(args):
 
 def command_use(args):
     use_and_generate(
-
+        args.host,
+        args.port,
+        args.bucket,
+        args.width,
+        args.volume,
+        args.shutdown,
     )
 
 
@@ -434,7 +500,12 @@ def command_interactive(args):
         )
     else:
         use_and_generate(
-
+            config['dim'],
+            DIM_PORT,
+            config['bucket_name'],
+            config['width'],
+            config['volume'],
+            config['shutdown'],
         )
 
 
@@ -467,7 +538,7 @@ def parser_arguments():
     parser_use.add_argument('bucket', help='the bucket to access')
     parser_use.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     parser_use.add_argument('host', help='the host the dfms is running on')
-    parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=8001)
+    parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_use.set_defaults(func=command_use)
