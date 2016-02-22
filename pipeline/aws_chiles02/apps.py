@@ -53,7 +53,7 @@ class DockerCopyFromS3(DockerApp):
         return 'docker container java-s3-copy:latest'
 
 
-class DockerCopyToS3(DockerApp):
+class DockerCopyMsTransformToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
         self._bucket = None
         self._key = None
@@ -63,19 +63,42 @@ class DockerCopyToS3(DockerApp):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
-        super(DockerCopyToS3, self).__init__(oid, uid, **kwargs)
+        super(DockerCopyMsTransformToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerCopyToS3, self).initialize(**kwargs)
+        super(DockerCopyMsTransformToS3, self).initialize(**kwargs)
         self._bucket = self._getArg(kwargs, 'bucket', None)
         self._key = self._getArg(kwargs, 'key', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._set_name = self._getArg(kwargs, 'set_name', None)
-        self._command = 'copy_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(
+        self._command = 'copy_mstransform_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(
                 self._min_frequency,
                 self._max_frequency,
         )
+
+    def dataURL(self):
+        return 'docker container java-s3-copy:latest'
+
+
+class DockerCopyCleanToS3(DockerApp):
+    def __init__(self, oid, uid, **kwargs):
+        self._bucket = None
+        self._key = None
+        self._aws_access_key_id = None
+        self._aws_secret_access_key = None
+        self._set_name = None
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        super(DockerCopyCleanToS3, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(DockerCopyCleanToS3, self).initialize(**kwargs)
+        self._bucket = self._getArg(kwargs, 'bucket', None)
+        self._key = self._getArg(kwargs, 'key', None)
+        self._set_name = self._getArg(kwargs, 'set_name', None)
+        self._command = 'copy_clean_to_s3.sh %i0 %oDataURL0'
 
     def dataURL(self):
         return 'docker container java-s3-copy:latest'
@@ -140,6 +163,7 @@ class DockerMsTransform(DockerApp):
 
 class DockerClean(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
@@ -148,18 +172,19 @@ class DockerClean(DockerApp):
     def initialize(self, **kwargs):
         super(DockerClean, self).initialize(**kwargs)
 
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'clean.sh %i0 %o0 %o0 {0} {1} {2}'
+        self._command = 'clean.sh %i0 %o0 %o0 '
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         json_drop = self.inputs[1]
-        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'.format(
-                self._min_frequency,
-                self._max_frequency,
-                json_drop['Bottom edge']
+        self._command = 'clean.sh %o0 {0} {1}'.format(
+            self._min_frequency,
+            self._max_frequency,
+            ' '.join(self._measurement_sets),
         )
         super(DockerClean, self).run()
 

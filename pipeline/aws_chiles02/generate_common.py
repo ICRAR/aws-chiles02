@@ -20,34 +20,67 @@
 #    MA 02111-1307  USA
 #
 """
-The abstract graph builder
+The common generate code
 """
-from abc import ABCMeta, abstractmethod
+import json
+import logging
+
+import boto3
+import time
+
+from aws_chiles02.settings_file import AWS_REGION, QUEUE
+
+LOG = logging.getLogger(__name__)
 
 
-class AbstractBuildGraph:
-    # This ensures that:
-    #  - This class cannot be instantiated
-    #  - Subclasses implement methods decorated with @abstractmethod
-    __metaclass__ = ABCMeta
+def get_reported_running(uuid, count, wait=600):
+    session = boto3.Session(profile_name='aws-chiles02')
+    sqs = session.resource('sqs', region_name=AWS_REGION)
+    queue = sqs.get_queue_by_name(QueueName=QUEUE)
+    nodes_running = {}
+    stop_time = time.time() + wait
+    messages_received = 0
+    while time.time() <= stop_time and messages_received < count:
+        for message in queue.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=100, WaitTimeSeconds=10):
+            json_message = message.body
+            message_details = json.loads(json_message)
+            if message_details['uuid'] == uuid:
+                ip_addresses = nodes_running.get(message_details['instance_type'])
+                if ip_addresses is None:
+                    ip_addresses = []
+                    nodes_running[message_details['instance_type']] = ip_addresses
+                ip_addresses.append(message_details)
+                LOG.info('{0} - {1} has started successfully'.format(message_details['ip_address'], message_details['instance_type']))
+                messages_received += 1
+                message.delete()
+                LOG.info('{0} of {1} started'.format(messages_received, count))
 
-    def __init__(self):
-        self._drop_list = []
-        self._start_oids = []
+    return nodes_running
 
-    @property
-    def drop_list(self):
-        return self._drop_list
 
-    @property
-    def start_oids(self):
-        return self._start_oids
+def get_nodes_running(host_list):
+    session = boto3.Session(profile_name='aws-chiles02')
+    ec2 = session.resource('ec2', region_name=AWS_REGION)
+    nodes_running = {}
+    for instance in ec2.instances.filter():
+        if instance.public_ip_address in host_list and instance.state['Name'] == 'running':
+            message_details = {
+                'ip_address': instance.public_ip_address,
+                'instance_type': instance.instance_type
+            }
+            ip_addresses = nodes_running.get(instance.instance_type)
+            if ip_addresses is None:
+                ip_addresses = []
+                nodes_running[instance.instance_type] = ip_addresses
+            ip_addresses.append(message_details)
 
-    def append(self, drop):
-        self._drop_list.append(drop)
+    return nodes_running
 
-    @abstractmethod
-    def build_graph(self):
-        """
-        Build the graph
-        """
+
+def build_hosts(reported_running):
+    hosts = []
+    for values in reported_running.values():
+        for value in values:
+            hosts.append(value['ip_address'])
+
+    return ','.join(hosts)

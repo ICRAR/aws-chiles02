@@ -30,18 +30,17 @@ import logging
 import os
 
 import boto3
-import time
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph import BuildGraph
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_user_data, get_aws_credentials, get_file_contents, MeasurementSetData, get_uuid
+from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
+from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_aws_credentials, MeasurementSetData, get_uuid
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, SIZE_1GB
-from dfms.manager.client import NodeManagerClient, SetEncoder
+from aws_chiles02.generate_common import get_reported_running, get_nodes_running, build_hosts
+from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, SIZE_1GB, DIM_PORT
+from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
+from dfms.manager.client import SetEncoder, DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-QUEUE = 'startup_complete'
-DIM_PORT = 8001
 
 
 class WorkToDo:
@@ -140,72 +139,6 @@ def get_s3_split_name(width):
     return 'split_{}'.format(width)
 
 
-def get_node_manager_user_data(boto_data, uuid):
-    cloud_init = get_file_contents('dfms_cloud_init.yaml')
-    cloud_init_dynamic = '''#cloud-config
-# Write the boto file
-write_files:
-  - path: "/root/.aws/credentials"
-    permissions: "0544"
-    owner: "root"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-  - path: "/home/ec2-user/.aws/credentials"
-    permissions: "0544"
-    owner: "ec2-user:ec2-user"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-'''.format(
-            'aws-chiles02',
-            boto_data[0],
-            boto_data[1],
-    )
-    user_script = get_file_contents('node_manager_start_up.bash')
-    dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"'
-'''.format(uuid, QUEUE)
-    user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
-    return user_data
-
-
-def get_data_island_manager_user_data(boto_data, hosts, uuid):
-    cloud_init = get_file_contents('dfms_cloud_init.yaml')
-    cloud_init_dynamic = '''#cloud-config
-# Write the boto file
-write_files:
-  - path: "/root/.aws/credentials"
-    permissions: "0544"
-    owner: "root"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-  - path: "/home/ec2-user/.aws/credentials"
-    permissions: "0544"
-    owner: "ec2-user:ec2-user"
-    content: |
-      [{0}]
-      aws_access_key_id = {1}
-      aws_secret_access_key = {2}
-'''.format(
-        'aws-chiles02',
-        boto_data[0],
-        boto_data[1],
-    )
-    user_script = get_file_contents('island_manager_start_up.bash')
-    dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsDIM --rest -v --id=kv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes {0} > /tmp/logfile.log 2>&1 &'
-
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{2}"'
-'''.format(hosts, QUEUE, uuid)
-    user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
-    return user_data
-
-
 def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     nodes = []
     counts = [0, 0]
@@ -234,40 +167,6 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         })
 
     return nodes, node_count
-
-
-def get_reported_running(uuid, count, wait=600):
-    session = boto3.Session(profile_name='aws-chiles02')
-    sqs = session.resource('sqs', region_name=AWS_REGION)
-    queue = sqs.get_queue_by_name(QueueName=QUEUE)
-    nodes_running = {}
-    stop_time = time.time() + wait
-    messages_received = 0
-    while time.time() <= stop_time and messages_received < count:
-        for message in queue.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=100, WaitTimeSeconds=10):
-            json_message = message.body
-            message_details = json.loads(json_message)
-            if message_details['uuid'] == uuid:
-                ip_addresses = nodes_running.get(message_details['instance_type'])
-                if ip_addresses is None:
-                    ip_addresses = []
-                    nodes_running[message_details['instance_type']] = ip_addresses
-                ip_addresses.append(message_details)
-                LOG.info('{0} - {1} has started successfully'.format(message_details['ip_address'], message_details['instance_type']))
-                messages_received += 1
-                message.delete()
-                LOG.info('{0} of {1} started'.format(messages_received, count))
-
-    return nodes_running
-
-
-def build_hosts(reported_running):
-    hosts = []
-    for values in reported_running.values():
-        for value in values:
-            hosts.append(value['ip_address'])
-
-    return ','.join(hosts)
 
 
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
@@ -312,7 +211,6 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             hosts = build_hosts(reported_running)
 
             # Create the Data Island Manager
-            uuid = get_uuid()
             data_island_manager = EC2Controller(
                 ami_id,
                 [
@@ -348,11 +246,13 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
 
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
-                graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width)
+                graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width)
                 graph.build_graph()
 
                 instance_details = data_island_manager_running['m4.large'][0]
-                client = NodeManagerClient(instance_details['ip_address'], DIM_PORT)
+                host = instance_details['ip_address']
+                LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+                client = DataIslandManagerClient(host, DIM_PORT)
 
                 session_id = get_session_id()
                 client.create_session(session_id)
@@ -360,26 +260,6 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 client.deploy_session(session_id, graph.start_oids)
     else:
         LOG.error('Unable to find the AWS credentials')
-
-
-def get_nodes_running(host_list):
-    session = boto3.Session(profile_name='aws-chiles02')
-    ec2 = session.resource('ec2', region_name=AWS_REGION)
-    nodes_running = {}
-    for instance in ec2.instances.filter():
-        if instance.public_ip_address in host_list and instance.state['Name'] == 'running':
-            message_details = {
-                'ip_address': instance.public_ip_address,
-                'instance_type': instance.instance_type
-            }
-            ip_addresses = nodes_running.get(instance.instance_type)
-            if ip_addresses is None:
-                ip_addresses = []
-                nodes_running[instance.instance_type] = ip_addresses
-            ip_addresses.append(message_details)
-
-
-    return nodes_running
 
 
 def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
@@ -402,10 +282,11 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
-            graph = BuildGraph(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width)
+            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width)
             graph.build_graph()
 
-            client = NodeManagerClient(host, port)
+            LOG.info('Connection to {0}:{1}'.format(host, port))
+            client = DataIslandManagerClient(host, port)
 
             session_id = get_session_id()
             client.create_session(session_id)
@@ -423,7 +304,7 @@ def command_json(args):
     node_details = {
         'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
-    graph = BuildGraph(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width)
+    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
     LOG.info(json_dumps)

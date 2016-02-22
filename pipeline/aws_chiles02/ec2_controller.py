@@ -62,7 +62,7 @@ class EC2Controller:
         for instance_required in self._instances_required:
             self._start_instances(instance_required['instance_type'], instance_required['number_instances'], instance_required['spot_price'])
 
-    def _start_instances(self, instance_type, total_number_instances, spot_price, start_spots_step=5):
+    def _start_instances(self, instance_type, total_number_instances, spot_price, start_spots_step=10):
         for node_id in range(0, total_number_instances, start_spots_step):
             if node_id + start_spots_step < total_number_instances:
                 number_instances = start_spots_step

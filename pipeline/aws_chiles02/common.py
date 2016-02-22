@@ -23,7 +23,6 @@
 Common code to
 """
 import Queue
-import base64
 import getpass
 import logging
 import os
@@ -31,17 +30,13 @@ import subprocess
 import threading
 import time
 import uuid
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
-from os.path import dirname, join, expanduser
+from os.path import join, expanduser
 
 from configobj import ConfigObj
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
 LOG = logging.getLogger(__name__)
-COUNTERS = {}
 
 
 class FrequencyPair:
@@ -111,21 +106,6 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
         count += 1
 
     return groups
-
-
-def get_oid(count_type):
-    count = COUNTERS.get(count_type)
-    if count is None:
-        count = 1
-    else:
-        count += 1
-    COUNTERS[count_type] = count
-
-    return '{0}__{1:06d}'.format(count_type, count)
-
-
-def get_uuid():
-    return str(uuid.uuid4())
 
 
 def get_module_name(item):
@@ -264,25 +244,6 @@ def get_argument(config, key, prompt, help_text=None, data_type=None, default=No
         config[key] = data
 
 
-def get_user_data(cloud_init_data):
-    user_data = MIMEMultipart()
-    for cloud_init in cloud_init_data:
-        user_data.attach(MIMEText(cloud_init))
-
-    encode = user_data.as_string().encode("ascii")
-    encoded_data = base64.b64encode(encode).decode('ascii')
-
-    return encoded_data
-
-
-def get_file_contents(file_name):
-    here = dirname(__file__)
-    bash = join(here, '../user_data', file_name)
-    with open(bash, 'r') as my_file:
-        data = my_file.read()
-    return data
-
-
 def get_aws_credentials(profile_name):
     data = None
     dot_boto = join(expanduser('~'), '.aws', 'credentials')
@@ -294,3 +255,6 @@ def get_aws_credentials(profile_name):
                 config[profile_name]['aws_secret_access_key'],
             ]
     return data
+
+def get_uuid():
+    return str(uuid.uuid4())

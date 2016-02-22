@@ -5,6 +5,7 @@
 /.idea
 /pipeline/aws_chiles02/chiles02.settings
 /pipeline/aws_chiles02/generate_mstransform_graph.settings
+/pipeline/aws_chiles02/generate_clean_graph.settings
 /java/.idea
 /out
 

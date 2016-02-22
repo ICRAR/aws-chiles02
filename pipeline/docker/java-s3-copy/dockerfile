@@ -46,8 +46,9 @@ ENV JAVA_HOME /usr/java/default
 # Needed by the Python Scripts
 RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 RUN pip install \
+    argparse \
     boto3 \
-    argparse
+    ConfigObj
 
 RUN mkdir -p /opt/chiles02
 WORKDIR /opt/chiles02
