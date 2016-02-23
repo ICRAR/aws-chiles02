@@ -178,6 +178,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "image": CONTAINER_JAVA_S3_COPY,
                 "command": 'copy_from_s3',
+                "min_frequency": frequency_pair.bottom_frequency,
+                "max_frequency": frequency_pair.top_frequency,
                 "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
                 "user": 'root',
                 "input_error_threshold": 100,

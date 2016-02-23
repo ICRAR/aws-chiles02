@@ -23,6 +23,7 @@
 My Docker Apps
 """
 import logging
+import os
 import sqlite3
 
 from dfms.apps.dockerapp import DockerApp
@@ -214,10 +215,11 @@ class DockerClean(DockerApp):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
+        measurement_sets = [os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
         self._command = 'clean.sh %o0 {0} {1}'.format(
                 self._min_frequency,
                 self._max_frequency,
-                ' '.join(self._measurement_sets),
+                ' '.join(measurement_sets),
         )
         super(DockerClean, self).run()
 
