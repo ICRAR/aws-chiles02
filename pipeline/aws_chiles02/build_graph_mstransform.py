@@ -25,7 +25,7 @@ Build the physical graph
 import os
 import operator
 
-from aws_chiles02.apps import DockerMsTransform, DockerCopyMsTransformToS3, DockerCopyFromS3, DockerListobs
+from aws_chiles02.apps import DockerMsTransform, DockerCopyMsTransformToS3, DockerCopyMsTransformFromS3, DockerListobs
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, SIZE_1GB
@@ -194,7 +194,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         copy_from_s3 = dropdict({
             "type": 'app',
-            "app": get_module_name(DockerCopyFromS3),
+            "app": get_module_name(DockerCopyMsTransformFromS3),
             "oid": self.get_oid('app_copy_from_s3'),
             "uid": self.get_uuid(),
             "image": CONTAINER_JAVA_S3_COPY,

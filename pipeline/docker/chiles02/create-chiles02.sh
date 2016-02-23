@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build --no-cache --tag chiles02:latest .
+docker build --tag chiles02:latest .
