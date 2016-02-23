@@ -22,12 +22,10 @@
 """
 Common code to
 """
-import Queue
 import getpass
 import logging
 import os
 import subprocess
-import threading
 import time
 import uuid
 from os.path import join, expanduser
@@ -147,12 +145,7 @@ def run_command(command):
     stdout, stderr = process.communicate()
     LOG.debug('{0}, output follows.\n==STDOUT==\n{1}==STDERR==\n{2}'.format(command, stdout, stderr))
 
-    return_code = process.poll()
-    while return_code is None:
-        time.sleep(2)
-        return_code = process.poll()
-
-    return return_code
+    return process.returncode
 
 
 def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None):
@@ -204,6 +197,7 @@ def get_aws_credentials(profile_name):
                 config[profile_name]['aws_secret_access_key'],
             ]
     return data
+
 
 def get_uuid():
     return str(uuid.uuid4())
