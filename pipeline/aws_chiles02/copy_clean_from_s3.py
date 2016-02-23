@@ -39,6 +39,8 @@ def parser_arguments():
     parser = argparse.ArgumentParser('Copy a file from S3 and untar it')
     parser.add_argument('s3_url', help='the s3: url to access')
     parser.add_argument('directory', help='the directory to write the file in')
+    parser.add_argument('min_frequency', help="the min frequency to use")
+    parser.add_argument('max_frequency', help="the max frequency to use")
 
     args = parser.parse_args()
     LOG.info(args)
@@ -63,8 +65,7 @@ def get_s3_size(s3_url):
 
 def copy_from_s3(args):
     # Does the file exists
-    head, tail = os.path.split(args.s3_url)
-    measurement_set = os.path.join(args.directory, tail)[:-4]
+    measurement_set = os.path.join(args.directory, 'vis_{0}~{1}'.format(args.min_frequency, args.max_frequency))
     LOG.info('Checking {0} exists'.format(measurement_set))
     if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
         LOG.info('Measurement Set: {0} exists'.format(measurement_set))
