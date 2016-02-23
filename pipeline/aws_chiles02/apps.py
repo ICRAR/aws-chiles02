@@ -64,12 +64,19 @@ class DockerCopyCleanFromS3(DockerApp):
         """
         self._aws_access_key_id = None
         self._aws_secret_access_key = None
+        self._max_frequency = None
+        self._min_frequency = None
         self._command = None
         super(DockerCopyCleanFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerCopyCleanFromS3, self).initialize(**kwargs)
-        self._command = 'copy_clean_from_s3.sh %iDataURL0 %o0'
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._command = 'copy_clean_from_s3.sh %iDataURL0 %o0 {0} {1}'.format(
+                self._min_frequency,
+                self._max_frequency,
+        )
 
     def dataURL(self):
         return 'docker container java-s3-copy:latest'
@@ -207,7 +214,6 @@ class DockerClean(DockerApp):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        json_drop = self.inputs[1]
         self._command = 'clean.sh %o0 {0} {1}'.format(
                 self._min_frequency,
                 self._max_frequency,
