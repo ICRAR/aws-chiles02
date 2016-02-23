@@ -140,69 +140,18 @@ def get_observation(s3_path):
     return elements
 
 
-class AsynchronousFileReader(threading.Thread):
-    """
-    Helper class to implement asynchronous reading of a file
-    in a separate thread. Pushes read lines on a queue to
-    be consumed in another thread.
-    """
-    def __init__(self, fd, queue):
-        assert isinstance(queue, Queue.Queue)
-        assert callable(fd.readline)
-        threading.Thread.__init__(self)
-        self._fd = fd
-        self._queue = queue
-
-    def run(self):
-        """
-        The body of the tread: read lines and put them on the queue.
-        """
-        for line in iter(self._fd.readline, ''):
-            self._queue.put(line)
-
-    def eof(self):
-        """
-        Check whether there is no more content to expect.
-        """
-        return not self.is_alive() and self._queue.empty()
-
-
 def run_command(command):
     LOG.info(command)
     process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
-    # Launch the asynchronous readers of the processes stdout and stderr.
-    stdout_queue = Queue.Queue()
-    stdout_reader = AsynchronousFileReader(process.stdout, stdout_queue)
-    stdout_reader.start()
-    stderr_queue = Queue.Queue()
-    stderr_reader = AsynchronousFileReader(process.stderr, stderr_queue)
-    stderr_reader.start()
-
-    # Check the queues if we received some output (until there is nothing more to get).
-    while not stdout_reader.eof() or not stderr_reader.eof():
-        # Show what we received from standard output.
-        while not stdout_queue.empty():
-            line = stdout_queue.get()
-            print line.rstrip()
-
-        # Show what we received from standard error.
-        while not stderr_queue.empty():
-            line = stderr_queue.get()
-            print line.rstrip()
-
-        # Sleep a bit before asking the readers again.
-        time.sleep(2)
-
-    # Let's be tidy and join the threads we've started.
-    stdout_reader.join()
-    stderr_reader.join()
-
-    # Close subprocess' file descriptors.
-    process.stdout.close()
-    process.stderr.close()
+    stdout, stderr = process.communicate()
+    LOG.debug('{0}, output follows.\n==STDOUT==\n{1}==STDERR==\n{2}'.format(command, stdout, stderr))
 
     return_code = process.poll()
+    while return_code is None:
+        time.sleep(2)
+        return_code = process.poll()
+
     return return_code
 
 
