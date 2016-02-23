@@ -106,7 +106,7 @@ def copy_from_s3(args):
 
     path_exists = os.path.exists(measurement_set)
     if return_code != 0 or not path_exists:
-        LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+        LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists))
         return 1
 
     os.remove(full_path_tar_file)
