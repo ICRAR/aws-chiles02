@@ -176,7 +176,7 @@ def run_command(command):
         process = subprocess.Popen(command, bufsize=1, shell=True, stdout=stream, stderr=subprocess.STDOUT, env=os.environ.copy())
         while process.poll() is None:
             time.sleep(1)
-    stream.close()
+
     output = stream.buffer.getvalue()
     LOG.debug('{0}, output follows.\n{1}'.format(command, output))
 
