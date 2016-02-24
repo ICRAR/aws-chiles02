@@ -26,9 +26,11 @@ import getpass
 import logging
 import os
 import subprocess
+import threading
 import time
 import uuid
 from os.path import join, expanduser
+from cStringIO import StringIO
 
 from configobj import ConfigObj
 
@@ -138,12 +140,45 @@ def get_observation(s3_path):
     return elements
 
 
+class OutputStream(threading.Thread):
+    def __init__(self):
+        super(OutputStream, self).__init__()
+        self.done = False
+        self.buffer = StringIO()
+        self.read, self.write = os.pipe()
+        self.reader = os.fdopen(self.read)
+        self.start()
+
+    def fileno(self):
+        return self.write
+
+    def run(self):
+        while not self.done:
+            self.buffer.write(self.reader.readline())
+
+        self.reader.close()
+
+    def close(self):
+        self.done = True
+        os.close(self.write)
+
+    def __enter__(self):
+        # Theoretically could be used to set up things not in __init__
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
 def run_command(command):
     LOG.info(command)
-    process = subprocess.Popen(command, bufsize=1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
-
-    stdout, stderr = process.communicate()
-    LOG.debug('{0}, output follows.\n==STDOUT==\n{1}==STDERR==\n{2}'.format(command, stdout, stderr))
+    with OutputStream() as stream:
+        process = subprocess.Popen(command, bufsize=1, shell=True, stdout=stream, stderr=subprocess.STDOUT, env=os.environ.copy())
+        while process.poll() is None:
+            time.sleep(1)
+    stream.close()
+    output = stream.buffer.getvalue()
+    LOG.debug('{0}, output follows.\n{1}'.format(command, output))
 
     return process.returncode
 

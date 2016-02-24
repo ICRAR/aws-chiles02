@@ -167,7 +167,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
-                graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width)
+                graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, 8, reported_running, add_shutdown, frequency_width)
                 graph.build_graph()
 
                 instance_details = data_island_manager_running['m4.large'][0]
@@ -203,7 +203,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
-            graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, 10, nodes_running, add_shutdown, frequency_width)
+            graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, 8, nodes_running, add_shutdown, frequency_width)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
