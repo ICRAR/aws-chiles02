@@ -92,6 +92,9 @@ fi
 # Print free disk space
 df -h
 
+# More file handles
+ulimit -n 20480
+
 # Create the DFMS root
 mkdir -p /mnt/dfms/dfms_root
 chmod -R 0777 /mnt/dfms
