@@ -155,6 +155,7 @@ class BuildGraphClean(AbstractBuildGraph):
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []
         counter = 0
+        first_group = True
         for s3_object in s3_objects:
             s3_drop = dropdict({
                 "type": 'plain',
@@ -168,7 +169,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "node": node_id,
             })
             carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.drop_listobs is None:
+            if carry_over_data.drop_listobs is None and first_group:
                 self._start_oids.append(s3_drop['uid'])
 
             copy_from_s3 = dropdict({
@@ -186,8 +187,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "node": node_id,
                 "n_tries": 2,
             })
-            if carry_over_data.drop_listobs is not None:
-                copy_from_s3.addInput(carry_over_data.drop_listobs)
 
             oid01 = self.get_oid('dir_in_ms')
             measurement_set = dropdict({
@@ -201,6 +200,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 "node": node_id,
             })
 
+            if carry_over_data.drop_listobs is not None:
+                copy_from_s3.addInput(carry_over_data.drop_listobs)
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
 
@@ -216,5 +217,6 @@ class BuildGraphClean(AbstractBuildGraph):
             counter += 1
             if counter >= self._parallel_streams:
                 counter = 0
+                first_group = False
 
         return s3_out_drops

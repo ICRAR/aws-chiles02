@@ -178,7 +178,7 @@ def run_command(command):
             time.sleep(1)
 
     output = stream.buffer.getvalue()
-    LOG.debug('{0}, output follows.\n{1}'.format(command, output))
+    LOG.INFO('{0}, output follows.\n{1}'.format(command, output))
 
     return process.returncode
 
