@@ -67,7 +67,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "user": 'root',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
-                "measurement_sets": s3_drop_outs,
+                "measurement_sets": [drop['dirname'] for drop in s3_drop_outs],
                 "input_error_threshold": 100,
                 "node": node_id,
                 "n_tries": 2,
