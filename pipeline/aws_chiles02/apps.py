@@ -215,14 +215,11 @@ class DockerClean(DockerApp):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        measurement_sets1 = [os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
-        measurement_sets2 = [os.path.join('/dfms_root', i) for i in measurement_sets1]
-        LOG.info('set 1: {0}'.format(measurement_sets1))
-        LOG.info('set 2: {0}'.format(measurement_sets2))
+        measurement_sets = ['/dfms_root' + os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
         self._command = 'clean.sh %o0 {0} {1} {2}'.format(
                 self._min_frequency,
                 self._max_frequency,
-                ' '.join(measurement_sets2),
+                ' '.join(measurement_sets),
         )
         super(DockerClean, self).run()
 
