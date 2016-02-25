@@ -34,8 +34,7 @@
 
 FROM centos:latest
 
-RUN yum update -y; \
-    yum clean all
+RUN yum update -y
 
 RUN yum install -y \
     fontconfig \
@@ -55,14 +54,14 @@ RUN yum install -y \
     yum clean all
 
 RUN mkdir -p /opt/casapy
-RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.0-el6.tar.gz \
+RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.2-el6.tar.gz \
     | tar -xzC /opt/casapy
 
-RUN ulimit -n 2048
+RUN ulimit -n 20480
 RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 
 # Update the path
-ENV PATH $PATH:/opt/casapy/casa-release-4.5.0-el6/bin
+ENV PATH $PATH:/opt/casapy/casa-release-4.5.2-el6/bin
 
 # Make sure CasaPy is initialised
 RUN echo exit | casapy --nologger --log2term

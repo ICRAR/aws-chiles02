@@ -98,6 +98,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 "image": CONTAINER_JAVA_S3_COPY,
                 "command": 'copy_to_s3',
                 "user": 'root',
+                "min_frequency": frequency_pair.bottom_frequency,
+                "max_frequency": frequency_pair.top_frequency,
                 "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
                 "input_error_threshold": 100,
                 "node": node_id,
