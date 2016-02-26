@@ -45,27 +45,28 @@ def parser_arguments():
     return args
 
 
-def copy_from_s3(args):
+def copy_to_s3(args):
     # Does the file exists
-    directory_name = 'clean_{0}~{1}'.format(args.min_frequency, args.max_frequency)
-    measurement_set = os.path.join(args.directory, directory_name)
-    LOG.info('check {0} exists'.format(measurement_set))
-    if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
-        LOG.info('Measurement_set: {0} does not exist'.format(measurement_set))
+    stem_name = 'clean_{0}~{1}'.format(args.min_frequency, args.max_frequency)
+    measurement_set = os.path.join(args.directory, stem_name)
+    LOG.info('checking {0}.image exists'.format(measurement_set))
+    if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
+        LOG.info('Measurement_set: {0}.image does not exist'.format(measurement_set))
         return 0
 
     # Make the tar file
     tar_filename = os.path.join(args.directory, 'clean_{0}~{1}.tar'.format(args.min_frequency, args.max_frequency))
     os.chdir(args.directory)
-    bash = 'tar -cvf {0} {1}'.format(tar_filename, directory_name)
+    bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual'.format(tar_filename, stem_name)
     return_code = run_command(bash)
     path_exists = os.path.exists(tar_filename)
     if return_code != 0 or not path_exists:
         LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
 
     bash = 'java -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
-           ' -aws_profile aws-chiles02 {0} vis.tar'.format(
+           ' -aws_profile aws-chiles02 {0} {1}'.format(
                 args.s3_url,
+                tar_filename
             )
     return_code = run_command(bash)
 
@@ -78,5 +79,5 @@ def copy_from_s3(args):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
-    error_code = copy_from_s3(arguments)
+    error_code = copy_to_s3(arguments)
     sys.exit(error_code)

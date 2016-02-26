@@ -45,7 +45,7 @@ def parser_arguments():
     return args
 
 
-def copy_from_s3(args):
+def copy_to_s3(args):
     # Does the file exists
     directory_name = 'vis_{0}~{1}'.format(args.min_frequency, args.max_frequency)
     measurement_set = os.path.join(args.directory, directory_name)
@@ -78,5 +78,5 @@ def copy_from_s3(args):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
-    error_code = copy_from_s3(arguments)
+    error_code = copy_to_s3(arguments)
     sys.exit(error_code)

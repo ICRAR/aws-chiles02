@@ -42,7 +42,7 @@ def do_clean(cube_dir, min_freq, max_freq, in_dirs):
     if not os.path.exists(cube_dir):
         os.makedirs(cube_dir)
 
-    outfile = os.path.join(cube_dir, 'cube_{0}~{1}'.format(min_freq, max_freq))
+    outfile = os.path.join(cube_dir, 'clean_{0}~{1}'.format(min_freq, max_freq))
     LOG.info('clean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
     try:
         # dump_all()

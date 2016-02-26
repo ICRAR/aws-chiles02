@@ -117,7 +117,6 @@ class BuildGraphClean(AbstractBuildGraph):
                         self._s3_clean_name,
                         frequency_pair.bottom_frequency,
                         frequency_pair.top_frequency,
-                        self._s3_clean_name,
                 ),
                 "profile_name": 'aws-chiles02',
                 "node": node_id,
