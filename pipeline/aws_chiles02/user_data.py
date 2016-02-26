@@ -58,6 +58,25 @@ def get_node_manager_user_data(boto_data, uuid):
     cloud_init_dynamic = '''#cloud-config
 # Write the boto file
 write_files:
+  - path: "/etc/sysconfig/docker"
+    permissions: "0644"
+    owner: "root"
+    content: |
+      # The max number of open files for the daemon itself, and all
+      # running containers.  The default value of 1048576 mirrors the value
+      # used by the systemd service unit.
+      DAEMON_MAXFILES=1048576
+
+      # Additional startup options for the Docker daemon, for example:
+      # OPTIONS="--ip-forward=true --iptables=true"
+      # By default we limit the number of open files per container
+      OPTIONS="-D --default-ulimit nofile=16384:16384"
+  - path: "/etc/sysconfig/docker-storage-setup"
+    permissions: "0544"
+    owner: "root"
+    content: |
+      VG=dfms-group
+      DATA_SIZE=100GB
   - path: "/root/.aws/credentials"
     permissions: "0544"
     owner: "root"

@@ -7,25 +7,5 @@ packages:
   - sysstat
   - iotop
 
-# Write the docker config files
-write_files:
-  - path: "/etc/sysconfig/docker"
-    permissions: "0644"
-    owner: "root"
-    content: |
-      # The max number of open files for the daemon itself, and all
-      # running containers.  The default value of 1048576 mirrors the value
-      # used by the systemd service unit.
-      DAEMON_MAXFILES=1048576
-
-      # Additional startup options for the Docker daemon, for example:
-      # OPTIONS="--ip-forward=true --iptables=true"
-      # By default we limit the number of open files per container
-      OPTIONS="-D --default-ulimit nofile=16384:16384"
-  - path: "/etc/sysconfig/docker-storage-setup"
-    content: |
-      VG=dfms-group
-      DATA_SIZE=100GB
-
 # Final_message written to log when cloud-init processes are finished
 final_message: "System boot (via cloud-init) is COMPLETE, after $UPTIME seconds. Finished at $TIMESTAMP"
