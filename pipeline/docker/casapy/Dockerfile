@@ -57,7 +57,6 @@ RUN mkdir -p /opt/casapy
 RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.2-el6.tar.gz \
     | tar -xzC /opt/casapy
 
-RUN ulimit -n 20480
 RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 
 # Update the path

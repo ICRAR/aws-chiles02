@@ -65,6 +65,13 @@ class BuildGraphClean(AbstractBuildGraph):
                 "image": CONTAINER_CHILES02,
                 "command": 'clean',
                 "user": 'root',
+                "ulimits": [
+                    {
+                        'name': 'nofile',
+                        'hard': 10000,
+                        'soft': 20000,
+                    }
+                ],
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
                 "measurement_sets": [drop['dirname'] for drop in s3_drop_outs],

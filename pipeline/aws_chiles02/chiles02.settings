@@ -34,7 +34,7 @@
 # |  | |  |\   |       |  |  |  | |  |____ |  |\  \----.|  |____ |__|
 # |__| |__| \__|       |__|  |__| |_______|| _| `._____||_______|(__)
 #
-ami_id = "ami-f6856596"
+ami_id = "ami-70987510"
 key_name = "aws-chiles02-oregon"
 security_groups = "sg-981c9cfc"
 region = "us-west-2"
