@@ -1,10 +1,6 @@
 #!/bin/bash -xv
 # clean
 
-ulimit -n 8192
-ulimit -Hn
-ulimit -Sn
-
 cd /opt/chiles02/aws-chiles02
 git pull
 
