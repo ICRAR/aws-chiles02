@@ -97,6 +97,9 @@ class BuildGraphClean(AbstractBuildGraph):
             for drop in s3_drop_outs:
                 casa_py_drop.addInput(drop)
             casa_py_drop.addOutput(result)
+            carry_over_data = self._map_carry_over_data[node_id]
+            carry_over_data.clean_drop = casa_py_drop
+
             self.append(casa_py_drop)
             self.append(result)
 
@@ -135,9 +138,6 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_to_s3.addOutput(s3_drop_out)
             self.append(copy_to_s3)
             self.append(s3_drop_out)
-
-            carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.clean_drop = casa_py_drop
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]
@@ -178,8 +178,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "profile_name": 'aws-chiles02',
                 "node": node_id,
             })
-            self._start_oids.append(s3_drop['uid'])
-
             copy_from_s3 = dropdict({
                 "type": 'app',
                 "app": get_module_name(DockerCopyCleanFromS3),
@@ -209,10 +207,13 @@ class BuildGraphClean(AbstractBuildGraph):
             })
 
             carry_over_data = self._map_carry_over_data[node_id]
+            if carry_over_data.clean_drop is None:
+                self._start_oids.append(s3_drop['uid'])
+            else:
+                carry_over_data.clean_drop.addOutput(s3_drop)
+
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
-            if carry_over_data.clean_drop is not None:
-                carry_over_data.clean_drop.addOutput(s3_drop)
 
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(measurement_set)
