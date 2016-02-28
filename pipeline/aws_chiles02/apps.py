@@ -202,6 +202,7 @@ class DockerClean(DockerApp):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
+        self._iterations = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -210,15 +211,17 @@ class DockerClean(DockerApp):
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._command = 'clean.sh %i0 %o0 %o0 '
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         measurement_sets = ['/dfms_root' + os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
-        self._command = 'clean.sh %o0 {0} {1} {2}'.format(
+        self._command = 'clean.sh %o0 {0} {1} {2} {3}'.format(
                 self._min_frequency,
                 self._max_frequency,
+                self._iterations,
                 ' '.join(measurement_sets),
         )
         super(DockerClean, self).run()

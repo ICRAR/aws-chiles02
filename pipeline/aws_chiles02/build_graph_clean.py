@@ -33,16 +33,25 @@ from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COP
 from dfms.drop import dropdict, DirectoryContainer
 
 
+class CarryOverDataClean:
+    def __init__(self):
+        self.clean_drop = None
+
+
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}'.format(width)
         self._s3_split_name = 'split_{0}'.format(width)
+        self._iterations = iterations
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
+
+    def new_carry_over_data(self):
+        return CarryOverDataClean()
 
     def build_graph(self):
         self._build_node_map()
@@ -67,6 +76,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "user": 'root',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
+                "iterations": self._iterations,
                 "measurement_sets": [drop['dirname'] for drop in s3_drop_outs],
                 "input_error_threshold": 100,
                 "node": node_id,
@@ -127,7 +137,7 @@ class BuildGraphClean(AbstractBuildGraph):
             self.append(s3_drop_out)
 
             carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.drop_listobs = s3_drop_out
+            carry_over_data.clean_drop = casa_py_drop
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]
@@ -199,10 +209,10 @@ class BuildGraphClean(AbstractBuildGraph):
             })
 
             carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.drop_listobs is not None:
-                copy_from_s3.addInput(carry_over_data.drop_listobs)
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
+            if carry_over_data.clean_drop is not None:
+                carry_over_data.clean_drop.addOutput(s3_drop)
 
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(measurement_set)

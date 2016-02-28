@@ -32,6 +32,12 @@ from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COP
 from dfms.drop import dropdict, BarrierAppDROP, DirectoryContainer
 
 
+class CarryOverDataMsTransform:
+    def __init__(self):
+        self.drop_listobs = None
+        self.barrier_drop = None
+
+
 class BuildGraphMsTransform(AbstractBuildGraph):
     def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width):
         super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume)
@@ -42,6 +48,9 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
         self._map_day_to_node = None
+
+    def new_carry_over_data(self):
+        return CarryOverDataMsTransform()
 
     def build_graph(self):
         self._build_node_map()

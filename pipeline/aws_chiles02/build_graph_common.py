@@ -30,12 +30,6 @@ from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
 
 
-class CarryOverData:
-    def __init__(self):
-        self.drop_listobs = None
-        self.barrier_drop = None
-
-
 class AbstractBuildGraph:
     # This ensures that:
     #  - This class cannot be instantiated
@@ -55,7 +49,7 @@ class AbstractBuildGraph:
 
         for key, list_ips in self._node_details.iteritems():
             for instance_details in list_ips:
-                self._map_carry_over_data[instance_details['ip_address']] = CarryOverData()
+                self._map_carry_over_data[instance_details['ip_address']] = self.new_carry_over_data()
 
     @property
     def drop_list(self):
@@ -86,6 +80,12 @@ class AbstractBuildGraph:
     def build_graph(self):
         """
         Build the graph
+        """
+
+    @abstractmethod
+    def new_carry_over_data(self):
+        """"
+        Get the carry over data structure
         """
 
     def _add_shutdown(self):

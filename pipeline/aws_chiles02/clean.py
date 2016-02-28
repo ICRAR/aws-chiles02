@@ -34,7 +34,7 @@ LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, in_dirs, iterations):
     """
     Perform the CLEAN step
 
@@ -56,7 +56,7 @@ def do_clean(cube_dir, min_freq, max_freq, in_dirs):
               start='',
               width='',
               interpolation='nearest',
-              niter=1000,
+              niter=iterations,
               gain=0.1,
               threshold='0.0mJy',
               imsize=[2048],
@@ -73,4 +73,5 @@ do_clean(
         args.arguments[0],
         int(args.arguments[1]),
         int(args.arguments[2]),
-        args.arguments[3:])
+        int(args.arguments[3]),
+        args.arguments[4:])
