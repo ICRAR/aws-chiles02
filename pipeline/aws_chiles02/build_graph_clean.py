@@ -30,12 +30,11 @@ from aws_chiles02.apps import DockerClean, DockerCopyCleanToS3, DockerCopyCleanF
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY
-from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
+from dfms.drop import dropdict, DirectoryContainer
 
 
 class CarryOverDataClean:
     def __init__(self):
-        self.barrier_before_clean = None
         self.s3_out = None
 
 
@@ -67,30 +66,6 @@ class BuildGraphClean(AbstractBuildGraph):
             node_id = self._get_next_node(frequency_pair)
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
-            barrier_before_clean = dropdict({
-                "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
-                "oid": self.get_oid('app_barrier'),
-                "uid": self.get_uuid(),
-                "user": 'root',
-                "node": node_id,
-            })
-            barrier_before_clean_out = dropdict({
-                "type": 'plain',
-                "storage": 'memory',
-                "oid": self.get_oid('in_memory'),
-                "uid": self.get_uuid(),
-                "user": 'root',
-                "node": node_id,
-            })
-            for drop in s3_drop_outs:
-                barrier_before_clean.addInput(drop)
-            barrier_before_clean.addOutput(barrier_before_clean_out)
-            self.append(barrier_before_clean)
-            self.append(barrier_before_clean_out)
-            carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.barrier_before_clean = barrier_before_clean
-
             casa_py_clean_drop = dropdict({
                 "type": 'app',
                 "app": get_module_name(DockerClean),
@@ -119,13 +94,11 @@ class BuildGraphClean(AbstractBuildGraph):
                 "expireAfterUse": True,
                 "node": node_id,
             })
-            casa_py_clean_drop.addInput(barrier_before_clean_out)
+            for drop in s3_drop_outs:
+                casa_py_clean_drop.addInput(drop)
             casa_py_clean_drop.addOutput(result)
             self.append(casa_py_clean_drop)
             self.append(result)
-
-            if carry_over_data.s3_out is not None:
-                casa_py_clean_drop.addInput(carry_over_data.s3_out)
 
             copy_to_s3 = dropdict({
                 "type": 'app',
@@ -162,6 +135,7 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_to_s3.addOutput(s3_drop_out)
             self.append(copy_to_s3)
             self.append(s3_drop_out)
+            carry_over_data = self._map_carry_over_data[node_id]
             carry_over_data.s3_out = s3_drop_out
 
     def _get_next_node(self, frequency_to_process):
@@ -231,11 +205,10 @@ class BuildGraphClean(AbstractBuildGraph):
                 "node": node_id,
             })
 
+            self._start_oids.append(s3_drop['uid'])
             carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.barrier_before_clean is None:
-                self._start_oids.append(s3_drop['uid'])
-            else:
-                carry_over_data.barrier_before_clean.addOutput(s3_drop)
+            if carry_over_data.s3_out is not None:
+                copy_from_s3.addInput(carry_over_data.s3_out)
 
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
