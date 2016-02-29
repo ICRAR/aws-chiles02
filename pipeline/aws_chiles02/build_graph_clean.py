@@ -151,8 +151,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 clean_up.addInput(drop)
             clean_up.addInput(s3_drop_out)
 
-
-
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]
 
