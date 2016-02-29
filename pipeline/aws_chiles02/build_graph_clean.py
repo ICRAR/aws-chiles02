@@ -36,6 +36,7 @@ from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
 class CarryOverDataClean:
     def __init__(self):
         self.barrier_before_clean = None
+        self.s3_out = None
 
 
 class BuildGraphClean(AbstractBuildGraph):
@@ -43,7 +44,7 @@ class BuildGraphClean(AbstractBuildGraph):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
-        self._s3_clean_name = 'clean_{0}'.format(width)
+        self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
         self._s3_split_name = 'split_{0}'.format(width)
         self._iterations = iterations
         self._map_frequency_to_node = None
@@ -123,6 +124,9 @@ class BuildGraphClean(AbstractBuildGraph):
             self.append(casa_py_clean_drop)
             self.append(result)
 
+            if carry_over_data.s3_out is not None:
+                casa_py_clean_drop.addInput(carry_over_data.s3_out)
+
             copy_to_s3 = dropdict({
                 "type": 'app',
                 "app": get_module_name(DockerCopyCleanToS3),
@@ -158,6 +162,7 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_to_s3.addOutput(s3_drop_out)
             self.append(copy_to_s3)
             self.append(s3_drop_out)
+            carry_over_data.s3_out = s3_drop_out
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

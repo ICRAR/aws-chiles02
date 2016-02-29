@@ -57,7 +57,7 @@ def copy_to_s3(args):
     # Make the tar file
     tar_filename = os.path.join(args.directory, 'clean_{0}~{1}.tar'.format(args.min_frequency, args.max_frequency))
     os.chdir(args.directory)
-    bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual'.format(tar_filename, stem_name)
+    bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(tar_filename, stem_name)
     return_code = run_command(bash)
     path_exists = os.path.exists(tar_filename)
     if return_code != 0 or not path_exists:
