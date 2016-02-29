@@ -260,7 +260,10 @@ class CleanupDirectories(BarrierAppDROP):
                     shutil.rmtree(input_file, ignore_errors=True)
                 else:
                     LOG.info('Removing file {0}'.format(input_file))
-                    os.remove(input_file)
+                    try:
+                        os.remove(input_file)
+                    except OSError:
+                        LOG.exception('Cannot remove {0}'.format(input_file))
 
 
 class InitializeSqliteApp(BarrierAppDROP):
