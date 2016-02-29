@@ -89,7 +89,7 @@ class BuildGraphClean(AbstractBuildGraph):
             self.append(barrier_before_clean)
             self.append(barrier_before_clean_out)
             carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.clean_drop = barrier_before_clean
+            carry_over_data.barrier_before_clean = barrier_before_clean
 
             casa_py_clean_drop = dropdict({
                 "type": 'app',
