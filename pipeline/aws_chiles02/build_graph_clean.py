@@ -26,7 +26,7 @@ import os
 
 import boto3
 
-from aws_chiles02.apps import DockerClean, DockerCopyCleanToS3, DockerCopyCleanFromS3
+from aws_chiles02.apps import DockerClean, DockerCopyCleanToS3, DockerCopyCleanFromS3, CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY
@@ -138,6 +138,21 @@ class BuildGraphClean(AbstractBuildGraph):
             carry_over_data = self._map_carry_over_data[node_id]
             carry_over_data.s3_out = s3_drop_out
 
+            clean_up = dropdict({
+                "type": 'app',
+                "app": get_module_name(CleanupDirectories),
+                "oid": self.get_oid('app_cleanup_directories'),
+                "uid": self.get_uuid(),
+                "user": 'root',
+                "node": node_id,
+            })
+            self.append(clean_up)
+            for drop in s3_drop_outs:
+                clean_up.addInput(drop)
+            clean_up.addInput(s3_drop_out)
+
+
+
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]
 
@@ -204,6 +219,9 @@ class BuildGraphClean(AbstractBuildGraph):
                 "check_exists": False,
                 "node": node_id,
             })
+            # The order of arguments is important so don't put anything in front of these
+            copy_from_s3.addInput(s3_drop)
+            copy_from_s3.addOutput(measurement_set)
 
             self._start_oids.append(s3_drop['uid'])
             carry_over_data = self._map_carry_over_data[node_id]
@@ -213,8 +231,6 @@ class BuildGraphClean(AbstractBuildGraph):
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
 
-            copy_from_s3.addInput(s3_drop)
-            copy_from_s3.addOutput(measurement_set)
             self.append(s3_drop)
             self.append(copy_from_s3)
             self.append(measurement_set)

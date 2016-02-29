@@ -24,10 +24,11 @@ My Docker Apps
 """
 import logging
 import os
+import shutil
 import sqlite3
 
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP
+from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 
 LOG = logging.getLogger(__name__)
 
@@ -241,6 +242,25 @@ class DockerListobs(DockerApp):
 
     def dataURL(self):
         return 'docker container chiles02:latest'
+
+
+class CleanupDirectories(BarrierAppDROP):
+    def __init__(self, oid, uid, **kwargs):
+        super(CleanupDirectories, self).__init__(oid, uid, **kwargs)
+
+    def dataURL(self):
+        return type(self).__name__
+
+    def run(self):
+        input_files = [i for i in self.inputs if isinstance(i, (FileDROP, DirectoryContainer))]
+        for input_file in input_files:
+            if os.path.exists(input_file):
+                if os.path.isdir(input_file):
+                    LOG.info('Removing directory {0}'.format(input_file))
+                    shutil.rmtree(input_file, ignore_errors=True)
+                else:
+                    LOG.info('Removing file {0}'.format(input_file))
+                    os.remove(input_file)
 
 
 class InitializeSqliteApp(BarrierAppDROP):
