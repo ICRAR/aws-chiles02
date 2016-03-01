@@ -33,6 +33,8 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.cli.CommandLine;
@@ -146,7 +148,9 @@ public class CopyFileToS3 extends AbstractCopyS3 {
     long startTime = System.currentTimeMillis();
 
     // TransferManager processes all transfers asynchronously, so this call will return immediately.
-    final Upload upload = transferManager.upload(bucketName, keyName, new File(filePath));
+    PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, keyName, new File(filePath));
+    putObjectRequest.setStorageClass(StorageClass.ReducedRedundancy);
+    final Upload upload = transferManager.upload(putObjectRequest);
     upload.addProgressListener(
         new ProgressListener() {
           private String lastValue = "";
