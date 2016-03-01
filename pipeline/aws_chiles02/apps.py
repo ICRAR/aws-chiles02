@@ -252,7 +252,7 @@ class CleanupDirectories(BarrierAppDROP):
         return type(self).__name__
 
     def run(self):
-        input_files = [i for i in self.inputs if isinstance(i, (FileDROP, DirectoryContainer))]
+        input_files = [i.path for i in self.inputs if isinstance(i, (FileDROP, DirectoryContainer))]
         for input_file in input_files:
             if os.path.exists(input_file):
                 if os.path.isdir(input_file):
