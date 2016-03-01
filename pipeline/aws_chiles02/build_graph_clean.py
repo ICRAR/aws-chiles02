@@ -123,7 +123,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "expireAfterUse": True,
                 "precious": False,
                 "bucket": self._bucket_name,
-                "key": '{0}/{1}_{2}.tar'.format(
+                "key": '{0}/cleaned_{1}_{2}.tar'.format(
                         self._s3_clean_name,
                         frequency_pair.bottom_frequency,
                         frequency_pair.top_frequency,
