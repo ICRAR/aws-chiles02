@@ -1,5 +1,5 @@
 #!/bin/bash -xv
-# copy_to_s3
+# copy_clean_to_s3
 
 cd /opt/chiles02/aws-chiles02
 git pull

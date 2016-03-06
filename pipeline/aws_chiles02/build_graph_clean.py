@@ -26,16 +26,19 @@ import os
 
 import boto3
 
-from aws_chiles02.apps import DockerClean, DockerCopyCleanToS3, DockerCopyCleanFromS3, CleanupDirectories
+from aws_chiles02.apps_clean import DockerClean, DockerCopyCleanToS3, DockerCopyCleanFromS3
+from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY
+from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, DirectoryContainer
 
 
 class CarryOverDataClean:
     def __init__(self):
         self.s3_out = None
+        self.clean_up = None
 
 
 class BuildGraphClean(AbstractBuildGraph):
@@ -150,6 +153,37 @@ class BuildGraphClean(AbstractBuildGraph):
             for drop in s3_drop_outs:
                 clean_up.addInput(drop)
             clean_up.addInput(s3_drop_out)
+            carry_over_data.clean_up = clean_up
+
+        if self._shutdown:
+            self.add_shutdown()
+
+    def add_shutdown(self):
+        for node_id in self._list_ip:
+            carry_over_data = self._map_carry_over_data[node_id]
+            if carry_over_data.clean_up is not None:
+                memory_drop = dropdict({
+                    "type": 'plain',
+                    "storage": 'memory',
+                    "oid": self.get_oid('memory_in'),
+                    "uid": self.get_uuid(),
+                    "node": node_id,
+                })
+                self.append(memory_drop)
+                carry_over_data.clean_up.addOutput(memory_drop)
+
+                shutdown_drop = dropdict({
+                    "type": 'app',
+                    "app": get_module_name(BashShellApp),
+                    "oid": self.get_oid('app_bash_shell_app'),
+                    "uid": self.get_uuid(),
+                    "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
+                    "user": 'root',
+                    "input_error_threshold": 100,
+                    "node": node_id,
+                })
+                shutdown_drop.addInput(memory_drop)
+                self.append(shutdown_drop)
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

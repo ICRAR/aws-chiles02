@@ -25,10 +25,6 @@ The abstract graph builder
 import uuid
 from abc import ABCMeta, abstractmethod
 
-from aws_chiles02.common import get_module_name
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict
-
 
 class AbstractBuildGraph:
     # This ensures that:
@@ -88,31 +84,8 @@ class AbstractBuildGraph:
         Get the carry over data structure
         """
 
-    def _add_shutdown(self):
-        for list_ips in self._node_details.values():
-            for instance_details in list_ips:
-                node_id = instance_details['ip_address']
-                carry_over_data = self._map_carry_over_data[node_id]
-                if carry_over_data.barrier_drop is not None:
-                    memory_drop = dropdict({
-                        "type": 'plain',
-                        "storage": 'memory',
-                        "oid": self.get_oid('memory_in'),
-                        "uid": self.get_uuid(),
-                        "node": node_id,
-                    })
-                    self.append(memory_drop)
-                    carry_over_data.barrier_drop.addOutput(memory_drop)
-
-                    shutdown_drop = dropdict({
-                        "type": 'app',
-                        "app": get_module_name(BashShellApp),
-                        "oid": self.get_oid('app_bash_shell_app'),
-                        "uid": self.get_uuid(),
-                        "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                        "user": 'root',
-                        "input_error_threshold": 100,
-                        "node": node_id,
-                    })
-                    shutdown_drop.addInput(memory_drop)
-                    self.append(shutdown_drop)
+    @abstractmethod
+    def add_shutdown(self):
+        """"
+        Add the shutdown drop
+        """

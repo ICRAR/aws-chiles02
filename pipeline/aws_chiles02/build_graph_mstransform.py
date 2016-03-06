@@ -25,10 +25,11 @@ Build the physical graph
 import os
 import operator
 
-from aws_chiles02.apps import DockerMsTransform, DockerCopyMsTransformToS3, DockerCopyMsTransformFromS3, DockerListobs
+from aws_chiles02.apps_mstransform import DockerMsTransform, DockerCopyMsTransformToS3, DockerCopyMsTransformFromS3, DockerListobs
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, SIZE_1GB
+from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, BarrierAppDROP, DirectoryContainer
 
 
@@ -108,7 +109,36 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         # Should we add a shutdown drop
         if self._shutdown:
-            self._add_shutdown()
+            self.add_shutdown()
+
+    def add_shutdown(self):
+        for list_ips in self._node_details.values():
+            for instance_details in list_ips:
+                node_id = instance_details['ip_address']
+                carry_over_data = self._map_carry_over_data[node_id]
+                if carry_over_data.barrier_drop is not None:
+                    memory_drop = dropdict({
+                        "type": 'plain',
+                        "storage": 'memory',
+                        "oid": self.get_oid('memory_in'),
+                        "uid": self.get_uuid(),
+                        "node": node_id,
+                    })
+                    self.append(memory_drop)
+                    carry_over_data.barrier_drop.addOutput(memory_drop)
+
+                    shutdown_drop = dropdict({
+                        "type": 'app',
+                        "app": get_module_name(BashShellApp),
+                        "oid": self.get_oid('app_bash_shell_app'),
+                        "uid": self.get_uuid(),
+                        "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
+                        "user": 'root',
+                        "input_error_threshold": 100,
+                        "node": node_id,
+                    })
+                    shutdown_drop.addInput(memory_drop)
+                    self.append(shutdown_drop)
 
     def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
         casa_py_drop = dropdict({
