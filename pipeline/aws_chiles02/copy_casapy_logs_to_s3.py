@@ -44,18 +44,10 @@ def parser_arguments():
 
 
 def copy_logs_to_s3(args):
-    # Does the file exists
-    stem_name = 'clean_{0}~{1}'.format(args.min_frequency, args.max_frequency)
-    measurement_set = os.path.join(args.directory, stem_name)
-    LOG.info('checking {0}.image exists'.format(measurement_set))
-    if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
-        LOG.info('Measurement_set: {0}.image does not exist'.format(measurement_set))
-        return 0
-
     # Make the tar file
-    tar_filename = os.path.join(args.directory, 'clean_{0}~{1}.tar'.format(args.min_frequency, args.max_frequency))
+    tar_filename = os.path.join(args.directory, 'logs.tar')
     os.chdir(args.directory)
-    bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(tar_filename, stem_name)
+    bash = 'tar -cvf {0} *.log'.format(tar_filename)
     return_code = run_command(bash)
     path_exists = os.path.exists(tar_filename)
     if return_code != 0 or not path_exists:

@@ -43,10 +43,11 @@ class FrequencyPair:
     def __init__(self, bottom_frequency, top_frequency):
         self.bottom_frequency = bottom_frequency
         self.top_frequency = top_frequency
-        self.name = 'FrequencyPair({0}, {1})'.format(bottom_frequency, top_frequency)
+        self._name = 'FrequencyPair({0}, {1})'.format(bottom_frequency, top_frequency)
+        self._underscore_name = '{0}_{1}'.format(bottom_frequency, top_frequency)
 
     def __str__(self):
-        return self.name
+        return self._name
 
     def __repr__(self):
         return self.__str__()
@@ -55,7 +56,15 @@ class FrequencyPair:
         return hash((self.bottom_frequency, self.top_frequency))
 
     def __eq__(self, other):
-        return self.name == other.name
+        return self._name == other._name
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def underscore_name(self):
+        return self._underscore_name
 
 
 class MeasurementSetData:

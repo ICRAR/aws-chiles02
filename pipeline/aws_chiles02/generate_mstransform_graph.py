@@ -112,7 +112,7 @@ class WorkToDo:
         else:
             # Remove the groups we've processed
             for frequency_group in self._list_frequencies:
-                if frequency_group.name not in splits_done:
+                if frequency_group.underscore_name not in splits_done:
                     frequency_groups.append(frequency_group)
 
         return frequency_groups

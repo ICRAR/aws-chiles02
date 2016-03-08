@@ -28,7 +28,7 @@ import argparse
 import boto3
 import collections
 
-from aws_chiles02.common import get_list_frequency_groups
+from aws_chiles02.common import get_list_frequency_groups, FrequencyPair
 from aws_chiles02.generate_mstransform_graph import MeasurementSetData
 
 LOG = logging.getLogger(__name__)
@@ -71,8 +71,10 @@ def analyse_data(measurement_sets, split_entries, width):
 
     for element in split_entries:
         frequencies = expected_combinations[element[0]]
-        if element[1] in frequencies:
-            frequencies.remove(element[1])
+        pair = element[1].split('_')
+        frequency_pair = FrequencyPair(pair[0], pair[1]).name
+        if frequency_pair in frequencies:
+            frequencies.remove(frequency_pair)
 
     number_entries = len(list_frequencies)
     ordered_dictionary = collections.OrderedDict(sorted(expected_combinations.items()))
