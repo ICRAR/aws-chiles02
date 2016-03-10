@@ -117,4 +117,4 @@ runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtuale
 runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'
 
 cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'

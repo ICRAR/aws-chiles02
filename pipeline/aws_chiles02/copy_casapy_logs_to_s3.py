@@ -25,7 +25,6 @@ Copy files to S3
 import logging
 import argparse
 import os
-import shutil
 import sys
 
 from aws_chiles02.common import run_command
@@ -35,7 +34,7 @@ LOG = logging.getLogger(__name__)
 
 def parser_arguments():
     parser = argparse.ArgumentParser('Copy a file from S3 and untar it')
-    parser.add_argument('directory', help='the directory to write the file in')
+    parser.add_argument('directory', help='the directory to get the log files from')
     parser.add_argument('s3_url', help='the s3: url to access')
 
     args = parser.parse_args()
@@ -52,18 +51,17 @@ def copy_logs_to_s3(args):
     path_exists = os.path.exists(tar_filename)
     if return_code != 0 or not path_exists:
         LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+        return 0
 
-    bash = 'java -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
-           ' -aws_profile aws-chiles02 {0} {1}'.format(
-            args.s3_url,
-            tar_filename
-    )
-    return_code = run_command(bash)
+    else:
+        bash = 'java -classpath /opt/chiles02/aws-chiles02/java/build/awsChiles02.jar org.icrar.awsChiles02.copyS3.CopyFileToS3' \
+               ' -aws_profile aws-chiles02 {0} {1}'.format(
+                args.s3_url,
+                tar_filename
+        )
+        return_code = run_command(bash)
 
-    # Clean up
-    shutil.rmtree(args.directory, ignore_errors=True)
-
-    return return_code
+        return return_code
 
 
 if __name__ == '__main__':

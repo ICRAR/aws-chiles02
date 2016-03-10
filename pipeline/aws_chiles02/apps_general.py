@@ -27,9 +27,29 @@ import os
 import shutil
 import sqlite3
 
+from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 
 LOG = logging.getLogger(__name__)
+
+
+class DockerCopyCasaPyLogsToS3(DockerApp):
+    def __init__(self, oid, uid, **kwargs):
+        self._bucket = None
+        self._key = None
+        self._aws_access_key_id = None
+        self._aws_secret_access_key = None
+        self._command = None
+        super(DockerCopyCasaPyLogsToS3, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(DockerCopyCasaPyLogsToS3, self).initialize(**kwargs)
+        self._bucket = self._getArg(kwargs, 'bucket', None)
+        self._key = self._getArg(kwargs, 'key', None)
+        self._command = 'copy_casapy_logs_to_s3.sh %oDataURL0 %i0'
+
+    def dataURL(self):
+        return 'docker container java-s3-copy:latest'
 
 
 class CleanupDirectories(BarrierAppDROP):

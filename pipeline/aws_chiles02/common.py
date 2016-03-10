@@ -56,7 +56,7 @@ class FrequencyPair:
         return hash((self.bottom_frequency, self.top_frequency))
 
     def __eq__(self, other):
-        return self._name == other._name
+        return self.name == other.name
 
     @property
     def name(self):
@@ -64,7 +64,7 @@ class FrequencyPair:
 
     @property
     def underscore_name(self):
-        return self._underscore_name
+        return self.underscore_name
 
 
 class MeasurementSetData:
