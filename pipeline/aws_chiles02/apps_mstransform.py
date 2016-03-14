@@ -57,11 +57,11 @@ class CopyMsTransformFromS3(BarrierAppDROP):
 
     def run(self):
         s3_input = self.inputs[0]
-        bucket_name = s3_input['bucket']
-        key = s3_input['key']
+        bucket_name = s3_input.bucket
+        key = s3_input.key
 
         measurement_set_output = self.outputs[0]
-        measurement_set_dir = measurement_set_output['dirname']
+        measurement_set_dir = measurement_set_output.path
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
@@ -138,11 +138,11 @@ class CopyMsTransformToS3(BarrierAppDROP):
 
     def run(self):
         measurement_set_output = self.inputs[0]
-        measurement_set_dir = measurement_set_output['dirname']
+        measurement_set_dir = measurement_set_output.path
 
         s3_output = self.outputs[0]
-        bucket_name = s3_output['bucket']
-        key = s3_output['key']
+        bucket_name = s3_output.bucket
+        key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
 
         directory_name = 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
@@ -180,34 +180,6 @@ class CopyMsTransformToS3(BarrierAppDROP):
         shutil.rmtree(measurement_set_dir, ignore_errors=True)
 
         return return_code
-
-
-class DockerCopyMsTransformToS3(DockerApp):
-    def __init__(self, oid, uid, **kwargs):
-        self._bucket = None
-        self._key = None
-        self._aws_access_key_id = None
-        self._aws_secret_access_key = None
-        self._set_name = None
-        self._max_frequency = None
-        self._min_frequency = None
-        self._command = None
-        super(DockerCopyMsTransformToS3, self).__init__(oid, uid, **kwargs)
-
-    def initialize(self, **kwargs):
-        super(DockerCopyMsTransformToS3, self).initialize(**kwargs)
-        self._bucket = self._getArg(kwargs, 'bucket', None)
-        self._key = self._getArg(kwargs, 'key', None)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._set_name = self._getArg(kwargs, 'set_name', None)
-        self._command = 'copy_mstransform_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(
-                self._min_frequency,
-                self._max_frequency,
-        )
-
-    def dataURL(self):
-        return 'docker container java-s3-copy:latest'
 
 
 class DockerMsTransform(DockerApp):

@@ -58,11 +58,11 @@ class CopyCleanFromS3(BarrierAppDROP):
 
     def run(self):
         s3_input = self.inputs[0]
-        bucket_name = s3_input['bucket']
-        key = s3_input['key']
+        bucket_name = s3_input.bucket
+        key = s3_input.key
 
         measurement_set_output = self.outputs[0]
-        measurement_set_dir = measurement_set_output['dirname']
+        measurement_set_dir = measurement_set_output.path
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
@@ -138,11 +138,11 @@ class CopyCleanToS3(BarrierAppDROP):
 
     def run(self):
         measurement_set_output = self.inputs[0]
-        measurement_set_dir = measurement_set_output['dirname']
+        measurement_set_dir = measurement_set_output.path
 
         s3_output = self.outputs[0]
-        bucket_name = s3_output['bucket']
-        key = s3_output['key']
+        bucket_name = s3_output.bucket
+        key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
         # Does the file exists
         stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
