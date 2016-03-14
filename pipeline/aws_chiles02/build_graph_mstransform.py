@@ -25,10 +25,10 @@ Build the physical graph
 import os
 import operator
 
-from aws_chiles02.apps_mstransform import DockerMsTransform, DockerCopyMsTransformToS3, DockerCopyMsTransformFromS3, DockerListobs
+from aws_chiles02.apps_mstransform import DockerMsTransform, DockerListobs, CopyMsTransformFromS3, CopyMsTransformToS3
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.build_graph_common import AbstractBuildGraph
-from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY, SIZE_1GB
+from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, BarrierAppDROP, DirectoryContainer
 
@@ -177,15 +177,12 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self.append(result)
         copy_to_s3 = dropdict({
             "type": 'app',
-            "app": get_module_name(DockerCopyMsTransformToS3),
+            "app": get_module_name(CopyMsTransformToS3),
             "oid": self.get_oid('app_copy_mstransform_to_s3'),
             "uid": self.get_uuid(),
-            "image": CONTAINER_JAVA_S3_COPY,
-            "command": 'copy_to_s3',
             "user": 'root',
             "min_frequency": frequency_pairs.bottom_frequency,
             "max_frequency": frequency_pairs.top_frequency,
-            "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             "input_error_threshold": 100,
             "node": node_id,
             "n_tries": 2,
@@ -233,12 +230,9 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         copy_from_s3 = dropdict({
             "type": 'app',
-            "app": get_module_name(DockerCopyMsTransformFromS3),
-            "oid": self.get_oid('app_copy_from_s3'),
+            "app": get_module_name(CopyMsTransformFromS3),
+            "oid": self.get_oid('app_copy_mstransform_from_s3'),
             "uid": self.get_uuid(),
-            "image": CONTAINER_JAVA_S3_COPY,
-            "command": 'copy_from_s3',
-            "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
             "user": 'root',
             "input_error_threshold": 100,
             "node": node_id,

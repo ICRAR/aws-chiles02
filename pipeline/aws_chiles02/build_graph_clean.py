@@ -26,11 +26,11 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_clean import DockerClean, DockerCopyCleanToS3, DockerCopyCleanFromS3
+from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
-from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_JAVA_S3_COPY
+from aws_chiles02.settings_file import CONTAINER_CHILES02
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, DirectoryContainer
 
@@ -83,7 +83,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "measurement_sets": [drop['dirname'] for drop in s3_drop_outs],
                 "input_error_threshold": 100,
                 "node": node_id,
-                "n_tries": 2,
             })
             oid = self.get_oid('dir_clean_output')
             result = dropdict({
@@ -105,15 +104,12 @@ class BuildGraphClean(AbstractBuildGraph):
 
             copy_to_s3 = dropdict({
                 "type": 'app',
-                "app": get_module_name(DockerCopyCleanToS3),
+                "app": get_module_name(CopyCleanToS3),
                 "oid": self.get_oid('app_copy_clean_to_s3'),
                 "uid": self.get_uuid(),
-                "image": CONTAINER_JAVA_S3_COPY,
-                "command": 'copy_to_s3',
                 "user": 'root',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
-                "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
                 "input_error_threshold": 100,
                 "node": node_id,
                 "n_tries": 2,
@@ -226,14 +222,11 @@ class BuildGraphClean(AbstractBuildGraph):
             })
             copy_from_s3 = dropdict({
                 "type": 'app',
-                "app": get_module_name(DockerCopyCleanFromS3),
+                "app": get_module_name(CopyCleanFromS3),
                 "oid": self.get_oid('app_copy_from_s3'),
                 "uid": self.get_uuid(),
-                "image": CONTAINER_JAVA_S3_COPY,
-                "command": 'copy_from_s3',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
-                "additionalBindings": ['/home/ec2-user/.aws/credentials:/root/.aws/credentials'],
                 "user": 'root',
                 "input_error_threshold": 100,
                 "node": node_id,

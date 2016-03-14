@@ -29,7 +29,7 @@ from dfms.apps.dockerapp import DockerApp
 LOG = logging.getLogger(__name__)
 
 
-class DockerCopyConcatenateFromS3(DockerApp):
+class CopyConcatenateFromS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
         """
         initial the class, make sure super is called after the event as it calls initialize
@@ -38,42 +38,25 @@ class DockerCopyConcatenateFromS3(DockerApp):
         :param kwargs:
         :return:
         """
-        self._aws_access_key_id = None
-        self._aws_secret_access_key = None
-        self._command = None
-        super(DockerCopyConcatenateFromS3, self).__init__(oid, uid, **kwargs)
+        super(CopyConcatenateFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerCopyConcatenateFromS3, self).initialize(**kwargs)
-        self._command = 'copy_mstransform_from_s3.sh %iDataURL0 %o0'
+        super(CopyConcatenateFromS3, self).initialize(**kwargs)
 
     def dataURL(self):
         return 'docker container java-s3-copy:latest'
 
 
-class DockerCopyConcatenateToS3(DockerApp):
+class CopyConcatenateToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        self._bucket = None
-        self._key = None
-        self._aws_access_key_id = None
-        self._aws_secret_access_key = None
-        self._set_name = None
         self._max_frequency = None
         self._min_frequency = None
-        self._command = None
-        super(DockerCopyConcatenateToS3, self).__init__(oid, uid, **kwargs)
+        super(CopyConcatenateToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerCopyConcatenateToS3, self).initialize(**kwargs)
-        self._bucket = self._getArg(kwargs, 'bucket', None)
-        self._key = self._getArg(kwargs, 'key', None)
+        super(CopyConcatenateToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._set_name = self._getArg(kwargs, 'set_name', None)
-        self._command = 'copy_mstransform_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(
-                self._min_frequency,
-                self._max_frequency,
-        )
 
     def dataURL(self):
         return 'docker container java-s3-copy:latest'

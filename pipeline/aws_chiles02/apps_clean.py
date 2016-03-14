@@ -24,13 +24,21 @@ My Docker Apps
 """
 import logging
 import os
+import shutil
 
+import boto3
+from boto3.s3.transfer import S3Transfer
+
+from aws_chiles02.apps_general import ProgressPercentage
+from aws_chiles02.common import run_command
 from dfms.apps.dockerapp import DockerApp
+from dfms.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
+TAR_FILE = 'ms.tar'
 
 
-class DockerCopyCleanFromS3(DockerApp):
+class CopyCleanFromS3(BarrierAppDROP):
     def __init__(self, oid, uid, **kwargs):
         """
         initial the class, make sure super is called after the event as it calls initialize
@@ -39,52 +47,139 @@ class DockerCopyCleanFromS3(DockerApp):
         :param kwargs:
         :return:
         """
-        self._aws_access_key_id = None
-        self._aws_secret_access_key = None
         self._max_frequency = None
         self._min_frequency = None
-        self._command = None
-        super(DockerCopyCleanFromS3, self).__init__(oid, uid, **kwargs)
+        super(CopyCleanFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerCopyCleanFromS3, self).initialize(**kwargs)
+        super(CopyCleanFromS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'copy_clean_from_s3.sh %iDataURL0 %o0 {0} {1}'.format(
-                self._min_frequency,
-                self._max_frequency,
+
+    def run(self):
+        s3_input = self.inputs[0]
+        bucket_name = s3_input['bucket']
+        key = s3_input['key']
+
+        measurement_set_output = self.outputs[0]
+        measurement_set_dir = measurement_set_output['dirname']
+
+        LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
+
+        measurement_set = os.path.join(measurement_set_dir, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        LOG.info('Checking {0} exists'.format(measurement_set))
+        if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
+            LOG.info('Measurement Set: {0} exists'.format(measurement_set))
+            return 0
+
+        # Make the directory
+        if not os.path.exists(measurement_set_dir):
+            os.makedirs(measurement_set_dir)
+
+        full_path_tar_file = os.path.join(measurement_set_dir, TAR_FILE)
+        LOG.info('Tar: {0}'.format(full_path_tar_file))
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+        s3_object = s3.Object(bucket_name, key)
+        s3_size = s3_object.content_length
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.download_file(
+                bucket_name,
+                key,
+                measurement_set_dir,
+                callback=ProgressPercentage(
+                    key,
+                    s3_size
+                )
         )
+        if not os.path.exists(full_path_tar_file):
+            LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
+            return 1
+
+        # Check the sizes match
+        tar_size = os.path.getsize(full_path_tar_file)
+        if s3_size != tar_size:
+            LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size))
+            return 1
+
+        # The tar file exists and is the same size
+        bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, measurement_set_dir)
+        return_code = run_command(bash)
+
+        path_exists = os.path.exists(measurement_set)
+        if return_code != 0 or not path_exists:
+            LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists))
+            return 1
+
+        os.remove(full_path_tar_file)
+
+        return 0
 
     def dataURL(self):
-        return 'docker container java-s3-copy:latest'
+        return 'CopyCleanFromS3'
 
 
-class DockerCopyCleanToS3(DockerApp):
+class CopyCleanToS3(DockerApp):
     def __init__(self, oid, uid, **kwargs):
-        self._bucket = None
-        self._key = None
-        self._aws_access_key_id = None
-        self._aws_secret_access_key = None
-        self._set_name = None
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
-        super(DockerCopyCleanToS3, self).__init__(oid, uid, **kwargs)
+        super(CopyCleanToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerCopyCleanToS3, self).initialize(**kwargs)
-        self._bucket = self._getArg(kwargs, 'bucket', None)
-        self._key = self._getArg(kwargs, 'key', None)
-        self._set_name = self._getArg(kwargs, 'set_name', None)
+        super(CopyCleanToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'copy_clean_to_s3.sh %i0 %oDataURL0 {0} {1}'.format(
-                self._min_frequency,
-                self._max_frequency,
-        )
 
     def dataURL(self):
-        return 'docker container java-s3-copy:latest'
+        return 'CopyCleanToS3'
+
+    def run(self):
+        measurement_set_output = self.inputs[0]
+        measurement_set_dir = measurement_set_output['dirname']
+
+        s3_output = self.outputs[0]
+        bucket_name = s3_output['bucket']
+        key = s3_output['key']
+        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+        # Does the file exists
+        stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        measurement_set = os.path.join(measurement_set_dir, stem_name)
+        LOG.info('checking {0}.image exists'.format(measurement_set))
+        if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
+            LOG.info('Measurement_set: {0}.image does not exist'.format(measurement_set))
+            return 0
+
+        # Make the tar file
+        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        os.chdir(measurement_set_dir)
+        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(tar_filename, stem_name)
+        return_code = run_command(bash)
+        path_exists = os.path.exists(tar_filename)
+        if return_code != 0 or not path_exists:
+            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+                tar_filename,
+                bucket_name,
+                key,
+                callback=ProgressPercentage(
+                        key,
+                        float(os.path.getsize(tar_filename))
+                )
+        )
+
+        # Clean up
+        shutil.rmtree(measurement_set_dir, ignore_errors=True)
+
+        return return_code
 
 
 class DockerClean(DockerApp):
