@@ -89,5 +89,3 @@ class DockerConcatenate(DockerApp):
 
     def dataURL(self):
         return 'docker container chiles02:latest'
-
-

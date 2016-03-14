@@ -26,7 +26,7 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3
+from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph

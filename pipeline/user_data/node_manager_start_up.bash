@@ -106,9 +106,7 @@ sleep 10
 #docker login --email=a@b.com --username=icrar --password=XXX sdp-docker-registry.icrar.uwa.edu.au:8080
 
 # Get the docker containers now to prevent a race condition later
-#docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/java-s3-copy:latest
 #docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest
-docker pull kevinvinsen/java-s3-copy:latest
 docker pull kevinvinsen/chiles02:latest
 
 cd /home/ec2-user
@@ -117,4 +115,4 @@ runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtuale
 runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'
 
 cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 > /mnt/dfms/dfms_root/logfile.log 2>&1 &'
