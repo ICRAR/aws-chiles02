@@ -102,20 +102,20 @@ class InitializeSqliteApp(BarrierAppDROP):
 class ProgressPercentage:
     def __init__(self, filename, expected_size):
         self._filename = filename
-        self._size = expected_size
+        self._size = float(expected_size)
         self._seen_so_far = 0
         self._lock = threading.Lock()
-        self._previous_text = ''
+        self._percentage = -1
 
     def __call__(self, bytes_amount):
         with self._lock:
             self._seen_so_far += bytes_amount
-            percentage = (self._seen_so_far / self._size) * 100
-            text = '{0}  {1} / {2}  ({3:.2f}%)'.format(
-                    self._filename,
-                    self._seen_so_far,
-                    self._size,
-                    percentage)
-            if text != self._previous_text:
-                LOG.write(text)
-                self._previous_text = text
+            percentage = int((self._seen_so_far / self._size) * 100.0)
+            if percentage > self._percentage:
+                LOG.info(
+                        '{0}  {1} / {2}  ({3:.2f}%)'.format(
+                            self._filename,
+                            self._seen_so_far,
+                            self._size,
+                            percentage))
+                self._percentage = percentage
