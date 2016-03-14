@@ -121,7 +121,7 @@ class CopyCleanFromS3(BarrierAppDROP):
         return 'CopyCleanFromS3'
 
 
-class CopyCleanToS3(DockerApp):
+class CopyCleanToS3(BarrierAppDROP):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
