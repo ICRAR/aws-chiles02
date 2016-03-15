@@ -88,7 +88,7 @@ class CopyCleanFromS3(BarrierAppDROP):
         transfer.download_file(
                 bucket_name,
                 key,
-                measurement_set_dir,
+                full_path_tar_file,
                 callback=ProgressPercentage(
                     key,
                     s3_size
