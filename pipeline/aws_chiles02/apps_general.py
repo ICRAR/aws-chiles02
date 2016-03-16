@@ -31,6 +31,7 @@ import threading
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 
+TO_MB = 1048576.0
 LOG = logging.getLogger(__name__)
 
 
@@ -103,6 +104,7 @@ class ProgressPercentage:
     def __init__(self, filename, expected_size):
         self._filename = filename
         self._size = float(expected_size)
+        self._size_mb = expected_size / TO_MB
         self._seen_so_far = 0
         self._lock = threading.Lock()
         self._percentage = -1
@@ -113,9 +115,9 @@ class ProgressPercentage:
             percentage = int((self._seen_so_far / self._size) * 100.0)
             if percentage > self._percentage:
                 LOG.info(
-                        '{0}  {1} / {2}  ({3:.2f}%)'.format(
-                            self._filename,
-                            self._seen_so_far,
-                            self._size,
-                            percentage))
+                    '{0}  {1:.2f}MB / {2:.2f}MB  ({3}%)'.format(
+                        self._filename,
+                        self._seen_so_far / TO_MB,
+                        self._size_mb,
+                        percentage))
                 self._percentage = percentage

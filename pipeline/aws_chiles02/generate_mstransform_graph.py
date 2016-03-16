@@ -38,7 +38,7 @@ from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, get_nodes_running, build_hosts
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, SIZE_1GB, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
-from dfms.manager.client import SetEncoder, DataIslandManagerClient
+from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
 
@@ -306,7 +306,7 @@ def command_json(args):
     }
     graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width)
     graph.build_graph()
-    json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
+    json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
     with open("/tmp/json_split.txt", "w") as json_file:
         json_file.write(json_dumps)

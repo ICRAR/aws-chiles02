@@ -37,7 +37,7 @@ from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
-from dfms.manager.client import SetEncoder, DataIslandManagerClient
+from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
@@ -52,71 +52,70 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
     if boto_data is not None:
         uuid = get_uuid()
         ec2_data = EC2Controller(
-                ami_id,
+            ami_id,
+            {
+                'number_instances': 1,
+                'instance_type': 'i2.2xlarge',
+                'spot_price': spot_price
+            },
+            get_node_manager_user_data(boto_data, uuid),
+            AWS_REGION,
+            tags=[
                 {
-                    'number_instances': 1,
-                    'instance_type': 'i2.2xlarge',
-                    'spot_price': spot_price
+                    'Key': 'Owner',
+                    'Value': getpass.getuser(),
                 },
-                get_node_manager_user_data(boto_data, uuid),
-                AWS_REGION,
-                tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'DFMS Node',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
-
+                {
+                    'Key': 'Name',
+                    'Value': 'DFMS Node',
+                },
+                {
+                    'Key': 'uuid',
+                    'Value': uuid,
+                }
+            ]
         )
         ec2_data.start_instances()
 
         reported_running = get_reported_running(
-                uuid,
-                1,
-                wait=600
+            uuid,
+            1,
+            wait=600
         )
         hosts = build_hosts(reported_running)
 
         # Create the Data Island Manager
         data_island_manager = EC2Controller(
-                ami_id,
-                [
-                    {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price
-                    }
-                ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid),
-                AWS_REGION,
-                tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'Data Island Manager',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
+            ami_id,
+            [
+                {
+                    'number_instances': 1,
+                    'instance_type': 'm4.large',
+                    'spot_price': spot_price
+                }
+            ],
+            get_data_island_manager_user_data(boto_data, hosts, uuid),
+            AWS_REGION,
+            tags=[
+                {
+                    'Key': 'Owner',
+                    'Value': getpass.getuser(),
+                },
+                {
+                    'Key': 'Name',
+                    'Value': 'Data Island Manager',
+                },
+                {
+                    'Key': 'uuid',
+                    'Value': uuid,
+                }
+            ]
         )
         data_island_manager.start_instances()
         data_island_manager_running = get_reported_running(
-                uuid,
-                1,
-                wait=600
+            uuid,
+            1,
+            wait=600
         )
 
         if len(data_island_manager_running['m4.large']) == 1:
@@ -178,7 +177,7 @@ def command_json(args):
 
     graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations)
     graph.build_graph()
-    json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
+    json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
     with open("/tmp/json_split.txt", "w") as json_file:
         json_file.write(json_dumps)
@@ -186,25 +185,25 @@ def command_json(args):
 
 def command_create(args):
     create_and_generate(
-            args.bucket,
-            args.width,
-            args.ami,
-            args.spot_price1,
-            args.volume,
-            args.shutdown,
-            args.iterations,
+        args.bucket,
+        args.width,
+        args.ami,
+        args.spot_price1,
+        args.volume,
+        args.shutdown,
+        args.iterations,
     )
 
 
 def command_use(args):
     use_and_generate(
-            args.host,
-            args.port,
-            args.bucket,
-            args.width,
-            args.volume,
-            args.shutdown,
-            args.iterations,
+        args.host,
+        args.port,
+        args.bucket,
+        args.width,
+        args.volume,
+        args.shutdown,
+        args.iterations,
     )
 
 
@@ -242,23 +241,23 @@ def command_interactive(args):
     # Run the command
     if config['create_use'] == 'create':
         create_and_generate(
-                config['bucket_name'],
-                config['width'],
-                config['ami'],
-                config['spot_price'],
-                config['volume'],
-                config['shutdown'],
-                config['iterations'],
+            config['bucket_name'],
+            config['width'],
+            config['ami'],
+            config['spot_price'],
+            config['volume'],
+            config['shutdown'],
+            config['iterations'],
         )
     else:
         use_and_generate(
-                config['dim'],
-                DIM_PORT,
-                config['bucket_name'],
-                config['width'],
-                config['volume'],
-                config['shutdown'],
-                config['iterations'],
+            config['dim'],
+            DIM_PORT,
+            config['bucket_name'],
+            config['width'],
+            config['volume'],
+            config['shutdown'],
+            config['iterations'],
         )
 
 

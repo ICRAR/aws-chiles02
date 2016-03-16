@@ -90,13 +90,13 @@ class CopyMsTransformFromS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.download_file(
-                bucket_name,
+            bucket_name,
+            key,
+            full_path_tar_file,
+            callback=ProgressPercentage(
                 key,
-                full_path_tar_file,
-                callback=ProgressPercentage(
-                    key,
-                    s3_size
-                )
+                s3_size
+            )
         )
 
         if not os.path.exists(full_path_tar_file):
@@ -167,13 +167,13 @@ class CopyMsTransformToS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-                tar_filename,
-                bucket_name,
+            tar_filename,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
                 key,
-                callback=ProgressPercentage(
-                        key,
-                        float(os.path.getsize(tar_filename))
-                )
+                float(os.path.getsize(tar_filename))
+            )
         )
 
         # Clean up
@@ -201,9 +201,9 @@ class DockerMsTransform(DockerApp):
         # created so we have to do it later
         json_drop = self.inputs[1]
         self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'.format(
-                self._min_frequency,
-                self._max_frequency,
-                json_drop['Bottom edge']
+            self._min_frequency,
+            self._max_frequency,
+            json_drop['Bottom edge']
         )
         super(DockerMsTransform, self).run()
 

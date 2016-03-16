@@ -86,13 +86,13 @@ class CopyCleanFromS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.download_file(
-                bucket_name,
+            bucket_name,
+            key,
+            full_path_tar_file,
+            callback=ProgressPercentage(
                 key,
-                full_path_tar_file,
-                callback=ProgressPercentage(
-                    key,
-                    s3_size
-                )
+                s3_size
+            )
         )
         if not os.path.exists(full_path_tar_file):
             LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
@@ -155,7 +155,10 @@ class CopyCleanToS3(BarrierAppDROP):
         # Make the tar file
         tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(tar_filename, stem_name)
+        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(
+            tar_filename,
+            stem_name,
+        )
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
@@ -167,13 +170,13 @@ class CopyCleanToS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-                tar_filename,
-                bucket_name,
+            tar_filename,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
                 key,
-                callback=ProgressPercentage(
-                        key,
-                        float(os.path.getsize(tar_filename))
-                )
+                float(os.path.getsize(tar_filename))
+            )
         )
 
         # Clean up
@@ -205,10 +208,10 @@ class DockerClean(DockerApp):
         # created so we have to do it later
         measurement_sets = ['/dfms_root' + os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
         self._command = 'clean.sh %o0 {0} {1} {2} {3}'.format(
-                self._min_frequency,
-                self._max_frequency,
-                self._iterations,
-                ' '.join(measurement_sets),
+            self._min_frequency,
+            self._max_frequency,
+            self._iterations,
+            ' '.join(measurement_sets),
         )
         super(DockerClean, self).run()
 
