@@ -225,7 +225,7 @@ def get_argument(config, key, prompt, help_text=None, data_type=None, default=No
         elif data_type == float:
             config[key] = float(data)
         elif data_type == bool:
-            config[key] = bool(data)
+            config[key] = data in ['True', 'true']
     else:
         config[key] = data
 

@@ -46,7 +46,8 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
         self._iterations = iterations
-        self._node_id = node_details[0]['ip_address']
+        values = node_details.values()
+        self._node_id = values[0][0]['ip_address']
         self._width = width
         self._s3_client = None
 
@@ -128,7 +129,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         casa_py_concatenation_drop = dropdict({
             "type": 'app',
             "app": get_module_name(DockerConcatenate),
-            "oid": self.get_oid('app_clean'),
+            "oid": self.get_oid('app_concatenate'),
             "uid": self.get_uuid(),
             "image": CONTAINER_CHILES02,
             "command": 'clean',
@@ -140,7 +141,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             "node": self._node_id,
             "n_tries": 2,
         })
-        oid = self.get_oid('dir_clean_output')
+        oid = self.get_oid('dir_concatenate_output')
         result = dropdict({
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
@@ -161,7 +162,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         copy_to_s3 = dropdict({
             "type": 'app',
             "app": get_module_name(CopyConcatenateToS3),
-            "oid": self.get_oid('app_copy_clean_to_s3'),
+            "oid": self.get_oid('app_copy_concatenate_to_s3'),
             "uid": self.get_uuid(),
             "user": 'root',
             "width": self._width,

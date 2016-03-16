@@ -53,11 +53,13 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         uuid = get_uuid()
         ec2_data = EC2Controller(
             ami_id,
-            {
-                'number_instances': 1,
-                'instance_type': 'i2.2xlarge',
-                'spot_price': spot_price
-            },
+            [
+                {
+                    'number_instances': 1,
+                    'instance_type': 'i2.2xlarge',
+                    'spot_price': spot_price
+                }
+            ],
             get_node_manager_user_data(boto_data, uuid),
             AWS_REGION,
             tags=[

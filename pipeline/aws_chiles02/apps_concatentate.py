@@ -126,7 +126,7 @@ class CopyConcatenateToS3(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(CopyConcatenateToS3, self).initialize(**kwargs)
-        self._width = self._getArg(kwargs, 'width', None)
+        self._width = self._getArg(kwargs, 'width ', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
 
     def dataURL(self):
@@ -180,21 +180,30 @@ class CopyConcatenateToS3(BarrierAppDROP):
 
 class DockerConcatenate(DockerApp):
     def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
         self._command = None
         super(DockerConcatenate, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerConcatenate, self).initialize(**kwargs)
 
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._command = 'concatentate.sh'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        measurement_sets = ['/dfms_root' + os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
+        measurement_sets = []
+        for measurement_set in self._measurement_sets:
+            for file_name in os.listdir(measurement_set):
+                if file_name.endswith(".image"):
+                    measurement_sets.append('/dfms_root{0}/{1}'.format(measurement_set, file_name))
+                    break
+
         self._command = 'concatentate.sh %o0 {0}'.format(
             ' '.join(measurement_sets),
         )
+        super(DockerConcatenate, self).run()
 
     def dataURL(self):
         return 'docker container chiles02:latest'

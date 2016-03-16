@@ -4,8 +4,10 @@
 cd /opt/chiles02/aws-chiles02
 git pull
 
+# make the directory and ensure anyone can write to it
 mkdir -p $1
 chmod oug+rwx $1
 cd $1
+
 # outdir, min_freq, max_freq
 casapy --nologger  --log2term --logfile $1  -c /opt/chiles02/aws-chiles02/pipeline/aws_chiles02/concatenate.py $@
