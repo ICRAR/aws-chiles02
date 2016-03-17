@@ -62,7 +62,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, in_dirs):
               imsize=[2048],
               cell=['1.25arcsec'],
               weighting='natural',
-              usescratch=True)
+              usescratch=False) # Don't overwrite the model data col
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
