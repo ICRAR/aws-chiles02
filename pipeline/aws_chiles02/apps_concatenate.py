@@ -115,9 +115,13 @@ class CopyConcatenateFromS3(BarrierAppDROP):
         os.remove(full_path_tar_file)
 
         # Remove the stuff we don't need
+        LOG.info('measurement_set_dir: {0}'.format(measurement_set_dir))
         for filename in os.listdir(measurement_set_dir):
+            LOG.info('filename: {0}'.format(filename))
             if filename.endswith(tuple(['.flux', '.model', '.residual', '.psf'])):
-                shutil.rmtree(filename, ignore_errors=True)
+                full_name = os.path.join(measurement_set_dir, filename)
+                LOG.info('full_name: {0}'.format(full_name))
+                shutil.rmtree(full_name, ignore_errors=True)
 
         return 0
 

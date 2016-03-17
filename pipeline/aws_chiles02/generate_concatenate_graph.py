@@ -40,7 +40,7 @@ from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_m
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 8
+PARALLEL_STREAMS = 16
 
 
 def get_s3_clean_name(width, iterations):
@@ -69,7 +69,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'DFMS Node',
+                    'Value': 'DFMS Node - Concatenate',
                 },
                 {
                     'Key': 'uuid',
@@ -105,7 +105,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Data Island Manager',
+                    'Value': 'Data Island Manager - Concatenate',
                 },
                 {
                     'Key': 'uuid',
@@ -223,7 +223,7 @@ def command_interactive(args):
     get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)

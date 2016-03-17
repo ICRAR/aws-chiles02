@@ -118,7 +118,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'DFMS Node',
+                        'Value': 'DFMS Node - Clean',
                     },
                     {
                         'Key': 'uuid',
@@ -154,7 +154,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Data Island Manager',
+                        'Value': 'Data Island Manager - Clean',
                     },
                     {
                         'Key': 'uuid',
