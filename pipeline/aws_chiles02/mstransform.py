@@ -97,8 +97,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
             ft(vis=outfile,
                field="",
                spw="",
-               model=['epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
-                      'epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'], #Model
+               model=['/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
+                      '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'], #Model
                nterms             =  2,     # SI model
                reffreq            =  "",     
                complist           =  "",    # use model
