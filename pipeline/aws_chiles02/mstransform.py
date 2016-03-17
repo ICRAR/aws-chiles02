@@ -36,7 +36,7 @@ LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625,pns_flag):
     """
     Perform the MS_TRANSFORM step
 
@@ -46,6 +46,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
     :param max_freq:
     :param bottom_edge:
     :param width_freq:
+    :param pns_flag:
     :return:
     """
     if not os.path.exists(outdir):
@@ -83,6 +84,27 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
 
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
+        if (pns_flag): # Also perform Predict and Subtract step
+            # Predict and fill MODEL_DATA
+            mod_spw=max_freq+min_freq)/2.0
+            spw_range=freq_map(mod_spw,mod_spw,bottom_edge)
+            mod_spw=re.split('\D+',spw_range)
+            mod_spw=mod_spw[0]
+                        
+            ft(vis=outfile,
+               field="",
+               spw="",
+               model=['epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
+                      'epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'], #Model
+               nterms             =  2,     # SI model
+               reffreq            =  "",     
+               complist           =  "",    # use model
+               incremental        =  False, # Replace, not add
+               usescratch         =  True,  # Save in MODEL_DATA
+            )
+            # Subtract and fill CORRECTED_DATA
+            uvsub(vis=outfile,
+                  reverse=False)
     else:
         LOG.info('Outside spectral window')
 
