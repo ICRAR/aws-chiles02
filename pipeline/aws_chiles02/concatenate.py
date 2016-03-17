@@ -36,8 +36,9 @@ LOG = logging.getLogger(__name__)
 @echo
 def do_concatenate(out_filename, input_files):
     """
-    Perform the CONCA step
-
+    Perform the CONCATENATION step
+    :param input_files:
+    :param out_filename:
     """
 
     try:

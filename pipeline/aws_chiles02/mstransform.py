@@ -35,8 +35,7 @@ casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
-@echo
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625,pns_flag):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subtract=False, width_freq=15.625):
     """
     Perform the MS_TRANSFORM step
 
@@ -45,8 +44,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
     :param min_freq:
     :param max_freq:
     :param bottom_edge:
+    :param predict_subtract:
     :param width_freq:
-    :param pns_flag:
     :return:
     """
     if not os.path.exists(outdir):
@@ -82,9 +81,13 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=1
                     createmms=False,
                     datacolumn="data")
 
+            if predict_subtract:
+                # Richard the predict and subtract code goes here
+                pass
+
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
-        if (pns_flag): # Also perform Predict and Subtract step
+        if (predict_subtract): # Also perform Predict and Subtract step
             # Predict and fill MODEL_DATA
             mod_spw=max_freq+min_freq)/2.0
             spw_range=freq_map(mod_spw,mod_spw,bottom_edge)
@@ -116,4 +119,5 @@ do_mstransform(
         args.arguments[1],
         int(args.arguments[2]),
         int(args.arguments[3]),
-        float(args.arguments[4]))
+        float(args.arguments[4]),
+        args.arguments[5] == 'True')

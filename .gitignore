@@ -1,12 +1,11 @@
 /pipeline/pipeline.iml
 /python/python.iml
-/java/java.iml
 /old-pipeline/old-pipeline.iml
 /.idea
 /pipeline/aws_chiles02/chiles02.settings
 /pipeline/aws_chiles02/generate_mstransform_graph.settings
 /pipeline/aws_chiles02/generate_clean_graph.settings
-/java/.idea
+/pipeline/aws_chiles02/generate_concatenate_graph.settings
 /out
 
 # Byte-compiled / optimized / DLL files
@@ -16,12 +15,4 @@ __pycache__/
 # C extensions
 *.so
 
-
-/java/out
-.class
-
 .DS_Store
-
-java/aws-chiles02.iml
-java/libs/jtar-2.3-javadoc.jar
-java/libs/jtar-2.3-sources.jar

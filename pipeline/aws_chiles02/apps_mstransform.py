@@ -187,6 +187,7 @@ class DockerMsTransform(DockerApp):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
+        self._predict_subtract = None
         super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -194,16 +195,18 @@ class DockerMsTransform(DockerApp):
 
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'
+        self._predict_subtract = self._getArg(kwargs, 'predict_subtract', None)
+        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2} {3}'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         json_drop = self.inputs[1]
-        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2}'.format(
+        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2} {3}'.format(
             self._min_frequency,
             self._max_frequency,
-            json_drop['Bottom edge']
+            json_drop['Bottom edge'],
+            self._predict_subtract,
         )
         super(DockerMsTransform, self).run()
 
