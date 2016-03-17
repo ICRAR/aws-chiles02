@@ -56,7 +56,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             [
                 {
                     'number_instances': 1,
-                    'instance_type': 'i2.2xlarge',
+                    'instance_type': 'i2.4xlarge',
                     'spot_price': spot_price
                 }
             ],
