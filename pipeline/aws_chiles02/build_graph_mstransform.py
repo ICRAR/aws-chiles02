@@ -40,11 +40,12 @@ class CarryOverDataMsTransform:
 
 
 class BuildGraphMsTransform(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, predict_subtract):
         super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_split_name = 'split_{0}'.format(width)
+        self._predict_subtract = predict_subtract
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
@@ -150,6 +151,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             "command": 'mstransform',
             "min_frequency": frequency_pairs.bottom_frequency,
             "max_frequency": frequency_pairs.top_frequency,
+            "predict_subtract": self._predict_subtract,
             "user": 'root',
             "input_error_threshold": 100,
             "node": node_id,

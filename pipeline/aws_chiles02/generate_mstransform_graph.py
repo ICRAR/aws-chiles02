@@ -169,7 +169,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, predict_subtract):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
@@ -246,7 +246,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
 
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
-                graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width)
+                graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width, predict_subtract)
                 graph.build_graph()
 
                 instance_details = data_island_manager_running['m4.large'][0]
@@ -262,7 +262,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, predict_subtract):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -282,7 +282,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
-            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width)
+            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width, predict_subtract)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -304,7 +304,7 @@ def command_json(args):
     node_details = {
         'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
-    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width)
+    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.predict_subtract)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -322,6 +322,7 @@ def command_create(args):
         args.volume,
         args.days_per_node,
         args.shutdown,
+        args.predict_subtract,
     )
 
 
@@ -333,6 +334,7 @@ def command_use(args):
         args.width,
         args.volume,
         args.shutdown,
+        args.predict_subtract,
     )
 
 
@@ -357,12 +359,14 @@ def command_interactive(args):
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        get_argument(config, 'predict_subtract', 'Subtract the sky model', data_type=bool, help_text='Subtract the sky model', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        get_argument(config, 'predict_subtract', 'Subtract the sky model', data_type=bool, help_text='Subtract the sky model', default=True)
 
     # Write the arguments
     config.write()
@@ -378,6 +382,7 @@ def command_interactive(args):
             config['volume'],
             config['days_per_node'],
             config['shutdown'],
+            config['predict_subtract'],
         )
     else:
         use_and_generate(
@@ -387,6 +392,7 @@ def command_interactive(args):
             config['width'],
             config['volume'],
             config['shutdown'],
+            config['predict_subtract'],
         )
 
 
@@ -413,6 +419,7 @@ def parser_arguments():
     parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_create.add_argument('-p', '--predict_subtract', action="store_true", help_text='Subtract the sky model')
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', help='use what is running and deploy')
@@ -422,6 +429,7 @@ def parser_arguments():
     parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_use.add_argument('-p', '--predict_subtract', action="store_true", help_text='Subtract the sky model')
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
