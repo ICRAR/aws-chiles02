@@ -108,12 +108,16 @@ class CopyConcatenateFromS3(BarrierAppDROP):
         bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, measurement_set_dir)
         return_code = run_command(bash)
 
-        path_exists = os.path.exists(measurement_set)
-        if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists))
+        if return_code != 0:
+            LOG.error('tar return_code: {0}'.format(return_code))
             return 1
 
         os.remove(full_path_tar_file)
+
+        # Remove the stuff we don't need
+        for filename in os.listdir(measurement_set_dir):
+            if filename.endswith(tuple(['.flux', '.model', '.residual', '.psf'])):
+                shutil.rmtree(filename, ignore_errors=True)
 
         return 0
 
