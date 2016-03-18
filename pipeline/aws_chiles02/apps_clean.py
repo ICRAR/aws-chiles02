@@ -36,6 +36,9 @@ from dfms.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
+logging.getLogger('boto3').setLevel(logging.INFO)
+logging.getLogger('botocore').setLevel(logging.INFO)
+logging.getLogger('nose').setLevel(logging.INFO)
 
 
 class CopyCleanFromS3(BarrierAppDROP):

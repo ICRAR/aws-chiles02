@@ -408,6 +408,7 @@ def parser_arguments():
     parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
     parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_json.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
     parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', help='run and deploy')
@@ -419,7 +420,7 @@ def parser_arguments():
     parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
-    parser_create.add_argument('-p', '--predict_subtract', action="store_true", help_text='Subtract the sky model')
+    parser_create.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', help='use what is running and deploy')
@@ -429,7 +430,7 @@ def parser_arguments():
     parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
-    parser_use.add_argument('-p', '--predict_subtract', action="store_true", help_text='Subtract the sky model')
+    parser_use.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')

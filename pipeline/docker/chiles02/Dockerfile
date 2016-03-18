@@ -42,7 +42,7 @@ RUN yum install -y \
 
 RUN mkdir -p /opt/chiles02
 WORKDIR /opt/chiles02
-RUN git clone https://github.com/ICRAR/aws-chiles02.git
+RUN git clone https://github.com/ICRAR/aws-chiles02.git && cd aws-chiles02 && git checkout 0f22d47
 
 # Copy the scripts
 COPY scripts /opt/chiles02/scripts/
