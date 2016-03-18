@@ -91,7 +91,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
                 spw_range = freq_map(mod_spw, mod_spw, bottom_edge)
                 mod_spw = re.split('\D+', spw_range)
                 mod_spw = mod_spw[0]
-
+                LOG.info('max_freq: {0}, min_freq: {1}, spw_range: {2}, mod_spw: {3}'.format(max_freq, min_freq, spw_range, mod_spw))
                 ft(
                     vis=outfile,
                     field="",
