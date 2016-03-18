@@ -40,6 +40,7 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
+
 class CopyMsTransformFromS3(BarrierAppDROP):
     def __init__(self, oid, uid, **kwargs):
         """
