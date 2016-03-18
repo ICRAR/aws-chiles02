@@ -196,7 +196,7 @@ class DockerConcatenate(DockerApp):
         super(DockerConcatenate, self).initialize(**kwargs)
 
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
-        self._command = 'concatentate.sh'
+        self._command = 'concatenate.sh'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -208,7 +208,7 @@ class DockerConcatenate(DockerApp):
                     measurement_sets.append('/dfms_root{0}/{1}'.format(measurement_set, file_name))
                     break
 
-        self._command = 'concatentate.sh %o0 {0}'.format(
+        self._command = 'concatenate.sh %o0 {0}'.format(
             ' '.join(measurement_sets),
         )
         super(DockerConcatenate, self).run()
