@@ -44,6 +44,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
     def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations):
         super(BuildGraphConcatenation, self).__init__(bucket_name, shutdown, node_details, volume)
         self._parallel_streams = parallel_streams
+        self._s3_image_name = 'image_{0}_{1}'.format(width, iterations)
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
         self._iterations = iterations
         values = node_details.values()
@@ -167,7 +168,6 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             "user": 'root',
             "width": self._width,
             "iterations": self._iterations,
-            "input_error_threshold": 100,
             "node": self._node_id,
             "n_tries": 2,
         })
@@ -180,7 +180,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             "precious": False,
             "bucket": self._bucket_name,
             "key": '{0}/image_{1}_{2}.tar'.format(
-                    self._s3_clean_name,
+                    self._s3_image_name,
                     self._width,
                     self._iterations,
             ),
