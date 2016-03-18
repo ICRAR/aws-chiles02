@@ -130,7 +130,7 @@ write_files:
     )
     user_script = get_file_contents('island_manager_start_up.bash')
     dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsDIM -vv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes {0} > /tmp/logfile.log 2>&1 &'
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsDIM -vvv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes {0} > /tmp/logfile.log 2>&1 &'
 sleep 10
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{2}"'
 '''.format(hosts, QUEUE, uuid)

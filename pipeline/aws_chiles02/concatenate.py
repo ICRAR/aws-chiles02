@@ -23,11 +23,9 @@
 Perform the MS Transform
 """
 import logging
-import os
 
 from aws_chiles02.casa_common import find_file, parse_args
 from aws_chiles02.echo import echo
-from ia import ia
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
@@ -42,6 +40,7 @@ def do_concatenate(out_filename, input_files):
     """
 
     try:
+        # ia doesn't need an import - it is just available in casapy
         final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True)
         final.done()
     except Exception:
