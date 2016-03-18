@@ -65,12 +65,11 @@ class CopyConcatenateFromS3(BarrierAppDROP):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        elements = key.split('/')
-        measurement_set = os.path.join(measurement_set_dir, elements[-1])[:-4]
-        LOG.info('Checking {0} exists'.format(measurement_set))
-        if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.info('Measurement Set: {0} exists'.format(measurement_set))
-            return 0
+        for filename in os.listdir(measurement_set_dir):
+            LOG.info('filename: {0}'.format(filename))
+            if filename.endswith('.image'):
+                LOG.info('Measurement Set: {0} exists'.format(filename))
+                return 0
 
         # Make the directory
         if not os.path.exists(measurement_set_dir):
