@@ -41,7 +41,7 @@ def do_concatenate(out_filename, input_files):
 
     try:
         # ia doesn't need an import - it is just available in casapy
-        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True)
+        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
         final.done()
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
