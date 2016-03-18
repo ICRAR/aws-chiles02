@@ -204,9 +204,12 @@ class DockerConcatenate(DockerApp):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set in self._measurement_sets:
-            for file_name in os.listdir('/dfms_root{0}'.format(measurement_set)):
+            LOG.info('measurement_set: {0}'.format(measurement_set))
+            for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
-                    measurement_sets.append('/dfms_root{0}/{1}'.format(measurement_set, file_name))
+                    dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
+                    LOG.info('dfms_name: {0}'.format(dfms_name))
+                    measurement_sets.append(dfms_name)
                     break
 
         self._command = 'concatenate.sh %o0 {0}'.format(

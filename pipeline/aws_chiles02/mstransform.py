@@ -24,12 +24,14 @@ Perform the MS Transform
 """
 import logging
 import os
+import re
 import shutil
 
 from aws_chiles02.freq_map import freq_map
 from aws_chiles02.casa_common import find_file, parse_args
-from aws_chiles02.echo import echo
 from mstransform import mstransform
+from ft import ft
+from uvsub import uvsub
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
@@ -64,50 +66,54 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
         try:
             # dump_all()
             mstransform(
-                    vis=infile,
-                    outputvis=outfile,
-                    regridms=True,
-                    restfreq='1420.405752MHz',
-                    mode='frequency',
-                    nchan=no_chan,
-                    outframe='lsrk',
-                    interpolation='linear',
-                    veltype='radio',
-                    start='{0}MHz'.format(min_freq),
-                    width='{0}kHz'.format(width_freq),
-                    spw=spw_range,
-                    combinespws=True,
-                    nspw=1,
-                    createmms=False,
-                    datacolumn="data")
+                vis=infile,
+                outputvis=outfile,
+                regridms=True,
+                restfreq='1420.405752MHz',
+                mode='frequency',
+                nchan=no_chan,
+                outframe='lsrk',
+                interpolation='linear',
+                veltype='radio',
+                start='{0}MHz'.format(min_freq),
+                width='{0}kHz'.format(width_freq),
+                spw=spw_range,
+                combinespws=True,
+                nspw=1,
+                createmms=False,
+                datacolumn="data"
+            )
 
             if predict_subtract:
-                # Richard the predict and subtract code goes here
-                pass
+                # Also perform Predict and Subtract step
+                # Predict and fill MODEL_DATA
+                mod_spw = (max_freq + min_freq) / 2.0
+                spw_range = freq_map(mod_spw, mod_spw, bottom_edge)
+                mod_spw = re.split('\D+', spw_range)
+                mod_spw = mod_spw[0]
 
+                ft(
+                    vis=outfile,
+                    field="",
+                    spw="",
+                    model=[
+                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
+                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'
+                    ],                  # Model
+                    nterms=2,           # SI model
+                    reffreq="",
+                    complist="",        # use model
+                    incremental=False,  # Replace, not add
+                    usescratch=True,    # Save in MODEL_DATA
+                )
+                # Subtract and fill CORRECTED_DATA
+                uvsub(
+                    vis=outfile,
+                    reverse=False
+                )
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
-        if (predict_subtract): # Also perform Predict and Subtract step
-            # Predict and fill MODEL_DATA
-            mod_spw=max_freq+min_freq)/2.0
-            spw_range=freq_map(mod_spw,mod_spw,bottom_edge)
-            mod_spw=re.split('\D+',spw_range)
-            mod_spw=mod_spw[0]
-                        
-            ft(vis=outfile,
-               field="",
-               spw="",
-               model=['/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
-                      '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'], #Model
-               nterms             =  2,     # SI model
-               reffreq            =  "",     
-               complist           =  "",    # use model
-               incremental        =  False, # Replace, not add
-               usescratch         =  True,  # Save in MODEL_DATA
-            )
-            # Subtract and fill CORRECTED_DATA
-            uvsub(vis=outfile,
-                  reverse=False)
+
     else:
         LOG.info('Outside spectral window')
 
