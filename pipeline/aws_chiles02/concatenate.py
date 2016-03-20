@@ -24,7 +24,7 @@ Perform the MS Transform
 """
 import logging
 
-from aws_chiles02.casa_common import find_file, parse_args
+from aws_chiles02.casa_common import parse_args
 from aws_chiles02.echo import echo
 
 casalog.filter('DEBUGGING')
