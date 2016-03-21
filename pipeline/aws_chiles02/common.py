@@ -260,12 +260,15 @@ class ProgressPercentage:
     def __call__(self, bytes_amount):
         with self._lock:
             self._seen_so_far += bytes_amount
-            percentage = int((self._seen_so_far / self._size) * 100.0)
-            if percentage > self._percentage:
-                LOG.info(
-                    '{0}  {1:.2f}MB / {2:.2f}MB  ({3}%)'.format(
-                        self._filename,
-                        self._seen_so_far / TO_MB,
-                        self._size_mb,
-                        percentage))
-                self._percentage = percentage
+            if self._size >= 1.0:
+                percentage = int((self._seen_so_far / self._size) * 100.0)
+                if percentage > self._percentage:
+                    LOG.info(
+                        '{0}  {1:.2f}MB / {2:.2f}MB  ({3}%)'.format(
+                            self._filename,
+                            self._seen_so_far / TO_MB,
+                            self._size_mb,
+                            percentage))
+                    self._percentage = percentage
+            else:
+                LOG.warning('Filename: {0}, size: 0'.format(self._filename))
