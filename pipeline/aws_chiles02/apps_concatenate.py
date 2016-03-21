@@ -221,7 +221,7 @@ class DockerConcatenate(DockerApp):
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'concatenate.sh %o0/image_{1}_{2} {0}'.format(
+        self._command = 'concatenate.sh %o0 image_{1}_{2} {0}'.format(
             ' '.join(measurement_sets),
             self._width,
             self._iterations,

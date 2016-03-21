@@ -49,6 +49,7 @@ def do_concatenate(out_filename, input_files):
 args = parse_args()
 LOG.info(args)
 
+# ignore the output directory
 do_concatenate(
-        args.arguments[0],
-        args.arguments[1:])
+        args.arguments[1],
+        args.arguments[2:])
