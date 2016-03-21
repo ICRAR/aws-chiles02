@@ -29,8 +29,7 @@ import shutil
 import boto3
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.apps_general import ProgressPercentage
-from aws_chiles02.common import run_command
+from aws_chiles02.common import run_command, ProgressPercentage
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
 

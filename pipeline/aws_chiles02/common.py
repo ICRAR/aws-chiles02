@@ -29,13 +29,14 @@ import subprocess
 import threading
 import time
 import uuid
-from os.path import join, expanduser
 from cStringIO import StringIO
+from os.path import join, expanduser
 
 from configobj import ConfigObj
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
+TO_MB = 1048576.0
 LOG = logging.getLogger(__name__)
 
 
@@ -245,3 +246,26 @@ def get_aws_credentials(profile_name):
 
 def get_uuid():
     return str(uuid.uuid4())
+
+
+class ProgressPercentage:
+    def __init__(self, filename, expected_size):
+        self._filename = filename
+        self._size = float(expected_size)
+        self._size_mb = expected_size / TO_MB
+        self._seen_so_far = 0
+        self._lock = threading.Lock()
+        self._percentage = -1
+
+    def __call__(self, bytes_amount):
+        with self._lock:
+            self._seen_so_far += bytes_amount
+            percentage = int((self._seen_so_far / self._size) * 100.0)
+            if percentage > self._percentage:
+                LOG.info(
+                    '{0}  {1:.2f}MB / {2:.2f}MB  ({3}%)'.format(
+                        self._filename,
+                        self._seen_so_far / TO_MB,
+                        self._size_mb,
+                        percentage))
+                self._percentage = percentage
