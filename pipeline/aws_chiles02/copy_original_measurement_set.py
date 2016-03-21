@@ -43,7 +43,7 @@ logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
 
-def copy_measurement_set(measurement_set, bucket_name):
+def copy_measurement_set(measurement_set, directory_out, bucket_name):
     LOG.info('measurement_set: {0}, bucket_name: {1}'.format(measurement_set, bucket_name))
 
     (measurement_set_directory, measurement_set_filename) = split(measurement_set)
@@ -57,7 +57,7 @@ def copy_measurement_set(measurement_set, bucket_name):
     if len(objs) > 0 and objs[0].key == key:
         LOG.info('The measurement set {0} exists in {1}'.format(key, bucket_name))
     else:
-        tar_filename = os.path.join(measurement_set_directory, 'ms.tar')
+        tar_filename = os.path.join(directory_out, '{0}.tar'.format(measurement_set_filename))
         bash = 'cd {0} && tar -cvf {1} {2}'.format(measurement_set_directory, tar_filename, measurement_set_filename)
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
@@ -86,9 +86,9 @@ def copy_measurement_set(measurement_set, bucket_name):
         os.remove(tar_filename)
 
 
-def write_files(list_measurement_sets, bucket_name):
+def write_files(list_measurement_sets, directory_out, bucket_name):
     for measurement_set in list_measurement_sets:
-        copy_measurement_set(measurement_set, bucket_name)
+        copy_measurement_set(measurement_set, directory_out, bucket_name)
 
 
 def get_list_measurement_sets(directory_in):
@@ -108,12 +108,13 @@ def copy_measurement_sets(args):
         LOG.error('The directory {0} does not exist'.format(args.directory_in))
 
     list_measurement_sets = get_list_measurement_sets(args.directory_in)
-    write_files(list_measurement_sets, args.bucket_name)
+    write_files(list_measurement_sets, args.directory_out, args.bucket_name)
 
 
 def main():
     parser = argparse.ArgumentParser('Get files and move them to S3')
     parser.add_argument('directory_in', help='the input directory to scan')
+    parser.add_argument('directory_out', help='the output directory to write the tar files to')
     parser.add_argument('bucket_name', help='where to write the files')
     args = parser.parse_args()
 
