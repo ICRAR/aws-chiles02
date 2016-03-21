@@ -174,13 +174,16 @@ class CopyConcatenateToS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-                tar_filename,
-                bucket_name,
-                key,
-                callback=ProgressPercentage(
-                        key,
-                        float(os.path.getsize(tar_filename))
-                )
+            tar_filename,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                    key,
+                    float(os.path.getsize(tar_filename))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
         )
 
         # Clean up

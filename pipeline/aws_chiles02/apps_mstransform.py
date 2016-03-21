@@ -175,7 +175,10 @@ class CopyMsTransformToS3(BarrierAppDROP):
             callback=ProgressPercentage(
                 key,
                 float(os.path.getsize(tar_filename))
-            )
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
         )
 
         # Clean up
