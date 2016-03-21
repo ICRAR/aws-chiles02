@@ -196,12 +196,16 @@ class DockerConcatenate(DockerApp):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._command = None
+        self._width = None
+        self._iterations = None
         super(DockerConcatenate, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(DockerConcatenate, self).initialize(**kwargs)
 
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
+        self._width = self._getArg(kwargs, 'width', None)
+        self._iterations = self._getArg(kwargs, 'iterations', None)
         self._command = 'concatenate.sh'
 
     def run(self):
@@ -217,8 +221,10 @@ class DockerConcatenate(DockerApp):
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'concatenate.sh %o0 {0}'.format(
+        self._command = 'concatenate.sh %o0/image_{1}_{2} {0}'.format(
             ' '.join(measurement_sets),
+            self._width,
+            self._iterations,
         )
         super(DockerConcatenate, self).run()
 

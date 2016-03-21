@@ -70,7 +70,8 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []
         counter = 0
-        for s3_object in s3_objects:
+        # TODO for s3_object in s3_objects:
+        for s3_object in s3_objects[:5]:
             s3_drop = dropdict({
                 "type": 'plain',
                 "storage": 's3',
