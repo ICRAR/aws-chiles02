@@ -92,6 +92,7 @@ def write_files(list_measurement_sets, bucket_name):
 
 
 def get_list_measurement_sets(directory_in):
+    LOG.info('Starting at: {0}'.format(directory_in))
     list_measurement_sets = []
     for root, dir_names, filenames in walk(directory_in):
         for match in fnmatch.filter(dir_names, '*_calibrated_deepfield.ms'):
@@ -119,4 +120,5 @@ def main():
     copy_measurement_sets(args)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()
