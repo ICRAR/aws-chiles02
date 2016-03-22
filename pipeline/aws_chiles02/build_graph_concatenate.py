@@ -65,7 +65,8 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         s3_objects = []
         prefix = '{0}/'.format(self._s3_clean_name)
         for key in self._bucket.objects.filter(Prefix=prefix):
-            s3_objects.append(key.key)
+            if key.key.endswith('.tar'):
+                s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []

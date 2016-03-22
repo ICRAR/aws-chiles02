@@ -10,4 +10,4 @@ chmod oug+rwx $1
 cd $1
 
 # outdir, min_freq, max_freq
-casapy --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/aws_chiles02/concatenate.py $@
+casapy --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casapy/concatenate.py $@

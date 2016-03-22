@@ -20,36 +20,39 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+Perform the listobs
 """
 import logging
+import os
 
-from aws_chiles02.casa_common import parse_args
-from aws_chiles02.echo import echo
+from casapy.parse_listobs import ParseListobs
+from casapy.echo import echo
+from casapy.casa_common import find_file, parse_args
+from listobs import listobs
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_concatenate(out_filename, input_files):
-    """
-    Perform the CONCATENATION step
-    :param input_files:
-    :param out_filename:
-    """
+def do_listobs(infile, outfile):
+    # make sure the directory for the file exists
+    dir_path, tail = os.path.split(outfile)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
-    try:
-        # ia doesn't need an import - it is just available in casapy
-        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
-        final.done()
-    except Exception:
-        LOG.exception('*********\nConcatenate exception: \n***********')
+    listobs(vis=infile, verbose=False, listfile='/tmp/listfile.txt')
+
+    parse_listobs = ParseListobs('/tmp/listfile.txt')
+    parse_listobs.parse()
+    json_string = parse_listobs.get_json_string()
+    with open(outfile, mode='w') as out_file:
+        out_file.write(json_string)
+
 
 args = parse_args()
 LOG.info(args)
 
-# ignore the output directory
-do_concatenate(
-        args.arguments[1],
-        args.arguments[2:])
+do_listobs(
+        find_file(args.arguments[0]),
+        args.arguments[1])
