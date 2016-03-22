@@ -154,15 +154,15 @@ class CopyConcatenateToS3(BarrierAppDROP):
         # Does the file exists
         stem_name = 'image_{0}_{1}'.format(self._width, self._iterations)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.image exists'.format(measurement_set))
-        if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
-            LOG.info('Measurement_set: {0}.image does not exist'.format(measurement_set))
+        LOG.info('checking {0}.cube exists'.format(measurement_set))
+        if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
+            LOG.info('Measurement_set: {0}.cube does not exist'.format(measurement_set))
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.tar'.format(self._width, self._iterations))
+        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.cube.tar'.format(self._width, self._iterations))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(tar_filename, stem_name)
+        bash = 'tar -cvf {0} {1}.cube'.format(tar_filename, stem_name)
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:

@@ -43,6 +43,8 @@ def do_concatenate(out_filename, input_files):
         # ia doesn't need an import - it is just available in casapy
         final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
         final.done()
+
+        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
