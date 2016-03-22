@@ -25,7 +25,7 @@
 import os
 import argparse
 
-from aws_chiles02.echo import echo
+from casapy.echo import echo
 
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 
