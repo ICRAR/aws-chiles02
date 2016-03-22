@@ -110,7 +110,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 {
                     'Key': 'uuid',
                     'Value': uuid,
-                }
+                },
             ]
         )
         data_island_manager.start_instances()
