@@ -131,7 +131,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
 
         casa_py_concatenation_drop = dropdict({
             "type": 'app',
-            "app": get_module_name(CasaPyConcatenate),
+            "app": get_module_name(DockerConcatenate),
             "oid": self.get_oid('app_concatenate'),
             "uid": self.get_uuid(),
             "image": CONTAINER_CHILES02,
