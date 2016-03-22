@@ -27,8 +27,8 @@ import os
 import re
 import shutil
 
-from casapy.freq_map import freq_map
-from casapy.casa_common import find_file, parse_args
+from casapy_code.freq_map import freq_map
+from casapy_code.casa_common import find_file, parse_args
 from mstransform import mstransform
 from ft import ft
 from uvsub import uvsub

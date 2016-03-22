@@ -228,7 +228,7 @@ class CasaPyConcatenate(BarrierAppDROP):
             # Make the directory
             os.makedirs(measurement_set_dir)
 
-        command = 'cd {0} && casapy --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/aws_chiles02/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
+        command = 'cd {0} && casapy --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casapy/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
             measurement_set_dir,
             self._width,
             self._iterations,

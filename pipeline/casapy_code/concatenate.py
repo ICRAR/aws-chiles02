@@ -24,8 +24,8 @@ Perform the MS Transform
 """
 import logging
 
-from casapy.casa_common import parse_args
-from casapy.echo import echo
+from casapy_code.casa_common import parse_args
+from casapy_code.echo import echo
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)

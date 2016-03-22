@@ -20,39 +20,33 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the listobs
+
 """
-import logging
 import os
+import argparse
 
-from casapy.parse_listobs import ParseListobs
-from casapy.echo import echo
-from casapy.casa_common import find_file, parse_args
-from listobs import listobs
+from casapy_code.echo import echo
 
-casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 
 
 @echo
-def do_listobs(infile, outfile):
-    # make sure the directory for the file exists
-    dir_path, tail = os.path.split(outfile)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+def find_file(top_dir):
+    for file_name in os.listdir(top_dir):
+        if file_name.endswith(INPUT_MS_SUFFIX):
+            return os.path.join(top_dir, file_name)
 
-    listobs(vis=infile, verbose=False, listfile='/tmp/listfile.txt')
-
-    parse_listobs = ParseListobs('/tmp/listfile.txt')
-    parse_listobs.parse()
-    json_string = parse_listobs.get_json_string()
-    with open(outfile, mode='w') as out_file:
-        out_file.write(json_string)
+    return None
 
 
-args = parse_args()
-LOG.info(args)
+@echo
+def parse_args():
+    parser = argparse.ArgumentParser('Get the arguments')
+    parser.add_argument('arguments', nargs='+', help='the arguments')
 
-do_listobs(
-        find_file(args.arguments[0]),
-        args.arguments[1])
+    parser.add_argument('--nologger', action="store_true")
+    parser.add_argument('--log2term', action="store_true")
+    parser.add_argument('--logfile')
+    parser.add_argument('-c', '--call')
+
+    return parser.parse_args()
