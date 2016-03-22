@@ -192,6 +192,55 @@ class CopyConcatenateToS3(BarrierAppDROP):
         return return_code
 
 
+class CasaPyConcatenate(BarrierAppDROP):
+    def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
+        self._width = None
+        self._iterations = None
+        super(CasaPyConcatenate, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaPyConcatenate, self).initialize(**kwargs)
+
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
+        self._width = self._getArg(kwargs, 'width', None)
+        self._iterations = self._getArg(kwargs, 'iterations', None)
+
+    def run(self):
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        measurement_sets = []
+        for measurement_set in self._measurement_sets:
+            LOG.info('measurement_set: {0}'.format(measurement_set))
+            for file_name in os.listdir(measurement_set):
+                if file_name.endswith(".image"):
+                    dfms_name = '{0}/{1}'.format(measurement_set, file_name)
+                    LOG.info('dfms_name: {0}'.format(dfms_name))
+                    measurement_sets.append(dfms_name)
+                    break
+
+        measurement_set_output = self.outputs[0]
+        measurement_set_dir = measurement_set_output.path
+
+        if os.path.exists(measurement_set_dir):
+            LOG.info('Directory {0} exists'.format(measurement_set_dir))
+        else:
+            # Make the directory
+            os.makedirs(measurement_set_dir)
+
+        command = 'cd {0} && casapy --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/aws_chiles02/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
+            measurement_set_dir,
+            self._width,
+            self._iterations,
+            ' '.join(measurement_sets),
+        )
+        return_code = run_command(command)
+        return return_code
+
+    def dataURL(self):
+        return 'CasaPyConcatenate'
+
+
 class DockerConcatenate(DockerApp):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
@@ -221,7 +270,7 @@ class DockerConcatenate(DockerApp):
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'concatenate.sh %o0 image_{1}_{2} {0}'.format(
+        self._command = 'concatenate.sh %o0 image_{1}_{2}.cube {0}'.format(
             ' '.join(measurement_sets),
             self._width,
             self._iterations,

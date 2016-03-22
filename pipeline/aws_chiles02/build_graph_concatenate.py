@@ -26,7 +26,7 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_concatenate import DockerConcatenate, CopyConcatenateFromS3, CopyConcatenateToS3
+from aws_chiles02.apps_concatenate import CasaPyConcatenate, CopyConcatenateFromS3, CopyConcatenateToS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -130,7 +130,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
 
         casa_py_concatenation_drop = dropdict({
             "type": 'app',
-            "app": get_module_name(DockerConcatenate),
+            "app": get_module_name(CasaPyConcatenate),
             "oid": self.get_oid('app_concatenate'),
             "uid": self.get_uuid(),
             "image": CONTAINER_CHILES02,
