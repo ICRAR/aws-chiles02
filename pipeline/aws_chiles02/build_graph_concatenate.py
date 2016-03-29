@@ -26,7 +26,7 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_concatenate import CopyConcatenateFromS3, CopyConcatenateToS3, DockerConcatenate
+from aws_chiles02.apps_concatenate import CopyConcatenateFromS3, CopyConcatenateToS3, DockerImageconcat, DockerVirtualconcat
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -41,7 +41,7 @@ class CarryOverDataConcatenation:
 
 
 class BuildGraphConcatenation(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations):
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, concatenation_type):
         super(BuildGraphConcatenation, self).__init__(bucket_name, shutdown, node_details, volume)
         self._parallel_streams = parallel_streams
         self._s3_image_name = 'image_{0}_{1}'.format(width, iterations)
@@ -51,6 +51,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
         self._node_id = values[0][0]['ip_address']
         self._width = width
         self._s3_client = None
+        self._concatenation_type = concatenation_type
 
     def new_carry_over_data(self):
         return CarryOverDataConcatenation()
@@ -128,21 +129,37 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             if counter >= self._parallel_streams:
                 counter = 0
 
-        casa_py_concatenation_drop = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerConcatenate),
-            "oid": self.get_oid('app_concatenate'),
-            "uid": self.get_uuid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'clean',
-            "user": 'root',
-            "measurement_sets": [drop['dirname'] for drop in s3_out_drops],
-            "width": self._width,
-            "iterations": self._iterations,
-            "input_error_threshold": 100,
-            "node": self._node_id,
-            "n_tries": 2,
-        })
+        if self._concatenation_type == 'image':
+            casa_py_concatenation_drop = dropdict({
+                "type": 'app',
+                "app": get_module_name(DockerImageconcat),
+                "oid": self.get_oid('app_concatenate'),
+                "uid": self.get_uuid(),
+                "image": CONTAINER_CHILES02,
+                "command": 'clean',
+                "user": 'root',
+                "measurement_sets": [drop['dirname'] for drop in s3_out_drops],
+                "width": self._width,
+                "iterations": self._iterations,
+                "input_error_threshold": 100,
+                "node": self._node_id,
+            })
+        else:
+            casa_py_concatenation_drop = dropdict({
+                "type": 'app',
+                "app": get_module_name(DockerVirtualconcat),
+                "oid": self.get_oid('app_concatenate'),
+                "uid": self.get_uuid(),
+                "image": CONTAINER_CHILES02,
+                "command": 'clean',
+                "user": 'root',
+                "measurement_sets": [drop['dirname'] for drop in s3_out_drops],
+                "width": self._width,
+                "iterations": self._iterations,
+                "input_error_threshold": 100,
+                "node": self._node_id,
+            })
+
         oid = self.get_oid('dir_concatenate_output')
         result = dropdict({
             "type": 'container',

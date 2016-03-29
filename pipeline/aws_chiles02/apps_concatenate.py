@@ -241,21 +241,21 @@ class CasaPyConcatenate(BarrierAppDROP):
         return 'CasaPyConcatenate'
 
 
-class DockerConcatenate(DockerApp):
+class DockerImageconcat(DockerApp):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._command = None
         self._width = None
         self._iterations = None
-        super(DockerConcatenate, self).__init__(oid, uid, **kwargs)
+        super(DockerImageconcat, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(DockerConcatenate, self).initialize(**kwargs)
+        super(DockerImageconcat, self).initialize(**kwargs)
 
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
-        self._command = 'concatenate.sh'
+        self._command = 'imageconcat.sh'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -270,12 +270,52 @@ class DockerConcatenate(DockerApp):
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'concatenate.sh %o0 image_{1}_{2}.cube {0}'.format(
+        self._command = 'imageconcat.sh %o0 image_{1}_{2}.cube {0}'.format(
             ' '.join(measurement_sets),
             self._width,
             self._iterations,
         )
-        super(DockerConcatenate, self).run()
+        super(DockerImageconcat, self).run()
+
+    def dataURL(self):
+        return 'docker container chiles02:latest'
+
+
+class DockerVirtualconcat(DockerApp):
+    def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
+        self._command = None
+        self._width = None
+        self._iterations = None
+        super(DockerVirtualconcat, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(DockerVirtualconcat, self).initialize(**kwargs)
+
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
+        self._width = self._getArg(kwargs, 'width', None)
+        self._iterations = self._getArg(kwargs, 'iterations', None)
+        self._command = 'virtualconcat.sh'
+
+    def run(self):
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        measurement_sets = []
+        for measurement_set in self._measurement_sets:
+            LOG.info('measurement_set: {0}'.format(measurement_set))
+            for file_name in os.listdir(measurement_set):
+                if file_name.endswith(".image"):
+                    dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
+                    LOG.info('dfms_name: {0}'.format(dfms_name))
+                    measurement_sets.append(dfms_name)
+                    break
+
+        self._command = 'virtualconcat.sh %o0 image_{1}_{2}.cube {0}'.format(
+            ' '.join(measurement_sets),
+            self._width,
+            self._iterations,
+        )
+        super(DockerVirtualconcat, self).run()
 
     def dataURL(self):
         return 'docker container chiles02:latest'

@@ -68,7 +68,7 @@ if [ -b "/dev/xvdb" ]; then
         pvcreate $drives
         vgcreate dfms-group $drives
       fi
-      lvcreate -L 10G --name swap dfms-group
+      lvcreate -L 20G --name swap dfms-group
       docker-storage-setup
       lvcreate --extents 100%FREE --name data dfms-group
 

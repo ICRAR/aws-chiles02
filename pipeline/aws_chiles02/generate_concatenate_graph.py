@@ -47,7 +47,7 @@ def get_s3_clean_name(width, iterations):
     return 'clean_{0}_{1}'.format(width, iterations)
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations, concatenation_type):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
@@ -122,7 +122,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 
         if len(data_island_manager_running['m4.large']) == 1:
             # Now build the graph
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations)
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, concatenation_type)
             graph.build_graph()
 
             instance_details = data_island_manager_running['m4.large'][0]
@@ -138,7 +138,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, concatenation_type):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -155,7 +155,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
             # Now build the graph
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations)
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, concatenation_type)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -177,7 +177,7 @@ def command_json(args):
         'spot_price': 0.99
     }
 
-    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations)
+    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, args.concatenation_type)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -194,6 +194,7 @@ def command_create(args):
         args.volume,
         args.shutdown,
         args.iterations,
+        args.concatenation_type,
     )
 
 
@@ -206,6 +207,7 @@ def command_use(args):
         args.volume,
         args.shutdown,
         args.iterations,
+        args.concatenation_type,
     )
 
 
@@ -228,6 +230,7 @@ def command_interactive(args):
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+        get_argument(config, 'concatenation_type', 'Image, Virtual', allowed=['image', 'virtual'], help_text='the type of iteration')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -235,6 +238,7 @@ def command_interactive(args):
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+        get_argument(config, 'concatenation_type', 'Image, Virtual', allowed=['image', 'virtual'], help_text='the type of iteration')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
@@ -250,6 +254,7 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
+            config['concatenation_type'],
         )
     else:
         use_and_generate(
@@ -260,6 +265,7 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
+            config['concatenation_type'],
         )
 
 
@@ -275,6 +281,7 @@ def parser_arguments():
     parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
     parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_json.add_argument('--concatenation_type', choices=['image', 'virtual'], help_text='the type of iteration')
     parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', help='run and deploy')
@@ -285,6 +292,7 @@ def parser_arguments():
     parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_create.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
     parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_create.add_argument('--concatenation_type', choices=['image', 'virtual'], help_text='the type of iteration')
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', help='use what is running and deploy')
@@ -295,6 +303,7 @@ def parser_arguments():
     parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_use.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
     parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_use.add_argument('--concatenation_type', choices=['image', 'virtual'], help_text='the type of iteration')
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')

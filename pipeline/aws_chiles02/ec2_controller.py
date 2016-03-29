@@ -217,4 +217,39 @@ class EC2Controller:
                     "VirtualName": "ephemeral3"
                 },
             ]
+        elif instance_type == 'i2.8xlarge':
+            specification['BlockDeviceMappings'] = [
+                {
+                    "DeviceName": "/dev/sdb",
+                    "VirtualName": "ephemeral0"
+                },
+                {
+                    "DeviceName": "/dev/sdc",
+                    "VirtualName": "ephemeral1"
+                },
+                {
+                    "DeviceName": "/dev/sdd",
+                    "VirtualName": "ephemeral2"
+                },
+                {
+                    "DeviceName": "/dev/sde",
+                    "VirtualName": "ephemeral3"
+                },
+                {
+                    "DeviceName": "/dev/sdf",
+                    "VirtualName": "ephemeral4"
+                },
+                {
+                    "DeviceName": "/dev/sdg",
+                    "VirtualName": "ephemeral5"
+                },
+                {
+                    "DeviceName": "/dev/sdh",
+                    "VirtualName": "ephemeral6"
+                },
+                {
+                    "DeviceName": "/dev/sdi",
+                    "VirtualName": "ephemeral7"
+                },
+            ]
         return specification
