@@ -6,6 +6,11 @@ git clone https://github.com/SKA-ScienceDataProcessor/dfms
 
 sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel
 
+virtualenv ~/virtualenv/aws-chiles02
+source ~/virtualenv/aws-chiles02/bin/activate
+pip install -U pip
+pip install boto3 argparse ConfigObj
+
 virtualenv ~/virtualenv/dfms
 source ~/virtualenv/dfms/bin/activate
 
@@ -20,3 +25,7 @@ sudo tee -a /etc/security/limits.conf << 'EOF'
 root      hard    nofile      500000
 root      soft    nofile      500000
 EOF
+
+sudo yum install -y docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user

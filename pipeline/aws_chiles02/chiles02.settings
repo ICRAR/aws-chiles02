@@ -34,6 +34,8 @@
 # |  | |  |\   |       |  |  |  | |  |____ |  |\  \----.|  |____ |__|
 # |__| |__| \__|       |__|  |__| |_______|| _| `._____||_______|(__)
 #
+
+# # OREGON
 ami_id = "ami-70987510"
 key_name = "aws-chiles02-oregon"
 security_groups = "sg-981c9cfc"
@@ -43,4 +45,17 @@ region = "us-west-2"
 [subnets]
 us-west-2a = "subnet-bde9a3d8"
 us-west-2b = "subnet-04e68e73"
-us-west-2c = 'subnet-628b063b'
+us-west-2c = "subnet-628b063b"
+
+## SYDNEY
+# ami_id = "ami-0fa1826c"
+# key_name = "aws-chiles02-sydney"
+# security_groups = "sg-f87bb49c"
+# region = "ap-southeast-2"
+#
+# # The subnets
+# [subnets]
+# ap-southeast-2a = "subnet-50db4f35"
+# ap-southeast-2b = "subnet-3768da40"
+# ap-southeast-2c = "subnet-7281d734"
+#

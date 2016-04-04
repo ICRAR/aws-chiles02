@@ -68,11 +68,12 @@ if [ -b "/dev/xvdb" ]; then
         pvcreate $drives
         vgcreate dfms-group $drives
       fi
-      lvcreate -L 20G --name swap dfms-group
+      lvcreate -L 10G --name swap dfms-group
       docker-storage-setup
       lvcreate --extents 100%FREE --name data dfms-group
 
-      mkfs.xfs /dev/dfms-group/data
+      mkfs.xfs -K -b size=64k /dev/dfms-group/data
+#      mkfs.ext4 /dev/dfms-group/data
       mkdir -p /mnt/dfms
       mount /dev/dfms-group/data /mnt/dfms
 
@@ -80,7 +81,7 @@ if [ -b "/dev/xvdb" ]; then
       swapon /dev/dfms-group/swap
     else
       mkdir -p /mnt/dfms
-      mkfs.xfs /dev/xvdb
+      mkfs.xfs -K /dev/xvdb
 
       mount /dev/xvdb /mnt/dfms
       dd if=/dev/zero of=/mnt/swapfile bs=1M count=1024
