@@ -92,16 +92,17 @@ class WorkToDo:
         for key in self._bucket.objects.filter(Prefix=self._s3_split_name):
             elements = key.key.split('/')
 
-            day_key = elements[2]
-            # Remove the .tar
-            day_key = day_key[:-4]
+            if len(elements) > 2:
+                day_key = elements[2]
+                # Remove the .tar
+                day_key = day_key[:-4]
 
-            frequencies = frequencies_per_day.get(day_key)
-            if frequencies is None:
-                frequencies = []
-                frequencies_per_day[day_key] = frequencies
+                frequencies = frequencies_per_day.get(day_key)
+                if frequencies is None:
+                    frequencies = []
+                    frequencies_per_day[day_key] = frequencies
 
-            frequencies.append(elements[1])
+                frequencies.append(elements[1])
 
         return frequencies_per_day
 
@@ -149,14 +150,6 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
             counts[1] += 1
 
     node_count = 0
-    if counts[0] > 0:
-        count = max(counts[0] / days_per_node, 1)
-        node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i2.2xlarge',
-            'spot_price': spot_price1
-        })
     if counts[1] > 0:
         count = max(counts[1] / days_per_node, 1)
         node_count += count
@@ -164,6 +157,14 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
             'number_instances': count,
             'instance_type': 'i2.4xlarge',
             'spot_price': spot_price2
+        })
+    if counts[0] > 0:
+        count = max(counts[0] / days_per_node, 1)
+        node_count += count
+        nodes.append({
+            'number_instances': count,
+            'instance_type': 'i2.2xlarge',
+            'spot_price': spot_price1
         })
 
     return nodes, node_count

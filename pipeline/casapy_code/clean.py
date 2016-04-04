@@ -66,6 +66,8 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, in_dirs):
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
+    exportfits(imagename=outfile, fitsimage='{0}.fits'.format(outfile))
+
 args = parse_args()
 LOG.info(args)
 

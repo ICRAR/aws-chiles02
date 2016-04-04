@@ -53,7 +53,8 @@ def get_split(bucket, width):
     split_data = []
     for key in bucket.objects.filter(Prefix='split_{0}'.format(width)):
         elements = key.key.split('/')
-        split_data.append([elements[2][:-4], elements[1]])
+        if len(elements) > 2:
+            split_data.append([elements[2][:-4], elements[1]])
 
     return split_data
 
