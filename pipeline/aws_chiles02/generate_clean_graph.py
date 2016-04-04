@@ -133,56 +133,60 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 node_count,
                 wait=600
             )
-            hosts = build_hosts(reported_running)
 
-            # Create the Data Island Manager
-            data_island_manager = EC2Controller(
-                ami_id,
-                [
-                    {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price
-                    }
-                ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid),
-                AWS_REGION,
-                tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'Data Island Manager - Clean',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
-            )
-            data_island_manager.start_instances()
-            data_island_manager_running = get_reported_running(
-                    uuid,
-                    1,
-                    wait=600
-            )
+            if len(reported_running) == 0:
+                LOG.error('Nothing has reported ready')
+            else:
+                hosts = build_hosts(reported_running)
 
-            if len(data_island_manager_running['m4.large']) == 1:
-                # Now build the graph
-                graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations)
-                graph.build_graph()
+                # Create the Data Island Manager
+                data_island_manager = EC2Controller(
+                    ami_id,
+                    [
+                        {
+                            'number_instances': 1,
+                            'instance_type': 'm4.large',
+                            'spot_price': spot_price
+                        }
+                    ],
+                    get_data_island_manager_user_data(boto_data, hosts, uuid),
+                    AWS_REGION,
+                    tags=[
+                        {
+                            'Key': 'Owner',
+                            'Value': getpass.getuser(),
+                        },
+                        {
+                            'Key': 'Name',
+                            'Value': 'Data Island Manager - Clean',
+                        },
+                        {
+                            'Key': 'uuid',
+                            'Value': uuid,
+                        }
+                    ]
+                )
+                data_island_manager.start_instances()
+                data_island_manager_running = get_reported_running(
+                        uuid,
+                        1,
+                        wait=600
+                )
 
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
-                LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
-                client = DataIslandManagerClient(host, DIM_PORT)
+                if len(data_island_manager_running['m4.large']) == 1:
+                    # Now build the graph
+                    graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations)
+                    graph.build_graph()
 
-                session_id = get_session_id()
-                client.create_session(session_id)
-                client.append_graph(session_id, graph.drop_list)
-                client.deploy_session(session_id, graph.start_oids)
+                    instance_details = data_island_manager_running['m4.large'][0]
+                    host = instance_details['ip_address']
+                    LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+                    client = DataIslandManagerClient(host, DIM_PORT)
+
+                    session_id = get_session_id()
+                    client.create_session(session_id)
+                    client.append_graph(session_id, graph.drop_list)
+                    client.deploy_session(session_id, graph.start_oids)
     else:
         LOG.error('Unable to find the AWS credentials')
 

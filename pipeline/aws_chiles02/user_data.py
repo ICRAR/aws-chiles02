@@ -29,7 +29,7 @@ from email.mime.text import MIMEText
 
 from os.path import dirname, join
 
-from aws_chiles02.settings_file import QUEUE
+from aws_chiles02.settings_file import QUEUE, AWS_REGION
 
 LOG = logging.getLogger(__name__)
 
@@ -98,8 +98,8 @@ write_files:
     )
     user_script = get_file_contents('node_manager_start_up.bash')
     dynamic_script = '''#!/bin/bash -vx
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{0}"'
-'''.format(uuid, QUEUE)
+runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} {2} "{0}"'
+'''.format(uuid, QUEUE, AWS_REGION)
     user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
     return user_data
 
@@ -132,7 +132,7 @@ write_files:
     dynamic_script = '''#!/bin/bash -vx
 runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsDIM -vvv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes {0} --log-dir /tmp &'
 sleep 10
-runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} us-west-2 "{2}"'
-'''.format(hosts, QUEUE, uuid)
+runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py {1} {3} "{2}"'
+'''.format(hosts, QUEUE, uuid, AWS_REGION)
     user_data = get_user_data([cloud_init, cloud_init_dynamic, user_script, dynamic_script])
     return user_data
