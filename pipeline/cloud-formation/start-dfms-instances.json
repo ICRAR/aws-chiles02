@@ -325,7 +325,7 @@
                 "      docker-storage-setup\n",
                 "      lvcreate --extents 100%FREE --name data dfms-group\n",
                 "\n",
-                "      mkfs.xfs -K -b size=64k /dev/dfms-group/data\n",
+                "      mkfs.xfs -K /dev/dfms-group/data\n",
                 "      mkdir -p /mnt/dfms\n",
                 "      mount /dev/dfms-group/data /mnt/dfms\n",
                 "\n",

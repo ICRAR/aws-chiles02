@@ -68,11 +68,11 @@ if [ -b "/dev/xvdb" ]; then
         pvcreate $drives
         vgcreate dfms-group $drives
       fi
-      lvcreate -L 10G --name swap dfms-group
+      lvcreate -L 20G --name swap dfms-group
       docker-storage-setup
       lvcreate --extents 100%FREE --name data dfms-group
 
-      mkfs.xfs -K -b size=64k /dev/dfms-group/data
+      mkfs.xfs -K /dev/dfms-group/data
 #      mkfs.ext4 /dev/dfms-group/data
       mkdir -p /mnt/dfms
       mount /dev/dfms-group/data /mnt/dfms
@@ -116,4 +116,4 @@ runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtuale
 runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'
 
 cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM -vvv --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/dfms/dfms_root &'
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --daemon -vv --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/dfms/dfms_root '
