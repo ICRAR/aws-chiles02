@@ -26,13 +26,13 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3
+from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer
+from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
 
 
 class CarryOverDataClean:
@@ -47,6 +47,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
+        self._s3_fits_name = 'fits_{0}_{1}'.format(width, iterations)
         self._s3_split_name = 'split_{0}'.format(width)
         self._iterations = iterations
         self._map_frequency_to_node = None
@@ -102,7 +103,7 @@ class BuildGraphClean(AbstractBuildGraph):
             self.append(casa_py_clean_drop)
             self.append(result)
 
-            copy_to_s3 = dropdict({
+            copy_clean_to_s3 = dropdict({
                 "type": 'app',
                 "app": get_module_name(CopyCleanToS3),
                 "oid": self.get_oid('app_copy_clean_to_s3'),
@@ -114,7 +115,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "node": node_id,
                 "n_tries": 2,
             })
-            s3_drop_out = dropdict({
+            s3_clean_drop_out = dropdict({
                 "type": 'plain',
                 "storage": 's3',
                 "oid": self.get_oid('s3_out'),
@@ -130,12 +131,59 @@ class BuildGraphClean(AbstractBuildGraph):
                 "profile_name": 'aws-chiles02',
                 "node": node_id,
             })
-            copy_to_s3.addInput(result)
-            copy_to_s3.addOutput(s3_drop_out)
-            self.append(copy_to_s3)
-            self.append(s3_drop_out)
+            copy_clean_to_s3.addInput(result)
+            copy_clean_to_s3.addOutput(s3_clean_drop_out)
+            self.append(copy_clean_to_s3)
+            self.append(s3_clean_drop_out)
+
+            copy_fits_to_s3 = dropdict({
+                "type": 'app',
+                "app": get_module_name(CopyFitsToS3),
+                "oid": self.get_oid('app_copy_fits_to_s3'),
+                "uid": self.get_uuid(),
+                "user": 'root',
+                "min_frequency": frequency_pair.bottom_frequency,
+                "max_frequency": frequency_pair.top_frequency,
+                "input_error_threshold": 100,
+                "node": node_id,
+                "n_tries": 2,
+            })
+            s3_fits_drop_out = dropdict({
+                "type": 'plain',
+                "storage": 's3',
+                "oid": self.get_oid('s3_out'),
+                "uid": self.get_uuid(),
+                "expireAfterUse": True,
+                "precious": False,
+                "bucket": self._bucket_name,
+                "key": '{0}/cleaned_{1}_{2}.fits'.format(
+                    self._s3_fits_name,
+                    frequency_pair.bottom_frequency,
+                    frequency_pair.top_frequency,
+                ),
+                "profile_name": 'aws-chiles02',
+                "node": node_id,
+            })
+            copy_fits_to_s3.addInput(result)
+            copy_fits_to_s3.addOutput(s3_fits_drop_out)
+            self.append(copy_fits_to_s3)
+            self.append(s3_fits_drop_out)
+
+            barrier_drop = dropdict({
+                "type": 'app',
+                "app": get_module_name(BarrierAppDROP),
+                "oid": self.get_oid('app_barrier'),
+                "uid": self.get_uuid(),
+                "user": 'root',
+                "input_error_threshold": 100,
+                "node": node_id,
+            })
+            barrier_drop.addInput(s3_clean_drop_out)
+            barrier_drop.addInput(s3_fits_drop_out)
+            self.append(barrier_drop)
+
             carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.s3_out = s3_drop_out
+            carry_over_data.s3_out = barrier_drop
 
             clean_up = dropdict({
                 "type": 'app',
@@ -148,7 +196,8 @@ class BuildGraphClean(AbstractBuildGraph):
             self.append(clean_up)
             for drop in s3_drop_outs:
                 clean_up.addInput(drop)
-            clean_up.addInput(s3_drop_out)
+            clean_up.addInput(result)
+            clean_up.addInput(barrier_drop)
             carry_over_data.clean_up = clean_up
 
         if self._shutdown:

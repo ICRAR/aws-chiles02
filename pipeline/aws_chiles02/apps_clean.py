@@ -24,7 +24,6 @@ My Docker Apps
 """
 import logging
 import os
-import shutil
 
 import boto3
 from boto3.s3.transfer import S3Transfer
@@ -184,10 +183,60 @@ class CopyCleanToS3(BarrierAppDROP):
             }
         )
 
-        # Clean up
-        shutil.rmtree(measurement_set_dir, ignore_errors=True)
-
         return return_code
+
+
+class CopyFitsToS3(BarrierAppDROP):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        super(CopyFitsToS3, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CopyFitsToS3, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+
+    def dataURL(self):
+        return 'CopyFitsToS3'
+
+    def run(self):
+        measurement_set_output = self.inputs[0]
+        measurement_set_dir = measurement_set_output.path
+
+        s3_output = self.outputs[0]
+        bucket_name = s3_output.bucket
+        key = s3_output.key
+        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+        # Does the file exists
+        stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        measurement_set = os.path.join(measurement_set_dir, stem_name)
+        LOG.info('checking {0}.fits exists'.format(measurement_set))
+        fits_file = measurement_set + '.fits'
+        if not os.path.exists(fits_file) or not os.path.isfile(fits_file):
+            LOG.info('Measurement_set: {0}.fits does not exist'.format(measurement_set))
+            return 0
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+            fits_file,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(fits_file))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
+        )
+
+        return 0
 
 
 class DockerClean(DockerApp):

@@ -41,7 +41,9 @@ class CleanupDirectories(BarrierAppDROP):
 
     def run(self):
         input_files = [i.path for i in self.inputs if isinstance(i, (FileDROP, DirectoryContainer))]
+        LOG.info('input_files: {0}'.format(input_files))
         for input_file in input_files:
+            LOG.info('Looking at {0}'.format(input_file))
             if os.path.exists(input_file):
                 if os.path.isdir(input_file):
                     LOG.info('Removing directory {0}'.format(input_file))
