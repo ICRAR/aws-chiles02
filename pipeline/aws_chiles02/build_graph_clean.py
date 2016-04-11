@@ -178,12 +178,22 @@ class BuildGraphClean(AbstractBuildGraph):
                 "input_error_threshold": 100,
                 "node": node_id,
             })
+
+            # Give the memory drop somewhere to go
+            memory_drop = dropdict({
+                "type": 'plain',
+                "storage": 'memory',
+                "oid": self.get_oid('memory_drop'),
+                "uid": self.get_uuid(),
+            })
             barrier_drop.addInput(s3_clean_drop_out)
             barrier_drop.addInput(s3_fits_drop_out)
+            barrier_drop.addOutput(memory_drop)
             self.append(barrier_drop)
+            self.append(memory_drop)
 
             carry_over_data = self._map_carry_over_data[node_id]
-            carry_over_data.s3_out = barrier_drop
+            carry_over_data.s3_out = memory_drop
 
             clean_up = dropdict({
                 "type": 'app',
@@ -197,7 +207,7 @@ class BuildGraphClean(AbstractBuildGraph):
             for drop in s3_drop_outs:
                 clean_up.addInput(drop)
             clean_up.addInput(result)
-            clean_up.addInput(barrier_drop)
+            clean_up.addInput(memory_drop)
             carry_over_data.clean_up = clean_up
 
         if self._shutdown:

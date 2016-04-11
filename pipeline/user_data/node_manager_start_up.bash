@@ -104,11 +104,9 @@ rm -rf /var/lib/docker
 service docker start
 sleep 10
 
-#docker login --email=a@b.com --username=icrar --password=XXX sdp-docker-registry.icrar.uwa.edu.au:8080
-
 # Get the docker containers now to prevent a race condition later
-#docker pull sdp-docker-registry.icrar.uwa.edu.au:8080/kevin/chiles02:latest
 docker pull kevinvinsen/chiles02:latest
+docker pull slavakitaeff/sv:1.4
 
 cd /home/ec2-user
 runuser -l ec2-user -c 'cd /home/ec2-user/dfms && git pull'

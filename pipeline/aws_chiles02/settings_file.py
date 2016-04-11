@@ -29,6 +29,7 @@ from configobj import ConfigObj
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 INPUT_MS_SUFFIX_TAR = '_calibrated_deepfield.ms.tar'
 CONTAINER_CHILES02 = 'kevinvinsen/chiles02:latest'
+CONTAINER_SV = 'slavakitaeff/sv:1.4'
 SIZE_1GB = 1073741824
 QUEUE = 'startup_complete'
 DIM_PORT = 8001
