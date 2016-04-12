@@ -47,7 +47,11 @@ class CleanupDirectories(BarrierAppDROP):
             if os.path.exists(input_file):
                 if os.path.isdir(input_file):
                     LOG.info('Removing directory {0}'.format(input_file))
-                    shutil.rmtree(input_file, ignore_errors=True)
+
+                    def rmtree_onerror(func, path, exc_info):
+                        LOG.error('onerror(func={0}, path={1}, exc_info={2}'.format(func, path, exc_info))
+
+                    shutil.rmtree(input_file, onerror=rmtree_onerror)
                 else:
                     LOG.info('Removing file {0}'.format(input_file))
                     try:

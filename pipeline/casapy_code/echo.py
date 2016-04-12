@@ -31,12 +31,10 @@ LOG = logging.getLogger(__name__)
 
 
 def format_arg_value(arg_val):
-    """ Return a string representing a (name, value) pair.
+    """
+    Return a string representing a (name, value) pair.
 
     :param arg_val: the tuple
-
-    >>> format_arg_value(('x', (1, 2, 3)))
-    'x=(1, 2, 3)'
     """
     arg, val = arg_val
     return '{0}={1}'.format(arg, val)
@@ -45,14 +43,15 @@ def format_arg_value(arg_val):
 def name(item):
     """
     Return an item's name.
-    :param item: the item
 
+    :param item: the item
     """
     return item.__name__
 
 
 def echo(fn):
-    """ Echo calls to a function.
+    """
+    Echo calls to a function.
 
     Returns a decorated version of the input function which "echoes" calls
     made to it by writing out the function's name and the arguments it was

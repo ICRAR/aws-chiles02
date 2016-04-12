@@ -55,3 +55,6 @@ env PATH /opt/chiles02/scripts:$PATH
 env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline
 
 VOLUME /dfms_root
+
+RUN groupadd -g500 ec2-user
+RUN useradd -ms /bin/bash -u500 -g500 ec2-user

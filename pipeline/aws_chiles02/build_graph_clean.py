@@ -77,7 +77,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "image": CONTAINER_CHILES02,
                 "command": 'clean',
-                "user": 'root',
+                "user": 'ec2-user',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
                 "iterations": self._iterations,
@@ -108,7 +108,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "app": get_module_name(CopyCleanToS3),
                 "oid": self.get_oid('app_copy_clean_to_s3'),
                 "uid": self.get_uuid(),
-                "user": 'root',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
                 "input_error_threshold": 100,
@@ -141,7 +140,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "app": get_module_name(CopyFitsToS3),
                 "oid": self.get_oid('app_copy_fits_to_s3'),
                 "uid": self.get_uuid(),
-                "user": 'root',
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
                 "input_error_threshold": 100,
@@ -174,7 +172,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "app": get_module_name(BarrierAppDROP),
                 "oid": self.get_oid('app_barrier'),
                 "uid": self.get_uuid(),
-                "user": 'root',
                 "input_error_threshold": 100,
                 "node": node_id,
             })
@@ -185,6 +182,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 "storage": 'memory',
                 "oid": self.get_oid('memory_drop'),
                 "uid": self.get_uuid(),
+                "node": node_id,
             })
             barrier_drop.addInput(s3_clean_drop_out)
             barrier_drop.addInput(s3_fits_drop_out)
@@ -200,7 +198,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "app": get_module_name(CleanupDirectories),
                 "oid": self.get_oid('app_cleanup_directories'),
                 "uid": self.get_uuid(),
-                "user": 'root',
                 "node": node_id,
             })
             self.append(clean_up)
@@ -233,7 +230,6 @@ class BuildGraphClean(AbstractBuildGraph):
                     "oid": self.get_oid('app_bash_shell_app'),
                     "uid": self.get_uuid(),
                     "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                    "user": 'root',
                     "input_error_threshold": 100,
                     "node": node_id,
                 })
@@ -286,7 +282,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "min_frequency": frequency_pair.bottom_frequency,
                 "max_frequency": frequency_pair.top_frequency,
-                "user": 'root',
                 "input_error_threshold": 100,
                 "node": node_id,
                 "n_tries": 2,
