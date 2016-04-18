@@ -24,13 +24,11 @@ My Docker Apps
 """
 import logging
 import os
-import shutil
 
 import boto3
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.common import run_command, ProgressPercentage
-from dfms.apps.dockerapp import DockerApp
+from aws_chiles02.common import ProgressPercentage
 from dfms.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
@@ -100,36 +98,24 @@ class CopyJpeg2000ToS3(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(CopyJpeg2000ToS3, self).initialize(**kwargs)
-        self._width = self._getArg(kwargs, 'width ', None)
-        self._iterations = self._getArg(kwargs, 'iterations', None)
 
     def dataURL(self):
         return 'CopyJpeg2000ToS3'
 
     def run(self):
-        measurement_set_output = self.inputs[0]
-        measurement_set_dir = measurement_set_output.path
-
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key
-        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
-        # Does the file exists
-        stem_name = 'image_{0}_{1}'.format(self._width, self._iterations)
-        measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.cube exists'.format(measurement_set))
-        if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
-            LOG.info('Measurement_set: {0}.cube does not exist'.format(measurement_set))
-            return 0
 
-        # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.cube.tar'.format(self._width, self._iterations))
-        os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.cube'.format(tar_filename, stem_name)
-        return_code = run_command(bash)
-        path_exists = os.path.exists(tar_filename)
-        if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+        jpeg_file_name = self.inputs[0].path
+
+        LOG.info('file: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, jpeg_file_name))
+
+        # Does the file exists
+        LOG.info('checking {0} exists'.format(jpeg_file_name))
+        if not os.path.exists(jpeg_file_name):
+            LOG.info('File: {0} does not exist'.format(jpeg_file_name))
+            return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -137,19 +123,16 @@ class CopyJpeg2000ToS3(BarrierAppDROP):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-            tar_filename,
+            jpeg_file_name,
             bucket_name,
             key,
             callback=ProgressPercentage(
                     key,
-                    float(os.path.getsize(tar_filename))
+                    float(os.path.getsize(jpeg_file_name))
             ),
             extra_args={
                 'StorageClass': 'REDUCED_REDUNDANCY',
             }
         )
 
-        # Clean up
-        shutil.rmtree(measurement_set_dir, ignore_errors=True)
-
-        return return_code
+        return 0

@@ -26,7 +26,7 @@ import os
 
 import boto3
 
-from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3
+from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3, CopyJpeg2000ToS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_SV
@@ -105,13 +105,14 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "n_tries": 2,
             })
 
+            (minimum_frequency, maximum_frequency) = self._get_frequencies(s3_object)
             fits_file_name = self._get_fits_file_name(s3_object)
             fits_file = dropdict({
                 "type": 'plain',
                 "storage": 'file',
                 "oid": self.get_oid('fits_file'),
                 "uid": self.get_uuid(),
-                "precious": False,
+                "precious": True,
                 "filepath": os.path.join(self._volume, fits_file_name),
                 "node": self._node_id,
             })
@@ -156,7 +157,37 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             self.append(convert_jpeg2000)
             self.append(jpeg2000_file)
 
-            parallel_streams[counter] = jpeg2000_file
+            copy_jpg2000_to_s3 = dropdict({
+                "type": 'app',
+                "app": get_module_name(CopyJpeg2000ToS3),
+                "oid": self.get_oid('app_copy_jpeg_to_s3'),
+                "uid": self.get_uuid(),
+                "input_error_threshold": 100,
+                "node": self._node_id,
+                "n_tries": 2,
+            })
+            s3_jpeg2000_drop_out = dropdict({
+                "type": 'plain',
+                "storage": 's3',
+                "oid": self.get_oid('s3_out'),
+                "uid": self.get_uuid(),
+                "expireAfterUse": True,
+                "precious": False,
+                "bucket": self._bucket_name,
+                "key": '{0}/image_{1}_{2}.jpg2000'.format(
+                    self._s3_jpeg2000_name,
+                    minimum_frequency,
+                    maximum_frequency,
+                ),
+                "profile_name": 'aws-chiles02',
+                "node": self._node_id,
+            })
+            copy_jpg2000_to_s3.addInput(jpeg2000_file)
+            copy_jpg2000_to_s3.addOutput(s3_jpeg2000_drop_out)
+            self.append(copy_jpg2000_to_s3)
+            self.append(s3_jpeg2000_drop_out)
+
+            parallel_streams[counter] = s3_jpeg2000_drop_out
 
             counter += 1
             if counter >= self._parallel_streams:
@@ -219,3 +250,10 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         (head, tail) = os.path.split(s3_object)
         (name, ext) = os.path.splitext(tail)
         return name + '.jpeg200'
+
+    @staticmethod
+    def _get_frequencies(s3_object):
+        (head, tail) = os.path.split(s3_object)
+        (name, ext) = os.path.splitext(tail)
+        elements = name.split('_')
+        return elements[1], elements[2]
