@@ -112,7 +112,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "storage": 'file',
                 "oid": self.get_oid('fits_file'),
                 "uid": self.get_uuid(),
-                "precious": True,
+                "precious": False,
                 "filepath": os.path.join(self._volume, fits_file_name),
                 "node": self._node_id,
             })
@@ -135,7 +135,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "oid": self.get_oid('app_convert_jpeg2000'),
                 "uid": self.get_uuid(),
                 "image": CONTAINER_SV,
-                "command": 'sv-encode -i %i0 -o %o0 Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
+                "command": 'sv-encode -i %i0 -o %o0 -stat Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
                 "user": 'root',
                 "node": self._node_id,
             })
@@ -174,7 +174,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "expireAfterUse": True,
                 "precious": False,
                 "bucket": self._bucket_name,
-                "key": '{0}/image_{1}_{2}.jpg2000'.format(
+                "key": '{0}/image_{1}_{2}.jpx'.format(
                     self._s3_jpeg2000_name,
                     minimum_frequency,
                     maximum_frequency,
