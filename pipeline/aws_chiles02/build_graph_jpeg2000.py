@@ -29,16 +29,15 @@ import boto3
 from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
-from aws_chiles02.settings_file import CONTAINER_CHILES02, CONTAINER_SV
+from aws_chiles02.settings_file import CONTAINER_SV
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import dropdict, DirectoryContainer, FileDROP
+from dfms.drop import dropdict, DirectoryContainer, FileDROP, BarrierAppDROP
 
 
-class CarryOverDataConcatenation:
+class CarryOverDataJpeg2000:
     def __init__(self):
-        self.fits_file = None
-        self.copy_to_s3 = None
+        self.barrier_drop = None
 
 
 class BuildGraphJpeg2000(AbstractBuildGraph):
@@ -46,6 +45,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         super(BuildGraphJpeg2000, self).__init__(bucket_name, shutdown, node_details, volume)
         self._parallel_streams = parallel_streams
         self._s3_fits_name = 'fits_{0}_{1}'.format(width, iterations)
+        self._s3_jpeg2000_name = 'jpeg_{0}_{1}'.format(width, iterations)
         self._iterations = iterations
         values = node_details.values()
         self._node_id = values[0][0]['ip_address']
@@ -53,7 +53,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         self._s3_client = None
 
     def new_carry_over_data(self):
-        return CarryOverDataConcatenation()
+        return CarryOverDataJpeg2000()
 
     def build_graph(self):
         session = boto3.Session(profile_name='aws-chiles02')
@@ -61,15 +61,26 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         self._s3_client = s3.meta.client
         self._bucket = s3.Bucket(self._bucket_name)
 
+        # Get the ones we've already done
+        already_done = []
+        prefix = '{0}/'.format(self._s3_jpeg2000_name)
+        for key in self._bucket.objects.filter(Prefix=prefix):
+            if key.key.endswith('.jpeg2000'):
+                (head, tail) = os.path.split(key.key)
+                (name, ext) = os.path.splitext(tail)
+                already_done.append(name)
+
         # Add the cleaned images
         s3_objects = []
         prefix = '{0}/'.format(self._s3_fits_name)
         for key in self._bucket.objects.filter(Prefix=prefix):
             if key.key.endswith('.fits'):
-                s3_objects.append(key.key)
+                (head, tail) = os.path.split(key.key)
+                (name, ext) = os.path.splitext(head)
+                if name not in already_done:
+                    s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams
-        s3_out_drops = []
         counter = 0
         for s3_object in s3_objects:
             s3_drop = dropdict({
@@ -109,10 +120,6 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             copy_from_s3.addOutput(fits_file)
 
             self._start_oids.append(s3_drop['uid'])
-            carry_over_data = self._map_carry_over_data[self._node_id]
-            if carry_over_data.s3_out is not None:
-                copy_from_s3.addInput(carry_over_data.s3_out)
-
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
 
@@ -149,16 +156,26 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             self.append(convert_jpeg2000)
             self.append(jpeg2000_file)
 
-
-
-
-            parallel_streams[counter] = fits_file
-            s3_out_drops.append(fits_file)
+            parallel_streams[counter] = jpeg2000_file
 
             counter += 1
             if counter >= self._parallel_streams:
                 counter = 0
 
+        barrier_drop = dropdict({
+            "type": 'app',
+            "app": get_module_name(BarrierAppDROP),
+            "oid": self.get_oid('app_barrier'),
+            "uid": self.get_uuid(),
+            "user": 'root',
+            "input_error_threshold": 100,
+            "node": self._node_id,
+        })
+        self.append(barrier_drop)
+        for jpeg2000_file in parallel_streams:
+            barrier_drop.addInput(jpeg2000_file)
+        carry_over_data = self._map_carry_over_data[self._node_id]
+        carry_over_data.barrier_drop = barrier_drop
 
         if self._shutdown:
             self.add_shutdown()
@@ -168,7 +185,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             for instance_details in list_ips:
                 node_id = instance_details['ip_address']
                 carry_over_data = self._map_carry_over_data[node_id]
-                if carry_over_data.copy_to_s3 is not None:
+                if carry_over_data.barrier_drop is not None:
                     memory_drop = dropdict({
                         "type": 'plain',
                         "storage": 'memory',
@@ -177,7 +194,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                         "node": node_id,
                     })
                     self.append(memory_drop)
-                    carry_over_data.copy_to_s3.addOutput(memory_drop)
+                    carry_over_data.barrier_drop.addOutput(memory_drop)
 
                     shutdown_drop = dropdict({
                         "type": 'app',
@@ -191,3 +208,14 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                     })
                     shutdown_drop.addInput(memory_drop)
                     self.append(shutdown_drop)
+
+    @staticmethod
+    def _get_fits_file_name(s3_object):
+        (head, tail) = os.path.split(s3_object)
+        return tail
+
+    @staticmethod
+    def _get_jpeg2000_name(s3_object):
+        (head, tail) = os.path.split(s3_object)
+        (name, ext) = os.path.splitext(tail)
+        return name + '.jpeg200'
