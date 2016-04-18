@@ -32,7 +32,7 @@ from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_SV
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import dropdict, DirectoryContainer, FileDROP, BarrierAppDROP
+from dfms.drop import dropdict, FileDROP, BarrierAppDROP
 
 
 class CarryOverDataJpeg2000:
@@ -76,7 +76,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         for key in self._bucket.objects.filter(Prefix=prefix):
             if key.key.endswith('.fits'):
                 (head, tail) = os.path.split(key.key)
-                (name, ext) = os.path.splitext(head)
+                (name, ext) = os.path.splitext(tail)
                 if name not in already_done:
                     s3_objects.append(key.key)
 

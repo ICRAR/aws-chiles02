@@ -61,7 +61,7 @@ class CopyFitsFromS3(BarrierAppDROP):
         bucket_name = s3_input.bucket
         key = s3_input.key
 
-        fits_file_name = self.outputs[0]
+        fits_file_name = self.outputs[0].path
 
         LOG.info('bucket: {0}, key: {1}, file: {2}'.format(bucket_name, key, fits_file_name))
 
