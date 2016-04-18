@@ -249,7 +249,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
     def _get_jpeg2000_name(s3_object):
         (head, tail) = os.path.split(s3_object)
         (name, ext) = os.path.splitext(tail)
-        return name + '.jpeg200'
+        return name + '.jpx'
 
     @staticmethod
     def _get_frequencies(s3_object):
