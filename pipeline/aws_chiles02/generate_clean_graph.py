@@ -284,7 +284,7 @@ def command_interactive(args):
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
         get_argument(config, 'frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
@@ -292,7 +292,7 @@ def command_interactive(args):
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments

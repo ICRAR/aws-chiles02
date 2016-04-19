@@ -40,8 +40,11 @@ def parse_arguments():
 
 def remove_bad_splits(s3, bucket_name, width, size):
     bucket = s3.Bucket(bucket_name)
+    deleted_count = 0
+    checked_count = 0
     for key in bucket.objects.filter(Prefix='split_{0}'.format(width)):
         if key.key.endswith('.tar'):
+            checked_count += 1
             s3_object = s3.Object(bucket_name, key.key)
             s3_size = s3_object.content_length
 
@@ -50,6 +53,9 @@ def remove_bad_splits(s3, bucket_name, width, size):
             if s3_size < size:
                 LOG.info('deleting key: {0}, size: {1:,}'.format(key.key, s3_size))
                 s3_object.delete()
+                deleted_count += 1
+
+    LOG.info('Checked {0} files. Deleted {1} files smaller than {2:,} bytes'.format(checked_count, deleted_count, size))
 
 
 def main():
@@ -62,8 +68,8 @@ def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    logging.getLogger('boto3').setLevel(logging.INFO)
-    logging.getLogger('botocore').setLevel(logging.INFO)
+    logging.getLogger('boto3').setLevel(logging.WARNING)
+    logging.getLogger('botocore').setLevel(logging.WARNING)
     logging.getLogger('nose').setLevel(logging.INFO)
 
     main()

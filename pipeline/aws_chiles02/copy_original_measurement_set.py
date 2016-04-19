@@ -47,7 +47,7 @@ def copy_measurement_set(measurement_set, directory_out, bucket_name):
     LOG.info('measurement_set: {0}, bucket_name: {1}'.format(measurement_set, bucket_name))
 
     (measurement_set_directory, measurement_set_filename) = split(measurement_set)
-    key = '{0}.tar'.format(measurement_set_filename)
+    key = 'observation_data/{0}.tar'.format(measurement_set_filename)
 
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
@@ -63,27 +63,28 @@ def copy_measurement_set(measurement_set, directory_out, bucket_name):
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
             LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+        else:
+            session = boto3.Session(profile_name='aws-chiles02')
+            s3 = session.resource('s3', use_ssl=False)
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
-
-        s3_client = s3.meta.client
-        transfer = S3Transfer(s3_client)
-        transfer.upload_file(
-            tar_filename,
-            bucket_name,
-            key,
-            callback=ProgressPercentage(
+            s3_client = s3.meta.client
+            transfer = S3Transfer(s3_client)
+            transfer.upload_file(
+                tar_filename,
+                bucket_name,
                 key,
-                float(os.path.getsize(tar_filename))
-            ),
-            extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
-            }
-        )
+                callback=ProgressPercentage(
+                    key,
+                    float(os.path.getsize(tar_filename))
+                ),
+                extra_args={
+                    'StorageClass': 'REDUCED_REDUNDANCY',
+                }
+            )
 
         # Clean up
-        os.remove(tar_filename)
+        if path_exists:
+            os.remove(tar_filename)
 
 
 def write_files(list_measurement_sets, directory_out, bucket_name):
@@ -105,7 +106,9 @@ def get_list_measurement_sets(directory_in):
 
 def copy_measurement_sets(args):
     if not exists(args.directory_in) or not isdir(args.directory_in):
-        LOG.error('The directory {0} does not exist'.format(args.directory_in))
+        LOG.error('The input directory {0} does not exist'.format(args.directory_in))
+    if not exists(args.directory_out) or not isdir(args.directory_out):
+        LOG.error('The output directory {0} does not exist'.format(args.directory_out))
 
     list_measurement_sets = get_list_measurement_sets(args.directory_in)
     write_files(list_measurement_sets, args.directory_out, args.bucket_name)
