@@ -41,8 +41,7 @@ RUN yum install -y \
     yum clean all
 
 RUN mkdir -p /opt/chiles02
-WORKDIR /opt/chiles02
-RUN git clone https://github.com/ICRAR/aws-chiles02.git
+RUN chmod oug+rw /opt/chiles02
 
 # Copy the scripts
 COPY scripts /opt/chiles02/scripts/
@@ -56,5 +55,11 @@ env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline
 
 VOLUME /dfms_root
 
+# Add the ec2-user
 RUN groupadd -g500 ec2-user
 RUN useradd -ms /bin/bash -u500 -g500 ec2-user
+
+# Clone the image as ec2-user as we run things as ec2-user
+USER ec2-user
+WORKDIR /opt/chiles02
+RUN git clone https://github.com/ICRAR/aws-chiles02.git

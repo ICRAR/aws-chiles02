@@ -135,7 +135,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "oid": self.get_oid('app_convert_jpeg2000'),
                 "uid": self.get_uuid(),
                 "image": CONTAINER_SV,
-                "command": 'sv-encode -i %i0 -o %o0 -stat Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
+                "command": 'sv-encode -i %i0 -o %o0 Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
                 "user": 'root',
                 "node": self._node_id,
             })
