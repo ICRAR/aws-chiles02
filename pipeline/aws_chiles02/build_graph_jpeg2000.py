@@ -65,10 +65,10 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         already_done = []
         prefix = '{0}/'.format(self._s3_jpeg2000_name)
         for key in self._bucket.objects.filter(Prefix=prefix):
-            if key.key.endswith('.jpeg2000'):
+            if key.key.endswith('.jpx'):
                 (head, tail) = os.path.split(key.key)
                 (name, ext) = os.path.splitext(tail)
-                already_done.append(name)
+                already_done.append(name[6:])
 
         # Add the cleaned images
         s3_objects = []
@@ -77,7 +77,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             if key.key.endswith('.fits'):
                 (head, tail) = os.path.split(key.key)
                 (name, ext) = os.path.splitext(tail)
-                if name not in already_done:
+                if name[8:] not in already_done:
                     s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams

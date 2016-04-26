@@ -27,6 +27,8 @@ import logging
 
 import boto3
 
+from aws_chiles02.common import human2bytes
+
 LOG = logging.getLogger(__name__)
 
 
@@ -34,7 +36,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser('Check what data has been split')
     parser.add_argument('bucket', help='the bucket to access')
     parser.add_argument('width', type=int, help='the frequency width')
-    parser.add_argument('size', type=int, help='the minimum viable size')
+    parser.add_argument('size', help='the minimum viable size')
     return parser.parse_args()
 
 
@@ -63,7 +65,8 @@ def main():
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 
-    remove_bad_splits(s3, arguments.bucket, arguments.width, arguments.size)
+    size_as_number = human2bytes(arguments.size)
+    remove_bad_splits(s3, arguments.bucket, arguments.width, size_as_number)
 
 
 if __name__ == "__main__":
