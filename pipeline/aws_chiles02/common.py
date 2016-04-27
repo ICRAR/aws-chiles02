@@ -36,7 +36,6 @@ from configobj import ConfigObj
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
-TO_MB = 1048576.0
 LOG = logging.getLogger(__name__)
 
 
@@ -252,7 +251,7 @@ class ProgressPercentage:
     def __init__(self, filename, expected_size):
         self._filename = filename
         self._size = float(expected_size)
-        self._size_mb = expected_size / TO_MB
+        self._size_mb = bytes2human(expected_size)
         self._seen_so_far = 0
         self._lock = threading.Lock()
         self._percentage = -1
@@ -264,9 +263,9 @@ class ProgressPercentage:
                 percentage = int((self._seen_so_far / self._size) * 100.0)
                 if percentage > self._percentage:
                     LOG.info(
-                        '{0}  {1:.2f}MB / {2:.2f}MB  ({3}%)'.format(
+                        '{0}  {1}B / {2}B ({3}%)'.format(
                             self._filename,
-                            self._seen_so_far / TO_MB,
+                            bytes2human(self._seen_so_far),
                             self._size_mb,
                             percentage))
                     self._percentage = percentage
@@ -282,58 +281,59 @@ SYMBOLS = {
 }
 
 
-def bytes2human(n, format_string='%(value).1f %(symbol)s', symbols='customary'):
+def bytes2human(n, format_string='{0:.1f}{1}', symbols='customary'):
     """
     Convert n bytes into a human readable string based on format.
     symbols can be either "customary", "customary_ext", "iec" or "iec_ext",
     see: http://goo.gl/kTQMs
 
       >>> bytes2human(0)
-      '0.0 B'
+      '0.0B'
       >>> bytes2human(0.9)
-      '0.0 B'
+      '0.0B'
       >>> bytes2human(1)
-      '1.0 B'
+      '1.0B'
       >>> bytes2human(1.9)
-      '1.0 B'
+      '1.0B'
       >>> bytes2human(1024)
-      '1.0 K'
+      '1.0K'
       >>> bytes2human(1048576)
-      '1.0 M'
+      '1.0M'
       >>> bytes2human(1099511627776127398123789121)
-      '909.5 Y'
+      '909.5Y'
 
       >>> bytes2human(9856, symbols="customary")
-      '9.6 K'
+      '9.6K'
       >>> bytes2human(9856, symbols="customary_ext")
-      '9.6 kilo'
+      '9.6kilo'
       >>> bytes2human(9856, symbols="iec")
-      '9.6 Ki'
+      '9.6Ki'
       >>> bytes2human(9856, symbols="iec_ext")
-      '9.6 kibi'
+      '9.6kibi'
 
-      >>> bytes2human(10000, "%(value).1f %(symbol)s/sec")
+      >>> bytes2human(10000, "{0:.1f} {1}/sec")
       '9.8 K/sec'
 
       >>> # precision can be adjusted by playing with %f operator
-      >>> bytes2human(10000, format_string="%(value).5f %(symbol)s")
+      >>> bytes2human(10000, format_string="{0:.5f} {1}")
       '9.76562 K'
     """
     n = int(n)
     if n < 0:
         raise ValueError("n < 0")
+
     symbols = SYMBOLS[symbols]
     prefix = {}
     for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i+1)*10
+        prefix[s] = 1 << (i + 1) * 10
     for symbol in reversed(symbols[1:]):
         if n >= prefix[symbol]:
             value = float(n) / prefix[symbol]
-            return format_string % locals()
-    return format_string % dict(symbol=symbols[0], value=n)
+            return format_string.format(value, symbol)
+    return format_string.format(n, symbols[0])
 
 
-def human2bytes(s):
+def human2bytes(input_string):
     """
     Attempts to guess the string format based on default symbols
     set and return the corresponding bytes as an integer.
@@ -343,7 +343,7 @@ def human2bytes(s):
       0
       >>> human2bytes('1 K')
       1024
-      >>> human2bytes('1 M')
+      >>> human2bytes('1M')
       1048576
       >>> human2bytes('1 Gi')
       1073741824
@@ -360,13 +360,13 @@ def human2bytes(s):
           ...
       ValueError: can't interpret '12 foo'
     """
-    init = s
+    init = input_string
     num = ""
-    while s and s[0:1].isdigit() or s[0:1] == '.':
-        num += s[0]
-        s = s[1:]
+    while input_string and input_string[0:1].isdigit() or input_string[0:1] == '.':
+        num += input_string[0]
+        input_string = input_string[1:]
     num = float(num)
-    letter = s.strip()
+    letter = input_string.strip()
     for name, sset in SYMBOLS.items():
         if letter in sset:
             break
@@ -376,8 +376,8 @@ def human2bytes(s):
             sset = SYMBOLS['customary']
             letter = letter.upper()
         else:
-            raise ValueError("can't interpret %r" % init)
+            raise ValueError("can't interpret '{0}'".format(init))
     prefix = {sset[0]: 1}
-    for i, s in enumerate(sset[1:]):
-        prefix[s] = 1 << (i+1)*10
+    for i, input_string in enumerate(sset[1:]):
+        prefix[input_string] = 1 << (i + 1) * 10
     return int(num * prefix[letter])

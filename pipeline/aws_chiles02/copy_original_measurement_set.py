@@ -33,9 +33,9 @@ from os import walk
 from os.path import exists, isdir, join, split
 
 import boto3
-from boto3.s3.transfer import S3Transfer
+from boto3.s3.transfer import S3Transfer, TransferConfig
 
-from aws_chiles02.common import run_command, ProgressPercentage
+from aws_chiles02.common import run_command, ProgressPercentage, bytes2human
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.INFO)
@@ -64,18 +64,29 @@ def copy_measurement_set(measurement_set, directory_out, bucket_name):
         if return_code != 0 or not path_exists:
             LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
         else:
-            session = boto3.Session(profile_name='aws-chiles02')
-            s3 = session.resource('s3', use_ssl=False)
-
+            tar_size = float(os.path.getsize(tar_filename))
+            chunk_size = int(tar_size / 9999)
+            LOG.info(
+                'tar_filename: {0}, bucket: {1}, key: {2}, size: {3}, chunk_size: {4}'.format(
+                    tar_filename,
+                    bucket_name,
+                    key,
+                    bytes2human(tar_size),
+                    chunk_size
+                )
+            )
+            transfer_config = TransferConfig(
+                multipart_chunksize=chunk_size
+            )
             s3_client = s3.meta.client
-            transfer = S3Transfer(s3_client)
+            transfer = S3Transfer(s3_client, transfer_config)
             transfer.upload_file(
                 tar_filename,
                 bucket_name,
                 key,
                 callback=ProgressPercentage(
                     key,
-                    float(os.path.getsize(tar_filename))
+                    tar_size
                 ),
                 extra_args={
                     'StorageClass': 'REDUCED_REDUNDANCY',
