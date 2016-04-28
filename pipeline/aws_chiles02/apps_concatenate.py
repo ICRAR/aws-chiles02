@@ -29,6 +29,7 @@ import shutil
 import boto3
 from boto3.s3.transfer import S3Transfer
 
+from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import run_command, ProgressPercentage
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
@@ -40,15 +41,8 @@ logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
 
-class CopyConcatenateFromS3(BarrierAppDROP):
+class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        """
-        initial the class, make sure super is called after the event as it calls initialize
-        :param oid:
-        :param uid:
-        :param kwargs:
-        :return:
-        """
         super(CopyConcatenateFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -98,13 +92,19 @@ class CopyConcatenateFromS3(BarrierAppDROP):
                 )
         )
         if not os.path.exists(full_path_tar_file):
-            LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
+            self.send_error_message(
+                'The tar file {0} does not exist'.format(full_path_tar_file),
+                LOG
+            )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
-            LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size))
+            self.send_error_message(
+                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
+                LOG
+            )
             return 1
 
         # The tar file exists and is the same size
@@ -112,7 +112,10 @@ class CopyConcatenateFromS3(BarrierAppDROP):
         return_code = run_command(bash)
 
         if return_code != 0:
-            LOG.error('tar return_code: {0}'.format(return_code))
+            self.send_error_message(
+                'tar return_code: {0}'.format(return_code),
+                LOG
+            )
             return 1
 
         os.remove(full_path_tar_file)
@@ -129,7 +132,7 @@ class CopyConcatenateFromS3(BarrierAppDROP):
         return 0
 
 
-class CopyConcatenateToS3(BarrierAppDROP):
+class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._width = None
         self._iterations = None
@@ -156,7 +159,10 @@ class CopyConcatenateToS3(BarrierAppDROP):
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.info('checking {0}.cube exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
-            LOG.info('Measurement_set: {0}.cube does not exist'.format(measurement_set))
+            self.send_error_message(
+                'Measurement_set: {0}.cube does not exist'.format(measurement_set),
+                LOG
+            )
             return 0
 
         # Make the tar file
@@ -166,7 +172,10 @@ class CopyConcatenateToS3(BarrierAppDROP):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+            self.send_error_message(
+                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
+                LOG
+            )
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -192,7 +201,7 @@ class CopyConcatenateToS3(BarrierAppDROP):
         return return_code
 
 
-class CasaPyConcatenate(BarrierAppDROP):
+class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._width = None
@@ -201,7 +210,6 @@ class CasaPyConcatenate(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(CasaPyConcatenate, self).initialize(**kwargs)
-
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
@@ -241,7 +249,7 @@ class CasaPyConcatenate(BarrierAppDROP):
         return 'CasaPyConcatenate'
 
 
-class DockerImageconcat(DockerApp):
+class DockerImageconcat(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._command = None
@@ -251,7 +259,6 @@ class DockerImageconcat(DockerApp):
 
     def initialize(self, **kwargs):
         super(DockerImageconcat, self).initialize(**kwargs)
-
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
@@ -281,7 +288,7 @@ class DockerImageconcat(DockerApp):
         return 'docker container chiles02:latest'
 
 
-class DockerVirtualconcat(DockerApp):
+class DockerVirtualconcat(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._command = None
@@ -291,7 +298,6 @@ class DockerVirtualconcat(DockerApp):
 
     def initialize(self, **kwargs):
         super(DockerVirtualconcat, self).initialize(**kwargs)
-
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)

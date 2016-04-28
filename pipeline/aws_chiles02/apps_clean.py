@@ -28,6 +28,7 @@ import os
 import boto3
 from boto3.s3.transfer import S3Transfer
 
+from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import run_command, ProgressPercentage
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
@@ -39,15 +40,8 @@ logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
 
-class CopyCleanFromS3(BarrierAppDROP):
+class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        """
-        initial the class, make sure super is called after the event as it calls initialize
-        :param oid:
-        :param uid:
-        :param kwargs:
-        :return:
-        """
         self._max_frequency = None
         self._min_frequency = None
         super(CopyCleanFromS3, self).__init__(oid, uid, **kwargs)
@@ -96,13 +90,19 @@ class CopyCleanFromS3(BarrierAppDROP):
             )
         )
         if not os.path.exists(full_path_tar_file):
-            LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
+            self.send_error_message(
+                'The tar file {0} does not exist'.format(full_path_tar_file),
+                LOG
+            )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
-            LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size))
+            self.send_error_message(
+                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
+                LOG
+            )
             return 1
 
         # The tar file exists and is the same size
@@ -111,7 +111,10 @@ class CopyCleanFromS3(BarrierAppDROP):
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists))
+            self.send_error_message(
+                'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists),
+                LOG
+            )
             return 1
 
         os.remove(full_path_tar_file)
@@ -122,7 +125,7 @@ class CopyCleanFromS3(BarrierAppDROP):
         return 'CopyCleanFromS3'
 
 
-class CopyCleanToS3(BarrierAppDROP):
+class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -150,7 +153,10 @@ class CopyCleanToS3(BarrierAppDROP):
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.info('checking {0}.image exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
-            LOG.info('Measurement_set: {0}.image does not exist'.format(measurement_set))
+            self.send_error_message(
+                'Measurement_set: {0}.image does not exist'.format(measurement_set),
+                LOG
+            )
             return 0
 
         # Make the tar file
@@ -163,7 +169,10 @@ class CopyCleanToS3(BarrierAppDROP):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+            self.send_error_message(
+                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
+                LOG,
+            )
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -186,7 +195,7 @@ class CopyCleanToS3(BarrierAppDROP):
         return return_code
 
 
-class CopyFitsToS3(BarrierAppDROP):
+class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -239,7 +248,7 @@ class CopyFitsToS3(BarrierAppDROP):
         return 0
 
 
-class DockerClean(DockerApp):
+class DockerClean(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._max_frequency = None
@@ -250,7 +259,6 @@ class DockerClean(DockerApp):
 
     def initialize(self, **kwargs):
         super(DockerClean, self).initialize(**kwargs)
-
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)

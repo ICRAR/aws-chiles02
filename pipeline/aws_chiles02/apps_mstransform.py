@@ -29,6 +29,8 @@ import shutil
 import boto3
 from boto3.s3.transfer import S3Transfer
 
+from aws_chiles02.apps_general import ErrorHandling
+from aws_chiles02.check_measurement_set import CheckMeasurementSet
 from aws_chiles02.common import run_command, ProgressPercentage
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
@@ -40,15 +42,8 @@ logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
 
-class CopyMsTransformFromS3(BarrierAppDROP):
+class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        """
-        initial the class, make sure super is called after the event as it calls initialize
-        :param oid:
-        :param uid:
-        :param kwargs:
-        :return:
-        """
         super(CopyMsTransformFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -102,13 +97,19 @@ class CopyMsTransformFromS3(BarrierAppDROP):
         )
 
         if not os.path.exists(full_path_tar_file):
-            LOG.error('The tar file {0} does not exist'.format(full_path_tar_file))
+            self.send_error_message(
+                'The tar file {0} does not exist'.format(full_path_tar_file),
+                LOG
+            )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
-            LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size))
+            self.send_error_message(
+                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
+                LOG
+            )
             return 1
 
         # The tar file exists and is the same size
@@ -117,14 +118,17 @@ class CopyMsTransformFromS3(BarrierAppDROP):
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+            self.send_error_message(
+                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
+                LOG
+            )
             return 1
 
         os.remove(full_path_tar_file)
         return 0
 
 
-class CopyMsTransformToS3(BarrierAppDROP):
+class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -151,7 +155,10 @@ class CopyMsTransformToS3(BarrierAppDROP):
         measurement_set = os.path.join(measurement_set_dir, directory_name)
         LOG.info('check {0} exists'.format(measurement_set))
         if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
-            LOG.info('Measurement_set: {0} does not exist'.format(measurement_set))
+            self.send_error_message(
+                'Measurement_set: {0} does not exist'.format(measurement_set),
+                LOG
+            )
             return 0
 
         # Make the tar file
@@ -161,7 +168,10 @@ class CopyMsTransformToS3(BarrierAppDROP):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}'.format(return_code, path_exists))
+            self.send_error_message(
+                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
+                LOG
+            )
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -187,7 +197,11 @@ class CopyMsTransformToS3(BarrierAppDROP):
         return return_code
 
 
-class DockerMsTransform(DockerApp):
+def isFSBased(o):
+    pass
+
+
+class DockerMsTransform(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -201,19 +215,29 @@ class DockerMsTransform(DockerApp):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._predict_subtract = self._getArg(kwargs, 'predict_subtract', None)
-        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2} {3}'
+        self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         json_drop = self.inputs[1]
-        self._command = 'mstransform.sh %i0 %o0 %o0 {0} {1} {2} {3}'.format(
+        self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'.format(
             self._min_frequency,
             self._max_frequency,
             json_drop['Bottom edge'],
             self._predict_subtract,
         )
         super(DockerMsTransform, self).run()
+
+        check_measurement_set = CheckMeasurementSet(self.outputs[0].path)
+        if self._predict_subtract:
+            error_message = check_measurement_set.check_tables_to_26()
+        else:
+            error_message = check_measurement_set.check_tables_to_23()
+
+        if error_message is not None:
+            self.send_error_message(error_message, LOG)
+            return
 
     def dataURL(self):
         return 'docker container chiles02:latest'

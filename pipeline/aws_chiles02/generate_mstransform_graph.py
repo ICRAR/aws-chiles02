@@ -59,7 +59,7 @@ class WorkToDo:
 
         list_measurement_sets = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.all():
+        for key in self._bucket.objects.filter(Prefix='observation_data'):
             if key.key.endswith('_calibrated_deepfield.ms.tar'):
                 obj = s3.Object(key.bucket_name, key.key)
                 storage_class = obj.storage_class
@@ -247,15 +247,28 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
 
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
-                graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, reported_running, add_shutdown, frequency_width, predict_subtract)
+                session_id = get_session_id()
+                graph = BuildGraphMsTransform(
+                    work_to_do.work_to_do,
+                    bucket_name,
+                    volume,
+                    7,
+                    reported_running,
+                    add_shutdown,
+                    frequency_width,
+                    predict_subtract,
+                    session_id,
+                )
                 graph.build_graph()
+                graph.tag_all_app_drops({
+                    "session_id": session_id,
+                })
 
                 instance_details = data_island_manager_running['m4.large'][0]
                 host = instance_details['ip_address']
                 LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                 client = DataIslandManagerClient(host, DIM_PORT)
 
-                session_id = get_session_id()
                 client.create_session(session_id)
                 client.append_graph(session_id, graph.drop_list)
                 client.deploy_session(session_id, graph.start_oids)
@@ -283,13 +296,13 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
-            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width, predict_subtract)
+            session_id = get_session_id()
+            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width, predict_subtract, session_id)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
 
-            session_id = get_session_id()
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
             client.deploy_session(session_id, graph.start_oids)
@@ -305,7 +318,7 @@ def command_json(args):
     node_details = {
         'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
-    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.predict_subtract)
+    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.predict_subtract, 'json_test')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)

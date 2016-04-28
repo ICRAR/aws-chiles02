@@ -22,15 +22,12 @@
 """
 Build the physical graph
 """
-import os
 import operator
 
 from aws_chiles02.apps_mstransform import DockerMsTransform, DockerListobs, CopyMsTransformFromS3, CopyMsTransformToS3
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, BarrierAppDROP, DirectoryContainer
 
 
 class CarryOverDataMsTransform:
@@ -40,8 +37,18 @@ class CarryOverDataMsTransform:
 
 
 class BuildGraphMsTransform(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, predict_subtract):
-        super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume)
+    def __init__(
+            self,
+            work_to_do,
+            bucket_name,
+            volume,
+            parallel_streams,
+            node_details,
+            shutdown,
+            width,
+            predict_subtract,
+            session_id):
+        super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_split_name = 'split_{0}'.format(width)
@@ -93,82 +100,26 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 if last_element is not None:
                     outputs.append(last_element)
 
-            barrier_drop = dropdict({
-                "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
-                "oid": self.get_oid('app_barrier'),
-                "uid": self.get_uuid(),
-                "user": 'root',
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
+            barrier_drop = self.create_barrier_app(node_id)
             carry_over_data.barrier_drop = barrier_drop
             self.append(barrier_drop)
 
             for output in outputs:
                 barrier_drop.addInput(output)
 
-        # Should we add a shutdown drop
-        if self._shutdown:
-            self.add_shutdown()
-
-    def add_shutdown(self):
-        for list_ips in self._node_details.values():
-            for instance_details in list_ips:
-                node_id = instance_details['ip_address']
-                carry_over_data = self._map_carry_over_data[node_id]
-                if carry_over_data.barrier_drop is not None:
-                    memory_drop = dropdict({
-                        "type": 'plain',
-                        "storage": 'memory',
-                        "oid": self.get_oid('memory_in'),
-                        "uid": self.get_uuid(),
-                        "node": node_id,
-                    })
-                    self.append(memory_drop)
-                    carry_over_data.barrier_drop.addOutput(memory_drop)
-
-                    shutdown_drop = dropdict({
-                        "type": 'app',
-                        "app": get_module_name(BashShellApp),
-                        "oid": self.get_oid('app_bash_shell_app'),
-                        "uid": self.get_uuid(),
-                        "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                        "user": 'root',
-                        "input_error_threshold": 100,
-                        "node": node_id,
-                    })
-                    shutdown_drop.addInput(memory_drop)
-                    self.append(shutdown_drop)
+        self.copy_logfiles_and_shutdown()
 
     def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
-        casa_py_drop = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerMsTransform),
-            "oid": self.get_oid('app_ms_transform'),
-            "uid": self.get_uuid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'mstransform',
-            "min_frequency": frequency_pairs.bottom_frequency,
-            "max_frequency": frequency_pairs.top_frequency,
-            "predict_subtract": self._predict_subtract,
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": node_id,
-            "n_tries": 2,
-        })
-        oid03 = self.get_oid('dir_split')
-        result = dropdict({
-            "type": 'container',
-            "container": get_module_name(DirectoryContainer),
-            "oid": oid03,
-            "uid": self.get_uuid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid03),
-            "check_exists": False,
-            "expireAfterUse": True,
-            "node": node_id,
-        })
+        casa_py_drop = self.create_docker_app(
+            node_id,
+            get_module_name(DockerMsTransform),
+            'app_ms_transform',
+            CONTAINER_CHILES02,
+            min_frequency=frequency_pairs.bottom_frequency,
+            max_frequency=frequency_pairs.top_frequency,
+            predict_subtract=self._predict_subtract
+        )
+        result = self.create_directory_container(node_id, 'dir_split')
         casa_py_drop.addInput(measurement_set)
         casa_py_drop.addInput(properties)
         if last_element is not None:
@@ -177,35 +128,25 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         casa_py_drop.addOutput(result)
         self.append(casa_py_drop)
         self.append(result)
-        copy_to_s3 = dropdict({
-            "type": 'app',
-            "app": get_module_name(CopyMsTransformToS3),
-            "oid": self.get_oid('app_copy_mstransform_to_s3'),
-            "uid": self.get_uuid(),
-            "user": 'root',
-            "min_frequency": frequency_pairs.bottom_frequency,
-            "max_frequency": frequency_pairs.top_frequency,
-            "input_error_threshold": 100,
-            "node": node_id,
-            "n_tries": 2,
-        })
-        s3_drop_out = dropdict({
-            "type": 'plain',
-            "storage": 's3',
-            "oid": self.get_oid('s3_out'),
-            "uid": self.get_uuid(),
-            "expireAfterUse": True,
-            "precious": False,
-            "bucket": self._bucket_name,
-            "key": '{3}/{0}_{1}/{2}.tar'.format(
-                    frequency_pairs.bottom_frequency,
-                    frequency_pairs.top_frequency,
-                    observation_name,
-                    self._s3_split_name
+        copy_to_s3 = self.create_app(
+            node_id,
+            get_module_name(CopyMsTransformToS3),
+            'app_copy_mstransform_to_s3',
+            min_frequency=frequency_pairs.bottom_frequency,
+            max_frequency=frequency_pairs.top_frequency,
+        )
+        s3_drop_out = self.create_s3_drop(
+            node_id,
+            self._bucket_name,
+            '{3}/{0}_{1}/{2}.tar'.format(
+                frequency_pairs.bottom_frequency,
+                frequency_pairs.top_frequency,
+                observation_name,
+                self._s3_split_name
             ),
-            "profile_name": 'aws-chiles02',
-            "node": node_id,
-        })
+            'aws-chiles02',
+            oid='s3_out'
+        )
         copy_to_s3.addInput(result)
         copy_to_s3.addOutput(s3_drop_out)
         self.append(copy_to_s3)
@@ -213,44 +154,15 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         return s3_drop_out
 
     def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3, node_id):
-        s3_drop = dropdict({
-            "type": 'plain',
-            "storage": 's3',
-            "oid": self.get_oid('s3_in'),
-            "uid": self.get_uuid(),
-            "precious": False,
-            "bucket": self._bucket_name,
-            "key": day_to_process.full_tar_name,
-            "profile_name": 'aws-chiles02',
-            "node": node_id,
-        })
+        s3_drop = self.create_s3_drop(node_id, self._bucket_name, day_to_process.full_tar_name, 'aws-chiles02', 's3_in')
         if len(add_output_s3) == 0:
             self._start_oids.append(s3_drop['uid'])
         else:
             for drop in add_output_s3:
                 drop.addOutput(s3_drop)
 
-        copy_from_s3 = dropdict({
-            "type": 'app',
-            "app": get_module_name(CopyMsTransformFromS3),
-            "oid": self.get_oid('app_copy_mstransform_from_s3'),
-            "uid": self.get_uuid(),
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": node_id,
-            "n_tries": 2,
-        })
-        oid01 = self.get_oid('dir_in_ms')
-        measurement_set = dropdict({
-            "type": 'container',
-            "container": get_module_name(DirectoryContainer),
-            "oid": oid01,
-            "uid": self.get_uuid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid01),
-            "check_exists": False,
-            "node": node_id,
-        })
+        copy_from_s3 = self.create_app(node_id, get_module_name(CopyMsTransformFromS3), 'app_copy_mstransform_from_s3')
+        measurement_set = self.create_directory_container(node_id, 'dir_in_ms', expire_after_use=False)
 
         if barrier_drop is not None:
             barrier_drop.addOutput(measurement_set)
@@ -259,29 +171,8 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self.append(s3_drop)
         self.append(copy_from_s3)
         self.append(measurement_set)
-        drop_listobs = dropdict({
-            "type": 'app',
-            "app": get_module_name(DockerListobs),
-            "oid": self.get_oid('app_listobs'),
-            "uid": self.get_uuid(),
-            "image": CONTAINER_CHILES02,
-            "command": 'listobs',
-            "user": 'root',
-            "input_error_threshold": 100,
-            "node": node_id,
-            "n_tries": 2,
-        })
-        oid02 = self.get_oid('json')
-        properties = dropdict({
-            "type": 'plain',
-            "storage": 'json',
-            "oid": oid02,
-            "uid": self.get_uuid(),
-            "precious": False,
-            "dirname": os.path.join(self._volume, oid02),
-            "check_exists": False,
-            "node": node_id,
-        })
+        drop_listobs = self.create_docker_app(node_id, get_module_name(DockerListobs), 'app_listobs', CONTAINER_CHILES02)
+        properties = self.create_json_drop(node_id)
         drop_listobs.addInput(measurement_set)
         drop_listobs.addOutput(properties)
         self.append(drop_listobs)

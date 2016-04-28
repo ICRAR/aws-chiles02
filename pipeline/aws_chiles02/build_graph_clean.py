@@ -27,12 +27,12 @@ import os
 import boto3
 
 from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3
-from aws_chiles02.apps_general import CleanupDirectories
+from aws_chiles02.apps_general import CleanupDirectories, Chiles02BarrierAppDROP
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
+from dfms.drop import dropdict, DirectoryContainer
 
 
 class CarryOverDataClean:
@@ -42,8 +42,8 @@ class CarryOverDataClean:
 
 
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations):
-        super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume)
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id):
+        super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
@@ -112,7 +112,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "max_frequency": frequency_pair.top_frequency,
                 "input_error_threshold": 100,
                 "node": node_id,
-                "n_tries": 2,
             })
             s3_clean_drop_out = dropdict({
                 "type": 'plain',
@@ -144,7 +143,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "max_frequency": frequency_pair.top_frequency,
                 "input_error_threshold": 100,
                 "node": node_id,
-                "n_tries": 2,
             })
             s3_fits_drop_out = dropdict({
                 "type": 'plain',
@@ -169,7 +167,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
             barrier_drop = dropdict({
                 "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
+                "app": get_module_name(Chiles02BarrierAppDROP),
                 "oid": self.get_oid('app_barrier'),
                 "uid": self.get_uuid(),
                 "input_error_threshold": 100,
@@ -284,7 +282,6 @@ class BuildGraphClean(AbstractBuildGraph):
                 "max_frequency": frequency_pair.top_frequency,
                 "input_error_threshold": 100,
                 "node": node_id,
-                "n_tries": 2,
             })
 
             oid01 = self.get_oid('dir_in_ms')

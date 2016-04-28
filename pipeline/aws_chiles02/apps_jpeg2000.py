@@ -28,6 +28,7 @@ import os
 import boto3
 from boto3.s3.transfer import S3Transfer
 
+from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage
 from dfms.drop import BarrierAppDROP
 
@@ -37,15 +38,8 @@ logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 
 
-class CopyFitsFromS3(BarrierAppDROP):
+class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        """
-        initial the class, make sure super is called after the event as it calls initialize
-        :param oid:
-        :param uid:
-        :param kwargs:
-        :return:
-        """
         super(CopyFitsFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -84,13 +78,16 @@ class CopyFitsFromS3(BarrierAppDROP):
                 )
         )
         if not os.path.exists(fits_file_name):
-            LOG.error('The fits file {0} does not exist'.format(fits_file_name))
+            self.send_error_message(
+                'The fits file {0} does not exist'.format(fits_file_name),
+                LOG
+            )
             return 1
 
         return 0
 
 
-class CopyJpeg2000ToS3(BarrierAppDROP):
+class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._width = None
         self._iterations = None
@@ -114,7 +111,10 @@ class CopyJpeg2000ToS3(BarrierAppDROP):
         # Does the file exists
         LOG.info('checking {0} exists'.format(jpeg_file_name))
         if not os.path.exists(jpeg_file_name):
-            LOG.info('File: {0} does not exist'.format(jpeg_file_name))
+            self.send_error_message(
+                'File: {0} does not exist'.format(jpeg_file_name),
+                LOG
+            )
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')

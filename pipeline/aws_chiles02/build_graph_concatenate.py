@@ -92,7 +92,6 @@ class BuildGraphConcatenation(AbstractBuildGraph):
                 "user": 'root',
                 "input_error_threshold": 100,
                 "node": self._node_id,
-                "n_tries": 2,
             })
 
             oid01 = self.get_oid('dir_in_ms')
@@ -137,7 +136,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "image": CONTAINER_CHILES02,
                 "command": 'clean',
-                "user": 'root',
+                "user": 'ec2-user',
                 "measurement_sets": [drop['dirname'] for drop in s3_out_drops],
                 "width": self._width,
                 "iterations": self._iterations,
@@ -152,7 +151,7 @@ class BuildGraphConcatenation(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "image": CONTAINER_CHILES02,
                 "command": 'clean',
-                "user": 'root',
+                "user": 'ec2-user',
                 "measurement_sets": [drop['dirname'] for drop in s3_out_drops],
                 "width": self._width,
                 "iterations": self._iterations,
@@ -183,11 +182,9 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             "app": get_module_name(CopyConcatenateToS3),
             "oid": self.get_oid('app_copy_concatenate_to_s3'),
             "uid": self.get_uuid(),
-            "user": 'root',
             "width": self._width,
             "iterations": self._iterations,
             "node": self._node_id,
-            "n_tries": 2,
         })
         s3_drop_out = dropdict({
             "type": 'plain',

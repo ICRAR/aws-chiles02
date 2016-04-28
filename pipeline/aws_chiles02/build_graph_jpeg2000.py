@@ -99,10 +99,8 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "app": get_module_name(CopyFitsFromS3),
                 "oid": self.get_oid('app_copy_from_s3'),
                 "uid": self.get_uuid(),
-                "user": 'root',
                 "input_error_threshold": 100,
                 "node": self._node_id,
-                "n_tries": 2,
             })
 
             (minimum_frequency, maximum_frequency) = self._get_frequencies(s3_object)
@@ -164,7 +162,6 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 "uid": self.get_uuid(),
                 "input_error_threshold": 100,
                 "node": self._node_id,
-                "n_tries": 2,
             })
             s3_jpeg2000_drop_out = dropdict({
                 "type": 'plain',
@@ -198,7 +195,6 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             "app": get_module_name(BarrierAppDROP),
             "oid": self.get_oid('app_barrier'),
             "uid": self.get_uuid(),
-            "user": 'root',
             "input_error_threshold": 100,
             "node": self._node_id,
         })
