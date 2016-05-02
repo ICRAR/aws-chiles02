@@ -45,7 +45,7 @@ class ErrorHandling:
         self._uid = uid
 
     def send_message(self, message_text, queue='dfms-messages', region=AWS_REGION, profile_name='aws-chiles02'):
-        session = boto3.Session(profile_name)
+        session = boto3.Session(profile_name=profile_name)
         sqs = session.resource('sqs', region_name=region)
         queue = sqs.get_queue_by_name(QueueName=queue)
         message = {

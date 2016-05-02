@@ -22,8 +22,6 @@
 """
 Build the physical graph
 """
-import os
-
 import boto3
 
 from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3
@@ -31,8 +29,6 @@ from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
 
 
 class CarryOverDataClean:
@@ -70,169 +66,87 @@ class BuildGraphClean(AbstractBuildGraph):
             node_id = self._get_next_node(frequency_pair)
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
-            casa_py_clean_drop = dropdict({
-                "type": 'app',
-                "app": get_module_name(DockerClean),
-                "oid": self.get_oid('app_clean'),
-                "uid": self.get_uuid(),
-                "image": CONTAINER_CHILES02,
-                "command": 'clean',
-                "user": 'ec2-user',
-                "min_frequency": frequency_pair.bottom_frequency,
-                "max_frequency": frequency_pair.top_frequency,
-                "iterations": self._iterations,
-                "measurement_sets": [drop['dirname'] for drop in s3_drop_outs],
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
-            oid = self.get_oid('dir_clean_output')
-            result = dropdict({
-                "type": 'container',
-                "container": get_module_name(DirectoryContainer),
-                "oid": oid,
-                "uid": self.get_uuid(),
-                "precious": False,
-                "dirname": os.path.join(self._volume, oid),
-                "check_exists": False,
-                "expireAfterUse": True,
-                "node": node_id,
-            })
+            casa_py_clean_drop = self.create_docker_app(
+                node_id,
+                get_module_name(DockerClean),
+                'app_clean',
+                CONTAINER_CHILES02,
+                'clean',
+                min_frequency=frequency_pair.bottom_frequency,
+                max_frequency=frequency_pair.top_frequency,
+                iterations=self._iterations,
+                measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+            )
+            result = self.create_directory_container(node_id, 'dir_clean_output')
             for drop in s3_drop_outs:
                 casa_py_clean_drop.addInput(drop)
             casa_py_clean_drop.addOutput(result)
-            self.append(casa_py_clean_drop)
-            self.append(result)
 
-            copy_clean_to_s3 = dropdict({
-                "type": 'app',
-                "app": get_module_name(CopyCleanToS3),
-                "oid": self.get_oid('app_copy_clean_to_s3'),
-                "uid": self.get_uuid(),
-                "min_frequency": frequency_pair.bottom_frequency,
-                "max_frequency": frequency_pair.top_frequency,
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
-            s3_clean_drop_out = dropdict({
-                "type": 'plain',
-                "storage": 's3',
-                "oid": self.get_oid('s3_out'),
-                "uid": self.get_uuid(),
-                "expireAfterUse": True,
-                "precious": False,
-                "bucket": self._bucket_name,
-                "key": '{0}/cleaned_{1}_{2}.tar'.format(
-                        self._s3_clean_name,
-                        frequency_pair.bottom_frequency,
-                        frequency_pair.top_frequency,
+            copy_clean_to_s3 = self.create_app(
+                node_id,
+                get_module_name(CopyCleanToS3),
+                'app_copy_clean_to_s3',
+                min_frequency=frequency_pair.bottom_frequency,
+                max_frequency=frequency_pair.top_frequency,
+            )
+            s3_clean_drop_out = self.create_s3_drop(
+                node_id,
+                self._bucket_name,
+                '{0}/cleaned_{1}_{2}.tar'.format(
+                    self._s3_clean_name,
+                    frequency_pair.bottom_frequency,
+                    frequency_pair.top_frequency,
                 ),
-                "profile_name": 'aws-chiles02',
-                "node": node_id,
-            })
+                'aws-chiles02',
+                oid='s3_out',
+            )
             copy_clean_to_s3.addInput(result)
             copy_clean_to_s3.addOutput(s3_clean_drop_out)
-            self.append(copy_clean_to_s3)
-            self.append(s3_clean_drop_out)
 
-            copy_fits_to_s3 = dropdict({
-                "type": 'app',
-                "app": get_module_name(CopyFitsToS3),
-                "oid": self.get_oid('app_copy_fits_to_s3'),
-                "uid": self.get_uuid(),
-                "min_frequency": frequency_pair.bottom_frequency,
-                "max_frequency": frequency_pair.top_frequency,
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
-            s3_fits_drop_out = dropdict({
-                "type": 'plain',
-                "storage": 's3',
-                "oid": self.get_oid('s3_out'),
-                "uid": self.get_uuid(),
-                "expireAfterUse": True,
-                "precious": False,
-                "bucket": self._bucket_name,
-                "key": '{0}/cleaned_{1}_{2}.fits'.format(
+            copy_fits_to_s3 = self.create_app(
+                node_id,
+                get_module_name(CopyFitsToS3),
+                'app_copy_fits_to_s3',
+                min_frequency=frequency_pair.bottom_frequency,
+                max_frequency=frequency_pair.top_frequency,
+            )
+            s3_fits_drop_out = self.create_s3_drop(
+                node_id,
+                self._bucket_name,
+                '{0}/cleaned_{1}_{2}.fits'.format(
                     self._s3_fits_name,
                     frequency_pair.bottom_frequency,
                     frequency_pair.top_frequency,
                 ),
-                "profile_name": 'aws-chiles02',
-                "node": node_id,
-            })
+                'aws-chiles02',
+                oid='s3_out',
+            )
             copy_fits_to_s3.addInput(result)
             copy_fits_to_s3.addOutput(s3_fits_drop_out)
-            self.append(copy_fits_to_s3)
-            self.append(s3_fits_drop_out)
 
-            barrier_drop = dropdict({
-                "type": 'app',
-                "app": get_module_name(BarrierAppDROP),
-                "oid": self.get_oid('app_barrier'),
-                "uid": self.get_uuid(),
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
+            barrier_drop = self.create_barrier_app(node_id)
 
             # Give the memory drop somewhere to go
-            memory_drop = dropdict({
-                "type": 'plain',
-                "storage": 'memory',
-                "oid": self.get_oid('memory_drop'),
-                "uid": self.get_uuid(),
-                "node": node_id,
-            })
+            memory_drop = self.create_memory_drop(node_id)
             barrier_drop.addInput(s3_clean_drop_out)
             barrier_drop.addInput(s3_fits_drop_out)
             barrier_drop.addOutput(memory_drop)
-            self.append(barrier_drop)
-            self.append(memory_drop)
 
             carry_over_data = self._map_carry_over_data[node_id]
             carry_over_data.s3_out = memory_drop
 
-            clean_up = dropdict({
-                "type": 'app',
-                "app": get_module_name(CleanupDirectories),
-                "oid": self.get_oid('app_cleanup_directories'),
-                "uid": self.get_uuid(),
-                "node": node_id,
-            })
-            self.append(clean_up)
+            clean_up = self.create_app(
+                node_id,
+                get_module_name(CleanupDirectories),
+                'app_cleanup_directories',
+            )
             for drop in s3_drop_outs:
                 clean_up.addInput(drop)
             clean_up.addInput(result)
             clean_up.addInput(memory_drop)
             carry_over_data.clean_up = clean_up
 
-        if self._shutdown:
-            self.add_shutdown()
-
-    def add_shutdown(self):
-        for node_id in self._list_ip:
-            carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.clean_up is not None:
-                memory_drop = dropdict({
-                    "type": 'plain',
-                    "storage": 'memory',
-                    "oid": self.get_oid('memory_in'),
-                    "uid": self.get_uuid(),
-                    "node": node_id,
-                })
-                self.append(memory_drop)
-                carry_over_data.clean_up.addOutput(memory_drop)
-
-                shutdown_drop = dropdict({
-                    "type": 'app',
-                    "app": get_module_name(BashShellApp),
-                    "oid": self.get_oid('app_bash_shell_app'),
-                    "uid": self.get_uuid(),
-                    "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
-                    "input_error_threshold": 100,
-                    "node": node_id,
-                })
-                shutdown_drop.addInput(memory_drop)
-                self.append(shutdown_drop)
+        self.copy_logfiles_and_shutdown()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]
@@ -262,39 +176,26 @@ class BuildGraphClean(AbstractBuildGraph):
         s3_out_drops = []
         counter = 0
         for s3_object in s3_objects:
-            s3_drop = dropdict({
-                "type": 'plain',
-                "storage": 's3',
-                "oid": self.get_oid('s3_in'),
-                "uid": self.get_uuid(),
-                "precious": False,
-                "bucket": self._bucket_name,
-                "key": s3_object,
-                "profile_name": 'aws-chiles02',
-                "node": node_id,
-            })
-            copy_from_s3 = dropdict({
-                "type": 'app',
-                "app": get_module_name(CopyCleanFromS3),
-                "oid": self.get_oid('app_copy_from_s3'),
-                "uid": self.get_uuid(),
-                "min_frequency": frequency_pair.bottom_frequency,
-                "max_frequency": frequency_pair.top_frequency,
-                "input_error_threshold": 100,
-                "node": node_id,
-            })
+            s3_drop = self.create_s3_drop(
+                node_id,
+                self._bucket_name,
+                s3_object,
+                'aws-chiles02',
+                oid='s3_in',
+            )
+            copy_from_s3 = self.create_app(
+                node_id,
+                get_module_name(CopyCleanFromS3),
+                'app_copy_from_s3',
+                min_frequency=frequency_pair.bottom_frequency,
+                max_frequency=frequency_pair.top_frequency,
 
-            oid01 = self.get_oid('dir_in_ms')
-            measurement_set = dropdict({
-                "type": 'container',
-                "container": get_module_name(DirectoryContainer),
-                "oid": oid01,
-                "uid": self.get_uuid(),
-                "precious": False,
-                "dirname": os.path.join(self._volume, oid01),
-                "check_exists": False,
-                "node": node_id,
-            })
+            )
+            measurement_set = self.create_directory_container(
+                node_id,
+                'dir_in_ms'
+            )
+
             # The order of arguments is important so don't put anything in front of these
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(measurement_set)
@@ -306,10 +207,6 @@ class BuildGraphClean(AbstractBuildGraph):
 
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
-
-            self.append(s3_drop)
-            self.append(copy_from_s3)
-            self.append(measurement_set)
 
             parallel_streams[counter] = measurement_set
             s3_out_drops.append(measurement_set)
