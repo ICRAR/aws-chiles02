@@ -102,7 +102,6 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
             barrier_drop = self.create_barrier_app(node_id)
             carry_over_data.barrier_drop = barrier_drop
-            self.append(barrier_drop)
 
             for output in outputs:
                 barrier_drop.addInput(output)
@@ -127,8 +126,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             casa_py_drop.addInput(last_element)
 
         casa_py_drop.addOutput(result)
-        self.append(casa_py_drop)
-        self.append(result)
+
         copy_to_s3 = self.create_app(
             node_id,
             get_module_name(CopyMsTransformToS3),
@@ -150,8 +148,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         )
         copy_to_s3.addInput(result)
         copy_to_s3.addOutput(s3_drop_out)
-        self.append(copy_to_s3)
-        self.append(s3_drop_out)
+
         return s3_drop_out
 
     def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3, node_id):
@@ -169,15 +166,12 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             barrier_drop.addOutput(measurement_set)
         copy_from_s3.addInput(s3_drop)
         copy_from_s3.addOutput(measurement_set)
-        self.append(s3_drop)
-        self.append(copy_from_s3)
-        self.append(measurement_set)
+
         drop_listobs = self.create_docker_app(node_id, get_module_name(DockerListobs), 'app_listobs', CONTAINER_CHILES02, 'listobs')
         properties = self.create_json_drop(node_id)
         drop_listobs.addInput(measurement_set)
         drop_listobs.addOutput(properties)
-        self.append(drop_listobs)
-        self.append(properties)
+
         return measurement_set, properties, drop_listobs
 
     def _get_next_node(self, day_to_process):

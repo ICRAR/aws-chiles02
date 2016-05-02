@@ -62,7 +62,7 @@ class AbstractBuildGraph:
     def start_oids(self):
         return self._start_oids
 
-    def append(self, drop):
+    def add_drop(self, drop):
         self._drop_list.append(drop)
 
     def get_oid(self, count_type):
@@ -88,11 +88,10 @@ class AbstractBuildGraph:
                 node_id = instance_details['ip_address']
 
                 copy_log_drop = self.create_app(node_id, get_module_name(CopyLogFilesApp), 'copy_log_files_app')
-                self.append(copy_log_drop)
 
                 # After everything is complete
                 for drop in self._drop_list:
-                    if drop['type'] in ['plain', 'container']:
+                    if drop['type'] in ['plain', 'container'] and drop['node'] == node_id:
                         copy_log_drop.addInput(drop)
 
                 s3_drop_out = self.create_s3_drop(
@@ -110,7 +109,6 @@ class AbstractBuildGraph:
                 if self._shutdown:
                     shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DFMS node shutting down" &')
                     shutdown_drop.addInput(s3_drop_out)
-                    self.append(shutdown_drop)
 
     def tag_all_app_drops(self, tags):
         for drop in self._drop_list:
@@ -137,6 +135,7 @@ class AbstractBuildGraph:
             "uid": self.get_uuid(),
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
 
     def create_bash_shell_app(self, node_id, command, oid='bash_shell_app', input_error_threshold=100):
@@ -149,6 +148,7 @@ class AbstractBuildGraph:
             "input_error_threshold": input_error_threshold,
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
 
     def create_barrier_app(self, node_id, oid='barrier_app', input_error_threshold=100):
@@ -160,6 +160,7 @@ class AbstractBuildGraph:
             "input_error_threshold": input_error_threshold,
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
 
     def create_app(self, node_id, app, oid, input_error_threshold=100, **key_word_arguments):
@@ -172,6 +173,7 @@ class AbstractBuildGraph:
             "node": node_id,
         })
         drop.update(key_word_arguments)
+        self.add_drop(drop)
         return drop
 
     def create_docker_app(self, node_id, app, oid, image, command, user='ec2-user', input_error_threshold=100, **key_word_arguments):
@@ -187,6 +189,7 @@ class AbstractBuildGraph:
             "node": node_id,
         })
         drop.update(key_word_arguments)
+        self.add_drop(drop)
         return drop
 
     def create_directory_container(self, node_id, oid='directory_container', expire_after_use=True):
@@ -202,6 +205,7 @@ class AbstractBuildGraph:
             "expireAfterUse": expire_after_use,
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
 
     def create_s3_drop(self, node_id, bucket_name, key, profile_name, oid='s3'):
@@ -217,6 +221,7 @@ class AbstractBuildGraph:
             "profile_name": profile_name,
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
 
     def create_json_drop(self, node_id, oid='json'):
@@ -231,4 +236,5 @@ class AbstractBuildGraph:
             "check_exists": False,
             "node": node_id,
         })
+        self.add_drop(drop)
         return drop
