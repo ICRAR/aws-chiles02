@@ -122,7 +122,8 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 
         if len(data_island_manager_running['m4.large']) == 1:
             # Now build the graph
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, concatenation_type)
+            session_id = get_session_id()
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, concatenation_type, session_id)
             graph.build_graph()
 
             instance_details = data_island_manager_running['m4.large'][0]
@@ -130,7 +131,6 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
             client = DataIslandManagerClient(host, DIM_PORT)
 
-            session_id = get_session_id()
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
             client.deploy_session(session_id, graph.start_oids)
@@ -155,13 +155,13 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
             # Now build the graph
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, concatenation_type)
+            session_id = get_session_id()
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, concatenation_type, session_id)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
 
-            session_id = get_session_id()
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
             client.deploy_session(session_id, graph.start_oids)
@@ -177,7 +177,7 @@ def command_json(args):
         'spot_price': 0.99
     }
 
-    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, args.concatenation_type)
+    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, args.concatenation_type, 'session_id')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)

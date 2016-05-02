@@ -41,8 +41,8 @@ class CarryOverDataJpeg2000:
 
 
 class BuildGraphJpeg2000(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations):
-        super(BuildGraphJpeg2000, self).__init__(bucket_name, shutdown, node_details, volume)
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id):
+        super(BuildGraphJpeg2000, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._parallel_streams = parallel_streams
         self._s3_fits_name = 'fits_{0}_{1}'.format(width, iterations)
         self._s3_jpeg2000_name = 'jpeg_{0}_{1}'.format(width, iterations)

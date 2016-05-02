@@ -41,8 +41,8 @@ class CarryOverDataConcatenation:
 
 
 class BuildGraphConcatenation(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, concatenation_type):
-        super(BuildGraphConcatenation, self).__init__(bucket_name, shutdown, node_details, volume)
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, concatenation_type, session_id):
+        super(BuildGraphConcatenation, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._parallel_streams = parallel_streams
         self._s3_image_name = 'image_{0}_{1}'.format(width, iterations)
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)

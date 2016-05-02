@@ -174,13 +174,14 @@ class AbstractBuildGraph:
         drop.update(key_word_arguments)
         return drop
 
-    def create_docker_app(self, node_id, app, oid, image, user='ec2-user', input_error_threshold=100, **key_word_arguments):
+    def create_docker_app(self, node_id, app, oid, image, command, user='ec2-user', input_error_threshold=100, **key_word_arguments):
         drop = dropdict({
             "type": 'app',
             "app": app,
             "oid": self.get_oid(oid),
             "uid": self.get_uuid(),
             "image": image,
+            "command": command,
             "user": user,
             "input_error_threshold": input_error_threshold,
             "node": node_id,

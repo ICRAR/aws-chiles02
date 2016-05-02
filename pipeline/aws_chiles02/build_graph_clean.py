@@ -27,12 +27,12 @@ import os
 import boto3
 
 from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3
-from aws_chiles02.apps_general import CleanupDirectories, Chiles02BarrierAppDROP
+from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer
+from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
 
 
 class CarryOverDataClean:
@@ -167,7 +167,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
             barrier_drop = dropdict({
                 "type": 'app',
-                "app": get_module_name(Chiles02BarrierAppDROP),
+                "app": get_module_name(BarrierAppDROP),
                 "oid": self.get_oid('app_barrier'),
                 "uid": self.get_uuid(),
                 "input_error_threshold": 100,

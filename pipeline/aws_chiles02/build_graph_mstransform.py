@@ -115,6 +115,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             get_module_name(DockerMsTransform),
             'app_ms_transform',
             CONTAINER_CHILES02,
+            'ms_transform',
             min_frequency=frequency_pairs.bottom_frequency,
             max_frequency=frequency_pairs.top_frequency,
             predict_subtract=self._predict_subtract
@@ -171,7 +172,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self.append(s3_drop)
         self.append(copy_from_s3)
         self.append(measurement_set)
-        drop_listobs = self.create_docker_app(node_id, get_module_name(DockerListobs), 'app_listobs', CONTAINER_CHILES02)
+        drop_listobs = self.create_docker_app(node_id, get_module_name(DockerListobs), 'app_listobs', CONTAINER_CHILES02, 'listobs')
         properties = self.create_json_drop(node_id)
         drop_listobs.addInput(measurement_set)
         drop_listobs.addOutput(properties)
