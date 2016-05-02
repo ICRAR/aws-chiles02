@@ -100,7 +100,10 @@ def copy_measurement_set(measurement_set, directory_out, bucket_name):
 
 def write_files(list_measurement_sets, directory_out, bucket_name):
     for measurement_set in list_measurement_sets:
-        copy_measurement_set(measurement_set, directory_out, bucket_name)
+        try:
+            copy_measurement_set(measurement_set, directory_out, bucket_name)
+        except Exception:
+            LOG.exception('Exception')
 
 
 def get_list_measurement_sets(directory_in):

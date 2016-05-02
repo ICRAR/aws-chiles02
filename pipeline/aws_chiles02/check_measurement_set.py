@@ -117,6 +117,7 @@ class CheckMeasurementSet:
                 filename_stub, file_extension = os.path.split(filename)
 
                 if filename_stub == 'table' and file_extension in to_find:
+                    LOG.info('Found {0}{1}'.format(filename_stub, file_extension))
                     to_find.remove(file_extension)
 
                 if len(to_find) == 0:
