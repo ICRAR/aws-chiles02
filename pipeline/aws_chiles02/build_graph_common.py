@@ -26,10 +26,10 @@ import os
 import uuid
 from abc import ABCMeta, abstractmethod
 
-from aws_chiles02.apps_general import CopyLogFilesApp, Chiles02BarrierAppDROP
+from aws_chiles02.apps_general import CopyLogFilesApp
 from aws_chiles02.common import get_module_name
 from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer
+from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
 
 
 class AbstractBuildGraph:
@@ -151,10 +151,10 @@ class AbstractBuildGraph:
         })
         return drop
 
-    def create_barrier_app(self, node_id, oid='chiles02_barrier_app', input_error_threshold=100):
+    def create_barrier_app(self, node_id, oid='barrier_app', input_error_threshold=100):
         drop = dropdict({
             "type": 'app',
-            "app": get_module_name(Chiles02BarrierAppDROP),
+            "app": get_module_name(BarrierAppDROP),
             "oid": self.get_oid(oid),
             "uid": self.get_uuid(),
             "input_error_threshold": input_error_threshold,
