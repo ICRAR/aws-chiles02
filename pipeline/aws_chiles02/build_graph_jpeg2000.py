@@ -30,9 +30,6 @@ from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3, CopyJpeg2000ToS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_SV
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.apps.dockerapp import DockerApp
-from dfms.drop import dropdict, FileDROP, BarrierAppDROP
 
 
 class CarryOverDataJpeg2000:

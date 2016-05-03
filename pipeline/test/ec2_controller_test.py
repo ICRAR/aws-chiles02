@@ -28,7 +28,7 @@ import argparse
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from aws_chiles02.common import get_file_contents, get_aws_credentials, get_user_data
+from aws_chiles02.common import get_aws_credentials
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.settings_file import AWS_AMI_ID
 

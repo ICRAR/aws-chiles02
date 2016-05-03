@@ -197,10 +197,6 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
         return return_code
 
 
-def isFSBased(o):
-    pass
-
-
 class DockerMsTransform(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None

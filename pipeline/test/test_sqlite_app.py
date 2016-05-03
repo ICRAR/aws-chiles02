@@ -28,8 +28,7 @@ import unittest
 
 from configobj import ConfigObj
 
-from aws_chiles02.apps import InitializeSqliteApp
-from aws_chiles02.common import get_oid, get_uuid
+from aws_chiles02.common import get_uuid
 from dfms import droputils
 from dfms.drop import FileDROP, InMemoryDROP
 

@@ -38,8 +38,13 @@ from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 LOG = logging.getLogger(__name__)
 
 
-class ErrorHandling:
+class ErrorHandling(object):
     def __init__(self, oid, uid, **kwargs):
+        """
+        Using the multiple inheritance of python is a pain
+        """
+        super(ErrorHandling, self).__init__()
+        LOG.debug('oid = {0}, uid= {1}, kwargs={2}'.format(oid, uid, kwargs))
         self._session_id = kwargs['session_id']
         self._oid = oid
         self._uid = uid
