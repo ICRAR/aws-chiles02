@@ -63,7 +63,9 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, key)[:-4]
+        # Knock off the observation_data/ from the front and .tar from the end
+        elements = key.split('/')
+        measurement_set = os.path.join(measurement_set_dir, elements[1])[:-4]
         LOG.info('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.info('Measurement Set: {0} exists'.format(measurement_set))
