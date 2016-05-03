@@ -48,6 +48,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyMsTransformFromS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'app CopyMsTransformFromS3'
@@ -119,7 +120,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
+                'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(return_code, path_exists, measurement_set),
                 LOG
             )
             return 1
@@ -138,6 +139,7 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
         super(CopyMsTransformToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'app CopyMsTransformToS3'
@@ -212,6 +214,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._predict_subtract = self._getArg(kwargs, 'predict_subtract', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -247,6 +250,7 @@ class DockerListobs(DockerApp):
     def initialize(self, **kwargs):
         super(DockerListobs, self).initialize(**kwargs)
         self._command = 'listobs.sh %i0 %o0'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'docker container chiles02:latest'

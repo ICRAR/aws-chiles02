@@ -44,6 +44,7 @@ class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyFitsFromS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyFitsFromS3'
@@ -95,6 +96,7 @@ class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyJpeg2000ToS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyJpeg2000ToS3'

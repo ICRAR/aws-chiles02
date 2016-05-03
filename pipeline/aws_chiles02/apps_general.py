@@ -22,7 +22,6 @@
 """
 My Docker Apps
 """
-import json
 import logging
 import os
 import shutil
@@ -32,41 +31,27 @@ import boto3
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.common import run_command, ProgressPercentage
-from aws_chiles02.settings_file import AWS_REGION
 from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 
 LOG = logging.getLogger(__name__)
 
 
 class ErrorHandling(object):
-    def __init__(self, oid, uid, **kwargs):
-        """
-        Using the multiple inheritance of python is a pain
-        """
-        super(ErrorHandling, self).__init__()
-        LOG.debug('oid = {0}, uid= {1}, kwargs={2}'.format(oid, uid, kwargs))
-        self._session_id = kwargs['session_id']
-        self._oid = oid
-        self._uid = uid
-
-    def send_message(self, message_text, queue='dfms-messages', region=AWS_REGION, profile_name='aws-chiles02'):
-        session = boto3.Session(profile_name=profile_name)
-        sqs = session.resource('sqs', region_name=region)
-        queue = sqs.get_queue_by_name(QueueName=queue)
-        message = {
-            'session_id': self._session_id,
-            'uid': self._uid,
-            'oid': self._oid,
-            'message': message_text,
-        }
-        json_message = json.dumps(message, indent=2)
-        queue.send_message(
-            MessageBody=json_message,
-        )
+    def __init__(self):
+        self._session_id = None
+        self._error_message = None
 
     def send_error_message(self, message, logger):
         logger.error(message)
-        self.send_message(message)
+        self._error_message = message
+
+    @property
+    def error_message(self):
+        return self._error_message
+
+    @property
+    def session_id(self):
+        return self._session_id
 
 
 class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
@@ -75,6 +60,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyLogFilesApp, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -97,6 +83,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
                 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
                 LOG
             )
+            return return_code
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -123,6 +110,7 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CleanupDirectories, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -161,6 +149,7 @@ class InitializeSqliteApp(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(InitializeSqliteApp, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__

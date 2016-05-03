@@ -47,6 +47,7 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyConcatenateFromS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyConcatenateFromS3'
@@ -142,6 +143,7 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         super(CopyConcatenateToS3, self).initialize(**kwargs)
         self._width = self._getArg(kwargs, 'width ', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyConcatenateToS3'
@@ -213,6 +215,7 @@ class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -263,6 +266,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
         self._command = 'imageconcat.sh'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -302,6 +306,7 @@ class DockerVirtualconcat(DockerApp, ErrorHandling):
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
         self._command = 'virtualconcat.sh'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is

@@ -50,6 +50,7 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
         super(CopyCleanFromS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         s3_input = self.inputs[0]
@@ -136,6 +137,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         super(CopyCleanToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyCleanToS3'
@@ -206,6 +208,7 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         super(CopyFitsToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyFitsToS3'
@@ -264,6 +267,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._command = 'clean.sh %i0 %o0 %o0 '
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
