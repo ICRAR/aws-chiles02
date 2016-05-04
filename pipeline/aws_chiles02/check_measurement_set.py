@@ -27,7 +27,7 @@ import os
 
 LOG = logging.getLogger(__name__)
 
-EXT_TO_23 = [
+EXT_TO_24 = [
     '.dat',
     '.f1',
     '.f2',
@@ -57,6 +57,8 @@ EXT_TO_23 = [
     '.f22_TSM1',
     '.f23',
     '.f23_TSM1',
+    '.f24',
+    '.f24_TSM1',
 ]
 EXT_TO_26 = [
     '.dat',
@@ -102,7 +104,7 @@ class CheckMeasurementSet:
         self._measurement_set = measurement_set
 
     def check_tables_to_23(self):
-        return self._check_tables(EXT_TO_23)
+        return self._check_tables(EXT_TO_24)
 
     def check_tables_to_26(self):
         return self._check_tables(EXT_TO_26)
@@ -113,8 +115,11 @@ class CheckMeasurementSet:
         LOG.info('Measurement Set: {0}'.format(self._measurement_set))
 
         for filename in os.listdir(self._measurement_set):
-            if os.path.isfile(os.path.join(self._measurement_set, filename)):
+            full_pathname = os.path.join(self._measurement_set, filename)
+            LOG.info('filename: {0}, full_pathname: {1}'.format(filename, full_pathname))
+            if os.path.isfile(full_pathname):
                 filename_stub, file_extension = os.path.split(filename)
+                LOG.info('filename_stub: {0}, file_extension: {1}'.format(filename_stub, file_extension))
 
                 if filename_stub == 'table' and file_extension in to_find:
                     LOG.info('Found {0}{1}'.format(filename_stub, file_extension))

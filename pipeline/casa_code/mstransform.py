@@ -55,7 +55,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
 
     spw_range = freq_map(min_freq, max_freq, bottom_edge)
     LOG.info('spw_range: {0}'.format(spw_range))
-    if spw_range != '-1~-1':
+    if spw_range.startswith('-1') or spw_range.endswith('-1'):
+        LOG.info('The spw_range is {0} which is outside the spectral window '.format(spw_range))
+    else:
         step_freq = max_freq - min_freq
         no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
@@ -114,8 +116,6 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
 
-    else:
-        LOG.info('Outside spectral window')
 
 args = parse_args()
 LOG.info(args)
