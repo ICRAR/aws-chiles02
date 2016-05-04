@@ -118,7 +118,7 @@ class CheckMeasurementSet:
             full_pathname = os.path.join(self._measurement_set, filename)
             LOG.info('filename: {0}, full_pathname: {1}'.format(filename, full_pathname))
             if os.path.isfile(full_pathname):
-                filename_stub, file_extension = os.path.split(filename)
+                filename_stub, file_extension = os.path.splitext(filename)
                 LOG.info('filename_stub: {0}, file_extension: {1}'.format(filename_stub, file_extension))
 
                 if filename_stub == 'table' and file_extension in to_find:
