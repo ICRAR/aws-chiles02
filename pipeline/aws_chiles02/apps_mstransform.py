@@ -238,7 +238,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
 
         if error_message is not None:
             self.send_error_message(error_message, LOG)
-            return
+            return 1
 
     def dataURL(self):
         return 'docker container chiles02:latest'
