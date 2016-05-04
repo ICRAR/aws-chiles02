@@ -230,7 +230,12 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         )
         super(DockerMsTransform, self).run()
 
-        check_measurement_set = CheckMeasurementSet(self.outputs[0].path)
+        check_measurement_set = CheckMeasurementSet(
+            os.path.join(
+                self.outputs[0].path,
+                'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+            )
+        )
         if self._predict_subtract:
             error_message = check_measurement_set.check_tables_to_26()
         else:
