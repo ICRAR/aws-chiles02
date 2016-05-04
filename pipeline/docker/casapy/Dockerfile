@@ -53,14 +53,14 @@ RUN yum install -y \
     xorg-x11-server-Xvfb; \
     yum clean all
 
-RUN mkdir -p /opt/casapy
-RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.5.2-el6.tar.gz \
-    | tar -xzC /opt/casapy
+RUN mkdir -p /opt/casa
+RUN curl -SL https://svn.cv.nrao.edu/casa/linux_distro/release/el6/casa-release-4.6.0-el6.tar.gz \
+    | tar -xzC /opt/casa
 
 RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
 
 # Update the path
-ENV PATH $PATH:/opt/casapy/casa-release-4.5.2-el6/bin
+ENV PATH $PATH:/opt/casa/casa-release-4.6.0-el6/bin
 
 # Make sure CasaPy is initialised
-RUN echo exit | casapy --nologger --log2term
+RUN echo exit | casa --nologger --log2term
