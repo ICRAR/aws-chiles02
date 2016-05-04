@@ -20,17 +20,16 @@
 #    MA 02111-1307  USA
 #
 #
-#   .oooooo.                                ooooooooo.
-#  d8P'  `Y8b                               `888   `Y88.
-# 888           .oooo.    .oooo.o  .oooo.    888   .d88' oooo    ooo
-# 888          `P  )88b  d88(  "8 `P  )88b   888ooo88P'   `88.  .8'
-# 888           .oP"888  `"Y88b.   .oP"888   888           `88..8'
-# `88b    ooo  d8(  888  o.  )88b d8(  888   888            `888'
-#  `Y8bood8P'  `Y888""8o 8""888P' `Y888""8o o888o            .8'
-#                                                        .o..P'
-#                                                        `Y8P'
+#   .oooooo.
+#  d8P'  `Y8b
+# 888           .oooo.    .oooo.o  .oooo.
+# 888          `P  )88b  d88(  "8 `P  )88b
+# 888           .oP"888  `"Y88b.   .oP"888
+# `88b    ooo  d8(  888  o.  )88b d8(  888
+#  `Y8bood8P'  `Y888""8o 8""888P' `Y888""8o
 #
-# Create a container to run the latest version of CasaPy
+#
+# Create a container to run the latest version of Casa
 
 FROM centos:latest
 
@@ -48,6 +47,7 @@ RUN yum install -y \
     libXfixes \
     libXrender \
     libxslt \
+    perl \
     which \
     xauth \
     xorg-x11-server-Xvfb; \
@@ -62,5 +62,5 @@ RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | 
 # Update the path
 ENV PATH $PATH:/opt/casa/casa-release-4.6.0-el6/bin
 
-# Make sure CasaPy is initialised
+# Make sure Casa is initialised
 RUN echo exit | casa --nologger --log2term

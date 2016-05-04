@@ -25,9 +25,9 @@ Perform the listobs
 import logging
 import os
 
-from casapy_code.parse_listobs import ParseListobs
-from casapy_code.echo import echo
-from casapy_code.casa_common import find_file, parse_args
+from casa_code.parse_listobs import ParseListobs
+from casa_code.echo import echo
+from casa_code.casa_common import find_file, parse_args
 from listobs import listobs
 
 casalog.filter('DEBUGGING')

@@ -10,4 +10,4 @@ chmod oug+rwx $2
 cd $2
 
 # infile, outdir, min_freq, max_freq
-casa --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casapy_code/mstransform.py $@
+casa --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casa_code/mstransform.py $@

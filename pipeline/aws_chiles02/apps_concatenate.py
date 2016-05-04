@@ -203,15 +203,15 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         return return_code
 
 
-class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
+class CasaConcatenate(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._width = None
         self._iterations = None
-        super(CasaPyConcatenate, self).__init__(oid, uid, **kwargs)
+        super(CasaConcatenate, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(CasaPyConcatenate, self).initialize(**kwargs)
+        super(CasaConcatenate, self).initialize(**kwargs)
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
@@ -239,7 +239,7 @@ class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
             # Make the directory
             os.makedirs(measurement_set_dir)
 
-        command = 'cd {0} && casapy --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casapy_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
+        command = 'cd {0} && casa --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casa_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
             measurement_set_dir,
             self._width,
             self._iterations,
@@ -249,7 +249,7 @@ class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
         return return_code
 
     def dataURL(self):
-        return 'CasaPyConcatenate'
+        return 'CasaConcatenate'
 
 
 class DockerImageconcat(DockerApp, ErrorHandling):

@@ -24,8 +24,8 @@ Perform the MS Transform
 """
 import logging
 
-from casapy_code.casa_common import parse_args
-from casapy_code.echo import echo
+from casa_code.casa_common import parse_args
+from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
@@ -40,8 +40,8 @@ def do_concatenate(out_filename, input_files):
     """
 
     try:
-        # ia doesn't need an import - it is just available in casapy
-        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
+        # virtualconcat doesn't need an import - it is just available in casa
+        final = virtualconcat(vis=input_files, concatvis=out_filename)
         final.done()
 
         exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))

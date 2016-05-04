@@ -31,7 +31,7 @@
 #
 # Create a container for the Chiles02 code
 
-FROM casapy:latest
+FROM casa:latest
 
 RUN yum update -y
 

@@ -20,33 +20,38 @@
 #    MA 02111-1307  USA
 #
 """
-
+Perform the MS Transform
 """
-import os
-import argparse
+import logging
 
-from casapy_code.echo import echo
+from casa_code.casa_common import parse_args
+from casa_code.echo import echo
 
-INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
-
-
-@echo
-def find_file(top_dir):
-    for file_name in os.listdir(top_dir):
-        if file_name.endswith(INPUT_MS_SUFFIX):
-            return os.path.join(top_dir, file_name)
-
-    return None
+casalog.filter('DEBUGGING')
+LOG = logging.getLogger(__name__)
 
 
 @echo
-def parse_args():
-    parser = argparse.ArgumentParser('Get the arguments')
-    parser.add_argument('arguments', nargs='+', help='the arguments')
+def do_concatenate(out_filename, input_files):
+    """
+    Perform the CONCATENATION step
+    :param input_files:
+    :param out_filename:
+    """
 
-    parser.add_argument('--nologger', action="store_true")
-    parser.add_argument('--log2term', action="store_true")
-    parser.add_argument('--logfile')
-    parser.add_argument('-c', '--call')
+    try:
+        # ia doesn't need an import - it is just available in casa
+        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
+        final.done()
 
-    return parser.parse_args()
+        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
+    except Exception:
+        LOG.exception('*********\nConcatenate exception: \n***********')
+
+args = parse_args()
+LOG.info(args)
+
+# ignore the output directory
+do_concatenate(
+        args.arguments[1],
+        args.arguments[2:])
