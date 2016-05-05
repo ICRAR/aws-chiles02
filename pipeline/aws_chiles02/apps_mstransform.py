@@ -63,9 +63,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        # Knock off the observation_data/ from the front and .tar from the end
-        elements = key.split('/')
-        measurement_set = os.path.join(measurement_set_dir, elements[1])[:-4]
+        measurement_set = key[:-4]
         LOG.info('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.info('Measurement Set: {0} exists'.format(measurement_set))
@@ -206,7 +204,6 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
-        self._predict_subtract = None
         super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -214,7 +211,6 @@ class DockerMsTransform(DockerApp, ErrorHandling):
 
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._predict_subtract = self._getArg(kwargs, 'predict_subtract', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -222,11 +218,10 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         json_drop = self.inputs[1]
-        self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'.format(
+        self._command = 'mstransform.sh %i0 %o0 {0} {1} {2}'.format(
             self._min_frequency,
             self._max_frequency,
             json_drop['Bottom edge'],
-            self._predict_subtract,
         )
         super(DockerMsTransform, self).run()
 
@@ -236,10 +231,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
                 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
             )
         )
-        if self._predict_subtract:
-            error_message = check_measurement_set.check_tables_to_26()
-        else:
-            error_message = check_measurement_set.check_tables_to_23()
+        error_message = check_measurement_set.check_tables_to_23()
 
         if error_message is not None:
             self.send_error_message(error_message, LOG)

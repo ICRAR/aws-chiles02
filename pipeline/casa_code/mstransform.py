@@ -30,14 +30,12 @@ import shutil
 from casa_code.freq_map import freq_map
 from casa_code.casa_common import find_file, parse_args
 from mstransform import mstransform
-from ft import ft
-from uvsub import uvsub
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subtract=False, width_freq=15.625):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):
     """
     Perform the MS_TRANSFORM step
 
@@ -46,7 +44,6 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
     :param min_freq:
     :param max_freq:
     :param bottom_edge:
-    :param predict_subtract:
     :param width_freq:
     :return:
     """
@@ -86,33 +83,6 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
                 datacolumn="data"
             )
 
-            if predict_subtract:
-                # Also perform Predict and Subtract step
-                # Predict and fill MODEL_DATA
-                mod_spw = (max_freq + min_freq) / 2.0
-                spw_range = freq_map(mod_spw, mod_spw, bottom_edge)
-                mod_spw = re.split('\D+', spw_range)
-                mod_spw = mod_spw[0]
-                LOG.info('max_freq: {0}, min_freq: {1}, spw_range: {2}, mod_spw: {3}'.format(max_freq, min_freq, spw_range, mod_spw))
-                ft(
-                    vis=outfile,
-                    field="",
-                    spw="",
-                    model=[
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'
-                    ],                  # Model
-                    nterms=2,           # SI model
-                    reffreq="",
-                    complist="",        # use model
-                    incremental=False,  # Replace, not add
-                    usescratch=True,    # Save in MODEL_DATA
-                )
-                # Subtract and fill CORRECTED_DATA
-                uvsub(
-                    vis=outfile,
-                    reverse=False
-                )
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
 

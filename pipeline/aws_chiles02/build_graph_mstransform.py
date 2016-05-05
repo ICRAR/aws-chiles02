@@ -23,6 +23,7 @@
 Build the physical graph
 """
 import operator
+import os
 
 from aws_chiles02.apps_mstransform import DockerMsTransform, DockerListobs, CopyMsTransformFromS3, CopyMsTransformToS3
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
@@ -46,13 +47,11 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             node_details,
             shutdown,
             width,
-            predict_subtract,
             session_id):
         super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_split_name = 'split_{0}'.format(width)
-        self._predict_subtract = predict_subtract
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
@@ -117,7 +116,6 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             'ms_transform',
             min_frequency=frequency_pairs.bottom_frequency,
             max_frequency=frequency_pairs.top_frequency,
-            predict_subtract=self._predict_subtract
         )
         result = self.create_directory_container(node_id, 'dir_split')
         casa_py_drop.addInput(measurement_set)
@@ -152,7 +150,12 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         return s3_drop_out
 
     def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3, node_id):
-        s3_drop = self.create_s3_drop(node_id, self._bucket_name, day_to_process.full_tar_name, 'aws-chiles02', 's3_in')
+        s3_drop = self.create_s3_drop(
+            node_id,
+            self._bucket_name,
+            os.path.join('observation_data', day_to_process.full_tar_name),
+            'aws-chiles02',
+            's3_in')
         if len(add_output_s3) == 0:
             self._start_oids.append(s3_drop['uid'])
         else:
