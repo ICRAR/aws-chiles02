@@ -95,5 +95,4 @@ do_mstransform(
         args.arguments[1],
         int(args.arguments[2]),
         int(args.arguments[3]),
-        float(args.arguments[4]),
-        args.arguments[5] == 'True')
+        float(args.arguments[4]))
