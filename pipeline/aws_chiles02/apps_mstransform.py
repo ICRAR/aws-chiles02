@@ -98,18 +98,24 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         )
 
         if not os.path.exists(full_path_tar_file):
+            message = 'The tar file {0} does not exist'.format(full_path_tar_file)
+            LOG.error(message)
             self.send_error_message(
-                'The tar file {0} does not exist'.format(full_path_tar_file),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
+            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size)
+            LOG.error(message)
             self.send_error_message(
-                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -119,9 +125,12 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(return_code, path_exists, measurement_set)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(return_code, path_exists, measurement_set),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -157,9 +166,12 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
         measurement_set = os.path.join(measurement_set_dir, directory_name)
         LOG.info('check {0} exists'.format(measurement_set))
         if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
+            message = 'Measurement_set: {0} does not exist'.format(measurement_set)
+            LOG.error(message)
             self.send_error_message(
-                'Measurement_set: {0} does not exist'.format(measurement_set),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 0
 
@@ -170,9 +182,12 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -231,17 +246,22 @@ class DockerMsTransform(DockerApp, ErrorHandling):
                 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
             )
         )
-        error_message = check_measurement_set.check_tables_to_23()
+        error_message = check_measurement_set.check_tables_to_24()
 
         if error_message is not None:
-            self.send_error_message(error_message, LOG)
+            LOG.error(error_message)
+            self.send_error_message(
+                error_message,
+                self.oid,
+                self.uid
+            )
             return 1
 
     def dataURL(self):
         return 'docker container chiles02:latest'
 
 
-class DockerListobs(DockerApp):
+class DockerListobs(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._command = None
         super(DockerListobs, self).__init__(oid, uid, **kwargs)

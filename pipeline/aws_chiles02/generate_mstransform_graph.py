@@ -63,17 +63,10 @@ class WorkToDo:
             if key.key.endswith('_calibrated_deepfield.ms.tar'):
                 obj = s3.Object(key.bucket_name, key.key)
                 storage_class = obj.storage_class
-                restore = obj.restore
-                LOG.info('{0}, {1}, {2}'.format(key.key, storage_class, restore))
+                LOG.info('{0}, {1}'.format(key.key, storage_class))
 
-                ok_to_queue = True
-                if 'GLACIER' == storage_class:
-                    if restore is None or restore.startswith('ongoing-request="true"'):
-                        ok_to_queue = False
-
-                if ok_to_queue:
-                    elements = key.key.split('/')
-                    list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
+                elements = key.key.split('/')
+                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
 
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
@@ -120,12 +113,9 @@ class WorkToDo:
         return frequency_groups
 
     def _ignore_day(self, list_frequency_groups):
-        if len(list_frequency_groups) >= 4:
-            return False
-
         # Check if we have the first groups
         count_bottom = 0
-        for bottom_frequency in range(940, 952, self._width):
+        for bottom_frequency in range(940, 956, self._width):
             frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
             if frequency_group in list_frequency_groups:
                 count_bottom += 1

@@ -103,7 +103,7 @@ class CheckMeasurementSet:
     def __init__(self, measurement_set):
         self._measurement_set = measurement_set
 
-    def check_tables_to_23(self):
+    def check_tables_to_24(self):
         return self._check_tables(EXT_TO_24)
 
     def check_tables_to_26(self):
