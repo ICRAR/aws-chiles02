@@ -61,9 +61,7 @@ class WorkToDo:
         self._bucket = s3.Bucket(self._bucket_name)
         for key in self._bucket.objects.filter(Prefix='observation_data'):
             if key.key.endswith('_calibrated_deepfield.ms.tar'):
-                obj = s3.Object(key.bucket_name, key.key)
-                storage_class = obj.storage_class
-                LOG.info('{0}, {1}'.format(key.key, storage_class))
+                LOG.info('Found {0}'.format(key.key))
 
                 elements = key.key.split('/')
                 list_measurement_sets.append(MeasurementSetData(elements[1], key.size))

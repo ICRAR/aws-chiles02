@@ -2,3 +2,4 @@ boto3
 argparse
 ConfigObj
 pip>=8.1
+mako
