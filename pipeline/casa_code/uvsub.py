@@ -27,7 +27,6 @@ import os
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
-from clean import clean
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
@@ -39,17 +38,20 @@ def do_uvsub(in_dir, model):
     Performs the UVSUB step
      Use imtool to fill MODEL_DATA correctly
      runs UVSUB to fill CORRECTED_DATA (=DATA-MODEL_DATA)
-     renames file from vis_XX to uvsub_XX
+     make uvsub_XX from vis_XX and column CORRECTED_DATA
     Inputs: VIS_name (str), MODEL (list of str)
     Number of taylor terms is length of model list. Expecting 2
 
     example:
      do_uvsub('vis_1400~1404',['Epoch1_Images_Wproject/epoch1.mmstest_spw_14.model.tt0','Epoch1_Images_Wproject/epoch1.mmstest_spw_14.model.tt1'])
 
+
+     I suggest that SPW in the model strings is deduced from
+     spw=int(((freq_min+freq_max)/2-946)/32)
     """
 
-    outfile = replace(in_dir, 'vis','uvsub') <<<
-    LOG.info('uvsub(vis={0}, model={1})'.format(str(in_dir), str(model)))
+    outfile = in_dir.replace('vis','uvsub')
+    LOG.info('uvsub(vis={0}, model={1}, output={2})'.format(in_dir, str(model),outfile))
     try:
         # dump_all()
         #
@@ -77,7 +79,7 @@ def do_uvsub(in_dir, model):
         im.close()
         # Now do the subtraction
         uvsub(vis=in_dir,reverse=False)
-        os.system('mv '+in_dir+' '+outfile)
+        split(vis=in_dir,outputvis=outfile,datacolumn='corrected')
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
@@ -85,9 +87,6 @@ def do_uvsub(in_dir, model):
 args = parse_args()
 LOG.info(args)
 
-do_clean(
+do_uvsub(
         args.arguments[0],
-        int(args.arguments[1]),
-        int(args.arguments[2]),
-        int(args.arguments[3]),
-        args.arguments[4:])
+        args.arguments[1])
