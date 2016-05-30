@@ -44,6 +44,7 @@ class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyFitsFromS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyFitsFromS3'
@@ -78,9 +79,12 @@ class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
                 )
         )
         if not os.path.exists(fits_file_name):
+            message = 'The fits file {0} does not exist'.format(fits_file_name)
+            LOG.error(message)
             self.send_error_message(
-                'The fits file {0} does not exist'.format(fits_file_name),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -95,6 +99,7 @@ class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyJpeg2000ToS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyJpeg2000ToS3'
@@ -111,9 +116,12 @@ class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         LOG.info('checking {0} exists'.format(jpeg_file_name))
         if not os.path.exists(jpeg_file_name):
+            message = 'File: {0} does not exist'.format(jpeg_file_name)
+            LOG.error(message)
             self.send_error_message(
-                'File: {0} does not exist'.format(jpeg_file_name),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 0
 

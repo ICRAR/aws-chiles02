@@ -27,17 +27,15 @@ import os
 import re
 import shutil
 
-from casapy_code.freq_map import freq_map
-from casapy_code.casa_common import find_file, parse_args
+from casa_code.freq_map import freq_map
+from casa_code.casa_common import find_file, parse_args
 from mstransform import mstransform
-from ft import ft
-from uvsub import uvsub
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subtract=False, width_freq=15.625):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):
     """
     Perform the MS_TRANSFORM step
 
@@ -46,7 +44,6 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
     :param min_freq:
     :param max_freq:
     :param bottom_edge:
-    :param predict_subtract:
     :param width_freq:
     :return:
     """
@@ -55,7 +52,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
 
     spw_range = freq_map(min_freq, max_freq, bottom_edge)
     LOG.info('spw_range: {0}'.format(spw_range))
-    if spw_range != '-1~-1':
+    if spw_range.startswith('-1') or spw_range.endswith('-1'):
+        LOG.info('The spw_range is {0} which is outside the spectral window '.format(spw_range))
+    else:
         step_freq = max_freq - min_freq
         no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
@@ -84,38 +83,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, predict_subt
                 datacolumn="data"
             )
 
-            if predict_subtract:
-                # Also perform Predict and Subtract step
-                # Predict and fill MODEL_DATA
-                mod_spw = (max_freq + min_freq) / 2.0
-                spw_range = freq_map(mod_spw, mod_spw, bottom_edge)
-                mod_spw = re.split('\D+', spw_range)
-                mod_spw = mod_spw[0]
-                LOG.info('max_freq: {0}, min_freq: {1}, spw_range: {2}, mod_spw: {3}'.format(max_freq, min_freq, spw_range, mod_spw))
-                ft(
-                    vis=outfile,
-                    field="",
-                    spw="",
-                    model=[
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt0',
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_'+str(mod_spw)+'.model.tt1'
-                    ],                  # Model
-                    nterms=2,           # SI model
-                    reffreq="",
-                    complist="",        # use model
-                    incremental=False,  # Replace, not add
-                    usescratch=True,    # Save in MODEL_DATA
-                )
-                # Subtract and fill CORRECTED_DATA
-                uvsub(
-                    vis=outfile,
-                    reverse=False
-                )
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
 
-    else:
-        LOG.info('Outside spectral window')
 
 args = parse_args()
 LOG.info(args)
@@ -125,5 +95,4 @@ do_mstransform(
         args.arguments[1],
         int(args.arguments[2]),
         int(args.arguments[3]),
-        float(args.arguments[4]),
-        args.arguments[5] == 'True')
+        float(args.arguments[4]))

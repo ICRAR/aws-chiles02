@@ -50,6 +50,7 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
         super(CopyCleanFromS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         s3_input = self.inputs[0]
@@ -90,18 +91,24 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
             )
         )
         if not os.path.exists(full_path_tar_file):
+            message = 'The tar file {0} does not exist'.format(full_path_tar_file)
+            LOG.error(message)
             self.send_error_message(
-                'The tar file {0} does not exist'.format(full_path_tar_file),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
+            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size)
+            LOG.error(message)
             self.send_error_message(
-                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -111,9 +118,12 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -136,6 +146,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         super(CopyCleanToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyCleanToS3'
@@ -153,9 +164,12 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.info('checking {0}.image exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
+            message = 'Measurement_set: {0}.image does not exist'.format(measurement_set)
+            LOG.error(message)
             self.send_error_message(
-                'Measurement_set: {0}.image does not exist'.format(measurement_set),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 0
 
@@ -169,9 +183,12 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
-                LOG,
+                message,
+                self.oid,
+                self.uid,
             )
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -206,6 +223,7 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         super(CopyFitsToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyFitsToS3'
@@ -264,6 +282,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._command = 'clean.sh %i0 %o0 %o0 '
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is

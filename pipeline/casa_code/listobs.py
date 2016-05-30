@@ -20,38 +20,39 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+Perform the listobs
 """
 import logging
+import os
 
-from casapy_code.casa_common import parse_args
-from casapy_code.echo import echo
+from casa_code.parse_listobs import ParseListobs
+from casa_code.echo import echo
+from casa_code.casa_common import find_file, parse_args
+from listobs import listobs
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_concatenate(out_filename, input_files):
-    """
-    Perform the CONCATENATION step
-    :param input_files:
-    :param out_filename:
-    """
+def do_listobs(infile, outfile):
+    # make sure the directory for the file exists
+    dir_path, tail = os.path.split(outfile)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
-    try:
-        # virtualconcat doesn't need an import - it is just available in casapy
-        final = virtualconcat(vis=input_files, concatvis=out_filename)
-        final.done()
+    listobs(vis=infile, verbose=False, listfile='/tmp/listfile.txt')
 
-        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
-    except Exception:
-        LOG.exception('*********\nConcatenate exception: \n***********')
+    parse_listobs = ParseListobs('/tmp/listfile.txt')
+    parse_listobs.parse()
+    json_string = parse_listobs.get_json_string()
+    with open(outfile, mode='w') as out_file:
+        out_file.write(json_string)
+
 
 args = parse_args()
 LOG.info(args)
 
-# ignore the output directory
-do_concatenate(
-        args.arguments[1],
-        args.arguments[2:])
+do_listobs(
+        find_file(args.arguments[0]),
+        args.arguments[1])

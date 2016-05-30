@@ -61,18 +61,10 @@ class WorkToDo:
         self._bucket = s3.Bucket(self._bucket_name)
         for key in self._bucket.objects.filter(Prefix='observation_data'):
             if key.key.endswith('_calibrated_deepfield.ms.tar'):
-                obj = s3.Object(key.bucket_name, key.key)
-                storage_class = obj.storage_class
-                restore = obj.restore
-                LOG.info('{0}, {1}, {2}'.format(key.key, storage_class, restore))
+                LOG.info('Found {0}'.format(key.key))
 
-                ok_to_queue = True
-                if 'GLACIER' == storage_class:
-                    if restore is None or restore.startswith('ongoing-request="true"'):
-                        ok_to_queue = False
-
-                if ok_to_queue:
-                    list_measurement_sets.append(MeasurementSetData(key.key, key.size))
+                elements = key.key.split('/')
+                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
 
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
@@ -119,12 +111,9 @@ class WorkToDo:
         return frequency_groups
 
     def _ignore_day(self, list_frequency_groups):
-        if len(list_frequency_groups) >= 4:
-            return False
-
         # Check if we have the first groups
         count_bottom = 0
-        for bottom_frequency in range(940, 952, self._width):
+        for bottom_frequency in range(940, 956, self._width):
             frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
             if frequency_group in list_frequency_groups:
                 count_bottom += 1
@@ -170,7 +159,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, predict_subtract):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
@@ -256,7 +245,6 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     reported_running,
                     add_shutdown,
                     frequency_width,
-                    predict_subtract,
                     session_id,
                 )
                 graph.build_graph()
@@ -276,7 +264,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, predict_subtract):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -297,7 +285,16 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphMsTransform(work_to_do.work_to_do, bucket_name, volume, 7, nodes_running, add_shutdown, frequency_width, predict_subtract, session_id)
+            graph = BuildGraphMsTransform(
+                work_to_do.work_to_do,
+                bucket_name,
+                volume,
+                7,
+                nodes_running,
+                add_shutdown,
+                frequency_width,
+                session_id
+            )
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -311,18 +308,28 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def command_json(args):
-    work_to_do = WorkToDo(args.width, args.bucket, get_s3_split_name(args.width))
+def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
+    work_to_do = WorkToDo(width, bucket, get_s3_split_name(width))
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
+        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
+        'i2.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
     }
-    graph = BuildGraphMsTransform(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.predict_subtract, 'json_test')
+    graph = BuildGraphMsTransform(
+        work_to_do.work_to_do,
+        bucket,
+        volume,
+        parallel_streams,
+        node_details,
+        shutdown,
+        width,
+        'json_test'
+    )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_split.txt", "w") as json_file:
+    with open("/tmp/json_mstransform.txt", "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -336,7 +343,6 @@ def command_create(args):
         args.volume,
         args.days_per_node,
         args.shutdown,
-        args.predict_subtract,
     )
 
 
@@ -348,12 +354,10 @@ def command_use(args):
         args.width,
         args.volume,
         args.shutdown,
-        args.predict_subtract,
     )
 
 
 def command_interactive(args):
-    LOG.info(args)
     path_dirname, filename = os.path.split(__file__)
     root, ext = os.path.splitext(filename)
     config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
@@ -363,7 +367,7 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+    get_argument(config, 'create_use', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price1', 'Spot Price for i2.2xlarge', help_text='the spot price')
@@ -373,14 +377,19 @@ def command_interactive(args):
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        get_argument(config, 'predict_subtract', 'Subtract the sky model', data_type=bool, help_text='Subtract the sky model', default=True)
-    else:
+    elif config['create_use'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        get_argument(config, 'predict_subtract', 'Subtract the sky model', data_type=bool, help_text='Subtract the sky model', default=True)
+    else:
+        get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+        get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        get_argument(config, 'nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
+        get_argument(config, 'parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
+        get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
     config.write()
@@ -396,9 +405,8 @@ def command_interactive(args):
             config['volume'],
             config['days_per_node'],
             config['shutdown'],
-            config['predict_subtract'],
         )
-    else:
+    elif config['create_use'] == 'use':
         use_and_generate(
             config['dim'],
             DIM_PORT,
@@ -406,7 +414,15 @@ def command_interactive(args):
             config['width'],
             config['volume'],
             config['shutdown'],
-            config['predict_subtract'],
+        )
+    else:
+        build_json(
+            config['bucket_name'],
+            config['width'],
+            config['volume'],
+            config['nodes'],
+            config['parallel_streams'],
+            config['shutdown'],
         )
 
 
@@ -414,16 +430,6 @@ def parser_arguments():
     parser = argparse.ArgumentParser('Build the MSTRANSFORM physical graph for a day')
 
     subparsers = parser.add_subparsers()
-
-    parser_json = subparsers.add_parser('json', help='display the json')
-    parser_json.add_argument('bucket', help='the bucket to access')
-    parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
-    parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
-    parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
-    parser_json.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
-    parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
@@ -434,7 +440,6 @@ def parser_arguments():
     parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
-    parser_create.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', help='use what is running and deploy')
@@ -444,7 +449,6 @@ def parser_arguments():
     parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
-    parser_use.add_argument('-ps', '--predict_subtract', action="store_true", help='Subtract the sky model')
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
@@ -455,7 +459,6 @@ def parser_arguments():
 
 
 if __name__ == '__main__':
-    # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
     # interactive
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()

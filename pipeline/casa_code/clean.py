@@ -25,8 +25,8 @@ Perform the MS Transform
 import logging
 import os
 
-from casapy_code.casa_common import parse_args
-from casapy_code.echo import echo
+from casa_code.casa_common import parse_args
+from casa_code.echo import echo
 from clean import clean
 
 casalog.filter('DEBUGGING')

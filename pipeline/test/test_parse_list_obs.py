@@ -24,7 +24,7 @@ List the parsing
 """
 import unittest
 
-from aws_chiles02.parse_listobs import ParseListobs
+from casa_code.parse_listobs import ParseListobs
 
 FILE_TEXT = '''================================================================================
            MeasurementSet Name:  /mnt/hidata/chiles/final_products/20140120_941_2_FINAL_PRODUCTS/13B-266.sb25390589.eb28661773.56677.175470648144_calibrated_deepfield.ms      MS Version 2

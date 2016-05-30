@@ -1,10 +1,7 @@
 #
-#    (c) UWA, The University of Western Australia
-#    M468/35 Stirling Hwy
-#    Perth WA 6009
-#    Australia
-#
-#    Copyright by UWA, 2012-2015
+#    ICRAR - International Centre for Radio Astronomy Research
+#    (c) UWA - The University of Western Australia
+#    Copyright by UWA (in the framework of the ICRAR)
 #    All rights reserved
 #
 #    This library is free software; you can redistribute it and/or
@@ -126,6 +123,7 @@ def copy_measurement_sets(args):
 
     list_measurement_sets = get_list_measurement_sets(args.directory_in)
     write_files(list_measurement_sets, args.directory_out, args.bucket_name)
+    LOG.info('All done')
 
 
 def main():

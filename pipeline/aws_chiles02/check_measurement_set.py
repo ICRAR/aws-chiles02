@@ -27,7 +27,7 @@ import os
 
 LOG = logging.getLogger(__name__)
 
-EXT_TO_23 = [
+EXT_TO_24 = [
     '.dat',
     '.f1',
     '.f2',
@@ -57,6 +57,8 @@ EXT_TO_23 = [
     '.f22_TSM1',
     '.f23',
     '.f23_TSM1',
+    '.f24',
+    '.f24_TSM1',
 ]
 EXT_TO_26 = [
     '.dat',
@@ -101,28 +103,35 @@ class CheckMeasurementSet:
     def __init__(self, measurement_set):
         self._measurement_set = measurement_set
 
-    def check_tables_to_23(self):
-        return self._check_tables(EXT_TO_23)
+    def check_tables_to_24(self):
+        return self._check_tables(EXT_TO_24)
 
     def check_tables_to_26(self):
         return self._check_tables(EXT_TO_26)
 
     def _check_tables(self, extension_list):
-        # Take a copy of the list
-        to_find = list(extension_list)
         LOG.info('Measurement Set: {0}'.format(self._measurement_set))
+        if os.path.exists(self._measurement_set):
+            # Take a copy of the list
+            to_find = list(extension_list)
 
-        for filename in os.listdir(self._measurement_set):
-            if os.path.isfile(os.path.join(self._measurement_set, filename)):
-                filename_stub, file_extension = os.path.split(filename)
+            for filename in os.listdir(self._measurement_set):
+                full_pathname = os.path.join(self._measurement_set, filename)
+                LOG.info('filename: {0}, full_pathname: {1}'.format(filename, full_pathname))
+                if os.path.isfile(full_pathname):
+                    filename_stub, file_extension = os.path.splitext(filename)
+                    LOG.info('filename_stub: {0}, file_extension: {1}'.format(filename_stub, file_extension))
 
-                if filename_stub == 'table' and file_extension in to_find:
-                    LOG.info('Found {0}{1}'.format(filename_stub, file_extension))
-                    to_find.remove(file_extension)
+                    if filename_stub == 'table' and file_extension in to_find:
+                        LOG.info('Found {0}{1}'.format(filename_stub, file_extension))
+                        to_find.remove(file_extension)
 
-                if len(to_find) == 0:
-                    break
+                    if len(to_find) == 0:
+                        break
 
-        if len(to_find) > 0:
-            return 'The following extensions are missing\n  {0}'.format(' '.join(to_find))
+            if len(to_find) > 0:
+                return 'The following extensions are missing\n  {0}'.format(' '.join(to_find))
+        else:
+            LOG.warning('Measurement Set: {0} does not exist'.format(self._measurement_set))
+
         return None

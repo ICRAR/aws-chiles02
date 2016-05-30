@@ -38,20 +38,20 @@ from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
 LOG = logging.getLogger(__name__)
 
 
-class ErrorHandling:
-    def __init__(self, oid, uid, **kwargs):
-        self._session_id = kwargs['session_id']
-        self._oid = oid
-        self._uid = uid
+class ErrorHandling(object):
+    def __init__(self):
+        self._session_id = None
+        self._error_message = None
 
-    def send_message(self, message_text, queue='dfms-messages', region=AWS_REGION, profile_name='aws-chiles02'):
+    def send_error_message(self, message_text, oid, uid, queue='dfms-messages', region=AWS_REGION, profile_name='aws-chiles02'):
+        self._error_message = message_text
         session = boto3.Session(profile_name=profile_name)
         sqs = session.resource('sqs', region_name=region)
         queue = sqs.get_queue_by_name(QueueName=queue)
         message = {
             'session_id': self._session_id,
-            'uid': self._uid,
-            'oid': self._oid,
+            'oid': oid,
+            'uid': uid,
             'message': message_text,
         }
         json_message = json.dumps(message, indent=2)
@@ -59,9 +59,13 @@ class ErrorHandling:
             MessageBody=json_message,
         )
 
-    def send_error_message(self, message, logger):
-        logger.error(message)
-        self.send_message(message)
+    @property
+    def error_message(self):
+        return self._error_message
+
+    @property
+    def session_id(self):
+        return self._session_id
 
 
 class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
@@ -70,6 +74,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyLogFilesApp, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -88,10 +93,14 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
+            return return_code
 
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
@@ -118,6 +127,7 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CleanupDirectories, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -132,9 +142,12 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                     LOG.info('Removing directory {0}'.format(input_file))
 
                     def rmtree_onerror(func, path, exc_info):
+                        message = 'onerror(func={0}, path={1}, exc_info={2}'.format(func, path, exc_info)
+                        LOG.error(message)
                         self.send_error_message(
-                            'onerror(func={0}, path={1}, exc_info={2}'.format(func, path, exc_info),
-                            LOG
+                            message,
+                            self.oid,
+                            self.uid
                         )
 
                     shutil.rmtree(input_file, onerror=rmtree_onerror)
@@ -143,9 +156,12 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                     try:
                         os.remove(input_file)
                     except OSError:
+                        message = 'Cannot remove {0}'.format(input_file)
+                        LOG.error(message)
                         self.send_error_message(
-                            'Cannot remove {0}'.format(input_file),
-                            LOG
+                            message,
+                            self.oid,
+                            self.uid
                         )
 
 
@@ -156,6 +172,7 @@ class InitializeSqliteApp(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(InitializeSqliteApp, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__

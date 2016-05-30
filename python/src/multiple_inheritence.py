@@ -20,39 +20,32 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the listobs
+
 """
 import logging
-import os
 
-from casapy_code.parse_listobs import ParseListobs
-from casapy_code.echo import echo
-from casapy_code.casa_common import find_file, parse_args
-from listobs import listobs
-
-casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
-@echo
-def do_listobs(infile, outfile):
-    # make sure the directory for the file exists
-    dir_path, tail = os.path.split(outfile)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-    listobs(vis=infile, verbose=False, listfile='/tmp/listfile.txt')
-
-    parse_listobs = ParseListobs('/tmp/listfile.txt')
-    parse_listobs.parse()
-    json_string = parse_listobs.get_json_string()
-    with open(outfile, mode='w') as out_file:
-        out_file.write(json_string)
+class ErrorHandling(object):
+    def __init__(self, oid, uid, **kwargs):
+        super(ErrorHandling, self).__init__()
+        LOG.info('oid = {0}, uid= {1}, kwargs={2}'.format(oid, uid, kwargs))
+        self._session_id = kwargs['session_id']
+        self._oid = oid
+        self._uid = uid
 
 
-args = parse_args()
-LOG.info(args)
+class MockBarrierApp(object):
+    def __init__(self, oid, uid, **kwargs):
+        super(MockBarrierApp, self).__init__(oid, uid, **kwargs)
+        LOG.info('oid = {0}, uid= {1}, kwargs={2}'.format(oid, uid, kwargs))
 
-do_listobs(
-        find_file(args.arguments[0]),
-        args.arguments[1])
+
+class MyTestClass(MockBarrierApp, ErrorHandling):
+    def __init__(self, *args, **kwargs):
+        super(MyTestClass, self).__init__(*args, **kwargs)
+
+
+if __name__ == "__main__":
+    my_class = MyTestClass('oid', 'uid', session_id='session_id', dummy01='dummy01')

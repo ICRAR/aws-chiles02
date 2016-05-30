@@ -26,10 +26,10 @@ import json
 import logging
 import argparse
 
-from aws_chiles02.common import get_oid, get_uuid, get_module_name, get_session_id
+from aws_chiles02.common import get_uuid, get_module_name, get_session_id
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
-from dfms.manager.client import SetEncoder, NodeManagerClient
+from dfms.manager.client import NodeManagerClient
 
 LOG = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ def command_json(args):
     LOG.info(args)
     graph = BuildGraph()
     graph.build_graph()
-    json_dumps = json.dumps(graph.drop_list, indent=2, cls=SetEncoder)
+    json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
     with open("/tmp/json_split.txt", "w") as json_file:
         json_file.write(json_dumps)

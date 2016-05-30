@@ -36,9 +36,11 @@ LOG = logging.getLogger(__name__)
 
 def get_measurement_sets(bucket):
     list_measurement_sets = []
-    for key in bucket.objects.all():
+    for key in bucket.objects.filter(Prefix='observation_data'):
         if key.key.endswith('_calibrated_deepfield.ms.tar'):
-            list_measurement_sets.append(MeasurementSetData(key.key, key.size))
+            elements = key.key.split('/')
+            if len(elements) >= 2:
+                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
     return list_measurement_sets
 
 

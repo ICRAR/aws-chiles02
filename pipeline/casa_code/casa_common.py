@@ -20,38 +20,33 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+
 """
-import logging
+import os
+import argparse
 
-from casapy_code.casa_common import parse_args
-from casapy_code.echo import echo
+from casa_code.echo import echo
 
-casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 
 
 @echo
-def do_concatenate(out_filename, input_files):
-    """
-    Perform the CONCATENATION step
-    :param input_files:
-    :param out_filename:
-    """
+def find_file(top_dir):
+    for file_name in os.listdir(top_dir):
+        if file_name.endswith(INPUT_MS_SUFFIX):
+            return os.path.join(top_dir, file_name)
 
-    try:
-        # ia doesn't need an import - it is just available in casapy
-        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
-        final.done()
+    return None
 
-        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
-    except Exception:
-        LOG.exception('*********\nConcatenate exception: \n***********')
 
-args = parse_args()
-LOG.info(args)
+@echo
+def parse_args():
+    parser = argparse.ArgumentParser('Get the arguments')
+    parser.add_argument('arguments', nargs='+', help='the arguments')
 
-# ignore the output directory
-do_concatenate(
-        args.arguments[1],
-        args.arguments[2:])
+    parser.add_argument('--nologger', action="store_true")
+    parser.add_argument('--log2term', action="store_true")
+    parser.add_argument('--logfile')
+    parser.add_argument('-c', '--call')
+
+    return parser.parse_args()

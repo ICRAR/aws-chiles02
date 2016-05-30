@@ -47,6 +47,7 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyConcatenateFromS3, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyConcatenateFromS3'
@@ -92,18 +93,24 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
                 )
         )
         if not os.path.exists(full_path_tar_file):
+            message = 'The tar file {0} does not exist'.format(full_path_tar_file)
+            LOG.error(message)
             self.send_error_message(
-                'The tar file {0} does not exist'.format(full_path_tar_file),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
+            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size)
+            LOG.error(message)
             self.send_error_message(
-                'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -112,9 +119,12 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         return_code = run_command(bash)
 
         if return_code != 0:
+            message = 'tar return_code: {0}'.format(return_code)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}'.format(return_code),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 1
 
@@ -142,6 +152,7 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         super(CopyConcatenateToS3, self).initialize(**kwargs)
         self._width = self._getArg(kwargs, 'width ', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
         return 'CopyConcatenateToS3'
@@ -159,9 +170,12 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.info('checking {0}.cube exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
+            message = 'Measurement_set: {0}.cube does not exist'.format(measurement_set)
+            LOG.error(message)
             self.send_error_message(
-                'Measurement_set: {0}.cube does not exist'.format(measurement_set),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
             return 0
 
@@ -172,9 +186,12 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
             self.send_error_message(
-                'tar return_code: {0}, exists: {1}'.format(return_code, path_exists),
-                LOG
+                message,
+                self.oid,
+                self.uid
             )
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -201,18 +218,19 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         return return_code
 
 
-class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
+class CasaConcatenate(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._width = None
         self._iterations = None
-        super(CasaPyConcatenate, self).__init__(oid, uid, **kwargs)
+        super(CasaConcatenate, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(CasaPyConcatenate, self).initialize(**kwargs)
+        super(CasaConcatenate, self).initialize(**kwargs)
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -236,7 +254,7 @@ class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
             # Make the directory
             os.makedirs(measurement_set_dir)
 
-        command = 'cd {0} && casapy --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casapy_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
+        command = 'cd {0} && casa --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casa_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
             measurement_set_dir,
             self._width,
             self._iterations,
@@ -246,7 +264,7 @@ class CasaPyConcatenate(BarrierAppDROP, ErrorHandling):
         return return_code
 
     def dataURL(self):
-        return 'CasaPyConcatenate'
+        return 'CasaConcatenate'
 
 
 class DockerImageconcat(DockerApp, ErrorHandling):
@@ -263,6 +281,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
         self._command = 'imageconcat.sh'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -302,6 +321,7 @@ class DockerVirtualconcat(DockerApp, ErrorHandling):
         self._width = self._getArg(kwargs, 'width', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
         self._command = 'virtualconcat.sh'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is

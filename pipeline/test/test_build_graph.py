@@ -24,7 +24,6 @@ Test the building of graphs
 """
 import unittest
 
-from aws_chiles02.build_graph_mstransform import BuildGraph
 from aws_chiles02.common import MeasurementSetData, FrequencyPair
 
 
