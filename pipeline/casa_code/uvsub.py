@@ -89,4 +89,4 @@ LOG.info(args)
 
 do_uvsub(
         args.arguments[0],
-        args.arguments[1])
+        args.arguments[1:])
