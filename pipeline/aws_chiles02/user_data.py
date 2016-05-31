@@ -47,7 +47,7 @@ def get_user_data(cloud_init_data):
     return encoded_data
 
 
-def get_node_manager_user_data(boto_data, uuid):
+def get_node_manager_user_data(boto_data, uuid, max_request_size=10):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -64,13 +64,14 @@ def get_node_manager_user_data(boto_data, uuid):
         uuid=uuid,
         queue=QUEUE,
         region=AWS_REGION,
+        max_request_size=max_request_size,
     )
 
     user_data = get_user_data([cloud_init, user_script])
     return user_data
 
 
-def get_data_island_manager_user_data(boto_data, hosts, uuid):
+def get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=10):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -88,6 +89,7 @@ def get_data_island_manager_user_data(boto_data, hosts, uuid):
         uuid=uuid,
         queue=QUEUE,
         region=AWS_REGION,
+        max_request_size=max_request_size,
     )
     user_data = get_user_data([cloud_init, user_script])
     return user_data

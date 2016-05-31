@@ -28,6 +28,7 @@ import httplib
 import json
 import logging
 import os
+from time import sleep
 
 from configobj import ConfigObj
 
@@ -213,6 +214,7 @@ def command_use(args):
 
 def command_interactive(args):
     LOG.info(args)
+    sleep(0.5)  # Allow the logging time to print
     path_dirname, filename = os.path.split(__file__)
     root, ext = os.path.splitext(filename)
     config_file_name = '{0}/{1}.settings'.format(path_dirname, root)

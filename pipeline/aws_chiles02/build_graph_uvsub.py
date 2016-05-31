@@ -22,8 +22,6 @@
 """
 Build the physical graph
 """
-import boto3
-
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.apps_uvsub import CopyUvsubFromS3, DockerUvsub, CopyUvsubToS3
 from aws_chiles02.common import get_module_name
@@ -44,7 +42,6 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._s3_split_name = 'split_{0}'.format(width)
         self._list_ip = []
-        self._s3_client = None
         self._node_index = 0
 
     def new_carry_over_data(self):
@@ -53,17 +50,13 @@ class BuildGraphUvsub(AbstractBuildGraph):
     def build_graph(self):
         self._build_node_map()
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
-        self._s3_client = s3.meta.client
-        self._bucket = s3.Bucket(self._bucket_name)
-
         # Add the start drops
         node_id = self._get_next_node()
         count_on_node = 0
         for split_to_process in self._work_to_do:
             self._build_uvsub_chain(split_to_process, count_on_node, node_id)
 
+            count_on_node += 1
             if count_on_node >= self._parallel_streams:
                 count_on_node = 0
                 node_id = self._get_next_node()
@@ -113,8 +106,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         # Work with the carry over
         carry_over_data = self._map_carry_over_data[node_id]
-        if carry_over_data.s3_out_list is None:
-            carry_over_data.memory_drop_list = [None * self._parallel_streams]
+        if carry_over_data.memory_drop_list is None:
+            carry_over_data.memory_drop_list = [None] * self._parallel_streams
 
         if carry_over_data.memory_drop_list[count_on_node] is None:
             self._start_oids.append(s3_drop['uid'])

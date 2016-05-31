@@ -28,6 +28,7 @@ import httplib
 import json
 import logging
 import os
+from time import sleep
 
 import boto3
 from configobj import ConfigObj
@@ -118,7 +119,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid),
+                get_node_manager_user_data(boto_data, uuid, max_request_size=50),
                 AWS_REGION,
                 tags=[
                     {
@@ -158,7 +159,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50),
                     AWS_REGION,
                     tags=[
                         {
@@ -240,7 +241,7 @@ def generate_json(width, bucket, nodes, volume, shutdown):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, nodes)]
+        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
     }
     graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id')
     graph.build_graph()
@@ -279,6 +280,7 @@ def command_use(args):
 
 def command_interactive(args):
     LOG.info(args)
+    sleep(0.5)  # Allow the logging time to print
     path_dirname, filename = os.path.split(__file__)
     root, ext = os.path.splitext(filename)
     config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
@@ -288,8 +290,8 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
-    if config['create_use'] == 'create':
+    get_argument(config, 'run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
+    if config['run_type'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
@@ -297,7 +299,7 @@ def command_interactive(args):
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    elif config['create_use'] == 'use':
+    elif config['run_type'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
@@ -314,7 +316,7 @@ def command_interactive(args):
     config.write()
 
     # Run the command
-    if config['create_use'] == 'create':
+    if config['run_type'] == 'create':
         create_and_generate(
             config['bucket_name'],
             config['width'],
@@ -324,7 +326,7 @@ def command_interactive(args):
             config['nodes'],
             config['shutdown'],
         )
-    elif config['create_use'] == 'use':
+    elif config['run_type'] == 'use':
         use_and_generate(
             config['dim'],
             DIM_PORT,
