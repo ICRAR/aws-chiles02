@@ -234,7 +234,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         )
 
-        spectral_window = int(((self._min_frequency+self._max_frequency) / 2-946) / 32)
+        spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
         self._command = 'uvsub.sh {0} {1} /opt/chiles02/LSM/Epoch1_Images_Wproject/epoch1.mmstest_spw_{2}.model.tt0 /opt/chiles02/LSMEpoch1_Images_Wproject/epoch1.mmstest_spw_{2}.model.tt1'.format(
             measurement_set_in,
             measurement_set_out,
