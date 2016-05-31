@@ -42,6 +42,8 @@ logging.getLogger('nose').setLevel(logging.INFO)
 
 class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
         super(CopyUvsubFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -130,7 +132,7 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
         return 0
 
     def dataURL(self):
-        return 'CopyCleanFromS3'
+        return 'CopyUvsubFromS3'
 
 
 class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
@@ -147,7 +149,7 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
-        return 'CopyCleanToS3'
+        return 'CopyUvSubToS3'
 
     def run(self):
         measurement_set_output = self.inputs[0]
@@ -172,9 +174,9 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir, 'uvsub{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(
+        bash = 'tar -cvf {0} {1}'.format(
             tar_filename,
             stem_name,
         )
