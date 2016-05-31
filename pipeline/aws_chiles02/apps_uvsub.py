@@ -162,9 +162,9 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         stem_name = 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.image exists'.format(measurement_set))
-        if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
-            message = 'Measurement_set: {0}.image does not exist'.format(measurement_set)
+        LOG.info('checking {0} exists'.format(measurement_set))
+        if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
+            message = 'Measurement_set: {0} does not exist'.format(measurement_set)
             LOG.error(message)
             self.send_error_message(
                 message,
