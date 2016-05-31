@@ -53,7 +53,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         # Add the start drops
         node_id = self._get_next_node()
         count_on_node = 0
-        for split_to_process in self._work_to_do:
+        for split_to_process in self._work_to_do[:5]:   # TODO: Remove after testing
             self._build_uvsub_chain(split_to_process, count_on_node, node_id)
 
             count_on_node += 1

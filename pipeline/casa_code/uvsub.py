@@ -26,10 +26,6 @@ import logging
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
-from ms import ms
-from im import im
-from split import split
-from uvsub import uvsub
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)

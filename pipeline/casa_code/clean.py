@@ -27,7 +27,6 @@ import os
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
-from clean import clean
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)

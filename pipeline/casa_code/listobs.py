@@ -28,7 +28,6 @@ import os
 from casa_code.parse_listobs import ParseListobs
 from casa_code.echo import echo
 from casa_code.casa_common import find_file, parse_args
-from listobs import listobs
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
