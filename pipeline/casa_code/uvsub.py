@@ -23,17 +23,20 @@
 Perform the UV Subtraction
 """
 import logging
-import os
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
+from ms import ms
+from im import im
+from split import split
+from uvsub import uvsub
 
 casalog.filter('DEBUGGING')
 LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_uvsub(in_dir, model):
+def do_uvsub(in_dir, outfile, model):
     """
     Performs the UVSUB step
      Use imtool to fill MODEL_DATA correctly
@@ -50,36 +53,36 @@ def do_uvsub(in_dir, model):
      spw=int(((freq_min+freq_max)/2-946)/32)
     """
 
-    outfile = in_dir.replace('vis','uvsub')
-    LOG.info('uvsub(vis={0}, model={1}, output={2})'.format(in_dir, str(model),outfile))
+    LOG.info('uvsub(vis={0}, model={1}, output={2})'.format(in_dir, str(model), outfile))
     try:
         # dump_all()
         #
         #  Here for reference; not needed as no CD column
-        #tb.open(vis_in_dir,nomodify=False)
-        #tb.removecols('CORRECTED_DATA')
-        #tb.close()
+        # tb.open(vis_in_dir,nomodify=False)
+        # tb.removecols('CORRECTED_DATA')
+        # tb.close()
         #
         # Create/Flush model_data column
-        im.open(thems=in_dir,addmodel=True)
+        im.open(thems=in_dir, addmodel=True)
+
         # Select all data in this case
         im.selectvis()
         # These are the parameters for the generation of the model
         # Not sure how many of them are important here -- all except mode?
-        im.defineimage(nx=2048,ny=2048,cellx='1.5arcsec',
-                       celly='1.5arcsec',mode='mfs',facets=1)
-        im.setoptions(ftmachine='wproject',wprojplanes=12)
+        im.defineimage(nx=2048, ny=2048, cellx='1.5arcsec',
+                       celly='1.5arcsec', mode='mfs', facets=1)
+        im.setoptions(ftmachine='wproject', wprojplanes=12)
         # Find the refernce frequency and set no. taylor terms
         ms.open(in_dir)
-        fq=ms.getspectralwindowinfo()['0']['RefFreq']
+        fq = ms.getspectralwindowinfo()['0']['RefFreq']
         ms.close()
-        im.settaylorterms(ntaylorterms=len(model),reffreq=fq)
-        # 
-        im.ft(model=model,incremental=False)
+        im.settaylorterms(ntaylorterms=len(model), reffreq=fq)
+        #
+        im.ft(model=model, incremental=False)
         im.close()
         # Now do the subtraction
-        uvsub(vis=in_dir,reverse=False)
-        split(vis=in_dir,outputvis=outfile,datacolumn='corrected')
+        uvsub(vis=in_dir, reverse=False)
+        split(vis=in_dir, outputvis=outfile, datacolumn='corrected')
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
@@ -89,4 +92,5 @@ LOG.info(args)
 
 do_uvsub(
         args.arguments[0],
-        args.arguments[1:])
+        args.arguments[1],
+        args.arguments[2:])

@@ -20,7 +20,7 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+Perform the Clean
 """
 import logging
 import os

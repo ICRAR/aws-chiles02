@@ -333,7 +333,7 @@ def parser_arguments():
     parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
     parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
-    parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_json.add_argument('-f', '--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
     parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_json.set_defaults(func=command_json)
 

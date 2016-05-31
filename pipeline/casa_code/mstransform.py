@@ -24,7 +24,6 @@ Perform the MS Transform
 """
 import logging
 import os
-import re
 import shutil
 
 from casa_code.freq_map import freq_map

@@ -32,93 +32,55 @@ import os
 import boto3
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_aws_credentials, MeasurementSetData, get_uuid
+from aws_chiles02.build_graph_uvsub import BuildGraphUvsub
+from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import get_reported_running, get_nodes_running, build_hosts
-from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, SIZE_1GB, DIM_PORT
+from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
+from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
+PARALLEL_STREAMS = 8
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_split_name):
+    def __init__(self, width, bucket_name, s3_uvsub_name, s3_split_name):
         self._width = width
         self._bucket_name = bucket_name
+        self._s3_uvsub_name = s3_uvsub_name
         self._s3_split_name = s3_split_name
         self._work_already_done = None
         self._bucket = None
         self._list_frequencies = None
-        self._work_to_do = {}
+        self._work_to_do = []
 
     def calculate_work_to_do(self):
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
 
-        list_measurement_sets = []
+        uvsub_objects = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(Prefix='observation_data'):
-            if key.key.endswith('_calibrated_deepfield.ms.tar'):
-                LOG.info('Found {0}'.format(key.key))
+        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
+            uvsub_objects.append(key.key)
+            LOG.info('uvsub {0} found'.format(key.key))
 
-                elements = key.key.split('/')
-                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
-
-        # Get work we've already done
-        self._list_frequencies = get_list_frequency_groups(self._width)
-        self._work_already_done = self._get_work_already_done()
-
-        for day_to_process in list_measurement_sets:
-            day_work_already_done = self._work_already_done.get(day_to_process.short_name)
-            list_frequency_groups = self._get_details_for_measurement_set(day_work_already_done)
-
-            if self._ignore_day(list_frequency_groups):
-                LOG.info('{0} has already been process.'.format(day_to_process.full_tar_name))
-            else:
-                self._work_to_do[day_to_process] = list_frequency_groups
-
-    def _get_work_already_done(self):
-        frequencies_per_day = {}
-        for key in self._bucket.objects.filter(Prefix=self._s3_split_name):
+        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_split_name)):
+            LOG.info('split {0} found'.format(key.key))
             elements = key.key.split('/')
-
-            if len(elements) > 2:
-                day_key = elements[2]
-                # Remove the .tar
-                day_key = day_key[:-4]
-
-                frequencies = frequencies_per_day.get(day_key)
-                if frequencies is None:
-                    frequencies = []
-                    frequencies_per_day[day_key] = frequencies
-
-                frequencies.append(elements[1])
-
-        return frequencies_per_day
-
-    def _get_details_for_measurement_set(self, splits_done):
-        frequency_groups = []
-        if splits_done is None:
-            frequency_groups.extend(self._list_frequencies)
-        else:
-            # Remove the groups we've processed
-            for frequency_group in self._list_frequencies:
-                if frequency_group.underscore_name not in splits_done:
-                    frequency_groups.append(frequency_group)
-
-        return frequency_groups
-
-    def _ignore_day(self, list_frequency_groups):
-        # Check if we have the first groups
-        count_bottom = 0
-        for bottom_frequency in range(940, 956, self._width):
-            frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
-            if frequency_group in list_frequency_groups:
-                count_bottom += 1
-
-        return len(list_frequency_groups) - count_bottom <= 0
+            if len(elements) == 3:
+                expected_uvsub_name = 'uvsub_{0}/{1}/{2}'.format(
+                    self._width,
+                    elements[1],
+                    elements[2],
+                )
+                if expected_uvsub_name not in uvsub_objects:
+                    self._work_to_do.append(
+                        [
+                            elements[1],
+                            elements[2],
+                        ]
+                    )
 
     @property
     def work_to_do(self):
@@ -129,44 +91,27 @@ def get_s3_split_name(width):
     return 'split_{0}'.format(width)
 
 
-def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
-    nodes = []
-    counts = [0, 0]
-    for day in days:
-        if day.size <= 500 * SIZE_1GB:
-            counts[0] += 1
-        else:
-            counts[1] += 1
+def get_s3_uvsub_name(width):
+    return 'uvsub_{0}'.format(width)
 
-    node_count = 0
-    if counts[1] > 0:
-        count = max(counts[1] / days_per_node, 1)
-        node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i2.4xlarge',
-            'spot_price': spot_price2
-        })
-    if counts[0] > 0:
-        count = max(counts[0] / days_per_node, 1)
-        node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i2.2xlarge',
-            'spot_price': spot_price1
-        })
+
+def get_nodes_required(node_count, spot_price):
+    nodes = [{
+        'number_instances': node_count,
+        'instance_type': 'i2.2xlarge',
+        'spot_price': spot_price
+    }]
 
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
+        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), get_s3_split_name(frequency_width))
         work_to_do.calculate_work_to_do()
 
-        days = work_to_do.work_to_do.keys()
-        nodes_required, node_count = get_nodes_required(days, days_per_node, spot_price1, spot_price2)
+        nodes_required, node_count = get_nodes_required(nodes, spot_price)
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
@@ -182,14 +127,13 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'DFMS Node - MsTransform',
+                        'Value': 'DFMS Node - Uvsub',
                     },
                     {
                         'Key': 'uuid',
                         'Value': uuid,
                     }
                 ]
-
             )
             ec2_data.start_instances()
 
@@ -198,68 +142,60 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 node_count,
                 wait=600
             )
-            hosts = build_hosts(reported_running)
 
-            # Create the Data Island Manager
-            data_island_manager = EC2Controller(
-                ami_id,
-                [
-                    {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price1
-                    }
-                ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid),
-                AWS_REGION,
-                tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'Data Island Manager - MsTransform',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
-            )
-            data_island_manager.start_instances()
-            data_island_manager_running = get_reported_running(
-                uuid,
-                1,
-                wait=600
-            )
+            if len(reported_running) == 0:
+                LOG.error('Nothing has reported ready')
+            else:
+                hosts = build_hosts(reported_running)
 
-            if len(data_island_manager_running['m4.large']) == 1:
-                # Now build the graph
-                session_id = get_session_id()
-                graph = BuildGraphMsTransform(
-                    work_to_do.work_to_do,
-                    bucket_name,
-                    volume,
-                    7,
-                    reported_running,
-                    add_shutdown,
-                    frequency_width,
-                    session_id,
+                # Create the Data Island Manager
+                data_island_manager = EC2Controller(
+                    ami_id,
+                    [
+                        {
+                            'number_instances': 1,
+                            'instance_type': 'm4.large',
+                            'spot_price': spot_price
+                        }
+                    ],
+                    get_data_island_manager_user_data(boto_data, hosts, uuid),
+                    AWS_REGION,
+                    tags=[
+                        {
+                            'Key': 'Owner',
+                            'Value': getpass.getuser(),
+                        },
+                        {
+                            'Key': 'Name',
+                            'Value': 'Data Island Manager - Uvsub',
+                        },
+                        {
+                            'Key': 'uuid',
+                            'Value': uuid,
+                        }
+                    ]
                 )
-                graph.build_graph()
-                graph.tag_all_app_drops({
-                    "session_id": session_id,
-                })
+                data_island_manager.start_instances()
+                data_island_manager_running = get_reported_running(
+                        uuid,
+                        1,
+                        wait=600
+                )
 
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
-                LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
-                client = DataIslandManagerClient(host, DIM_PORT)
+                if len(data_island_manager_running['m4.large']) == 1:
+                    # Now build the graph
+                    session_id = get_session_id()
+                    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, session_id)
+                    graph.build_graph()
 
-                client.create_session(session_id)
-                client.append_graph(session_id, graph.drop_list)
-                client.deploy_session(session_id, graph.start_oids)
+                    instance_details = data_island_manager_running['m4.large'][0]
+                    host = instance_details['ip_address']
+                    LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+                    client = DataIslandManagerClient(host, DIM_PORT)
+
+                    client.create_session(session_id)
+                    client.append_graph(session_id, graph.drop_list)
+                    client.deploy_session(session_id, graph.start_oids)
     else:
         LOG.error('Unable to find the AWS credentials')
 
@@ -280,21 +216,12 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
+            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), get_s3_split_name(frequency_width))
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphMsTransform(
-                work_to_do.work_to_do,
-                bucket_name,
-                volume,
-                7,
-                nodes_running,
-                add_shutdown,
-                frequency_width,
-                session_id
-            )
+            graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, session_id)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -308,29 +235,23 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
-    work_to_do = WorkToDo(width, bucket, get_s3_split_name(width))
+def generate_json(width, bucket, nodes, volume, shutdown):
+    work_to_do = WorkToDo(width, bucket, get_s3_uvsub_name(width), get_s3_split_name(width))
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
-        'i2.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
+        'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, nodes)]
     }
-    graph = BuildGraphMsTransform(
-        work_to_do.work_to_do,
-        bucket,
-        volume,
-        parallel_streams,
-        node_details,
-        shutdown,
-        width,
-        'json_test'
-    )
+    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_mstransform.txt", "w") as json_file:
+    with open("/tmp/json_uvsub.txt", "w") as json_file:
         json_file.write(json_dumps)
+
+
+def command_json(args):
+    generate_json(args.width, args.bucket, args.nodes, args.volume, args.shutdown)
 
 
 def command_create(args):
@@ -339,9 +260,8 @@ def command_create(args):
         args.width,
         args.ami,
         args.spot_price1,
-        args.spot_price2,
         args.volume,
-        args.days_per_node,
+        args.nodes,
         args.shutdown,
     )
 
@@ -358,6 +278,7 @@ def command_use(args):
 
 
 def command_interactive(args):
+    LOG.info(args)
     path_dirname, filename = os.path.split(__file__)
     root, ext = os.path.splitext(filename)
     config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
@@ -367,15 +288,14 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
+    get_argument(config, 'create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price1', 'Spot Price for i2.2xlarge', help_text='the spot price')
-        get_argument(config, 'spot_price2', 'Spot Price for i2.4xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
+        get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     elif config['create_use'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -387,8 +307,7 @@ def command_interactive(args):
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
-        get_argument(config, 'parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
+        get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
@@ -400,10 +319,9 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['ami'],
-            config['spot_price1'],
-            config['spot_price2'],
+            config['spot_price'],
             config['volume'],
-            config['days_per_node'],
+            config['nodes'],
             config['shutdown'],
         )
     elif config['create_use'] == 'use':
@@ -416,29 +334,36 @@ def command_interactive(args):
             config['shutdown'],
         )
     else:
-        build_json(
-            config['bucket_name'],
+        generate_json(
             config['width'],
-            config['volume'],
+            config['bucket_name'],
             config['nodes'],
-            config['parallel_streams'],
+            config['volume'],
             config['shutdown'],
         )
 
 
 def parser_arguments():
-    parser = argparse.ArgumentParser('Build the MSTRANSFORM physical graph for a day')
+    parser = argparse.ArgumentParser('Build the UVSUB physical graph for a day')
 
     subparsers = parser.add_subparsers()
 
+    parser_json = subparsers.add_parser('json', help='display the json')
+    parser_json.add_argument('bucket', help='the bucket to access')
+    parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
+    parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
+    parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    parser_json.set_defaults(func=command_json)
+
     parser_create = subparsers.add_parser('create', help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
-    parser_create.add_argument('spot_price1', type=float, help='the spot price')
-    parser_create.add_argument('spot_price2', type=float, help='the spot price')
+    parser_create.add_argument('spot_price', type=float, help='the spot price')
     parser_create.add_argument('bucket', help='the bucket to access')
     parser_create.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
+    parser_create.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
     parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_create.set_defaults(func=command_create)
 
@@ -459,6 +384,7 @@ def parser_arguments():
 
 
 if __name__ == '__main__':
+    # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
     # interactive
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
