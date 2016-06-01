@@ -174,7 +174,7 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'uvsub{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         bash = 'tar -cvf {0} {1}'.format(
             tar_filename,
@@ -237,9 +237,12 @@ class DockerUvsub(DockerApp, ErrorHandling):
         )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = 'uvsub.sh /dfms_root{0} /dfms_root{1} /opt/chiles02/LSM/Epoch1_Images_Wproject/epoch1.mmstest_spw_{2}.model.tt0 /opt/chiles02/LSMEpoch1_Images_Wproject/epoch1.mmstest_spw_{2}.model.tt1'.format(
+        self._command = 'uvsub.sh /dfms_root{0} /dfms_root{1} {2} ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Epoch1_Images_Wproject/epoch1.mmstest_spw_{3}.model.tt0 ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Epoch1_Images_Wproject/epoch1.mmstest_spw_{3}.model.tt1'.format(
             measurement_set_in,
             measurement_set_out,
+            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
             spectral_window,
         )
         super(DockerUvsub, self).run()

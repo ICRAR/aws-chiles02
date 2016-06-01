@@ -23,6 +23,7 @@
 Perform the UV Subtraction
 """
 import logging
+import os
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
@@ -32,7 +33,7 @@ LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_uvsub(in_dir, outfile, model):
+def do_uvsub(in_dir, out_dir, out_ms, model):
     """
     Performs the UVSUB step
      Use imtool to fill MODEL_DATA correctly
@@ -49,7 +50,7 @@ def do_uvsub(in_dir, outfile, model):
      spw=int(((freq_min+freq_max)/2-946)/32)
     """
 
-    LOG.info('uvsub(vis={0}, model={1}, output={2})'.format(in_dir, str(model), outfile))
+    LOG.info('uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3})'.format(in_dir, str(model), out_dir, out_ms))
     try:
         # dump_all()
         #
@@ -88,7 +89,7 @@ def do_uvsub(in_dir, outfile, model):
 
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
-        split(vis=in_dir, outputvis=outfile, datacolumn='corrected')
+        split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
@@ -99,4 +100,5 @@ LOG.info(args)
 do_uvsub(
         args.arguments[0],
         args.arguments[1],
-        args.arguments[2:])
+        args.arguments[2],
+        args.arguments[3:])
