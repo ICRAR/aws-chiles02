@@ -48,6 +48,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser('Check what data has been split')
     parser.add_argument('bucket', help='the bucket to access')
     parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
     return parser.parse_args()
 
 

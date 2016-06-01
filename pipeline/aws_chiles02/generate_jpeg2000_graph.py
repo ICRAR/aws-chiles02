@@ -269,6 +269,7 @@ def command_interactive(args):
 
 def parser_arguments(command_line=sys.argv[1:]):
     parser = argparse.ArgumentParser('Build the JPEG2000 physical graph for a day')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()
 

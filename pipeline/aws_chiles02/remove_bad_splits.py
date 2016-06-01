@@ -37,6 +37,7 @@ def parse_arguments():
     parser.add_argument('bucket', help='the bucket to access')
     parser.add_argument('width', type=int, help='the frequency width')
     parser.add_argument('size', help='the minimum viable size')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
     return parser.parse_args()
 
 

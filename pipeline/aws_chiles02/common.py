@@ -381,3 +381,9 @@ def human2bytes(input_string):
     for i, input_string in enumerate(sset[1:]):
         prefix[input_string] = 1 << (i + 1) * 10
     return int(num * prefix[letter])
+
+
+def set_boto_logging_level(level):
+    logging.getLogger('boto3').setLevel(level)
+    logging.getLogger('botocore').setLevel(level)
+    logging.getLogger('nose').setLevel(level)

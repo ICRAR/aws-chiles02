@@ -43,7 +43,7 @@ def do_uvsub(in_dir, out_dir, out_ms, model):
     Number of taylor terms is length of model list. Expecting 2
 
     example:
-     do_uvsub('vis_1400~1404',['Epoch1_Images_Wproject/epoch1.mmstest_spw_14.model.tt0','Epoch1_Images_Wproject/epoch1.mmstest_spw_14.model.tt1'])
+     do_uvsub('vis_1400~1404',['Epoch1_Images_Wproject/epoch1.bb.gt4k.si_spw_14.model.tt0','Epoch1_Images_Wproject/epoch1.bb.gt4k.si_spw_14.model.tt1'])
 
 
      I suggest that SPW in the model strings is deduced from

@@ -27,12 +27,15 @@ import logging
 
 import boto3
 
+from aws_chiles02.common import bytes2human
+
 LOG = logging.getLogger(__name__)
 
 
 def parser_arguments():
     parser = argparse.ArgumentParser('Size of files in Glacier')
     parser.add_argument('bucket', help='the s3 bucket')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     args = parser.parse_args()
     LOG.info(args)
@@ -51,10 +54,10 @@ def retrieve_files(args):
             storage_class = obj.storage_class
             restore = obj.restore
             size += key.size
-            LOG.info('{0}, {1}, {2}, {3}'.format(key.key, storage_class, restore, size))
+            if args.verbosity >= 1:
+                LOG.info('{0}, {1}, {2}, {3}'.format(key.key, storage_class, restore, size))
 
-    size /= 1073741824.0
-    LOG.info('Size = {0}GB'.format(size))
+    LOG.info('Size = {0}'.format(bytes2human(size)))
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

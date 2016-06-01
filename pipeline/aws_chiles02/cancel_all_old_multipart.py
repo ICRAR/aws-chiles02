@@ -40,6 +40,7 @@ def main():
     parser = argparse.ArgumentParser('Check the multipart upload status')
     parser.add_argument('-c', '--cancel', action="store_true", help='cancel all the outstanding ')
     parser.add_argument('-f', '--force', action="store_true", help='force all the outstanding ')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
     parser.add_argument('bucket', help='the bucket to check')
     args = parser.parse_args()
 
