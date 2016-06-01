@@ -348,36 +348,30 @@ def command_interactive(args):
 
 def parser_arguments(command_line=sys.argv[1:]):
     parser = argparse.ArgumentParser('Build the UVSUB physical graph for a day')
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
+
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument('bucket', help='the bucket to access')
+    common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
+    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()
 
-    parser_json = subparsers.add_parser('json', help='display the json')
-    parser_json.add_argument('bucket', help='the bucket to access')
-    parser_json.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    parser_json = subparsers.add_parser('json', parents=[common_parser], help='display the json')
     parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
-    parser_json.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
-    parser_json.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_json.set_defaults(func=command_json)
 
-    parser_create = subparsers.add_parser('create', help='run and deploy')
+    parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
     parser_create.add_argument('spot_price', type=float, help='the spot price')
-    parser_create.add_argument('bucket', help='the bucket to access')
-    parser_create.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    parser_create.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     parser_create.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
-    parser_create.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_create.set_defaults(func=command_create)
 
-    parser_use = subparsers.add_parser('use', help='use what is running and deploy')
-    parser_use.add_argument('bucket', help='the bucket to access')
-    parser_use.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
     parser_use.add_argument('host', help='the host the dfms is running on')
     parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
-    parser_use.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser_use.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
