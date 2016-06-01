@@ -123,11 +123,13 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
 
 class CleanupDirectories(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
+        self._dry_run = None
         super(CleanupDirectories, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(CleanupDirectories, self).initialize(**kwargs)
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._dry_run = self._getArg(kwargs, 'dry_run', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -150,11 +152,17 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                             self.uid
                         )
 
-                    shutil.rmtree(input_file, onerror=rmtree_onerror)
+                    if self._dry_run:
+                        LOG.info('dry_run = True')
+                    else:
+                        shutil.rmtree(input_file, onerror=rmtree_onerror)
                 else:
                     LOG.info('Removing file {0}'.format(input_file))
                     try:
-                        os.remove(input_file)
+                        if self._dry_run:
+                            LOG.info('dry_run = True')
+                        else:
+                            os.remove(input_file)
                     except OSError:
                         message = 'Cannot remove {0}'.format(input_file)
                         LOG.error(message)
