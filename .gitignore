@@ -13,3 +13,5 @@ __pycache__/
 *.so
 
 .DS_Store
+/pipeline/aws_chiles02.egg-info/
+/pipeline/build/

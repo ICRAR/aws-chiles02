@@ -99,6 +99,7 @@ def analyse_data(measurement_sets, split_entries, width):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     arguments = parse_arguments()
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
@@ -112,5 +113,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()

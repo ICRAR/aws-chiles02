@@ -34,13 +34,13 @@ setup(
 
     # Keep alpha-sorted PLEASE!
     install_requires=[
-        "argparse",
-        "boto3",
-        "ConfigObj",
-        "mako",
-        "pip>=8.1",
+        'argparse',
+        'boto3',
+        'ConfigObj',
+        'dfms',
+        'mako',
+        'pip>=8.1',
     ],
-
     packages=[
         'aws_chiles02',
         'casa_code',
@@ -50,8 +50,15 @@ setup(
     },
     entry_points= {
         'console_scripts': [
-            'generate=aws_chiles02.generate:main'
+            'generate=aws_chiles02.generate:main',
+            'check_splits=aws_chiles02.check_splits:main',
+            'check_clean=aws_chiles02.check_clean:main',
+            'check_uvsub=aws_chiles02.check_uvsub:main',
         ]
-    }
+    },
 
+    # I need the daliuge client from github
+    dependency_links = [
+        'git+https://github.com/SKA-ScienceDataProcessor/dfms#egg=dfms-0.1'
+    ],
 )
