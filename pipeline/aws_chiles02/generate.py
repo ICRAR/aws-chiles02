@@ -86,5 +86,8 @@ class Generate(object):
         self._run_arguments()
 
 
-if __name__ == '__main__':
+def main():
     Generate()
+
+if __name__ == '__main__':
+    main()

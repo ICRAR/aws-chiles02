@@ -44,7 +44,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
         self._s3_fits_name = 'fits_{0}_{1}'.format(width, iterations)
-        self._s3_split_name = 'split_{0}'.format(width)
+        self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._iterations = iterations
         self._map_frequency_to_node = None
         self._list_ip = []
@@ -168,7 +168,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
     def _build_s3_download(self, node_id, frequency_pair):
         s3_objects = []
-        prefix = '{0}/{1}_{2}'.format(self._s3_split_name, frequency_pair.bottom_frequency, frequency_pair.top_frequency)
+        prefix = '{0}/{1}_{2}'.format(self._s3_uvsub_name, frequency_pair.bottom_frequency, frequency_pair.top_frequency)
         for key in self._bucket.objects.filter(Prefix=prefix):
             s3_objects.append(key.key)
 

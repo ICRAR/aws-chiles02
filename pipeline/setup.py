@@ -50,7 +50,7 @@ setup(
     },
     entry_points= {
         'console_scripts': [
-            ''  # TODO:
+            'generate=aws_chiles02.generate:main'
         ]
     }
 
