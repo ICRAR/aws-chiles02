@@ -44,6 +44,7 @@ setup(
     packages=[
         'aws_chiles02',
         'casa_code',
+        'user_data',
     ],
     package_data= {
         'user_data': ['*.bash', '*.yaml'],
