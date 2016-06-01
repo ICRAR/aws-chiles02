@@ -59,23 +59,33 @@ def do_uvsub(in_dir, outfile, model):
         # tb.close()
         #
         # Create/Flush model_data column
-        im.open(thems=in_dir, addmodel=True)
+        im.open(thems=in_dir, usescratch=True)
 
         # Select all data in this case
         im.selectvis()
+
         # These are the parameters for the generation of the model
         # Not sure how many of them are important here -- all except mode?
-        im.defineimage(nx=2048, ny=2048, cellx='1.5arcsec',
-                       celly='1.5arcsec', mode='mfs', facets=1)
+        im.defineimage(
+            nx=2048,
+            ny=2048,
+            cellx='1.5arcsec',
+            celly='1.5arcsec',
+            mode='mfs',
+            facets=1
+        )
         im.setoptions(ftmachine='wproject', wprojplanes=12)
+
         # Find the refernce frequency and set no. taylor terms
         ms.open(in_dir)
         fq = ms.getspectralwindowinfo()['0']['RefFreq']
         ms.close()
         im.settaylorterms(ntaylorterms=len(model), reffreq=fq)
+
         #
         im.ft(model=model, incremental=False)
         im.close()
+
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
         split(vis=in_dir, outputvis=outfile, datacolumn='corrected')

@@ -1,5 +1,5 @@
-boto3
 argparse
+boto3
 ConfigObj
-pip>=8.1
 mako
+pip>=8.1
