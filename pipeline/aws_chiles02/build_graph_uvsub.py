@@ -157,7 +157,6 @@ class BuildGraphUvsub(AbstractBuildGraph):
             node_id,
             get_module_name(CleanupDirectories),
             'app_cleanup_directories',
-            dry_run=True,
         )
         memory_drop = self.create_memory_drop(node_id)
         clean_up.addInput(s3_uvsub_drop_out)

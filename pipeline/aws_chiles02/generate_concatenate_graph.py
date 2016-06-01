@@ -30,6 +30,7 @@ import logging
 import os
 from time import sleep
 
+import sys
 from configobj import ConfigObj
 
 from aws_chiles02.build_graph_concatenate import BuildGraphConcatenation
@@ -271,7 +272,7 @@ def command_interactive(args):
         )
 
 
-def parser_arguments():
+def parser_arguments(command_line=sys.argv[1:]):
     parser = argparse.ArgumentParser('Build the CONCATENATION physical graph for a day')
 
     subparsers = parser.add_subparsers()
@@ -311,7 +312,7 @@ def parser_arguments():
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
     parser_interactive.set_defaults(func=command_interactive)
 
-    args = parser.parse_args()
+    args = parser.parse_args(command_line)
     return args
 
 
