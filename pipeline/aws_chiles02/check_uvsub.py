@@ -25,6 +25,7 @@ Check the uvsubs
 import argparse
 import logging
 
+from aws_chiles02.common import set_logging_level
 from aws_chiles02.generate_uvsub_graph import WorkToDo, get_s3_uvsub_name, get_s3_split_name
 
 LOG = logging.getLogger(__name__)
@@ -39,8 +40,8 @@ def parse_arguments():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     arguments = parse_arguments()
+    set_logging_level(arguments.verbosity)
 
     work_to_do = WorkToDo(arguments.width, arguments.bucket, get_s3_uvsub_name(arguments.width), get_s3_split_name(arguments.width))
     work_to_do.calculate_work_to_do()

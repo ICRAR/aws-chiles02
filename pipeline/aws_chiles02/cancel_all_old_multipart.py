@@ -31,6 +31,7 @@ import logging
 import datetime
 import boto3
 
+from aws_chiles02.common import set_logging_level
 from constants import utc
 
 LOG = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ def main():
     parser.add_argument('bucket', help='the bucket to check')
     args = parser.parse_args()
 
+    set_logging_level(args.verbosity)
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 
@@ -59,5 +61,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()

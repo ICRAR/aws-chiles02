@@ -65,9 +65,9 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         # Does the directory exist
         if os.path.exists(measurement_set_dir):
             for filename in os.listdir(measurement_set_dir):
-                LOG.info('filename: {0}'.format(filename))
+                LOG.debug('filename: {0}'.format(filename))
                 if filename.endswith('.image'):
-                    LOG.info('Measurement Set: {0} exists'.format(filename))
+                    LOG.warn('Measurement Set: {0} exists'.format(filename))
                     return 0
 
         else:
@@ -133,7 +133,7 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         # Remove the stuff we don't need
         LOG.info('measurement_set_dir: {0}'.format(measurement_set_dir))
         for filename in os.listdir(measurement_set_dir):
-            LOG.info('filename: {0}'.format(filename))
+            LOG.debug('filename: {0}'.format(filename))
             if filename.endswith(tuple(['.flux', '.model', '.residual', '.psf'])):
                 full_name = os.path.join(measurement_set_dir, filename)
                 LOG.info('full_name: {0}'.format(full_name))
@@ -168,7 +168,7 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         stem_name = 'image_{0}_{1}'.format(self._width, self._iterations)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.cube exists'.format(measurement_set))
+        LOG.debug('checking {0}.cube exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
             message = 'Measurement_set: {0}.cube does not exist'.format(measurement_set)
             LOG.error(message)
@@ -237,7 +237,7 @@ class CasaConcatenate(BarrierAppDROP, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set in self._measurement_sets:
-            LOG.info('measurement_set: {0}'.format(measurement_set))
+            LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
                     dfms_name = '{0}/{1}'.format(measurement_set, file_name)
@@ -288,7 +288,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set in self._measurement_sets:
-            LOG.info('measurement_set: {0}'.format(measurement_set))
+            LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
                     dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
@@ -328,7 +328,7 @@ class DockerVirtualconcat(DockerApp, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set in self._measurement_sets:
-            LOG.info('measurement_set: {0}'.format(measurement_set))
+            LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
                     dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)

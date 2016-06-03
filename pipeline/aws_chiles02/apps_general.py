@@ -138,7 +138,7 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
         input_files = [i.path for i in self.inputs if isinstance(i, (FileDROP, DirectoryContainer))]
         LOG.info('input_files: {0}'.format(input_files))
         for input_file in input_files:
-            LOG.info('Looking at {0}'.format(input_file))
+            LOG.debug('Looking at {0}'.format(input_file))
             if os.path.exists(input_file):
                 if os.path.isdir(input_file):
                     LOG.info('Removing directory {0}'.format(input_file))
@@ -153,14 +153,14 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                         )
 
                     if self._dry_run:
-                        LOG.info('dry_run = True')
+                        LOG.debug('dry_run = True')
                     else:
                         shutil.rmtree(input_file, onerror=rmtree_onerror)
                 else:
                     LOG.info('Removing file {0}'.format(input_file))
                     try:
                         if self._dry_run:
-                            LOG.info('dry_run = True')
+                            LOG.debug('dry_run = True')
                         else:
                             os.remove(input_file)
                     except OSError:

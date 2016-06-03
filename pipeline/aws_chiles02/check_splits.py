@@ -28,7 +28,7 @@ import argparse
 import boto3
 import collections
 
-from aws_chiles02.common import get_list_frequency_groups, FrequencyPair
+from aws_chiles02.common import get_list_frequency_groups, FrequencyPair, set_logging_level
 from aws_chiles02.generate_mstransform_graph import MeasurementSetData
 
 LOG = logging.getLogger(__name__)
@@ -100,8 +100,8 @@ def analyse_data(measurement_sets, split_entries, width):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     arguments = parse_arguments()
+    set_logging_level(arguments.verbosity)
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
     bucket = s3.Bucket(arguments.bucket)

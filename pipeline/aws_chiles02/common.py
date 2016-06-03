@@ -89,7 +89,7 @@ class MeasurementSetData:
 
 def get_list_frequency_groups(frequency_width):
     list_frequencies = []
-    for bottom_frequency in range(940, 1420, frequency_width):
+    for bottom_frequency in range(944, 1420, frequency_width):
         list_frequencies.append(FrequencyPair(bottom_frequency, bottom_frequency + frequency_width))
     return list_frequencies
 
@@ -377,10 +377,25 @@ def human2bytes(input_string):
             letter = letter.upper()
         else:
             raise ValueError("can't interpret '{0}'".format(init))
-    prefix = {sset[0]: 1}
+
+    prefix = {
+        sset[0]: 1
+    }
     for i, input_string in enumerate(sset[1:]):
         prefix[input_string] = 1 << (i + 1) * 10
     return int(num * prefix[letter])
+
+
+def set_logging_level(verbosity):
+    if verbosity == 0:
+        logging.basicConfig(level=logging.INFO)
+        set_boto_logging_level(level=logging.WARN)
+    elif verbosity == 1:
+        logging.basicConfig(level=logging.INFO)
+        set_boto_logging_level(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.DEBUG)
+        set_boto_logging_level(level=logging.DEBUG)
 
 
 def set_boto_logging_level(level):

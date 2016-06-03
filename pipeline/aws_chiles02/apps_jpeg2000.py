@@ -60,7 +60,7 @@ class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
 
         # Does the directory exist
         if os.path.exists(fits_file_name):
-            LOG.info('fits_file: {0} exists'.format(fits_file_name))
+            LOG.warn('fits_file: {0} exists'.format(fits_file_name))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -114,7 +114,7 @@ class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
         LOG.info('file: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, jpeg_file_name))
 
         # Does the file exists
-        LOG.info('checking {0} exists'.format(jpeg_file_name))
+        LOG.debug('checking {0} exists'.format(jpeg_file_name))
         if not os.path.exists(jpeg_file_name):
             message = 'File: {0} does not exist'.format(jpeg_file_name)
             LOG.error(message)

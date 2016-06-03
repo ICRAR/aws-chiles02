@@ -28,10 +28,9 @@ import logging
 import argparse
 import boto3
 
-from aws_chiles02.common import get_list_frequency_groups
+from aws_chiles02.common import get_list_frequency_groups, set_logging_level
 
 LOG = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s:' + logging.BASIC_FORMAT)
 
 
 def get_clean(bucket, width, iterations):
@@ -71,6 +70,7 @@ def parse_arguments():
 
 def main():
     arguments = parse_arguments()
+    set_logging_level(arguments.verbosity)
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
     bucket = s3.Bucket(arguments.bucket)

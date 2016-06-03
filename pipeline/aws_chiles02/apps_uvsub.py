@@ -63,9 +63,9 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
         measurement_set = os.path.join(measurement_set_dir, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
-        LOG.info('Checking {0} exists'.format(measurement_set))
+        LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.info('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -162,7 +162,7 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         stem_name = 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0} exists'.format(measurement_set))
+        LOG.debug('checking {0} exists'.format(measurement_set))
         if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
             message = 'Measurement_set: {0} does not exist'.format(measurement_set)
             LOG.error(message)

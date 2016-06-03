@@ -117,13 +117,13 @@ class CheckMeasurementSet:
 
             for filename in os.listdir(self._measurement_set):
                 full_pathname = os.path.join(self._measurement_set, filename)
-                LOG.info('filename: {0}, full_pathname: {1}'.format(filename, full_pathname))
+                LOG.debug('filename: {0}, full_pathname: {1}'.format(filename, full_pathname))
                 if os.path.isfile(full_pathname):
                     filename_stub, file_extension = os.path.splitext(filename)
-                    LOG.info('filename_stub: {0}, file_extension: {1}'.format(filename_stub, file_extension))
+                    LOG.debug('filename_stub: {0}, file_extension: {1}'.format(filename_stub, file_extension))
 
                     if filename_stub == 'table' and file_extension in to_find:
-                        LOG.info('Found {0}{1}'.format(filename_stub, file_extension))
+                        LOG.debug('Found {0}{1}'.format(filename_stub, file_extension))
                         to_find.remove(file_extension)
 
                     if len(to_find) == 0:

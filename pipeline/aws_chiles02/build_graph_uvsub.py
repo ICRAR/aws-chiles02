@@ -77,6 +77,11 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 self._list_ip.append(value['ip_address'])
 
     def _build_uvsub_chain(self, split_to_process, count_on_node, node_id):
+        # Get the carry over
+        carry_over_data = self._map_carry_over_data[node_id]
+        if carry_over_data.memory_drop_list is None:
+            carry_over_data.memory_drop_list = [None] * self._parallel_streams
+
         s3_drop = self.create_s3_drop(
             node_id,
             self._bucket_name,
@@ -88,6 +93,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
             'aws-chiles02',
             oid='s3_in',
         )
+        self._start_oids.append(s3_drop['uid'])
 
         frequencies = split_to_process[0].split('_')
         copy_from_s3 = self.create_app(
@@ -103,19 +109,11 @@ class BuildGraphUvsub(AbstractBuildGraph):
             'dir_in_ms'
         )
 
-        # Work with the carry over
-        carry_over_data = self._map_carry_over_data[node_id]
-        if carry_over_data.memory_drop_list is None:
-            carry_over_data.memory_drop_list = [None] * self._parallel_streams
-
-        if carry_over_data.memory_drop_list[count_on_node] is None:
-            self._start_oids.append(s3_drop['uid'])
-        else:
-            copy_from_s3.addInput(carry_over_data.memory_drop_list[count_on_node])
-
         # The order of arguments is important so don't put anything in front of these
         copy_from_s3.addInput(s3_drop)
         copy_from_s3.addOutput(measurement_set)
+        if carry_over_data.memory_drop_list[count_on_node] is not None:
+            copy_from_s3.addInput(carry_over_data.memory_drop_list[count_on_node])
 
         # Do the UV subtraction
         casa_py_uvsub_drop = self.create_docker_app(

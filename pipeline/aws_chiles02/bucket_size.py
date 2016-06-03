@@ -27,7 +27,7 @@ import logging
 
 import boto3
 
-from aws_chiles02.common import bytes2human, set_boto_logging_level
+from aws_chiles02.common import bytes2human
 
 LOG = logging.getLogger(__name__)
 
@@ -40,10 +40,13 @@ def parse_arguments():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     arguments = parse_arguments()
+    logging.basicConfig(level=logging.INFO)
     if arguments.verbosity == 0:
-        set_boto_logging_level(level=logging.WARN)
+        logging.getLogger('boto3').setLevel(level=logging.WARN)
+        logging.getLogger('botocore').setLevel(level=logging.WARN)
+        logging.getLogger('nose').setLevel(level=logging.WARN)
+
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 

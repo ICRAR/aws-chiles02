@@ -63,9 +63,9 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
         measurement_set = os.path.join(measurement_set_dir, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
-        LOG.info('Checking {0} exists'.format(measurement_set))
+        LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.info('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -162,7 +162,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.image exists'.format(measurement_set))
+        LOG.debug('checking {0}.image exists'.format(measurement_set))
         if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
             message = 'Measurement_set: {0}.image does not exist'.format(measurement_set)
             LOG.error(message)
@@ -239,10 +239,10 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.info('checking {0}.fits exists'.format(measurement_set))
+        LOG.debug('checking {0}.fits exists'.format(measurement_set))
         fits_file = measurement_set + '.fits'
         if not os.path.exists(fits_file) or not os.path.isfile(fits_file):
-            LOG.info('Measurement_set: {0}.fits does not exist'.format(measurement_set))
+            LOG.warn('Measurement_set: {0}.fits does not exist'.format(measurement_set))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -287,7 +287,7 @@ class DockerClean(DockerApp, ErrorHandling):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        measurement_sets = ['/dfms_root' + os.path.join(i, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
+        measurement_sets = ['/dfms_root' + os.path.join(i, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency)) for i in self._measurement_sets]
         self._command = 'clean.sh %o0 {0} {1} {2} {3}'.format(
             self._min_frequency,
             self._max_frequency,
