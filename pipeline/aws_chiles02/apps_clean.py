@@ -62,7 +62,7 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
