@@ -221,7 +221,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Data Island Manager - MsTransform',
+                        'Value': 'Daliuge DIM - MsTransform',
                     },
                     {
                         'Key': 'uuid',

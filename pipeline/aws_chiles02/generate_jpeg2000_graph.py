@@ -108,7 +108,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Data Island Manager - JPEG2000',
+                    'Value': 'Daliuge DIM - JPEG2000',
                 },
                 {
                     'Key': 'uuid',
