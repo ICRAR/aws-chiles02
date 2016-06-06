@@ -36,9 +36,9 @@ class CarryOverDataClean:
         self.clean_up = None
 
 
-class BuildGraphCleanFindBadMeasurementSet(AbstractBuildGraph):
+class BuildGraphFindBadMeasurementSet(AbstractBuildGraph):
     def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, bottom_frequency, session_id):
-        super(BuildGraphCleanFindBadMeasurementSet, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
+        super(BuildGraphFindBadMeasurementSet, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._parallel_streams = parallel_streams
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._min_frequency = bottom_frequency
@@ -70,6 +70,7 @@ class BuildGraphCleanFindBadMeasurementSet(AbstractBuildGraph):
         parallel_streams = [None] * self._parallel_streams
         counter = 0
         for s3_object in s3_objects:
+            elements = s3_object.split('/')
             s3_drop = self.create_s3_drop(
                 self._node_id,
                 self._bucket_name,
@@ -86,7 +87,7 @@ class BuildGraphCleanFindBadMeasurementSet(AbstractBuildGraph):
             )
             measurement_set = self.create_directory_container(
                 self._node_id,
-                'dir_in_ms'
+                'dir_in_ms_{0}'.format(elements[2])
             )
 
             # The order of arguments is important so don't put anything in front of these
@@ -106,7 +107,7 @@ class BuildGraphCleanFindBadMeasurementSet(AbstractBuildGraph):
                 min_frequency=self._min_frequency,
                 max_frequency=self._max_frequency,
                 iterations=1,
-                measurement_sets=[s3_drop],
+                measurement_sets=[measurement_set['dirname']],
             )
             elements = s3_object.split('/')
             result = self.create_directory_container(

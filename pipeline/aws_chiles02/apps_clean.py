@@ -289,7 +289,7 @@ class DockerClean(DockerApp, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set_dir in self._measurement_sets:
-            measurement_set_name = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+            measurement_set_name = '/dfms_root' + os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
             if os.path.exists(measurement_set_name):
                 measurement_sets.append(measurement_set_name)
             else:

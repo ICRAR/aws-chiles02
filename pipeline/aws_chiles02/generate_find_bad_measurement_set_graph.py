@@ -33,7 +33,7 @@ from time import sleep
 import sys
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph_clean_find_bad_measurement_set import BuildGraphCleanFindBadMeasurementSet
+from aws_chiles02.build_graph_find_bad_measurement_set import BuildGraphFindBadMeasurementSet
 from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
@@ -79,7 +79,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge Node - Clean find bad',
+                    'Value': 'Daliuge Node - Find bad MS',
                 },
                 {
                     'Key': 'uuid',
@@ -119,7 +119,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Data Island Manager - Clean',
+                        'Value': 'Data Island Manager - Find bad MS',
                     },
                     {
                         'Key': 'uuid',
@@ -137,7 +137,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
                 session_id = get_session_id()
-                graph = BuildGraphCleanFindBadMeasurementSet(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, bottom_frequency, session_id)
+                graph = BuildGraphFindBadMeasurementSet(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, bottom_frequency, session_id)
                 graph.build_graph()
 
                 instance_details = data_island_manager_running['m4.large'][0]
@@ -170,7 +170,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, bottom_fr
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphCleanFindBadMeasurementSet(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, bottom_frequency, session_id)
+            graph = BuildGraphFindBadMeasurementSet(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, bottom_frequency, session_id)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -188,7 +188,7 @@ def command_json(args):
     node_details = {
         'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
-    graph = BuildGraphCleanFindBadMeasurementSet(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.bottom_frequency, 'session_id')
+    graph = BuildGraphFindBadMeasurementSet(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.bottom_frequency, 'session_id')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -224,8 +224,7 @@ def command_interactive(args):
     LOG.info(args)
     sleep(0.5)  # Allow the logging time to print
     path_dirname, filename = os.path.split(__file__)
-    root, ext = os.path.splitext(filename)
-    config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
+    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
     if os.path.exists(config_file_name):
         config = ConfigObj(config_file_name)
     else:
@@ -239,16 +238,14 @@ def command_interactive(args):
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-        get_argument(config, 'bottom_frequency', 'bottom frequency', data_type=int, help_text='the bottom frequency to look at')
+        get_argument(config, 'bottom_frequency', 'Bottom frequency', data_type=int, help_text='the bottom frequency to look at')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-        get_argument(config, 'bottom_frequency', 'bottom frequency', data_type=int, help_text='the bottom frequency to look at')
+        get_argument(config, 'bottom_frequency', 'Bottom frequency', data_type=int, help_text='the bottom frequency to look at')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
