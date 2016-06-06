@@ -238,3 +238,16 @@ class AbstractBuildGraph:
         })
         self.add_drop(drop)
         return drop
+
+    def create_file_drop(self, node_id, filepath, oid='file'):
+        drop = dropdict({
+            "type": 'plain',
+            "storage": 'file',
+            "oid": self.get_oid(oid),
+            "uid": self.get_uuid(),
+            "precious": False,
+            "filepath": filepath,
+            "node": node_id,
+        })
+        self.add_drop(drop)
+        return drop

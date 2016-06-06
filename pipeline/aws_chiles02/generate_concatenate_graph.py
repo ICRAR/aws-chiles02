@@ -71,7 +71,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'DFMS Node - Concatenate',
+                    'Value': 'Daliuge Node - Concatenate',
                 },
                 {
                     'Key': 'uuid',
@@ -217,8 +217,7 @@ def command_interactive(args):
     LOG.info(args)
     sleep(0.5)  # Allow the logging time to print
     path_dirname, filename = os.path.split(__file__)
-    root, ext = os.path.splitext(filename)
-    config_file_name = '{0}/{1}.settings'.format(path_dirname, root)
+    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
     if os.path.exists(config_file_name):
         config = ConfigObj(config_file_name)
     else:

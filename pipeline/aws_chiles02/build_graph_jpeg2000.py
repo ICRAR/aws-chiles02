@@ -30,6 +30,8 @@ from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3, CopyJpeg2000ToS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_SV
+from dfms.apps.dockerapp import DockerApp
+from dfms.drop import BarrierAppDROP
 
 
 class CarryOverDataJpeg2000:
@@ -67,7 +69,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 (name, ext) = os.path.splitext(tail)
                 already_done.append(name[6:])
 
-        # Add the cleaned images
+        # Add the fits
         s3_objects = []
         prefix = '{0}/'.format(self._s3_fits_name)
         for key in self._bucket.objects.filter(Prefix=prefix):
@@ -80,37 +82,26 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         parallel_streams = [None] * self._parallel_streams
         counter = 0
         for s3_object in s3_objects:
-            s3_drop = dropdict({
-                "type": 'plain',
-                "storage": 's3',
-                "oid": self.get_oid('s3_in'),
-                "uid": self.get_uuid(),
-                "precious": False,
-                "bucket": self._bucket_name,
-                "key": s3_object,
-                "profile_name": 'aws-chiles02',
-                "node": self._node_id,
-            })
-            copy_from_s3 = dropdict({
-                "type": 'app',
-                "app": get_module_name(CopyFitsFromS3),
-                "oid": self.get_oid('app_copy_from_s3'),
-                "uid": self.get_uuid(),
-                "input_error_threshold": 100,
-                "node": self._node_id,
-            })
+            s3_drop = self.create_s3_drop(
+                self._node_id,
+                self._bucket_name,
+                s3_object,
+                'aws-chiles02',
+                oid='s3_in',
+            )
+            copy_from_s3 = self.create_app(
+                self._node_id,
+                get_module_name(CopyFitsFromS3),
+                'app_copy_from_s3',
+            )
 
             (minimum_frequency, maximum_frequency) = self._get_frequencies(s3_object)
             fits_file_name = self._get_fits_file_name(s3_object)
-            fits_file = dropdict({
-                "type": 'plain',
-                "storage": 'file',
-                "oid": self.get_oid('fits_file'),
-                "uid": self.get_uuid(),
-                "precious": False,
-                "filepath": os.path.join(self._volume, fits_file_name),
-                "node": self._node_id,
-            })
+            fits_file = self.create_file_drop(
+                self._node_id,
+                os.path.join(self._volume, fits_file_name),
+                oid='fits_file',
+            )
             # The order of arguments is important so don't put anything in front of these
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(fits_file)
@@ -119,67 +110,44 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
 
-            self.append(s3_drop)
-            self.append(copy_from_s3)
-            self.append(fits_file)
-
             # Do the conversions
-            convert_jpeg2000 = dropdict({
-                "type": 'app',
-                "app": get_module_name(DockerApp),
-                "oid": self.get_oid('app_convert_jpeg2000'),
-                "uid": self.get_uuid(),
-                "image": CONTAINER_SV,
-                "command": 'sv-encode -i %i0 -o %o0 Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
-                "user": 'root',
-                "node": self._node_id,
-            })
+            convert_jpeg2000 = self.create_docker_app(
+                self._node_id,
+                get_module_name(DockerApp),
+                'app_convert_jpeg2000',
+                CONTAINER_SV,
+                'sv-encode -i %i0 -o %o0 Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
+                user='root',
+            )
 
             jpeg2000_name = self._get_jpeg2000_name(s3_object)
-            jpeg2000_file = dropdict({
-                "type": 'plain',
-                "storage": 'file',
-                "container": get_module_name(FileDROP),
-                "oid": self.get_oid('fits_file'),
-                "uid": self.get_uuid(),
-                "precious": False,
-                "filepath": os.path.join(self._volume, jpeg2000_name),
-                "node": self._node_id,
-            })
+            jpeg2000_file = self.create_file_drop(
+                self._node_id,
+                os.path.join(self._volume, jpeg2000_name),
+                oid='jpeg200_file',
+            )
 
             convert_jpeg2000.addInput(fits_file)
             convert_jpeg2000.addOutput(jpeg2000_file)
-            self.append(convert_jpeg2000)
-            self.append(jpeg2000_file)
 
-            copy_jpg2000_to_s3 = dropdict({
-                "type": 'app',
-                "app": get_module_name(CopyJpeg2000ToS3),
-                "oid": self.get_oid('app_copy_jpeg_to_s3'),
-                "uid": self.get_uuid(),
-                "input_error_threshold": 100,
-                "node": self._node_id,
-            })
-            s3_jpeg2000_drop_out = dropdict({
-                "type": 'plain',
-                "storage": 's3',
-                "oid": self.get_oid('s3_out'),
-                "uid": self.get_uuid(),
-                "expireAfterUse": True,
-                "precious": False,
-                "bucket": self._bucket_name,
-                "key": '{0}/image_{1}_{2}.jpx'.format(
+            copy_jpg2000_to_s3 = self.create_app(
+                self._node_id,
+                get_module_name(CopyJpeg2000ToS3),
+                'app_copy_jpeg_to_s3',
+            )
+            s3_jpeg2000_drop_out = self.create_s3_drop(
+                self._node_id,
+                self._bucket_name,
+                '{0}/image_{1}_{2}.jpx'.format(
                     self._s3_jpeg2000_name,
                     minimum_frequency,
                     maximum_frequency,
                 ),
-                "profile_name": 'aws-chiles02',
-                "node": self._node_id,
-            })
+                'aws-chiles02',
+                's3_out',
+            )
             copy_jpg2000_to_s3.addInput(jpeg2000_file)
             copy_jpg2000_to_s3.addOutput(s3_jpeg2000_drop_out)
-            self.append(copy_jpg2000_to_s3)
-            self.append(s3_jpeg2000_drop_out)
 
             parallel_streams[counter] = s3_jpeg2000_drop_out
 
@@ -187,22 +155,18 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             if counter >= self._parallel_streams:
                 counter = 0
 
-        barrier_drop = dropdict({
-            "type": 'app',
-            "app": get_module_name(BarrierAppDROP),
-            "oid": self.get_oid('app_barrier'),
-            "uid": self.get_uuid(),
-            "input_error_threshold": 100,
-            "node": self._node_id,
-        })
-        self.append(barrier_drop)
+        barrier_drop = self.create_app(
+            self._node_id,
+            get_module_name(BarrierAppDROP),
+            'app_barrier',
+        )
+
         for jpeg2000_file in parallel_streams:
             barrier_drop.addInput(jpeg2000_file)
         carry_over_data = self._map_carry_over_data[self._node_id]
         carry_over_data.barrier_drop = barrier_drop
 
-        if self._shutdown:
-            self.add_shutdown()
+        self.copy_logfiles_and_shutdown()
 
     @staticmethod
     def _get_fits_file_name(s3_object):
