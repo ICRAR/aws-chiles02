@@ -103,7 +103,8 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             carry_over_data.barrier_drop = barrier_drop
 
             for output in outputs:
-                barrier_drop.addInput(output)
+                if output is not None:
+                    barrier_drop.addInput(output)
 
         self.copy_logfiles_and_shutdown()
 

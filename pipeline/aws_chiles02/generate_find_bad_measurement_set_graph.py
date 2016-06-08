@@ -312,7 +312,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('bottom_frequency', type=int, help='the bottom frequency')
     common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop',default=True)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()

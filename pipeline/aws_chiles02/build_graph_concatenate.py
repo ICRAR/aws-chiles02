@@ -24,7 +24,7 @@ Build the physical graph
 """
 import boto3
 
-from aws_chiles02.apps_concatenate import CopyConcatenateFromS3, CopyConcatenateToS3, DockerImageconcat, DockerVirtualconcat
+from aws_chiles02.apps_concatenate import CopyConcatenateFromS3, CopyConcatenateToS3, DockerImageconcat
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -37,17 +37,16 @@ class CarryOverDataConcatenation:
 
 
 class BuildGraphConcatenation(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, concatenation_type, session_id):
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id):
         super(BuildGraphConcatenation, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
         self._parallel_streams = parallel_streams
-        self._s3_image_name = 'image_{0}_{1}'.format(width, iterations)
+        self._s3_image_name = 'final_image_{0}_{1}'.format(width, iterations)
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)
         self._iterations = iterations
         values = node_details.values()
         self._node_id = values[0][0]['ip_address']
         self._width = width
         self._s3_client = None
-        self._concatenation_type = concatenation_type
 
     def new_carry_over_data(self):
         return CarryOverDataConcatenation()
@@ -105,28 +104,16 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             if counter >= self._parallel_streams:
                 counter = 0
 
-        if self._concatenation_type == 'image':
-            casa_py_concatenation_drop = self.create_docker_app(
-                self._node_id,
-                get_module_name(DockerImageconcat),
-                'app_concatenate',
-                CONTAINER_CHILES02,
-                'concatenate',
-                measurement_sets=[drop['dirname'] for drop in s3_out_drops],
-                width=self._width,
-                iterations=self._iterations,
-            )
-        else:
-            casa_py_concatenation_drop = self.create_docker_app(
-                self._node_id,
-                get_module_name(DockerVirtualconcat),
-                'app_concatenate',
-                CONTAINER_CHILES02,
-                'concatenate',
-                measurement_sets=[drop['dirname'] for drop in s3_out_drops],
-                width=self._width,
-                iterations=self._iterations,
-            )
+        casa_py_concatenation_drop = self.create_docker_app(
+            self._node_id,
+            get_module_name(DockerImageconcat),
+            'app_concatenate',
+            CONTAINER_CHILES02,
+            'concatenate',
+            measurement_sets=[drop['dirname'] for drop in s3_out_drops],
+            width=self._width,
+            iterations=self._iterations,
+        )
 
         result = self.create_directory_container(self._node_id, 'dir_concatenate_output')
         for drop in s3_out_drops:

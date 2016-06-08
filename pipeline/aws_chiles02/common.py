@@ -124,7 +124,7 @@ def get_module_name(item):
 def get_session_id():
     return '{0}-{1}'.format(
             getpass.getuser(),
-            int(time.time())
+            time.strftime('%Y%m%d%H%M%S')
     )
 
 

@@ -39,7 +39,9 @@ setup(
         'ConfigObj',
         'dfms',
         'mako',
+        'pymysql',
         'pip>=8.1',
+        'sqlalchemy',
     ],
     packages=[
         'aws_chiles02',

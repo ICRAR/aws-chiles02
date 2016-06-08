@@ -374,8 +374,8 @@ def command_interactive(args):
     get_argument(config, 'create_use', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price1', 'Spot Price for i2.2xlarge', help_text='the spot price')
-        get_argument(config, 'spot_price2', 'Spot Price for i2.4xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price_i2.2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
@@ -404,8 +404,8 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['ami'],
-            config['spot_price1'],
-            config['spot_price2'],
+            config['spot_price_i2.2xlarge'],
+            config['spot_price_i2_4xlarge'],
             config['volume'],
             config['days_per_node'],
             config['shutdown'],
@@ -444,8 +444,8 @@ def parser_arguments(command_line=sys.argv[1:]):
 
     parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
-    parser_create.add_argument('spot_price1', type=float, help='the spot price')
-    parser_create.add_argument('spot_price2', type=float, help='the spot price')
+    parser_create.add_argument('spot_price1', type=float, help='the spot price for the i2.2xlarge instances')
+    parser_create.add_argument('spot_price2', type=float, help='the spot price for the i2.4xlarge instances')
     parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.set_defaults(func=command_create)
 

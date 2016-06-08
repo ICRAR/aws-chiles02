@@ -49,9 +49,16 @@ COPY scripts /opt/chiles02/scripts/
 # Make them executable
 RUN chmod oug+x /opt/chiles02/scripts/*.sh
 
+# Add the DB stuff we need into a virtual env as we'll trick casa into using it
+RUN pip install --upgrade pip
+RUN pip install virtualenv
+RUN virtualenv /opt/chiles02/env
+RUN source /opt/chiles02/env/bin/activate ; \
+    pip install pymysql sqlalchemy
+
 # Update the path
 env PATH /opt/chiles02/scripts:$PATH
-env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline
+env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline:/opt/chiles02/env/lib64/python2.7/site-packages
 
 VOLUME /dfms_root
 

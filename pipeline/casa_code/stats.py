@@ -23,9 +23,12 @@
 Perform the Statistics Calc
 """
 import logging
-import os
+
+from datetime import time
+from sqlalchemy import create_engine, select
 
 from casa_code.casa_common import parse_args
+from casa_code.database import VISSTAT_META, DAY_NAME, VISSTAT
 from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
@@ -33,59 +36,130 @@ LOG = logging.getLogger(__name__)
 
 
 @echo
-def do_stats(in_ms, out_result)
+def do_stats(in_ms):
     """
     Performs the Stats extraction
     Inputs: VIS_name (str), Output (str)
 
     example:
      do_stats('vis_1400~1404','vis_1400~1404.stats')
-
     """
-
-    LOG.info('stats(vis={0},  output={2})'.format(in_ms, out_result))
+    LOG.info('stats(vis={0})'.format(in_ms))
     try:
         ms.open(in_ms)
-        SI=ms.getscansummary()
-        l=SI.keys()
-        l2=[]
-        for n in range(0,len(l)):
+        SI = ms.getscansummary()
+        l = SI.keys()
+
+        l2 = []
+        for n in range(0, len(l)):
             l2.append(int(l[n]))
         l2.sort()
-        l=l2
-        # This assumes all spw have the same no channels as the first
-        l2=ms.getspectralwindowinfo()
-        num_spw=len(l2)
-        num_chan=l2['0']['NumChan']
-        ms.close()
-        rms=[]
-        #This will fail is there is no data
-        zerov=visstat(vis=in_ms,datacolumn='data',
-                      scan=str(l[0]),spw='0:0',useflags=F)
-        #strip off the ['DATA']
-        zerov=zerov[zerov.keys()[0]]
-        for k in zerov.keys():
-            zerov[k]=0
+        l = l2
 
-        for ns in range(0,len(l)):
-            for nsp in range(0,num_spw):
-                for nch in range(0,num_chan):
-                    l2=visstat(vis=vis,datacolumn='data',
-                               scan=str(l[ns]),spw=str(nsp)+':'+str(nch))
-                    if (l2==None):
+        # This assumes all spw have the same no channels as the first
+        l2 = ms.getspectralwindowinfo()
+        num_spw = len(l2)
+        num_chan = l2['0']['NumChan']
+        ms.close()
+        rms = []
+
+        # This will fail if there is no data
+        zerov = visstat(
+            vis=in_ms,
+            datacolumn='data',
+            scan=str(l[0]),
+            spw='0:0',
+            useflags=False
+        )
+
+        # strip off the ['DATA']
+        zerov = zerov[zerov.keys()[0]]
+        for k in zerov.keys():
+            zerov[k] = 0
+
+        for ns in range(0, len(l)):
+            for nsp in range(0, num_spw):
+                for nch in range(0, num_chan):
+                    l2 = visstat(
+                        vis=in_ms,
+                        datacolumn='data',
+                        scan=str(l[ns]),
+                        spw=str(nsp) + ':' + str(nch)
+                    )
+                    if l2 is None:
                         rms.append(zerov)
                     else:
-                        #strip off the ['CORRECTED']
+                        # strip off the ['CORRECTED']
                         rms.append(l2[l2.keys()[0]])
 
-        out_result=rms
+        return rms, len(l), num_spw, num_chan
+
     except Exception:
         LOG.exception('*********\nStats exception: \n***********')
+        return None
+
+
+def store_stats(results, password, db_hostname, day_name, min_frequency, max_frequency, number_SI, number_spectral_windows, number_channels):
+    db_login = "mysql+pymysql://root:{0}@{1}/aws_chiles02".format(password, db_hostname)
+    engine = create_engine(db_login)
+    connection = engine.connect()
+    transaction = connection.begin()
+    try:
+        day_name_id = connection.execute(
+            select([DAY_NAME.c.day_name_id]).where(DAY_NAME.c.name == day_name)
+        ).fetchone()[0]
+
+        sql_result = connection.execute(
+            VISSTAT_META.insert(),
+            day_name_id=day_name_id,
+            min_frequency=min_frequency,
+            max_frequency=max_frequency,
+            number_SI=number_SI,
+            number_spectral_windows=number_spectral_windows,
+            number_channels=number_channels,
+            update_time=time.now()
+        )
+        visstat_meta_id = sql_result.inserted_primary_key[0]
+
+        for result in results:
+            connection.execute(
+                VISSTAT.insert(),
+                visstat_meta_id=visstat_meta_id,
+                sequence=result['sequence'],
+                max=result['max'],
+                mean=result['mean'],
+                medabsdevmed=result['medabsdevmed'],
+                median=result['median'],
+                min=result['min'],
+                npts=result['npts'],
+                quartile=result['quartile'],
+                rms=result['rms'],
+                stddev=result['stddev'],
+                sum=result['sum'],
+                sumsq=result['sumsq'],
+                var=result['var'],
+                update_time=time.now()
+            )
+        transaction.commit()
+    except Exception:
+        LOG.exception('Insert error')
+        if transaction is not None:
+            transaction.rollback()
 
 
 args = parse_args()
 LOG.info(args)
 
-do_stats(
-        args.arguments[0],
-        args.arguments[1])
+results, number_SI, number_spectral_windows, number_channels = do_stats(args.arguments[0])
+if results is not None:
+    store_stats(
+        results,
+        args.arguments[1],
+        args.arguments[2],
+        args.arguments[3],
+        args.arguments[4],
+        args.arguments[5],
+        number_SI,
+        number_spectral_windows,
+        number_channels
+    )

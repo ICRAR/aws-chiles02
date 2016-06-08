@@ -63,7 +63,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     'spot_price': spot_price
                 }
             ],
-            get_node_manager_user_data(boto_data, uuid),
+            get_node_manager_user_data(boto_data, uuid, chiles=False, jpeg2000=True),
             AWS_REGION,
             tags=[
                 {

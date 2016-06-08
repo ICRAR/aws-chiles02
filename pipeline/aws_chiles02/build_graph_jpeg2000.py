@@ -162,7 +162,8 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         )
 
         for jpeg2000_file in parallel_streams:
-            barrier_drop.addInput(jpeg2000_file)
+            if jpeg2000_file is not None:
+                barrier_drop.addInput(jpeg2000_file)
         carry_over_data = self._map_carry_over_data[self._node_id]
         carry_over_data.barrier_drop = barrier_drop
 

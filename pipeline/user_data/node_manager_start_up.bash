@@ -105,8 +105,13 @@ service docker start
 sleep 10
 
 # Get the docker containers now to prevent a race condition later
+% if chiles:
 docker pull kevinvinsen/chiles02:latest
+% endif
+
+% if jpeg2000:
 docker pull slavakitaeff/sv:1.4
+% endif
 
 cd /home/ec2-user
 runuser -l ec2-user -c 'cd /home/ec2-user/dfms && git pull'

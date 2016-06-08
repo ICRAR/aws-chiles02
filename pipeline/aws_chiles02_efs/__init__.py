@@ -20,38 +20,5 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+
 """
-import logging
-
-from casa_code.casa_common import parse_args
-from casa_code.echo import echo
-
-casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
-
-
-@echo
-def do_concatenate(out_filename, input_files):
-    """
-    Perform the CONCATENATION step
-    :param input_files:
-    :param out_filename:
-    """
-
-    try:
-        # virtualconcat doesn't need an import - it is just available in casa
-        final = virtualconcat(vis=input_files, concatvis=out_filename)
-        final.done()
-
-        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
-    except Exception:
-        LOG.exception('*********\nConcatenate exception: \n***********')
-
-args = parse_args()
-LOG.info(args)
-
-# ignore the output directory
-do_concatenate(
-        args.arguments[1],
-        args.arguments[2:])

@@ -47,7 +47,7 @@ def get_user_data(cloud_init_data):
     return encoded_data
 
 
-def get_node_manager_user_data(boto_data, uuid, max_request_size=10):
+def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True, jpeg2000=False):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -65,6 +65,8 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10):
         queue=QUEUE,
         region=AWS_REGION,
         max_request_size=max_request_size,
+        chiles=chiles,
+        jpeg2000=jpeg2000,
     )
 
     user_data = get_user_data([cloud_init, user_script])

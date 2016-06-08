@@ -49,7 +49,7 @@ def get_s3_clean_name(width, iterations):
     return 'clean_{0}_{1}'.format(width, iterations)
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations, concatenation_type):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
@@ -125,7 +125,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         if len(data_island_manager_running['m4.large']) == 1:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, concatenation_type, session_id)
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id)
             graph.build_graph()
 
             instance_details = data_island_manager_running['m4.large'][0]
@@ -140,7 +140,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, concatenation_type):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -158,7 +158,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, concatenation_type, session_id)
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -224,15 +224,14 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+    get_argument(config, 'create_use', 'create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price', 'Spot Price for i2.4xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
-        get_argument(config, 'concatenation_type', 'Image, Virtual', allowed=['image', 'virtual'], help_text='the type of iteration')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -240,7 +239,6 @@ def command_interactive(args):
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
-        get_argument(config, 'concatenation_type', 'Image, Virtual', allowed=['image', 'virtual'], help_text='the type of iteration')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
@@ -252,11 +250,10 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['ami'],
-            config['spot_price'],
+            config['spot_price_i2_4xlarge'],
             config['volume'],
             config['shutdown'],
             config['iterations'],
-            config['concatenation_type'],
         )
     else:
         use_and_generate(
@@ -267,7 +264,6 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
-            config['concatenation_type'],
         )
 
 
@@ -280,7 +276,6 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
     common_parser.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
-    common_parser.add_argument('--concatenation_type', choices=['image', 'virtual'], help='the type of iteration')
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()

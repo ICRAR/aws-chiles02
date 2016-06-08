@@ -91,7 +91,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     node_count = max(len(work_to_do) / frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
-        'instance_type': 'i2.2xlarge',
+        'instance_type': 'i2.4xlarge',
         'spot_price': spot_price
     })
 
@@ -233,7 +233,7 @@ def command_json(args):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
+        'i2.4xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
     graph = BuildGraphClean(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, 'session_id')
     graph.build_graph()
@@ -282,7 +282,7 @@ def command_interactive(args):
     get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+        get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
@@ -306,7 +306,7 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['ami'],
-            config['spot_price'],
+            config['spot_price_i2_4xlarge'],
             config['volume'],
             config['frequencies_per_node'],
             config['shutdown'],
