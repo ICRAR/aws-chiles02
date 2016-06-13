@@ -47,7 +47,7 @@ class BidPriceException(Exception):
     pass
 
 
-class EC2Controller:
+class EC2Controller(object):
     def __init__(self, ami_id, instances_required, user_data, region, tags=None):
         self._ami_id = ami_id
         self._instances_required = instances_required

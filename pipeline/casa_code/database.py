@@ -1,23 +1,44 @@
+#
+#    ICRAR - International Centre for Radio Astronomy Research
+#    (c) UWA - The University of Western Australia
+#    Copyright by UWA (in the framework of the ICRAR)
+#    All rights reserved
+#
+#    This library is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU Lesser General Public
+#    License as published by the Free Software Foundation; either
+#    version 2.1 of the License, or (at your option) any later version.
+#
+#    This library is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#    Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public
+#    License along with this library; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+#    MA 02111-1307  USA
+#
 """
-
+Database tables for the stats
 """
 from sqlalchemy import MetaData, Table, Column, String, BigInteger, Integer, Index, Float, ForeignKey, TIMESTAMP
 
-MAGPHYS_METADATA = MetaData()
+CHILES02_METADATA = MetaData()
 
 DAY_NAME = Table(
     'day_name',
-    MAGPHYS_METADATA,
+    CHILES02_METADATA,
     Column('day_name_id', BigInteger, primary_key=True),
     Column('name', String(400), nullable=False),
     Column('update_time', TIMESTAMP, nullable=False),
 
-    Index('index_main', 'name'),
+    Index('index1', 'name', unique=True),
 )
 
 VISSTAT = Table(
     'visstat',
-    MAGPHYS_METADATA,
+    CHILES02_METADATA,
     Column('visstat_id', BigInteger, primary_key=True),
     Column('visstat_meta_id', BigInteger, ForeignKey('visstat_meta.visstat_meta_id'), nullable=False),
     Column('sequence', Integer, nullable=False),
@@ -35,21 +56,23 @@ VISSTAT = Table(
     Column('var', Float, nullable=False),
     Column('update_time', TIMESTAMP, nullable=False),
 
-    Index('index_main', 'sequence'),
+    Index('index1', 'sequence'),
+    Index('index2', 'visstat_meta_id', 'sequence', unique=True),
 )
 
 VISSTAT_META = Table(
     'visstat_meta',
-    MAGPHYS_METADATA,
+    CHILES02_METADATA,
     Column('visstat_meta_id', BigInteger, primary_key=True),
+    Column('width', Integer, nullable=False),
     Column('day_name_id', BigInteger, ForeignKey('day_name.day_name_id'), nullable=False),
     Column('min_frequency', Integer, nullable=False),
     Column('max_frequency', Integer, nullable=False),
 
-    Column('number_SI', Integer, nullable=False),
+    Column('number_scans', Integer, nullable=False),
     Column('number_spectral_windows', Integer, nullable=False),
     Column('number_channels', Integer, nullable=False),
     Column('update_time', TIMESTAMP, nullable=False),
 
-    Index('index_main', 'day_name_id', 'min_frequency', 'max_frequency'),
+    Index('index1', 'width', 'day_name_id', 'min_frequency', 'max_frequency'),
 )

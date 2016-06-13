@@ -24,7 +24,7 @@ Perform the Statistics Calc
 """
 import logging
 
-from datetime import time
+from datetime import datetime
 from sqlalchemy import create_engine, select
 
 from casa_code.casa_common import parse_args
@@ -47,8 +47,8 @@ def do_stats(in_ms):
     LOG.info('stats(vis={0})'.format(in_ms))
     try:
         ms.open(in_ms)
-        SI = ms.getscansummary()
-        l = SI.keys()
+        number_scans = ms.getscansummary()
+        l = number_scans.keys()
 
         l2 = []
         for n in range(0, len(l)):
@@ -99,25 +99,22 @@ def do_stats(in_ms):
         return None
 
 
-def store_stats(results, password, db_hostname, day_name, min_frequency, max_frequency, number_SI, number_spectral_windows, number_channels):
+def store_stats(results, password, db_hostname, day_name_id, width, min_frequency, max_frequency, number_scans, number_spectral_windows, number_channels):
     db_login = "mysql+pymysql://root:{0}@{1}/aws_chiles02".format(password, db_hostname)
     engine = create_engine(db_login)
     connection = engine.connect()
     transaction = connection.begin()
     try:
-        day_name_id = connection.execute(
-            select([DAY_NAME.c.day_name_id]).where(DAY_NAME.c.name == day_name)
-        ).fetchone()[0]
-
         sql_result = connection.execute(
             VISSTAT_META.insert(),
             day_name_id=day_name_id,
+            width=width,
             min_frequency=min_frequency,
             max_frequency=max_frequency,
-            number_SI=number_SI,
+            number_scans=number_scans,
             number_spectral_windows=number_spectral_windows,
             number_channels=number_channels,
-            update_time=time.now()
+            update_time=datetime.now()
         )
         visstat_meta_id = sql_result.inserted_primary_key[0]
 
@@ -138,7 +135,7 @@ def store_stats(results, password, db_hostname, day_name, min_frequency, max_fre
                 sum=result['sum'],
                 sumsq=result['sumsq'],
                 var=result['var'],
-                update_time=time.now()
+                update_time=datetime.now()
             )
         transaction.commit()
     except Exception:
@@ -159,6 +156,7 @@ if results is not None:
         args.arguments[3],
         args.arguments[4],
         args.arguments[5],
+        args.arguments[6],
         number_SI,
         number_spectral_windows,
         number_channels

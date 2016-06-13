@@ -42,7 +42,7 @@ AWS_KEY_NAME = None
 AWS_SECURITY_GROUPS = None
 AWS_REGION = None
 AWS_SUBNETS = None
-
+AWS_DATABASE_ID = None
 
 config_file_name = dirname(__file__) + '/chiles02.settings'
 if exists(config_file_name):
@@ -52,5 +52,6 @@ if exists(config_file_name):
     AWS_AMI_ID = config['ami_id']
     AWS_KEY_NAME = config['key_name']
     AWS_SECURITY_GROUPS = config['security_groups']
+    AWS_DATABASE_ID = config['database_server']
     AWS_REGION = config['region']
     AWS_SUBNETS = config['subnets']

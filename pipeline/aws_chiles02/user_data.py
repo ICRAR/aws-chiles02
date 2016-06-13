@@ -73,7 +73,7 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True
     return user_data
 
 
-def get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=10):
+def get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=False, max_request_size=10):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -92,6 +92,7 @@ def get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=1
         queue=QUEUE,
         region=AWS_REGION,
         max_request_size=max_request_size,
+        need_node_manager=need_node_manager,
     )
     user_data = get_user_data([cloud_init, user_script])
     return user_data
