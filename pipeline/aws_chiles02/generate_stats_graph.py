@@ -37,7 +37,6 @@ from configobj import ConfigObj
 from sqlalchemy import create_engine, select
 
 from aws_chiles02.build_graph_stats import BuildGraphStats
-from aws_chiles02.build_graph_uvsub import BuildGraphUvsub
 from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
 from aws_chiles02.database_server import DatabaseServer
 from aws_chiles02.ec2_controller import EC2Controller
@@ -178,16 +177,16 @@ def setup_database(password, bucket_name):
                 day_name_id = sql_result.inserted_primary_key[0]
             else:
                 day_name_id = day_name[DAY_NAME.c.day_name_id]
-            map_day_name[short_name] = day_name_id
+            map_day_name[short_name + '.tar'] = day_name_id
 
     transaction.commit()
-    return connection, map_day_name
+    return connection, map_day_name, database_ip
 
 
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown, password):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        database_connection, map_day_name = setup_database(password, bucket_name)
+        database_connection, map_day_name, database_ip = setup_database(password, bucket_name)
 
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), database_connection)
         work_to_do.calculate_work_to_do()
@@ -281,7 +280,9 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                         add_shutdown,
                         frequency_width,
                         session_id,
-                        map_day_name
+                        map_day_name,
+                        password,
+                        database_ip,
                     )
                     graph.build_graph()
 
@@ -300,7 +301,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, password):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        database_connection, map_day_name = setup_database(password, bucket_name)
+        database_connection, map_day_name, database_ip = setup_database(password, bucket_name)
 
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
@@ -320,7 +321,19 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, session_id)
+            graph = BuildGraphStats(
+                work_to_do.work_to_do,
+                bucket_name,
+                volume,
+                PARALLEL_STREAMS,
+                nodes_running,
+                add_shutdown,
+                frequency_width,
+                session_id,
+                map_day_name,
+                password,
+                database_ip,
+            )
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -334,14 +347,27 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def generate_json(width, bucket, nodes, volume, shutdown):
-    work_to_do = WorkToDo(width, bucket, get_s3_uvsub_name(width), get_s3_split_name(width))
+def generate_json(width, bucket, nodes, volume, shutdown, password):
+    database_connection, map_day_name, database_ip = setup_database(password, bucket)
+    work_to_do = WorkToDo(width, bucket, get_s3_uvsub_name(width), database_connection)
     work_to_do.calculate_work_to_do()
 
     node_details = {
         'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
     }
-    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id')
+    graph = BuildGraphStats(
+        work_to_do.work_to_do,
+        bucket,
+        volume,
+        PARALLEL_STREAMS,
+        node_details,
+        shutdown,
+        width,
+        'session_id',
+        map_day_name,
+        password,
+        database_ip,
+    )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -350,7 +376,14 @@ def generate_json(width, bucket, nodes, volume, shutdown):
 
 
 def command_json(args):
-    generate_json(args.width, args.bucket, args.nodes, args.volume, args.shutdown)
+    generate_json(
+        args.width,
+        args.bucket,
+        args.nodes,
+        args.volume,
+        args.shutdown,
+        args.password,
+    )
 
 
 def command_create(args):
@@ -362,7 +395,7 @@ def command_create(args):
         args.volume,
         args.nodes,
         args.shutdown,
-        args.password
+        args.password,
     )
 
 
@@ -374,6 +407,7 @@ def command_use(args):
         args.width,
         args.volume,
         args.shutdown,
+        args.password,
     )
 
 

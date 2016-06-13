@@ -88,7 +88,7 @@ class BuildGraphStats(AbstractBuildGraph):
         s3_drop = self.create_s3_drop(
             node_id,
             self._bucket_name,
-            '{0}/{1}_{2}/{3}.tar'.format(
+            '{0}/{1}_{2}/{3}'.format(
                 self._s3_uvsub_name,
                 uvsub_to_process[1],
                 uvsub_to_process[2],
