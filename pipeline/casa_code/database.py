@@ -41,7 +41,9 @@ VISSTAT = Table(
     CHILES02_METADATA,
     Column('visstat_id', BigInteger, primary_key=True),
     Column('visstat_meta_id', BigInteger, ForeignKey('visstat_meta.visstat_meta_id'), nullable=False),
-    Column('sequence', Integer, nullable=False),
+    Column('scan', Integer, nullable=False),
+    Column('spectral_window', Integer, nullable=False),
+    Column('channel', Integer, nullable=False),
     Column('max', Float, nullable=False),
     Column('mean', Float, nullable=False),
     Column('medabsdevmed', Float, nullable=False),
@@ -56,8 +58,7 @@ VISSTAT = Table(
     Column('var', Float, nullable=False),
     Column('update_time', TIMESTAMP, nullable=False),
 
-    Index('index1', 'sequence'),
-    Index('index2', 'visstat_meta_id', 'sequence', unique=True),
+    Index('index1', 'visstat_meta_id', 'scan', 'spectral_window', 'channel', unique=True),
 )
 
 VISSTAT_META = Table(
@@ -68,10 +69,6 @@ VISSTAT_META = Table(
     Column('day_name_id', BigInteger, ForeignKey('day_name.day_name_id'), nullable=False),
     Column('min_frequency', Integer, nullable=False),
     Column('max_frequency', Integer, nullable=False),
-
-    Column('number_scans', Integer, nullable=False),
-    Column('number_spectral_windows', Integer, nullable=False),
-    Column('number_channels', Integer, nullable=False),
     Column('update_time', TIMESTAMP, nullable=False),
 
     Index('index1', 'width', 'day_name_id', 'min_frequency', 'max_frequency'),
