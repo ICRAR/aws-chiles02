@@ -30,7 +30,8 @@ from casa_code.freq_map import freq_map
 from casa_code.casa_common import find_file, parse_args
 
 casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+logging.info('Starting logger for...')
+LOG = logging.getLogger('mstransform')
 
 
 def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):

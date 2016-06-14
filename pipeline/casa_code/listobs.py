@@ -30,7 +30,8 @@ from casa_code.echo import echo
 from casa_code.casa_common import find_file, parse_args
 
 casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+logging.info('Starting logger for...')
+LOG = logging.getLogger('listobs')
 
 
 @echo

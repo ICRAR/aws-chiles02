@@ -29,7 +29,8 @@ from casa_code.casa_common import parse_args
 from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+logging.info('Starting logger for...')
+LOG = logging.getLogger('clean')
 
 
 @echo

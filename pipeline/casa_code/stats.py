@@ -124,9 +124,9 @@ def store_stats(results, password, db_hostname, day_name_id, width, min_frequenc
             connection.execute(
                 VISSTAT.insert(),
                 visstat_meta_id=visstat_meta_id,
-                scan=result.scan,
-                spectral_window=result.spectral_window,
-                channel=result.channel,
+                scan=result.scan_number,
+                spectral_window=result.spectral_window_number,
+                channel=result.channel_number,
                 max=result.stats['max'],
                 mean=result.stats['mean'],
                 medabsdevmed=result.stats['medabsdevmed'],

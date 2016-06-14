@@ -84,6 +84,9 @@ class AbstractBuildGraph:
         """
         Copy the logfile to S3 and shutdown
         """
+        if shutdown_dim:
+            dim_shutdown_drop = self.create_bash_shell_app(self._dim_ip, 'sudo shutdown -h +5 "DFMS node shutting down" &')
+
         for list_ips in self._node_details.values():
             for instance_details in list_ips:
                 node_id = instance_details['ip_address']
@@ -110,6 +113,12 @@ class AbstractBuildGraph:
                 if self._shutdown:
                     shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DFMS node shutting down" &')
                     shutdown_drop.addInput(s3_drop_out)
+
+                    if shutdown_dim:
+                        memory_drop = self.create_memory_drop(node_id)
+                        shutdown_drop.addOutput(memory_drop)
+
+                        dim_shutdown_drop.addInput(memory_drop)
 
     def tag_all_app_drops(self, tags):
         for drop in self._drop_list:
