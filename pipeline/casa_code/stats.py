@@ -102,7 +102,7 @@ def do_stats(in_ms):
 
 
 def store_stats(results, password, db_hostname, day_name_id, width, min_frequency, max_frequency):
-    db_login = "mysql+pymysql://root:{0}@{1}/aws_chiles02".format(password, db_hostname)
+    db_login = "mysql+pymysql://root:{0}@{1}/chiles02".format(password, db_hostname)
     engine = create_engine(db_login)
     connection = engine.connect()
     transaction = connection.begin()
