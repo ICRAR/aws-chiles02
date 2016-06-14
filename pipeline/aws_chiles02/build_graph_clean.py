@@ -38,8 +38,8 @@ class CarryOverDataClean:
 
 
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id):
-        super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id, dim_ip):
+        super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_clean_name = 'clean_{0}_{1}'.format(width, iterations)

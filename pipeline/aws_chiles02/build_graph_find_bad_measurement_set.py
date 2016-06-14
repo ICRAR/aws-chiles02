@@ -36,8 +36,8 @@ class CarryOverDataFixMeasurementSet:
 
 
 class BuildGraphFindBadMeasurementSet(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, bottom_frequency, session_id):
-        super(BuildGraphFindBadMeasurementSet, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, bottom_frequency, session_id, dim_ip):
+        super(BuildGraphFindBadMeasurementSet, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._parallel_streams = parallel_streams
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._min_frequency = bottom_frequency

@@ -239,6 +239,8 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
                 session_id = get_session_id()
+                instance_details = data_island_manager_running['m4.large'][0]
+                host = instance_details['ip_address']
                 graph = BuildGraphMsTransform(
                     work_to_do.work_to_do,
                     bucket_name,
@@ -248,14 +250,13 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     add_shutdown,
                     frequency_width,
                     session_id,
+                    hosts,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
                     "session_id": session_id,
                 })
 
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
                 LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                 client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -295,7 +296,8 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 nodes_running,
                 add_shutdown,
                 frequency_width,
-                session_id
+                session_id,
+                host,
             )
             graph.build_graph()
 
@@ -326,7 +328,8 @@ def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
         node_details,
         shutdown,
         width,
-        'json_test'
+        'json_test',
+        '1.2.3.4'
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)

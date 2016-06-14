@@ -137,6 +137,8 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             if len(data_island_manager_running['m4.large']) == 1:
                 # Now build the graph
                 session_id = get_session_id()
+                instance_details = data_island_manager_running['m4.large'][0]
+                host = instance_details['ip_address']
                 graph = BuildGraphFindBadMeasurementSet(
                     bucket_name,
                     volume,
@@ -145,12 +147,11 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     add_shutdown,
                     frequency_width,
                     bottom_frequency,
-                    session_id
+                    session_id,
+                    host,
                 )
                 graph.build_graph()
 
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
                 LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                 client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -187,7 +188,8 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, bottom_fr
                 add_shutdown,
                 frequency_width,
                 bottom_frequency,
-                session_id
+                session_id,
+                host,
             )
             graph.build_graph()
 
@@ -214,7 +216,8 @@ def command_json(args):
         args.shutdown,
         args.width,
         args.bottom_frequency,
-        'session_id'
+        'session_id',
+        '1.2.3.4',
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -312,7 +315,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('bottom_frequency', type=int, help='the bottom frequency')
     common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop',default=True)
+    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop', default=True)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()

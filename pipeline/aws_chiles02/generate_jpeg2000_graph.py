@@ -126,11 +126,11 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         if len(data_island_manager_running['m4.large']) == 1:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id)
-            graph.build_graph()
-
             instance_details = data_island_manager_running['m4.large'][0]
             host = instance_details['ip_address']
+            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host)
+            graph.build_graph()
+
             LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
             client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -159,7 +159,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id)
+            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -180,7 +180,7 @@ def command_json(args):
         'spot_price': 0.99
     }
 
-    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, args.concatenation_type, 'session_id')
+    graph = BuildGraphJpeg2000(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, 'session_id', '1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)

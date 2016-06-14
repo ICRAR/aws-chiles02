@@ -187,11 +187,11 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 if len(data_island_manager_running['m4.large']) == 1:
                     # Now build the graph
                     session_id = get_session_id()
-                    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, session_id)
-                    graph.build_graph()
-
                     instance_details = data_island_manager_running['m4.large'][0]
                     host = instance_details['ip_address']
+                    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, session_id, host)
+                    graph.build_graph()
+
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                     client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -223,7 +223,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, session_id)
+            graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, session_id, host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -244,7 +244,7 @@ def generate_json(width, bucket, nodes, volume, shutdown):
     node_details = {
         'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
     }
-    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id')
+    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id', '1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)

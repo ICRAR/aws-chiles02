@@ -47,8 +47,9 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             node_details,
             shutdown,
             width,
-            session_id):
-        super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
+            session_id,
+            dim_ip):
+        super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_split_name = 'split_{0}'.format(width)

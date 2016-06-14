@@ -158,7 +158,7 @@ class DockerStats(DockerApp, ErrorHandling):
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        self._command = 'stats.sh %i0 {0} {1} {2} {3} {4} {5}'.format(
+        self._command = 'stats.sh %i0/uvsub_{4}~{5} {0} {1} {2} {3} {4} {5}'.format(
             self._password,
             self._database_hostname,
             self._day_name_id,

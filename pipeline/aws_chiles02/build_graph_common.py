@@ -38,7 +38,7 @@ class AbstractBuildGraph:
     #  - Subclasses implement methods decorated with @abstractmethod
     __metaclass__ = ABCMeta
 
-    def __init__(self, bucket_name, shutdown, node_details, volume, session_id):
+    def __init__(self, bucket_name, shutdown, node_details, volume, session_id, dim_ip):
         self._drop_list = []
         self._start_oids = []
         self._map_carry_over_data = {}
@@ -48,6 +48,7 @@ class AbstractBuildGraph:
         self._node_details = node_details
         self._volume = volume
         self._session_id = session_id
+        self._dim_ip = dim_ip
         self._counters = {}
 
         for key, list_ips in self._node_details.iteritems():
@@ -79,7 +80,7 @@ class AbstractBuildGraph:
     def get_uuid():
         return str(uuid.uuid4())
 
-    def copy_logfiles_and_shutdown(self):
+    def copy_logfiles_and_shutdown(self, shutdown_dim=False):
         """
         Copy the logfile to S3 and shutdown
         """

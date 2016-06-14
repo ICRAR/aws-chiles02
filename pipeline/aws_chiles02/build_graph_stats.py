@@ -35,8 +35,8 @@ class CarryOverDataStats:
 
 
 class BuildGraphStats(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, session_id, map_day_name, password, database_hostname):
-        super(BuildGraphStats, self).__init__(bucket_name, shutdown, node_details, volume, session_id)
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, session_id, map_day_name, password, database_hostname, dim_ip):
+        super(BuildGraphStats, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
@@ -63,7 +63,7 @@ class BuildGraphStats(AbstractBuildGraph):
                 count_on_node = 0
                 node_id = self._get_next_node()
 
-        self.copy_logfiles_and_shutdown()
+        self.copy_logfiles_and_shutdown(True)
 
     def _get_next_node(self):
         next_node = self._list_ip[self._node_index]
@@ -118,8 +118,8 @@ class BuildGraphStats(AbstractBuildGraph):
         if carry_over_data.memory_drop_list[count_on_node] is not None:
             copy_from_s3.addInput(carry_over_data.memory_drop_list[count_on_node])
 
-        # Do the UV subtraction
-        casa_py_uvsub_drop = self.create_docker_app(
+        # Do the stats
+        casa_py_stats_drop = self.create_docker_app(
             node_id,
             get_module_name(DockerStats),
             'app_stats',
@@ -133,8 +133,8 @@ class BuildGraphStats(AbstractBuildGraph):
             max_frequency=uvsub_to_process[2],
         )
         result = self.create_memory_drop(node_id)
-        casa_py_uvsub_drop.addInput(measurement_set)
-        casa_py_uvsub_drop.addOutput(result)
+        casa_py_stats_drop.addInput(measurement_set)
+        casa_py_stats_drop.addOutput(result)
 
         clean_up = self.create_app(
             node_id,
