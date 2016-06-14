@@ -33,7 +33,6 @@ from aws_chiles02.common import run_command, ProgressPercentage
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
 
-logging.info('Starting logger for...')
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
 logging.getLogger('boto3').setLevel(logging.INFO)

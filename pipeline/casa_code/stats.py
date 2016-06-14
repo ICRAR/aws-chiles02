@@ -80,8 +80,7 @@ def do_stats(in_ms):
         for k in zerov.keys():
             zerov[k] = 0
 
-        # TODO for scan_number in scans:
-        for scan_number in scans[:2]: # TODO:
+        for scan_number in scans:
             for spectral_window_number in range(0, number_sceptal_windows):
                 for channel_number in range(0, number_channels):
                     vis_stats = visstat(
