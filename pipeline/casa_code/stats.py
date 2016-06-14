@@ -32,7 +32,8 @@ from casa_code.database import VISSTAT_META, VISSTAT
 from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
-LOG = logging.getLogger(__name__)
+logging.info('Starting logger for...')
+LOG = logging.getLogger('stats')
 
 
 class DataToStore(object):
@@ -79,7 +80,8 @@ def do_stats(in_ms):
         for k in zerov.keys():
             zerov[k] = 0
 
-        for scan_number in scans[:2]:
+        # TODO for scan_number in scans:
+        for scan_number in scans[:2]: # TODO:
             for spectral_window_number in range(0, number_sceptal_windows):
                 for channel_number in range(0, number_channels):
                     vis_stats = visstat(
@@ -101,6 +103,7 @@ def do_stats(in_ms):
         return None
 
 
+@echo
 def store_stats(results, password, db_hostname, day_name_id, width, min_frequency, max_frequency):
     db_login = "mysql+pymysql://root:{0}@{1}/chiles02".format(password, db_hostname)
     engine = create_engine(db_login)
