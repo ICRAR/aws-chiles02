@@ -56,12 +56,7 @@ def do_stats(in_ms):
     try:
         ms.open(in_ms)
         scan_summary = ms.getscansummary()
-        scan_keys = scan_summary.keys()
-
-        scans = []
-        for n in range(0, len(scan_keys)):
-            scans.append(int(scan_keys[n]))
-        scans.sort()
+        scans = scan_summary.keys()
 
         # This assumes all spw have the same no channels as the first
         spectral_window_info = ms.getspectralwindowinfo()
@@ -84,13 +79,13 @@ def do_stats(in_ms):
         for k in zerov.keys():
             zerov[k] = 0
 
-        for scan_number in range(0, len(scans)):
+        for scan_number in scans[:2]:
             for spectral_window_number in range(0, number_sceptal_windows):
                 for channel_number in range(0, number_channels):
                     vis_stats = visstat(
                         vis=in_ms,
                         datacolumn='data',
-                        scan=str(scans[scan_number]),
+                        scan=scan_number,
                         spw=str(spectral_window_number) + ':' + str(channel_number)
                     )
                     if spectral_window_info is None:
