@@ -374,7 +374,7 @@ def generate_json(width, bucket, nodes, volume, shutdown, password):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_uvsub.txt", "w") as json_file:
+    with open("/tmp/json_stats.txt", "w") as json_file:
         json_file.write(json_dumps)
 
 

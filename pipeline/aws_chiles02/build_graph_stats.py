@@ -74,7 +74,6 @@ class BuildGraphStats(AbstractBuildGraph):
         return next_node
 
     def _build_node_map(self):
-        self._list_ip = []
         for key, values in self._node_details.iteritems():
             for value in values:
                 self._list_ip.append(value['ip_address'])
@@ -140,10 +139,10 @@ class BuildGraphStats(AbstractBuildGraph):
             node_id,
             get_module_name(CleanupDirectories),
             'app_cleanup_directories',
-            dry_run=True,
+            # dry_run=True,
         )
         memory_drop = self.create_memory_drop(node_id)
-        clean_up.addInput(measurement_set)
+        clean_up.addInput(result)
         clean_up.addOutput(memory_drop)
 
         # Remember the end of the tail

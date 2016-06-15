@@ -61,7 +61,7 @@ def do_stats(in_ms):
 
         # This assumes all spw have the same no channels as the first
         spectral_window_info = ms.getspectralwindowinfo()
-        number_sceptal_windows = len(spectral_window_info)
+        number_spectal_windows = len(spectral_window_info)
         number_channels = spectral_window_info['0']['NumChan']
         ms.close()
         results = []
@@ -81,7 +81,7 @@ def do_stats(in_ms):
             zerov[k] = 0
 
         for scan_number in scans:
-            for spectral_window_number in range(0, number_sceptal_windows):
+            for spectral_window_number in range(0, number_spectal_windows):
                 for channel_number in range(0, number_channels):
                     vis_stats = visstat(
                         vis=in_ms,
@@ -103,7 +103,10 @@ def do_stats(in_ms):
 
 
 @echo
-def store_stats(results, password, db_hostname, day_name_id, width, min_frequency, max_frequency):
+def store_stats(results_from_stats, password, db_hostname, day_name_id, width, min_frequency, max_frequency):
+    if results is None or len(results) == 0:
+        return
+
     db_login = "mysql+pymysql://root:{0}@{1}/chiles02".format(password, db_hostname)
     engine = create_engine(db_login)
     connection = engine.connect()
@@ -119,27 +122,33 @@ def store_stats(results, password, db_hostname, day_name_id, width, min_frequenc
         )
         visstat_meta_id = sql_result.inserted_primary_key[0]
 
-        for result in results:
-            connection.execute(
-                VISSTAT.insert(),
-                visstat_meta_id=visstat_meta_id,
-                scan=result.scan_number,
-                spectral_window=result.spectral_window_number,
-                channel=result.channel_number,
-                max=result.stats['max'],
-                mean=result.stats['mean'],
-                medabsdevmed=result.stats['medabsdevmed'],
-                median=result.stats['median'],
-                min=result.stats['min'],
-                npts=result.stats['npts'],
-                quartile=result.stats['quartile'],
-                rms=result.stats['rms'],
-                stddev=result.stats['stddev'],
-                sum=result.stats['sum'],
-                sumsq=result.stats['sumsq'],
-                var=result.stats['var'],
-                update_time=datetime.now()
+        insert_data = []
+        for result in results_from_stats:
+            insert_data.append(
+                {
+                    'visstat_meta_id': visstat_meta_id,
+                    'scan': result.scan_number,
+                    'spectral_window': result.spectral_window_number,
+                    'channel': result.channel_number,
+                    'max': result.stats['max'],
+                    'mean': result.stats['mean'],
+                    'medabsdevmed': result.stats['medabsdevmed'],
+                    'median': result.stats['median'],
+                    'min': result.stats['min'],
+                    'npts': result.stats['npts'],
+                    'quartile': result.stats['quartile'],
+                    'rms': result.stats['rms'],
+                    'stddev': result.stats['stddev'],
+                    'sum': result.stats['sum'],
+                    'sumsq': result.stats['sumsq'],
+                    'var': result.stats['var'],
+                    'update_time': datetime.now()
+                }
             )
+        connection.execute(
+            VISSTAT.insert(),
+            insert_data
+        )
         transaction.commit()
     except Exception:
         LOG.exception('Insert error')
