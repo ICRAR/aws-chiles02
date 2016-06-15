@@ -28,7 +28,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 
 from casa_code.casa_common import parse_args
-from casa_code.database import VISSTAT_META, VISSTAT
+from casa_code.database import MEASUREMENT_SET, VISSTAT
 from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
@@ -113,7 +113,7 @@ def store_stats(results_from_stats, password, db_hostname, day_name_id, width, m
     transaction = connection.begin()
     try:
         sql_result = connection.execute(
-            VISSTAT_META.insert(),
+            MEASUREMENT_SET.insert(),
             day_name_id=day_name_id,
             width=width,
             min_frequency=min_frequency,

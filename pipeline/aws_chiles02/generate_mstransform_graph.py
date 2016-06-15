@@ -184,7 +184,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge Node - MsTransform',
+                        'Value': 'Daliuge NM - MsTransform',
                     },
                     {
                         'Key': 'uuid',

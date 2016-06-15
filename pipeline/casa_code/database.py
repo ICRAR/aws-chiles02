@@ -40,7 +40,7 @@ VISSTAT = Table(
     'visstat',
     CHILES02_METADATA,
     Column('visstat_id', BigInteger, primary_key=True),
-    Column('visstat_meta_id', BigInteger, ForeignKey('visstat_meta.visstat_meta_id'), nullable=False),
+    Column('measurement_set_id', BigInteger, ForeignKey('measurement_set.measurement_set_id'), nullable=False),
     Column('scan', Integer, nullable=False),
     Column('spectral_window', Integer, nullable=False),
     Column('channel', Integer, nullable=False),
@@ -61,10 +61,10 @@ VISSTAT = Table(
     Index('index1', 'visstat_meta_id', 'scan', 'spectral_window', 'channel', unique=True),
 )
 
-VISSTAT_META = Table(
-    'visstat_meta',
+MEASUREMENT_SET = Table(
+    'measurement_set',
     CHILES02_METADATA,
-    Column('visstat_meta_id', BigInteger, primary_key=True),
+    Column('measurement_set_id', BigInteger, primary_key=True),
     Column('width', Integer, nullable=False),
     Column('day_name_id', BigInteger, ForeignKey('day_name.day_name_id'), nullable=False),
     Column('min_frequency', Integer, nullable=False),

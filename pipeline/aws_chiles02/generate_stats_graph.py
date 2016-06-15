@@ -43,7 +43,7 @@ from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT, AWS_DATABASE_ID, INPUT_MS_SUFFIX_TAR
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
-from casa_code.database import CHILES02_METADATA, DAY_NAME, VISSTAT_META
+from casa_code.database import CHILES02_METADATA, DAY_NAME, MEASUREMENT_SET
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
@@ -67,15 +67,15 @@ class WorkToDo:
 
         visstat_data_rows = []
         for visstat_data in self._connection.execute(
-                select([VISSTAT_META.c.width, DAY_NAME.c.name, VISSTAT_META.c.min_frequency, VISSTAT_META.c.max_frequency]).select_from(
-                    VISSTAT_META.join(DAY_NAME)
+                select([MEASUREMENT_SET.c.width, DAY_NAME.c.name, MEASUREMENT_SET.c.min_frequency, MEASUREMENT_SET.c.max_frequency]).select_from(
+                    MEASUREMENT_SET.join(DAY_NAME)
                 )):
             visstat_data_rows.append(
                 '{0} {1} {2} {3}'.format(
-                    visstat_data[VISSTAT_META.c.width],
+                    visstat_data[MEASUREMENT_SET.c.width],
                     visstat_data[DAY_NAME.c.name],
-                    visstat_data[VISSTAT_META.c.min_frequency],
-                    visstat_data[VISSTAT_META.c.max_frequency],
+                    visstat_data[MEASUREMENT_SET.c.min_frequency],
+                    visstat_data[MEASUREMENT_SET.c.max_frequency],
                 )
             )
 
@@ -207,7 +207,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge Node - Stats',
+                        'Value': 'Daliuge NM - Stats',
                     },
                     {
                         'Key': 'uuid',

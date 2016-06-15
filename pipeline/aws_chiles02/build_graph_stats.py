@@ -63,7 +63,7 @@ class BuildGraphStats(AbstractBuildGraph):
                 count_on_node = 0
                 node_id = self._get_next_node()
 
-        self.copy_logfiles_and_shutdown(True)
+        self.copy_logfiles_and_shutdown(False)
 
     def _get_next_node(self):
         next_node = self._list_ip[self._node_index]

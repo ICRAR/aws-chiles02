@@ -129,7 +129,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge Node - Uvsub',
+                        'Value': 'Daliuge NM - Uvsub',
                     },
                     {
                         'Key': 'uuid',

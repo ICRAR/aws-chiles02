@@ -79,7 +79,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge Node - Find bad MS',
+                    'Value': 'Daliuge NM - Find bad MS',
                 },
                 {
                     'Key': 'uuid',

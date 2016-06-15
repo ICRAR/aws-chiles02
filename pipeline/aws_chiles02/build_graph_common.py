@@ -115,7 +115,7 @@ class AbstractBuildGraph:
                     shutdown_drop.addInput(s3_drop_out)
 
                     if shutdown_dim:
-                        memory_drop = self.create_memory_drop(self._dim_ip)
+                        memory_drop = self.create_memory_drop(node_id)
                         shutdown_drop.addOutput(memory_drop)
 
                         dim_shutdown_drop.addInput(memory_drop)
@@ -136,17 +136,6 @@ class AbstractBuildGraph:
         """"
         Get the carry over data structure
         """
-
-    def create_memory_drop(self, node_id, oid='memory_drop'):
-        drop = dropdict({
-            "type": 'plain',
-            "storage": 'memory',
-            "oid": self.get_oid(oid),
-            "uid": self.get_uuid(),
-            "node": node_id,
-        })
-        self.add_drop(drop)
-        return drop
 
     def create_bash_shell_app(self, node_id, command, oid='bash_shell_app', input_error_threshold=100):
         drop = dropdict({
@@ -213,6 +202,18 @@ class AbstractBuildGraph:
             "dirname": os.path.join(self._volume, oid_text),
             "check_exists": False,
             "expireAfterUse": expire_after_use,
+            "node": node_id,
+        })
+        self.add_drop(drop)
+        return drop
+
+    def create_memory_drop(self, node_id, oid='memory_drop'):
+        drop = dropdict({
+            "type": 'plain',
+            "storage": 'memory',
+            "oid": self.get_oid(oid),
+            "uid": self.get_uuid(),
+            "precious": False,
             "node": node_id,
         })
         self.add_drop(drop)
