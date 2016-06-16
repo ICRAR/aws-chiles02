@@ -120,13 +120,13 @@ def store_stats(results_from_stats, password, db_hostname, day_name_id, width, m
             max_frequency=max_frequency,
             update_time=datetime.now()
         )
-        visstat_meta_id = sql_result.inserted_primary_key[0]
+        measurement_set_id = sql_result.inserted_primary_key[0]
 
         insert_data = []
         for result in results_from_stats:
             insert_data.append(
                 {
-                    'visstat_meta_id': visstat_meta_id,
+                    'measurement_set_id': measurement_set_id,
                     'scan': result.scan_number,
                     'spectral_window': result.spectral_window_number,
                     'channel': result.channel_number,

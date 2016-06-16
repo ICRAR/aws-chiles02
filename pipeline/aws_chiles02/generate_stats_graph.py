@@ -47,7 +47,7 @@ from casa_code.database import CHILES02_METADATA, DAY_NAME, MEASUREMENT_SET
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 6
+PARALLEL_STREAMS = 8
 
 
 class WorkToDo:
