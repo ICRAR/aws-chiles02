@@ -47,7 +47,7 @@ def get_user_data(cloud_init_data):
     return encoded_data
 
 
-def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True, jpeg2000=False):
+def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True, jpeg2000=False, log_level='vvv'):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -67,13 +67,14 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True
         max_request_size=max_request_size,
         chiles=chiles,
         jpeg2000=jpeg2000,
+        log_level=log_level
     )
 
     user_data = get_user_data([cloud_init, user_script])
     return user_data
 
 
-def get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=False, max_request_size=10):
+def get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=False, max_request_size=10, log_level='vvv'):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -93,6 +94,7 @@ def get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=
         region=AWS_REGION,
         max_request_size=max_request_size,
         need_node_manager=need_node_manager,
+        log_level=log_level
     )
     user_data = get_user_data([cloud_init, user_script])
     return user_data

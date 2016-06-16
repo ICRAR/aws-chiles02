@@ -183,7 +183,7 @@ def setup_database(password, bucket_name):
     return connection, map_day_name, database_ip
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown, password):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown, password, log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         database_connection, map_day_name, database_ip = setup_database(password, bucket_name)
@@ -198,7 +198,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, max_request_size=50),
+                get_node_manager_user_data(boto_data, uuid, max_request_size=50, log_level=log_level),
                 AWS_REGION,
                 tags=[
                     {
@@ -390,6 +390,13 @@ def command_json(args):
 
 
 def command_create(args):
+    log_level = 'vvv'
+    if args.verbosity <= 1:
+        log_level = 'v'
+    elif args.verbosity == 2:
+        log_level = 'vv'
+    elif args.verbosity == 3:
+        log_level = 'vvv'
     create_and_generate(
         args.bucket,
         args.width,
@@ -399,6 +406,7 @@ def command_create(args):
         args.nodes,
         args.shutdown,
         args.password,
+        log_level
     )
 
 
@@ -434,6 +442,7 @@ def command_interactive(args):
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
         get_argument(config, 'database_password', 'Database password', help_text='the database password')
+        get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     elif config['run_type'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -463,7 +472,8 @@ def command_interactive(args):
             config['volume'],
             config['nodes'],
             config['shutdown'],
-            config['database_password']
+            config['database_password'],
+            config['log_level']
         )
     elif config['run_type'] == 'use':
         use_and_generate(

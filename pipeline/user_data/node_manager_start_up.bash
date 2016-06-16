@@ -120,6 +120,6 @@ runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtuale
 runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 
 cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --daemon -vvv --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/dfms/dfms_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
+runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --daemon -${log_level} --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/dfms/dfms_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
 sleep 10
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py ${queue} ${region} "${uuid}"'
