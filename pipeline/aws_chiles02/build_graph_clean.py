@@ -38,15 +38,15 @@ class CarryOverDataClean:
 
 
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, arcsecs, only_image, session_id, dim_ip):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, arcsec, only_image, session_id, dim_ip):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
-        self._s3_clean_name = 'clean_{0}_{1}_{2}'.format(width, iterations, arcsecs)
-        self._s3_fits_name = 'fits_{0}_{1}_{2}'.format(width, iterations, arcsecs)
+        self._s3_clean_name = 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec)
+        self._s3_fits_name = 'fits_{0}_{1}_{2}'.format(width, iterations, arcsec)
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._iterations = iterations
-        self._arcsecs = arcsecs
+        self._arcsec = arcsec
         self._only_image = only_image
         self._map_frequency_to_node = None
         self._list_ip = []
@@ -77,7 +77,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 min_frequency=frequency_pair.bottom_frequency,
                 max_frequency=frequency_pair.top_frequency,
                 iterations=self._iterations,
-                arcsecs=self._arcsecs,
+                arcsec=self._arcsec,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
             result = self.create_directory_container(node_id, 'dir_clean_output')
@@ -150,7 +150,7 @@ class BuildGraphClean(AbstractBuildGraph):
             clean_up.addInput(memory_drop)
             carry_over_data.clean_up = clean_up
 
-        self.copy_logfiles_and_shutdown()
+        self.copy_logfiles_and_shutdown(True)
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

@@ -151,7 +151,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid, log_level=log_level),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=True, log_level=log_level),
                     AWS_REGION,
                     tags=[
                         {
@@ -382,7 +382,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('arcsec', help='the number of arcsecs', default='1.25')
+    common_parser.add_argument('arcsec', help='the number of arcsec', default='1.25')
     common_parser.add_argument('-oi', '--only_image', action='store_true', help='store only the image to S3', )
     common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('-s', '--shutdown', action='store_true', help='add a shutdown drop')

@@ -281,7 +281,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._min_frequency = None
         self._command = None
         self._iterations = None
-        self._arcsecs = None
+        self._arcsec = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -290,7 +290,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._iterations = self._getArg(kwargs, 'iterations', 10)
-        self._arcsecs = self._getArg(kwargs, 'arcsecs', '1.25arcsec')
+        self._arcsec = self._getArg(kwargs, 'arcsec', '1.25arcsec')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -310,7 +310,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
-                self._arcsecs,
+                self._arcsec,
                 ' '.join(measurement_sets),
             )
         else:
