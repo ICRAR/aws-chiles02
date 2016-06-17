@@ -45,8 +45,8 @@ LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 16
 
 
-def get_s3_clean_name(width, iterations):
-    return 'clean_{0}_{1}'.format(width, iterations)
+def get_s3_clean_name(width, iterations, arcsec):
+    return 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec)
 
 
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):

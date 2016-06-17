@@ -2,13 +2,12 @@
 
 sudo yum update -y
 sudo yum install mysql-server xfsprogs -y
-sudo mkdir -p /mnt/daliuge
-sudo mkfs.xfs -K /dev/xvdb
-
-sudo mkdir -p /mnt/daliuge/mysql
-sudo vim /etc/my.cnf
-# Point to directory
 
 sudo /etc/init.d/mysqld start
 mysqladmin -u root password 'XXXXX'
 
+## MySQL bits
+CREATE USER 'root'@'%' IDENTIFIED BY 'XXXXXX';
+GRANT ALL ON *.* TO 'root'@'%';
+flush privileges;
+CREATE SCHEMA `chiles02` ;

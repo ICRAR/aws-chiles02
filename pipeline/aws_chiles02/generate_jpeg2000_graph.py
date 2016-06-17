@@ -33,7 +33,6 @@ from time import sleep
 import sys
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph_concatenate import BuildGraphConcatenation
 from aws_chiles02.build_graph_jpeg2000 import BuildGraphJpeg2000
 from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
 from aws_chiles02.ec2_controller import EC2Controller
@@ -44,10 +43,6 @@ from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
-
-
-def get_s3_clean_name(width, iterations):
-    return 'clean_{0}_{1}'.format(width, iterations)
 
 
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):

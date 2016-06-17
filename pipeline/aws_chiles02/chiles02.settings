@@ -40,7 +40,7 @@ ami_id = "ami-a4a557c4"
 key_name = "aws-chiles02-oregon"
 security_groups = "sg-981c9cfc"
 region = "us-west-2"
-database_server = "i-c11fb91c"
+database_server = "i-bccc7b61"
 
 # The subnets
 [subnets]

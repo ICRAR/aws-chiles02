@@ -82,8 +82,8 @@ class WorkToDo:
         return self._work_to_do
 
 
-def get_s3_clean_name(width, iterations):
-    return 'clean_{0}_{1}'.format(width, iterations)
+def get_s3_clean_name(width, iterations, arcsec):
+    return 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec)
 
 
 def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
@@ -101,7 +101,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, frequencies_per_node, add_shutdown, iterations, arcsec, only_image, log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations))
+        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations, arcsec))
         work_to_do.calculate_work_to_do()
 
         nodes_required, node_count = get_nodes_required(work_to_do.work_to_do, frequencies_per_node, spot_price)
@@ -221,7 +221,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations))
+            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations, arcsec))
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
@@ -253,7 +253,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
 
 def command_json(args):
-    work_to_do = WorkToDo(args.width, args.bucket, get_s3_clean_name(args.width, args.iterations))
+    work_to_do = WorkToDo(args.width, args.bucket, get_s3_clean_name(args.width, args.iterations, args.arcsec))
     work_to_do.calculate_work_to_do()
 
     node_details = {
@@ -358,9 +358,9 @@ def command_interactive(args):
             config['frequencies_per_node'],
             config['shutdown'],
             config['iterations'],
-            config['log_level'],
             config['arcsec'] + 'arcsec',
             config['only_image'],
+            config['log_level'],
         )
     else:
         use_and_generate(

@@ -306,7 +306,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
