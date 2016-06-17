@@ -35,7 +35,7 @@ import sys
 from configobj import ConfigObj
 
 from aws_chiles02.build_graph_clean import BuildGraphClean
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, get_argument, get_aws_credentials, get_uuid
+from aws_chiles02.common import get_session_id, get_list_frequency_groups, get_argument, get_aws_credentials, get_uuid, get_log_level
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
@@ -43,7 +43,7 @@ from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_m
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 8
+PARALLEL_STREAMS = 12
 
 
 class WorkToDo:
@@ -98,7 +98,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, frequencies_per_node, add_shutdown, iterations):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, frequencies_per_node, add_shutdown, iterations, arcsec, only_image, log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations))
@@ -111,7 +111,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid),
+                get_node_manager_user_data(boto_data, uuid, log_level=log_level),
                 AWS_REGION,
                 tags=[
                     {
@@ -151,7 +151,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, log_level=log_level),
                     AWS_REGION,
                     tags=[
                         {
@@ -180,7 +180,19 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     session_id = get_session_id()
                     instance_details = data_island_manager_running['m4.large'][0]
                     host = instance_details['ip_address']
-                    graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host)
+                    graph = BuildGraphClean(
+                        work_to_do.work_to_do,
+                        bucket_name,
+                        volume,
+                        PARALLEL_STREAMS,
+                        reported_running,
+                        add_shutdown,
+                        frequency_width,
+                        iterations,
+                        arcsec,
+                        only_image,
+                        session_id,
+                        host)
                     graph.build_graph()
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -193,7 +205,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, arcsec, only_image):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -214,7 +226,19 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphClean(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host)
+            graph = BuildGraphClean(
+                work_to_do.work_to_do,
+                bucket_name,
+                volume,
+                PARALLEL_STREAMS,
+                nodes_running,
+                add_shutdown,
+                frequency_width,
+                iterations,
+                arcsec,
+                only_image,
+                session_id,
+                host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -235,7 +259,19 @@ def command_json(args):
     node_details = {
         'i2.4xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
-    graph = BuildGraphClean(work_to_do.work_to_do, args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, 'session_id', '1.2.3.4')
+    graph = BuildGraphClean(
+        work_to_do.work_to_do,
+        args.bucket,
+        args.volume,
+        args.parallel_streams,
+        node_details,
+        args.shutdown,
+        args.width,
+        args.iterations,
+        args.arcsec,
+        args.only_image,
+        'session_id',
+        '1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -244,6 +280,7 @@ def command_json(args):
 
 
 def command_create(args):
+    log_level = get_log_level(args)
     create_and_generate(
         args.bucket,
         args.width,
@@ -253,6 +290,9 @@ def command_create(args):
         args.frequencies_per_node,
         args.shutdown,
         args.iterations,
+        args.arcsec + 'arcsec',
+        args.only_image,
+        log_level,
     )
 
 
@@ -265,6 +305,8 @@ def command_use(args):
         args.volume,
         args.shutdown,
         args.iterations,
+        args.arcsec + 'arcsec',
+        args.only_image,
     )
 
 
@@ -287,7 +329,10 @@ def command_interactive(args):
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
+        get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
+        get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         get_argument(config, 'frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
+        get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -295,6 +340,8 @@ def command_interactive(args):
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
+        get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
+        get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
@@ -311,6 +358,9 @@ def command_interactive(args):
             config['frequencies_per_node'],
             config['shutdown'],
             config['iterations'],
+            config['log_level'],
+            config['arcsec'] + 'arcsec',
+            config['only_image'],
         )
     else:
         use_and_generate(
@@ -321,6 +371,8 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
+            config['arcsec'] + 'arcsec',
+            config['only_image'],
         )
 
 
@@ -330,8 +382,10 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
+    common_parser.add_argument('arcsec', help='the number of arcsecs', default='1.25')
+    common_parser.add_argument('-oi', '--only_image', action='store_true', help='store only the image to S3', )
     common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('-s', '--shutdown', action='store_true', help='add a shutdown drop')
     common_parser.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 

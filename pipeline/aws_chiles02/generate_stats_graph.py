@@ -37,7 +37,7 @@ from configobj import ConfigObj
 from sqlalchemy import create_engine, select
 
 from aws_chiles02.build_graph_stats import BuildGraphStats
-from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
+from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid, get_log_level
 from aws_chiles02.database_server import DatabaseServer
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
@@ -390,13 +390,7 @@ def command_json(args):
 
 
 def command_create(args):
-    log_level = 'vvv'
-    if args.verbosity <= 1:
-        log_level = 'v'
-    elif args.verbosity == 2:
-        log_level = 'vv'
-    elif args.verbosity == 3:
-        log_level = 'vvv'
+    log_level = get_log_level(args)
     create_and_generate(
         args.bucket,
         args.width,
@@ -473,7 +467,7 @@ def command_interactive(args):
             config['nodes'],
             config['shutdown'],
             config['database_password'],
-            config['log_level']
+            config['log_level'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(

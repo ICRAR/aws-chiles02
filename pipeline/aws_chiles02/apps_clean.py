@@ -140,6 +140,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
+        self._only_image = None
         super(CopyCleanToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -147,6 +148,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._only_image = self._getArg(kwargs, 'only_image', False)
 
     def dataURL(self):
         return 'CopyCleanToS3'
@@ -176,10 +178,16 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         # Make the tar file
         tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(
-            tar_filename,
-            stem_name,
-        )
+        if self._only_image:
+            bash = 'tar -cvf {0} {1}.image'.format(
+                tar_filename,
+                stem_name,
+            )
+        else:
+            bash = 'tar -cvf {0} {1}.flux {1}.image {1}.model {1}.residual {1}.psf'.format(
+                tar_filename,
+                stem_name,
+            )
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
@@ -273,6 +281,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._min_frequency = None
         self._command = None
         self._iterations = None
+        self._arcsecs = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -281,6 +290,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._iterations = self._getArg(kwargs, 'iterations', 10)
+        self._arcsecs = self._getArg(kwargs, 'arcsecs', '1.25arcsec')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -300,6 +310,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
+                self._arcsecs,
                 ' '.join(measurement_sets),
             )
         else:

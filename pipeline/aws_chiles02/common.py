@@ -117,6 +117,17 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
     return groups
 
 
+def get_log_level(args):
+    log_level = 'vvv'
+    if args.verbosity <= 1:
+        log_level = 'v'
+    elif args.verbosity == 2:
+        log_level = 'vv'
+    elif args.verbosity == 3:
+        log_level = 'vvv'
+    return log_level
+
+
 def get_module_name(item):
     return item.__module__ + '.' + item.__name__
 

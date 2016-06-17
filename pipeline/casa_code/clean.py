@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsecs, in_dirs):
     """
     Perform the CLEAN step
 
@@ -60,7 +60,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, in_dirs):
               gain=0.1,
               threshold='0.0mJy',
               imsize=[2048],
-              cell=['1.25arcsec'],
+              cell=[arcsecs],
               weighting='natural',
               usescratch=False) # Don't overwrite the model data col
     except Exception:
@@ -72,8 +72,9 @@ args = parse_args()
 LOG.info(args)
 
 do_clean(
-        args.arguments[0],
-        int(args.arguments[1]),
-        int(args.arguments[2]),
-        int(args.arguments[3]),
-        args.arguments[4:])
+    args.arguments[0],
+    int(args.arguments[1]),
+    int(args.arguments[2]),
+    int(args.arguments[3]),
+    args.arguments[4],
+    args.arguments[5:])
