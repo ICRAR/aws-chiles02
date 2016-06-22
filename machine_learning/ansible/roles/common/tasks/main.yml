@@ -1,0 +1,24 @@
+---
+
+- name: upgrade all packages
+  yum: name=* state=latest
+
+- name: install default packages
+  yum: pkg={{ item }} state=installed
+  with_items:
+    - autoconf
+    - automake
+    - binutils
+    - curl-devel
+    - freetype-devel
+    - gcc
+    - gcc-c++
+    - gcc-gfortran
+    - gdb
+    - git-core
+    - htop
+    - libpng-devel
+    - libtool
+    - openssl-devel
+    - screen
+    - vim
