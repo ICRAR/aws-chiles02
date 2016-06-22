@@ -1,6 +1,7 @@
 ---
 
 - name: Apply common configuration to all target nodes
-  hosts: all
+  hosts: local
+  connection: local
   roles:
     - common
