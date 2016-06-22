@@ -161,6 +161,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         bucket_name = s3_output.bucket
         key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+
         # Does the file exists
         stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)

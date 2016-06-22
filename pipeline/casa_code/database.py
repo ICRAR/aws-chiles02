@@ -59,6 +59,7 @@ VISSTAT = Table(
     Column('update_time', TIMESTAMP, nullable=False),
 
     Index('index1', 'measurement_set_id', 'scan', 'spectral_window', 'channel', unique=True),
+    Index('index2', 'measurement_set_id'),
 )
 
 MEASUREMENT_SET = Table(

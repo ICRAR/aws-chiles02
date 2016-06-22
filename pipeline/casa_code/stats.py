@@ -89,7 +89,7 @@ def do_stats(in_ms):
                         scan=scan_number,
                         spw=str(spectral_window_number) + ':' + str(channel_number)
                     )
-                    if spectral_window_info is None:
+                    if vis_stats is None:
                         results.append(DataToStore(scan_number, spectral_window_number, channel_number, zerov))
                     else:
                         # strip off the ['CORRECTED']

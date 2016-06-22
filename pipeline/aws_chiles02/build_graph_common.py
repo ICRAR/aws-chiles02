@@ -115,7 +115,7 @@ class AbstractBuildGraph:
                     shutdown_drop.addInput(s3_drop_out)
 
                     if shutdown_dim:
-                        memory_drop = self.create_memory_drop(node_id)
+                        memory_drop = self.create_memory_drop(self._dim_ip)
                         shutdown_drop.addOutput(memory_drop)
 
                         dim_shutdown_drop.addInput(memory_drop)

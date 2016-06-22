@@ -322,27 +322,20 @@ def command_interactive(args):
         config.filename = config_file_name
 
     get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+    get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+    get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+    get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+    get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
+    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
+    get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
+    get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
-        get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-        get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
-        get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         get_argument(config, 'frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
         get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
-        get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
-        get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-        get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
-        get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
-        get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
     config.write()
