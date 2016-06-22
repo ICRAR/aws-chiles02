@@ -1,8 +1,0 @@
-matplotlib
-numpy
-pandas
-pip>=8.1
-pymysql
-scikit-learn
-scipy
-sqlalchemy

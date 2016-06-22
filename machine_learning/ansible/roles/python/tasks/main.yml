@@ -9,11 +9,12 @@
   become: yes
   become_user: ec2-user
   action: pip name={{item}}  virtualenv={{virtual_env}} state=present
-  with_items: # These are fed into the {{item}} one at a time so SciPy must come before scikit-learn
-    - matplotlib
+  with_items: # These are fed into the {{item}} one at a time so the order is important SciPy must come before scikit-learn
     - numpy
+    - matplotlib
     - pandas
-    - pymysql
     - scipy
     - scikit-learn
+    - pymysql
     - sqlalchemy
+    - ipython
