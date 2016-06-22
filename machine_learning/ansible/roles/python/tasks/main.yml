@@ -1,15 +1,15 @@
 ---
 
-- name: Create virtualenv and update pip
-  pip: name=pip virtualenv={{virtual_env}}
+- name: create virtualenv and update pip
+  pip: name=pip virtualenv={{virtual_env}} extra_args="
 
-- name: install dependencies into virtualenv
+- name: install packages into virtualenv
   action: pip name={{item}}  virtualenv={{virtual_env}} state=present
-  with_items:
+  with_items: # These are fed into the {{item}} one at a time so SciPy must come before scikit-learn
     - matplotlib
     - numpy
     - pandas
     - pymysql
-    - scikit-learn
     - scipy
+    - scikit-learn
     - sqlalchemy
