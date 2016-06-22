@@ -1,7 +1,7 @@
 ---
 
 - name: create virtualenv and update pip
-  pip: name=pip virtualenv={{virtual_env}} extra_args="
+  pip: name=pip virtualenv={{virtual_env}} extra_args="--upgrade"
 
 - name: install packages into virtualenv
   action: pip name={{item}}  virtualenv={{virtual_env}} state=present
