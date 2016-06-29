@@ -56,6 +56,8 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, in_dirs):
               start='',
               width='',
               interpolation='nearest',
+              gridmode='widefield',
+              wprojplanes=12,
               niter=iterations,
               gain=0.1,
               threshold='0.0mJy',
