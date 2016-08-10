@@ -34,7 +34,7 @@ LOG = logging.getLogger('uvsub')
 
 
 @echo
-def do_uvsub(in_dir, out_dir, out_ms, model):
+def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
     """
     Performs the UVSUB step
      Use imtool to fill MODEL_DATA correctly
@@ -51,7 +51,13 @@ def do_uvsub(in_dir, out_dir, out_ms, model):
      spw=int(((freq_min+freq_max)/2-946)/32)
     """
 
-    LOG.info('uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3})'.format(in_dir, str(model), out_dir, out_ms))
+    LOG.info(
+        'uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3}, w_projection_planes={4})'.format(
+            in_dir,
+            str(model),
+            out_dir,
+            out_ms,
+            w_projection_planes))
     try:
         # dump_all()
         #
@@ -76,7 +82,7 @@ def do_uvsub(in_dir, out_dir, out_ms, model):
             mode='mfs',
             facets=1
         )
-        im.setoptions(ftmachine='wproject', wprojplanes=12)
+        im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes)
 
         # Find the refernce frequency and set no. taylor terms
         ms.open(in_dir)
@@ -99,7 +105,8 @@ args = parse_args()
 LOG.info(args)
 
 do_uvsub(
-        args.arguments[0],
-        args.arguments[1],
-        args.arguments[2],
-        args.arguments[3:])
+        in_dir=args.arguments[0],
+        out_dir=args.arguments[1],
+        out_ms=args.arguments[2],
+        w_projection_planes=args.arguments[3],
+        model=args.arguments[4:])

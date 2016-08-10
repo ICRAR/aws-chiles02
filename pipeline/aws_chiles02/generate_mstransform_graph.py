@@ -164,11 +164,18 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
 def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
+        work_to_do = WorkToDo(
+            width=frequency_width,
+            bucket_name=bucket_name,
+            s3_split_name=get_s3_split_name(frequency_width))
         work_to_do.calculate_work_to_do()
 
         days = work_to_do.work_to_do.keys()
-        nodes_required, node_count = get_nodes_required(days, days_per_node, spot_price1, spot_price2)
+        nodes_required, node_count = get_nodes_required(
+            days=days,
+            days_per_node=days_per_node,
+            spot_price1=spot_price1,
+            spot_price2=spot_price2)
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
@@ -242,15 +249,15 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 instance_details = data_island_manager_running['m4.large'][0]
                 host = instance_details['ip_address']
                 graph = BuildGraphMsTransform(
-                    work_to_do.work_to_do,
-                    bucket_name,
-                    volume,
-                    7,
-                    reported_running,
-                    add_shutdown,
-                    frequency_width,
-                    session_id,
-                    hosts,
+                    work_to_do=work_to_do.work_to_do,
+                    bucket_name=bucket_name,
+                    volume=volume,
+                    parallel_streams=7,
+                    node_details=reported_running,
+                    shutdown=add_shutdown,
+                    width=frequency_width,
+                    session_id=session_id,
+                    dim_ip=hosts,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -283,21 +290,24 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_split_name(frequency_width))
+            work_to_do = WorkToDo(
+                width=frequency_width,
+                bucket_name=bucket_name,
+                s3_split_name=get_s3_split_name(frequency_width))
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
             session_id = get_session_id()
             graph = BuildGraphMsTransform(
-                work_to_do.work_to_do,
-                bucket_name,
-                volume,
-                7,
-                nodes_running,
-                add_shutdown,
-                frequency_width,
-                session_id,
-                host,
+                work_to_do=work_to_do.work_to_do,
+                bucket_name=bucket_name,
+                volume=volume,
+                parallel_streams=7,
+                node_details=nodes_running,
+                shutdown=add_shutdown,
+                width=frequency_width,
+                session_id=session_id,
+                dim_ip=host,
             )
             graph.build_graph()
 
@@ -321,15 +331,15 @@ def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
         'i2.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
     }
     graph = BuildGraphMsTransform(
-        work_to_do.work_to_do,
-        bucket,
-        volume,
-        parallel_streams,
-        node_details,
-        shutdown,
-        width,
-        'json_test',
-        '1.2.3.4'
+        work_to_do=work_to_do.work_to_do,
+        bucket_name=bucket,
+        volume=volume,
+        parallel_streams=parallel_streams,
+        node_details=node_details,
+        shutdown=shutdown,
+        width=width,
+        session_id='json_test',
+        dim_ip='1.2.3.4'
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -340,25 +350,25 @@ def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
 
 def command_create(args):
     create_and_generate(
-        args.bucket,
-        args.width,
-        args.ami,
-        args.spot_price1,
-        args.spot_price2,
-        args.volume,
-        args.days_per_node,
-        args.shutdown,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        ami_id=args.ami,
+        spot_price1=args.spot_price1,
+        spot_price2=args.spot_price2,
+        volume=args.volume,
+        days_per_node=args.days_per_node,
+        add_shutdown=args.shutdown,
     )
 
 
 def command_use(args):
     use_and_generate(
-        args.host,
-        args.port,
-        args.bucket,
-        args.width,
-        args.volume,
-        args.shutdown,
+        host=args.host,
+        port=args.port,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        volume=args.volume,
+        add_shutdown=args.shutdown,
     )
 
 
@@ -396,32 +406,32 @@ def command_interactive(args):
     # Run the command
     if config['create_use'] == 'create':
         create_and_generate(
-            config['bucket_name'],
-            config['width'],
-            config['ami'],
-            config['spot_price_i2.2xlarge'],
-            config['spot_price_i2_4xlarge'],
-            config['volume'],
-            config['days_per_node'],
-            config['shutdown'],
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            ami_id=config['ami'],
+            spot_price1=config['spot_price_i2.2xlarge'],
+            spot_price2=config['spot_price_i2_4xlarge'],
+            volume=config['volume'],
+            days_per_node=config['days_per_node'],
+            add_shutdown=config['shutdown'],
         )
     elif config['create_use'] == 'use':
         use_and_generate(
-            config['dim'],
-            DIM_PORT,
-            config['bucket_name'],
-            config['width'],
-            config['volume'],
-            config['shutdown'],
+            host=config['dim'],
+            port=DIM_PORT,
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
         )
     else:
         build_json(
-            config['bucket_name'],
-            config['width'],
-            config['volume'],
-            config['nodes'],
-            config['parallel_streams'],
-            config['shutdown'],
+            bucket=config['bucket_name'],
+            width=config['width'],
+            volume=config['volume'],
+            nodes=config['nodes'],
+            parallel_streams=config['parallel_streams'],
+            shutdown=config['shutdown'],
         )
 
 
@@ -432,8 +442,8 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
-    common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
+    common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
 
     subparsers = parser.add_subparsers()
 
@@ -441,12 +451,12 @@ def parser_arguments(command_line=sys.argv[1:]):
     parser_create.add_argument('ami', help='the ami to use')
     parser_create.add_argument('spot_price1', type=float, help='the spot price for the i2.2xlarge instances')
     parser_create.add_argument('spot_price2', type=float, help='the spot price for the i2.4xlarge instances')
-    parser_create.add_argument('-d', '--days_per_node', type=int, help='the number of days per node', default=1)
+    parser_create.add_argument('--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
     parser_use.add_argument('host', help='the host the dfms is running on')
-    parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
+    parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')

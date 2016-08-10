@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, in_dirs):
     """
     Perform the CLEAN step
 
@@ -61,7 +61,9 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, in_dirs):
               threshold='0.0mJy',
               imsize=[2048],
               cell=[arcsec],
-              weighting='natural',
+              wprojplanes=w_projection_planes,
+              weighting='briggs',
+              robust=robust,
               usescratch=False) # Don't overwrite the model data col
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
@@ -72,9 +74,11 @@ args = parse_args()
 LOG.info(args)
 
 do_clean(
-    args.arguments[0],
-    int(args.arguments[1]),
-    int(args.arguments[2]),
-    int(args.arguments[3]),
-    args.arguments[4],
-    args.arguments[5:])
+    cube_dir=args.arguments[0],
+    min_freq=int(args.arguments[1]),
+    max_freq=int(args.arguments[2]),
+    iterations=int(args.arguments[3]),
+    arcsec=args.arguments[4],
+    w_projection_planes=int(args.arguments[5]),
+    robust=float(args.arguments[6]),
+    in_dirs=args.arguments[7:])

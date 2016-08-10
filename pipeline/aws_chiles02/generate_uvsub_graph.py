@@ -107,10 +107,14 @@ def get_nodes_required(node_count, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown):
+def create_and_generate(bucket_name, frequency_width, w_projection_planes, ami_id, spot_price, volume, nodes, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), get_s3_split_name(frequency_width))
+        work_to_do = WorkToDo(
+            width=frequency_width,
+            bucket_name=bucket_name,
+            s3_uvsub_name=get_s3_uvsub_name(frequency_width),
+            s3_split_name=get_s3_split_name(frequency_width))
         work_to_do.calculate_work_to_do()
 
         nodes_required, node_count = get_nodes_required(nodes, spot_price)
@@ -189,7 +193,17 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     session_id = get_session_id()
                     instance_details = data_island_manager_running['m4.large'][0]
                     host = instance_details['ip_address']
-                    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, session_id, host)
+                    graph = BuildGraphUvsub(
+                        work_to_do=work_to_do.work_to_do,
+                        bucket_name=bucket_name,
+                        volume=volume,
+                        parallel_streams=PARALLEL_STREAMS,
+                        node_details=reported_running,
+                        shutdown=add_shutdown,
+                        width=frequency_width,
+                        w_projection_planes=w_projection_planes,
+                        session_id=session_id,
+                        dim_ip=host)
                     graph.build_graph()
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -202,7 +216,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
+def use_and_generate(host, port, bucket_name, frequency_width, w_projection_planes, volume, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -218,12 +232,26 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), get_s3_split_name(frequency_width))
+            work_to_do = WorkToDo(
+                width=frequency_width,
+                bucket_name=bucket_name,
+                s3_uvsub_name=get_s3_uvsub_name(frequency_width),
+                s3_split_name=get_s3_split_name(frequency_width))
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphUvsub(work_to_do.work_to_do, bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, session_id, host)
+            graph = BuildGraphUvsub(
+                work_to_do=work_to_do.work_to_do,
+                bucket_name=bucket_name,
+                volume=volume,
+                parallel_streams=PARALLEL_STREAMS,
+                node_details=nodes_running,
+                shutdown=add_shutdown,
+                width=frequency_width,
+                w_projection_planes=w_projection_planes,
+                session_id=session_id,
+                dim_ip=host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -237,14 +265,28 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def generate_json(width, bucket, nodes, volume, shutdown):
-    work_to_do = WorkToDo(width, bucket, get_s3_uvsub_name(width), get_s3_split_name(width))
+def generate_json(width, w_projection_planes, bucket, nodes, volume, shutdown):
+    work_to_do = WorkToDo(
+        width=width,
+        bucket_name=bucket,
+        s3_uvsub_name=get_s3_uvsub_name(width),
+        s3_split_name=get_s3_split_name(width))
     work_to_do.calculate_work_to_do()
 
     node_details = {
         'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
     }
-    graph = BuildGraphUvsub(work_to_do.work_to_do, bucket, volume, PARALLEL_STREAMS, node_details, shutdown, width, 'session_id', '1.2.3.4')
+    graph = BuildGraphUvsub(
+        work_to_do=work_to_do.work_to_do,
+        bucket_name=bucket,
+        volume=volume,
+        parallel_streams=PARALLEL_STREAMS,
+        node_details=node_details,
+        shutdown=shutdown,
+        width=width,
+        w_projection_planes=w_projection_planes,
+        session_id='session_id',
+        dim_ip='1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -253,29 +295,38 @@ def generate_json(width, bucket, nodes, volume, shutdown):
 
 
 def command_json(args):
-    generate_json(args.width, args.bucket, args.nodes, args.volume, args.shutdown)
+    generate_json(
+        width=args.width,
+        w_projection_planes=args.w_projection_planes,
+        bucket=args.bucket,
+        nodes=args.nodes,
+        volume=args.volume,
+        shutdown=args.shutdown,
+    )
 
 
 def command_create(args):
     create_and_generate(
-        args.bucket,
-        args.width,
-        args.ami,
-        args.spot_price1,
-        args.volume,
-        args.nodes,
-        args.shutdown,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        w_projection_planes=args.w_projection_planes,
+        ami_id=args.ami,
+        spot_price=args.spot_price,
+        volume=args.volume,
+        nodes=args.nodes,
+        add_shutdown=args.shutdown,
     )
 
 
 def command_use(args):
     use_and_generate(
-        args.host,
-        args.port,
-        args.bucket,
-        args.width,
-        args.volume,
-        args.shutdown,
+        host=args.host,
+        port=args.port,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        w_projection_planes=args.w_projection_planes,
+        volume=args.volume,
+        add_shutdown=args.shutdown,
     )
 
 
@@ -294,6 +345,7 @@ def command_interactive(args):
     get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+    get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     if config['run_type'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -310,30 +362,33 @@ def command_interactive(args):
     # Run the command
     if config['run_type'] == 'create':
         create_and_generate(
-            config['bucket_name'],
-            config['width'],
-            config['ami'],
-            config['spot_price'],
-            config['volume'],
-            config['nodes'],
-            config['shutdown'],
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            w_projection_planes=config['w_projection_planes'],
+            ami_id=config['ami'],
+            spot_price=config['spot_price'],
+            volume=config['volume'],
+            nodes=config['nodes'],
+            add_shutdown=config['shutdown'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
-            config['dim'],
-            DIM_PORT,
-            config['bucket_name'],
-            config['width'],
-            config['volume'],
-            config['shutdown'],
+            host=config['dim'],
+            port=DIM_PORT,
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            w_projection_planes=config['w_projection_planes'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
         )
     else:
         generate_json(
-            config['width'],
-            config['bucket_name'],
-            config['nodes'],
-            config['volume'],
-            config['shutdown'],
+            width=config['width'],
+            w_projection_planes=config['w_projection_planes'],
+            bucket=config['bucket_name'],
+            nodes=config['nodes'],
+            volume=config['volume'],
+            shutdown=config['shutdown'],
         )
 
 
@@ -343,26 +398,27 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
+    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
+    common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()
 
     parser_json = subparsers.add_parser('json', parents=[common_parser], help='display the json')
     parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
-    parser_json.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_json.add_argument('--nodes', type=int, help='the number of nodes', default=1)
     parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
     parser_create.add_argument('spot_price', type=float, help='the spot price')
-    parser_create.add_argument('-n', '--nodes', type=int, help='the number of nodes', default=1)
+    parser_create.add_argument('--nodes', type=int, help='the number of nodes', default=1)
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
     parser_use.add_argument('host', help='the host the dfms is running on')
-    parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
+    parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')

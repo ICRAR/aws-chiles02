@@ -38,7 +38,7 @@ class CarryOverDataClean:
 
 
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, arcsec, only_image, session_id, dim_ip):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, arcsec, w_projection_planes, robust, only_image, session_id, dim_ip):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
@@ -47,6 +47,8 @@ class BuildGraphClean(AbstractBuildGraph):
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._iterations = iterations
         self._arcsec = arcsec
+        self._w_projection_planes = w_projection_planes
+        self._robust = robust
         self._only_image = only_image
         self._map_frequency_to_node = None
         self._list_ip = []
@@ -78,6 +80,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 max_frequency=frequency_pair.top_frequency,
                 iterations=self._iterations,
                 arcsec=self._arcsec,
+                robust=self._robust,
+                w_projection_planes=self._w_projection_planes,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
             result = self.create_directory_container(node_id, 'dir_clean_output')

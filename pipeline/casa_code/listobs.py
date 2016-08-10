@@ -54,5 +54,5 @@ args = parse_args()
 LOG.info(args)
 
 do_listobs(
-        find_file(args.arguments[0]),
-        args.arguments[1])
+        infile=find_file(args.arguments[0]),
+        outfile=args.arguments[1])

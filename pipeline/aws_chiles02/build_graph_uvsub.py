@@ -35,10 +35,11 @@ class CarryOverDataUvsub:
 
 
 class BuildGraphUvsub(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, session_id, dim_ip):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, w_projection_planes, session_id, dim_ip):
         super(BuildGraphUvsub, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
+        self._w_projection_planes = w_projection_planes
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._s3_split_name = 'split_{0}'.format(width)
         self._list_ip = []
@@ -124,6 +125,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
             'uvsub',
             min_frequency=frequencies[0],
             max_frequency=frequencies[1],
+            w_projection_planes=self._w_projection_planes,
         )
         result = self.create_directory_container(node_id, 'dir_uvsub_output')
         casa_py_uvsub_drop.addInput(measurement_set)

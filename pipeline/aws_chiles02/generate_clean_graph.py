@@ -98,7 +98,20 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, frequencies_per_node, add_shutdown, iterations, arcsec, only_image, log_level):
+def create_and_generate(
+        bucket_name,
+        frequency_width,
+        ami_id,
+        spot_price,
+        volume,
+        frequencies_per_node,
+        add_shutdown,
+        iterations,
+        arcsec,
+        w_projection_planes,
+        robust,
+        only_image,
+        log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations, arcsec))
@@ -181,18 +194,20 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     instance_details = data_island_manager_running['m4.large'][0]
                     host = instance_details['ip_address']
                     graph = BuildGraphClean(
-                        work_to_do.work_to_do,
-                        bucket_name,
-                        volume,
-                        PARALLEL_STREAMS,
-                        reported_running,
-                        add_shutdown,
-                        frequency_width,
-                        iterations,
-                        arcsec,
-                        only_image,
-                        session_id,
-                        host)
+                        work_to_do=work_to_do.work_to_do,
+                        bucket_name=bucket_name,
+                        volume=volume,
+                        parallel_streams=PARALLEL_STREAMS,
+                        node_details=reported_running,
+                        shutdown=add_shutdown,
+                        width=frequency_width,
+                        iterations=iterations,
+                        arcsec=arcsec,
+                        w_projection_planes=w_projection_planes,
+                        robust=robust,
+                        only_image=only_image,
+                        session_id=session_id,
+                        dim_ip=host)
                     graph.build_graph()
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -205,7 +220,18 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, arcsec, only_image):
+def use_and_generate(
+        host,
+        port,
+        bucket_name,
+        frequency_width,
+        volume,
+        add_shutdown,
+        iterations,
+        arcsec,
+        w_projection_planes,
+        robust,
+        only_image):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -227,18 +253,20 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             # Now build the graph
             session_id = get_session_id()
             graph = BuildGraphClean(
-                work_to_do.work_to_do,
-                bucket_name,
-                volume,
-                PARALLEL_STREAMS,
-                nodes_running,
-                add_shutdown,
-                frequency_width,
-                iterations,
-                arcsec,
-                only_image,
-                session_id,
-                host)
+                work_to_do=work_to_do.work_to_do,
+                bucket_name=bucket_name,
+                volume=volume,
+                parallel_streams=PARALLEL_STREAMS,
+                node_details=nodes_running,
+                shutdown=add_shutdown,
+                width=frequency_width,
+                iterations=iterations,
+                arcsec=arcsec,
+                w_projection_planes=w_projection_planes,
+                robust=robust,
+                only_image=only_image,
+                session_id=session_id,
+                dim_ip=host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -260,18 +288,20 @@ def command_json(args):
         'i2.4xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
     }
     graph = BuildGraphClean(
-        work_to_do.work_to_do,
-        args.bucket,
-        args.volume,
-        args.parallel_streams,
-        node_details,
-        args.shutdown,
-        args.width,
-        args.iterations,
-        args.arcsec,
-        args.only_image,
-        'session_id',
-        '1.2.3.4')
+        work_to_do=work_to_do.work_to_do,
+        bucket_name=args.bucket,
+        volume=args.volume,
+        parallel_streams=args.parallel_streams,
+        node_details=node_details,
+        shutdown=args.shutdown,
+        width=args.width,
+        iterations=args.iterations,
+        arcsec=args.arcsec + 'arcsec',
+        w_projection_planes=args.w_projection_planes,
+        robust=args.robust,
+        only_image=args.only_image,
+        session_id='session_id',
+        dim_ip='1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -282,31 +312,35 @@ def command_json(args):
 def command_create(args):
     log_level = get_log_level(args)
     create_and_generate(
-        args.bucket,
-        args.width,
-        args.ami,
-        args.spot_price1,
-        args.volume,
-        args.frequencies_per_node,
-        args.shutdown,
-        args.iterations,
-        args.arcsec + 'arcsec',
-        args.only_image,
-        log_level,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        ami_id=args.ami,
+        spot_price=args.spot_price1,
+        volume=args.volume,
+        frequencies_per_node=args.frequencies_per_node,
+        add_shutdown=args.shutdown,
+        iterations=args.iterations,
+        arcsec=args.arcsec + 'arcsec',
+        w_projection_planes=args.w_projection_planes,
+        robust=args.robust,
+        only_image=args.only_image,
+        log_level=log_level,
     )
 
 
 def command_use(args):
     use_and_generate(
-        args.host,
-        args.port,
-        args.bucket,
-        args.width,
-        args.volume,
-        args.shutdown,
-        args.iterations,
-        args.arcsec + 'arcsec',
-        args.only_image,
+        host=args.host,
+        port=args.port,
+        bucket_name=args.bucket,
+        frequency_width=args.width,
+        volume=args.volume,
+        add_shutdown=args.shutdown,
+        iterations=args.iterations,
+        arcsec=args.arcsec + 'arcsec',
+        w_projection_planes=args.w_projection_planes,
+        robust=args.robust,
+        only_image=args.only_image,
     )
 
 
@@ -327,6 +361,8 @@ def command_interactive(args):
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
     get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
+    get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
+    get_argument(config, 'robust', 'clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     if config['create_use'] == 'create':
@@ -343,29 +379,33 @@ def command_interactive(args):
     # Run the command
     if config['create_use'] == 'create':
         create_and_generate(
-            config['bucket_name'],
-            config['width'],
-            config['ami'],
-            config['spot_price_i2_4xlarge'],
-            config['volume'],
-            config['frequencies_per_node'],
-            config['shutdown'],
-            config['iterations'],
-            config['arcsec'] + 'arcsec',
-            config['only_image'],
-            config['log_level'],
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            ami_id=config['ami'],
+            spot_price=config['spot_price_i2_4xlarge'],
+            volume=config['volume'],
+            frequencies_per_node=config['frequencies_per_node'],
+            add_shutdown=config['shutdown'],
+            iterations=config['iterations'],
+            arcsec=config['arcsec'] + 'arcsec',
+            w_projection_planes=config['w_projection_planes'],
+            robust=config['robust'],
+            only_image=config['only_image'],
+            log_level=config['log_level'],
         )
     else:
         use_and_generate(
-            config['dim'],
-            DIM_PORT,
-            config['bucket_name'],
-            config['width'],
-            config['volume'],
-            config['shutdown'],
-            config['iterations'],
-            config['arcsec'] + 'arcsec',
-            config['only_image'],
+            host=config['dim'],
+            port=DIM_PORT,
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
+            iterations=config['iterations'],
+            arcsec=config['arcsec'] + 'arcsec',
+            w_projection_planes=config['w_projection_planes'],
+            robust=config['robust'],
+            only_image=config['only_image'],
         )
 
 
@@ -376,28 +416,30 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('arcsec', help='the number of arcsec', default='1.25')
-    common_parser.add_argument('-oi', '--only_image', action='store_true', help='store only the image to S3', )
-    common_parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('-s', '--shutdown', action='store_true', help='add a shutdown drop')
-    common_parser.add_argument('-i', '--iterations', type=int, help='the number of iterations', default=10)
+    common_parser.add_argument('--only_image', action='store_true', help='store only the image to S3', )
+    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
+    common_parser.add_argument('--shutdown', action='store_true', help='add a shutdown drop')
+    common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
+    common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
+    common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
 
     subparsers = parser.add_subparsers()
 
     parser_json = subparsers.add_parser('json', parents=[common_parser], help='display the json')
     parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
-    parser_json.add_argument('-f', '--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
+    parser_json.add_argument('--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
     parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
     parser_create.add_argument('spot_price', type=float, help='the spot price')
-    parser_create.add_argument('-f', '--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
+    parser_create.add_argument('--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
     parser_use.add_argument('host', help='the host the dfms is running on')
-    parser_use.add_argument('-p', '--port', type=int, help='the port to bind to', default=DIM_PORT)
+    parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.set_defaults(func=command_use)
 
     parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')

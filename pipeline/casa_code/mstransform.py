@@ -90,8 +90,8 @@ args = parse_args()
 LOG.info(args)
 
 do_mstransform(
-        find_file(args.arguments[0]),
-        args.arguments[1],
-        int(args.arguments[2]),
-        int(args.arguments[3]),
-        float(args.arguments[4]))
+        infile=find_file(args.arguments[0]),
+        outdir=args.arguments[1],
+        min_freq=int(args.arguments[2]),
+        max_freq=int(args.arguments[3]),
+        bottom_edge=float(args.arguments[4]))
