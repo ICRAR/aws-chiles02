@@ -75,10 +75,10 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         # These are the parameters for the generation of the model
         # Not sure how many of them are important here -- all except mode?
         im.defineimage(
-            nx=2048,
-            ny=2048,
-            cellx='1.5arcsec',
-            celly='1.5arcsec',
+            nx=4096,
+            ny=4096,
+            cellx='2arcsec',
+            celly='2arcsec',
             mode='mfs',
             facets=1
         )
