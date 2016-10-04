@@ -39,6 +39,7 @@ TAR_FILE = 'ms.tar'
 logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
+logging.getLogger('s3transfer').setLevel(logging.INFO)
 
 
 class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
