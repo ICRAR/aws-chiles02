@@ -191,7 +191,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge NM - MsTransform',
+                        'Value': 'DALiuGE NM - MsTransform',
                     },
                     {
                         'Key': 'uuid',
@@ -228,7 +228,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge DIM - MsTransform',
+                        'Value': 'DALiuGE DIM - MsTransform',
                     },
                     {
                         'Key': 'uuid',

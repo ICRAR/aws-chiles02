@@ -71,7 +71,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge NM - Concatenate',
+                    'Value': 'DALiuGE NM - Concatenate',
                 },
                 {
                     'Key': 'uuid',
@@ -107,7 +107,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge DIM - Concatenate',
+                    'Value': 'DALiuGE DIM - Concatenate',
                 },
                 {
                     'Key': 'uuid',

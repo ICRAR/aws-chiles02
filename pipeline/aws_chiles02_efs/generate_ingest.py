@@ -95,7 +95,7 @@ def command_create(args):
 
 
 def parser_arguments(command_line=sys.argv[1:]):
-    parser = argparse.ArgumentParser('Build and deploy the ingest, which will trigger of Daliuge nodes')
+    parser = argparse.ArgumentParser('Build and deploy the ingest, which will trigger of DALiuGE nodes')
 
     subparsers = parser.add_subparsers()
 

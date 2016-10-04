@@ -67,7 +67,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge NM - JPEG2000',
+                    'Value': 'DALiuGE NM - JPEG2000',
                 },
                 {
                     'Key': 'uuid',
@@ -103,7 +103,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge DIM - JPEG2000',
+                    'Value': 'DALiuGE DIM - JPEG2000',
                 },
                 {
                     'Key': 'uuid',

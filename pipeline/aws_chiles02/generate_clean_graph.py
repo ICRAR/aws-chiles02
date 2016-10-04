@@ -133,7 +133,7 @@ def create_and_generate(
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge NM - Clean',
+                        'Value': 'DALiuGE NM - Clean',
                     },
                     {
                         'Key': 'uuid',
@@ -173,7 +173,7 @@ def create_and_generate(
                         },
                         {
                             'Key': 'Name',
-                            'Value': 'Daliuge DIM - Clean',
+                            'Value': 'DALiuGE DIM - Clean',
                         },
                         {
                             'Key': 'uuid',

@@ -79,7 +79,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'Daliuge NM - Find bad MS',
+                    'Value': 'DALiuGE NM - Find bad MS',
                 },
                 {
                     'Key': 'uuid',
@@ -119,7 +119,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge DIM - Find bad MS',
+                        'Value': 'DALiuGE DIM - Find bad MS',
                     },
                     {
                         'Key': 'uuid',

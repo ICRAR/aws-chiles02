@@ -107,10 +107,16 @@ sleep 10
 # Get the docker containers now to prevent a race condition later
 % if chiles:
 docker pull kevinvinsen/chiles02:latest
+
+# Check it works
+docker run kevinvinsen/chiles02:latest /bin/echo 'Hello chiles02 container'
 % endif
 
 % if jpeg2000:
 docker pull slavakitaeff/sv:1.4
+
+# Check it works
+docker run kevinvinsen/chiles02:latest /bin/echo 'Hello sv container'
 % endif
 
 cd /home/ec2-user

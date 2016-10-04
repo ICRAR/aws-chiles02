@@ -133,7 +133,7 @@ def create_and_generate(bucket_name, frequency_width, w_projection_planes, ami_i
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'Daliuge NM - Uvsub',
+                        'Value': 'DALiuGE NM - Uvsub',
                     },
                     {
                         'Key': 'uuid',
@@ -173,7 +173,7 @@ def create_and_generate(bucket_name, frequency_width, w_projection_planes, ami_i
                         },
                         {
                             'Key': 'Name',
-                            'Value': 'Daliuge DIM - Uvsub',
+                            'Value': 'DALiuGE DIM - Uvsub',
                         },
                         {
                             'Key': 'uuid',
