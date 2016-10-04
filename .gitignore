@@ -17,3 +17,4 @@ __pycache__/
 /pipeline/build/
 /pipeline/.eggs/
 /machine_learning/machine_learning.iml
+/pipeline/dist/
