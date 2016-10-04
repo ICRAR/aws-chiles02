@@ -104,6 +104,10 @@ rm -rf /var/lib/docker
 service docker start
 sleep 10
 
+# Docker 1.11.2 has some odd issues so we need to restart the server
+service docker restart
+sleep 10
+
 # Get the docker containers now to prevent a race condition later
 % if chiles:
 docker pull kevinvinsen/chiles02:latest
@@ -116,7 +120,7 @@ docker run kevinvinsen/chiles02:latest /bin/echo 'Hello chiles02 container'
 docker pull slavakitaeff/sv:1.4
 
 # Check it works
-docker run kevinvinsen/chiles02:latest /bin/echo 'Hello sv container'
+docker run slavakitaeff/sv /bin/echo 'Hello sv container'
 % endif
 
 cd /home/ec2-user

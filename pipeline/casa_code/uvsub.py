@@ -108,5 +108,5 @@ do_uvsub(
         in_dir=args.arguments[0],
         out_dir=args.arguments[1],
         out_ms=args.arguments[2],
-        w_projection_planes=args.arguments[3],
+        w_projection_planes=int(args.arguments[3]),
         model=args.arguments[4:])
