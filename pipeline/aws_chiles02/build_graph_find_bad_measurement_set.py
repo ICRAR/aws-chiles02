@@ -106,7 +106,6 @@ class BuildGraphFindBadMeasurementSet(AbstractBuildGraph):
             'aws-chiles02',
             oid='s3_in',
         )
-        self._start_oids.append(s3_drop['uid'])
 
         copy_from_s3 = self.create_app(
             node_id,

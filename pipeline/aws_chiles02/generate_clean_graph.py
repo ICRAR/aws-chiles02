@@ -40,6 +40,7 @@ from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
+from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
@@ -215,7 +216,7 @@ def create_and_generate(
 
                     client.create_session(session_id)
                     client.append_graph(session_id, graph.drop_list)
-                    client.deploy_session(session_id, graph.start_oids)
+                    client.deploy_session(session_id, get_roots(graph.drop_list))
     else:
         LOG.error('Unable to find the AWS credentials')
 
@@ -269,37 +270,44 @@ def use_and_generate(
                 dim_ip=host)
             graph.build_graph()
 
+            # TODO: Remove
+            json_dumps = json.dumps(graph.drop_list, indent=2)
+            LOG.info(json_dumps)
+            with open("/tmp/json_clean.txt", "w") as json_file:
+                json_file.write(json_dumps)
+            # TODO: Remove
+
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
 
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
-            client.deploy_session(session_id, graph.start_oids)
+            client.deploy_session(session_id, get_roots(graph.drop_list))
 
         else:
             LOG.warning('No nodes are running')
 
 
-def command_json(args):
-    work_to_do = WorkToDo(args.width, args.bucket, get_s3_clean_name(args.width, args.iterations, args.arcsec))
+def generate_json(width, bucket, iterations, arcsec, nodes, volume, parallel_streams, shutdown, w_projection_planes, robust, only_image):
+    work_to_do = WorkToDo(width, bucket, get_s3_clean_name(width, iterations, arcsec))
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.4xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
+        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
-        bucket_name=args.bucket,
-        volume=args.volume,
-        parallel_streams=args.parallel_streams,
+        bucket_name=bucket,
+        volume=volume,
+        parallel_streams=parallel_streams,
         node_details=node_details,
-        shutdown=args.shutdown,
-        width=args.width,
-        iterations=args.iterations,
-        arcsec=args.arcsec + 'arcsec',
-        w_projection_planes=args.w_projection_planes,
-        robust=args.robust,
-        only_image=args.only_image,
+        shutdown=shutdown,
+        width=width,
+        iterations=iterations,
+        arcsec=arcsec + 'arcsec',
+        w_projection_planes=w_projection_planes,
+        robust=robust,
+        only_image=only_image,
         session_id='session_id',
         dim_ip='1.2.3.4')
     graph.build_graph()
@@ -307,6 +315,22 @@ def command_json(args):
     LOG.info(json_dumps)
     with open("/tmp/json_clean.txt", "w") as json_file:
         json_file.write(json_dumps)
+
+
+def command_json(args):
+    generate_json(
+        width=args.width,
+        bucket=args.bucket,
+        iterations=args.iterations,
+        arcsec=args.arcsec,
+        nodes=args.nodes,
+        volume=args.volume,
+        parallel_streams=args.parallel_streams,
+        shutdown=args.shutdown,
+        w_projection_planes=args.w_projection_planes,
+        robust=args.robust,
+        only_image=args.only_image
+    )
 
 
 def command_create(args):
@@ -355,29 +379,31 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+    get_argument(config, 'run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
     get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
     get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
-    get_argument(config, 'robust', 'clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
+    get_argument(config, 'robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    if config['create_use'] == 'create':
+    if config['run_type'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
         get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
-    else:
+    elif config['run_type'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+    else:
+        get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
 
     # Write the arguments
     config.write()
 
     # Run the command
-    if config['create_use'] == 'create':
+    if config['run_type'] == 'create':
         create_and_generate(
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
@@ -393,7 +419,7 @@ def command_interactive(args):
             only_image=config['only_image'],
             log_level=config['log_level'],
         )
-    else:
+    elif config['run_type'] == 'use':
         use_and_generate(
             host=config['dim'],
             port=DIM_PORT,
@@ -406,6 +432,20 @@ def command_interactive(args):
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
             only_image=config['only_image'],
+        )
+    else:
+        generate_json(
+            width=config['width'],
+            bucket=config['bucket_name'],
+            iterations=config['iterations'],
+            arcsec=config['arcsec'] + 'arcsec',
+            nodes=config['nodes'],
+            volume=config['volume'],
+            parallel_streams=PARALLEL_STREAMS,
+            shutdown=config['shutdown'],
+            w_projection_planes=config['w_projection_planes'],
+            robust=config['robust'],
+            only_image=config['only_image']
         )
 
 

@@ -29,6 +29,7 @@ import argparse
 from aws_chiles02.common import get_uuid, get_module_name, get_session_id
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
+from dfms.droputils import get_roots
 from dfms.manager.client import NodeManagerClient
 
 LOG = logging.getLogger(__name__)
@@ -37,14 +38,12 @@ LOG = logging.getLogger(__name__)
 class BuildGraph:
     def __init__(self):
         self._drop_list = []
-        self._start_oids = []
 
     def build_graph(self):
         start_drop = dropdict({
             "type": 'plain',
             "storage": 'memory',
             "oid": get_oid('memory_in'),
-            "uid": get_uuid(),
         })
         self._start_oids.append(start_drop['uid'])
         self.append(start_drop)
@@ -64,10 +63,6 @@ class BuildGraph:
     @property
     def drop_list(self):
         return self._drop_list
-
-    @property
-    def start_oids(self):
-        return self._start_oids
 
     def append(self, drop):
         self._drop_list.append(drop)
@@ -93,7 +88,7 @@ def command_run(args):
     session_id = get_session_id()
     client.create_session(session_id)
     client.append_graph(session_id, graph.drop_list)
-    client.deploy_session(session_id, graph.start_oids)
+    client.deploy_session(session_id, get_roots(graph.drop_list))
 
 
 def parser_arguments():

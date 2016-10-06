@@ -106,7 +106,6 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(fits_file)
 
-            self._start_oids.append(s3_drop['uid'])
             if parallel_streams[counter] is not None:
                 copy_from_s3.addInput(parallel_streams[counter])
 
@@ -116,7 +115,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 get_module_name(DockerApp),
                 'app_convert_jpeg2000',
                 CONTAINER_SV,
-                'sv-encode -i %i0 -o %o0 Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{256,256},{128,128}" Cblk="{32,32}" Qstep=0.0001',
+                'sv_encode -i %i0 --input-options normalisation-dist LOG normalisation-domain CHANNEL -o %o0 --output-options Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{128,128},{64,64}" Cblk="{32,32}" Qstep=0.0001 --stats',
                 user='root',
             )
 

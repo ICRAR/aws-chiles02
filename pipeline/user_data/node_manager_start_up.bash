@@ -117,10 +117,10 @@ docker run kevinvinsen/chiles02:latest /bin/echo 'Hello chiles02 container'
 % endif
 
 % if jpeg2000:
-docker pull slavakitaeff/sv:1.4
+docker pull jtmalarecki/sv:latest
 
 # Check it works
-docker run slavakitaeff/sv /bin/echo 'Hello sv container'
+docker run jtmalarecki/sv /bin/echo 'Hello sv container'
 % endif
 
 cd /home/ec2-user

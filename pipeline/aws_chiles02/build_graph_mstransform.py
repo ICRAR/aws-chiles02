@@ -159,7 +159,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             'aws-chiles02',
             's3_in')
         if len(add_output_s3) == 0:
-            self._start_oids.append(s3_drop['uid'])
+            pass # Do nothing
         else:
             for drop in add_output_s3:
                 drop.addOutput(s3_drop)

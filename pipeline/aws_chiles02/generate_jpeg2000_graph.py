@@ -39,6 +39,7 @@ from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
+from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
@@ -131,7 +132,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
-            client.deploy_session(session_id, graph.start_oids)
+            client.deploy_session(session_id, get_roots(graph.drop_list))
     else:
         LOG.error('Unable to find the AWS credentials')
 
@@ -162,7 +163,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
 
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)
-            client.deploy_session(session_id, graph.start_oids)
+            client.deploy_session(session_id, get_roots(graph.drop_list))
 
         else:
             LOG.warning('No nodes are running')

@@ -40,7 +40,6 @@ class AbstractBuildGraph:
 
     def __init__(self, bucket_name, shutdown, node_details, volume, session_id, dim_ip):
         self._drop_list = []
-        self._start_oids = []
         self._map_carry_over_data = {}
         self._bucket_name = bucket_name
         self._shutdown = shutdown
@@ -58,10 +57,6 @@ class AbstractBuildGraph:
     @property
     def drop_list(self):
         return self._drop_list
-
-    @property
-    def start_oids(self):
-        return self._start_oids
 
     def add_drop(self, drop):
         self._drop_list.append(drop)
@@ -139,12 +134,12 @@ class AbstractBuildGraph:
 
     def create_bash_shell_app(self, node_id, command, oid='bash_shell_app', input_error_threshold=100):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'app',
             "app": get_module_name(BashShellApp),
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "command": command,
             "input_error_threshold": input_error_threshold,
             "node": node_id,
@@ -154,12 +149,12 @@ class AbstractBuildGraph:
 
     def create_barrier_app(self, node_id, oid='barrier_app', input_error_threshold=100):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'app',
             "app": get_module_name(BarrierAppDROP),
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "input_error_threshold": input_error_threshold,
             "node": node_id,
         })
@@ -168,12 +163,12 @@ class AbstractBuildGraph:
 
     def create_app(self, node_id, app, oid, input_error_threshold=100, **key_word_arguments):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'app',
             "app": app,
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "input_error_threshold": input_error_threshold,
             "node": node_id,
         })
@@ -183,12 +178,12 @@ class AbstractBuildGraph:
 
     def create_docker_app(self, node_id, app, oid, image, command, user='ec2-user', input_error_threshold=100, **key_word_arguments):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'app',
             "app": app,
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "image": image,
             "command": command,
             "user": user,
@@ -201,12 +196,12 @@ class AbstractBuildGraph:
 
     def create_directory_container(self, node_id, oid='directory_container', expire_after_use=True):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'container',
             "container": get_module_name(DirectoryContainer),
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "precious": False,
             "dirname": os.path.join(self._volume, oid_text),
             "check_exists": False,
@@ -218,12 +213,12 @@ class AbstractBuildGraph:
 
     def create_memory_drop(self, node_id, oid='memory_drop'):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'plain',
             "storage": 'memory',
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "precious": False,
             "node": node_id,
         })
@@ -232,12 +227,12 @@ class AbstractBuildGraph:
 
     def create_s3_drop(self, node_id, bucket_name, key, profile_name, oid='s3'):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'plain',
             "storage": 's3',
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "expireAfterUse": True,
             "precious": False,
             "bucket": bucket_name,
@@ -250,12 +245,12 @@ class AbstractBuildGraph:
 
     def create_json_drop(self, node_id, oid='json'):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'plain',
             "storage": 'json',
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "precious": False,
             "dirname": os.path.join(self._volume, oid_text),
             "check_exists": False,
@@ -266,12 +261,12 @@ class AbstractBuildGraph:
 
     def create_file_drop(self, node_id, filepath, oid='file'):
         oid_text = self.get_oid(oid)
-        uid_text = self.get_uuid()
+        # uid_text = self.get_uuid()
         drop = dropdict({
             "type": 'plain',
             "storage": 'file',
             "oid": oid_text,
-            "uid": uid_text,
+            # "uid": uid_text,
             "precious": False,
             "filepath": filepath,
             "node": node_id,

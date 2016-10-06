@@ -89,7 +89,6 @@ class BuildGraphConcatenation(AbstractBuildGraph):
             copy_from_s3.addInput(s3_drop)
             copy_from_s3.addOutput(measurement_set)
 
-            self._start_oids.append(s3_drop['uid'])
             carry_over_data = self._map_carry_over_data[self._node_id]
             if carry_over_data.s3_out is not None:
                 copy_from_s3.addInput(carry_over_data.s3_out)
