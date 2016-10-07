@@ -71,6 +71,11 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
+    # IA used to report the statistics to the log file
+    ia.open(outfile+'.image')
+    ia.statistics(verbose=T,axes=[0,1])
+    ia.close()
+
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
 
 args = parse_args()

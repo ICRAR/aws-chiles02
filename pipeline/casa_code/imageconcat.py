@@ -45,6 +45,11 @@ def do_concatenate(out_filename, input_files):
         final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
         final.done()
 
+        # IA used to report the statistics to the log file
+        ia.open(out_filename)
+        ia.statistics(verbose=T,axes=[0,1])
+        ia.close()
+
         exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
