@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, in_dirs):
     """
     Perform the CLEAN step
 
@@ -56,13 +56,13 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
               start='',
               width='',
               # Nearest or Linear??
-              # Should be identical as we are not averaging channels 
+              # Should be identical as we are not averaging channels
               interpolation='nearest',
               gridmode='widefield',
               niter=iterations,
               gain=0.1,
               threshold='0.0mJy',
-              imsize=[2048],
+              imsize=[image_size],
               cell=[arcsec],
               wprojplanes=w_projection_planes,
               weighting='briggs',
@@ -73,7 +73,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
 
     # IA used to report the statistics to the log file
     ia.open(outfile+'.image')
-    ia.statistics(verbose=T,axes=[0,1])
+    ia.statistics(verbose=True,axes=[0,1])
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
@@ -89,4 +89,5 @@ do_clean(
     arcsec=args.arguments[4],
     w_projection_planes=int(args.arguments[5]),
     robust=float(args.arguments[6]),
-    in_dirs=args.arguments[7:])
+    image_size=int(args.arguments[7]),
+    in_dirs=args.arguments[8:])

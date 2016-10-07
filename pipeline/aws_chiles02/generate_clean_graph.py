@@ -48,10 +48,12 @@ PARALLEL_STREAMS = 12
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_clean_name):
+    def __init__(self, width, bucket_name, s3_clean_name, min_frequency, max_frequency):
         self._width = width
         self._bucket_name = bucket_name
         self._s3_clean_name = s3_clean_name
+        self._min_frequency = min_frequency
+        self._max_frequency = max_frequency
         self._work_already_done = None
         self._bucket = None
         self._list_frequencies = None
@@ -75,6 +77,7 @@ class WorkToDo:
                 frequency_pair.bottom_frequency,
                 frequency_pair.top_frequency,
             )
+            # TODO: Use the min and max frequency
             if expected_tar_file not in cleaned_objects:
                 self._work_to_do.append(frequency_pair)
 
@@ -111,11 +114,21 @@ def create_and_generate(
         arcsec,
         w_projection_planes,
         robust,
+        image_size,
+        min_frequency,
+        max_frequency,
+        clean_directory_name,
         only_image,
         log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations, arcsec))
+        work_to_do = WorkToDo(
+            frequency_width,
+            bucket_name,
+            get_s3_clean_name(frequency_width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+            min_frequency,
+            max_frequency
+        )
         work_to_do.calculate_work_to_do()
 
         nodes_required, node_count = get_nodes_required(work_to_do.work_to_do, frequencies_per_node, spot_price)
@@ -206,6 +219,8 @@ def create_and_generate(
                         arcsec=arcsec,
                         w_projection_planes=w_projection_planes,
                         robust=robust,
+                        image_size=image_size,
+                        clean_directory_name=clean_directory_name,
                         only_image=only_image,
                         session_id=session_id,
                         dim_ip=host)
@@ -232,6 +247,10 @@ def use_and_generate(
         arcsec,
         w_projection_planes,
         robust,
+        image_size,
+        min_frequency,
+        max_frequency,
+        clean_directory_name,
         only_image):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
@@ -248,7 +267,13 @@ def use_and_generate(
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_clean_name(frequency_width, iterations, arcsec))
+            work_to_do = WorkToDo(
+                frequency_width,
+                bucket_name,
+                get_s3_clean_name(frequency_width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+                min_frequency,
+                max_frequency
+            )
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
@@ -265,6 +290,8 @@ def use_and_generate(
                 arcsec=arcsec,
                 w_projection_planes=w_projection_planes,
                 robust=robust,
+                image_size=image_size,
+                clean_directory_name=clean_directory_name,
                 only_image=only_image,
                 session_id=session_id,
                 dim_ip=host)
@@ -288,8 +315,29 @@ def use_and_generate(
             LOG.warning('No nodes are running')
 
 
-def generate_json(width, bucket, iterations, arcsec, nodes, volume, parallel_streams, shutdown, w_projection_planes, robust, only_image):
-    work_to_do = WorkToDo(width, bucket, get_s3_clean_name(width, iterations, arcsec))
+def generate_json(
+        width,
+        bucket,
+        iterations,
+        arcsec,
+        nodes,
+        volume,
+        parallel_streams,
+        shutdown,
+        w_projection_planes,
+        robust,
+        image_size,
+        min_frequency,
+        max_frequency,
+        clean_directory_name,
+        only_image):
+    work_to_do = WorkToDo(
+        width,
+        bucket,
+        get_s3_clean_name(width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+        min_frequency,
+        max_frequency
+    )
     work_to_do.calculate_work_to_do()
 
     node_details = {
@@ -307,6 +355,8 @@ def generate_json(width, bucket, iterations, arcsec, nodes, volume, parallel_str
         arcsec=arcsec + 'arcsec',
         w_projection_planes=w_projection_planes,
         robust=robust,
+        image_size=image_size,
+        clean_directory_name=clean_directory_name,
         only_image=only_image,
         session_id='session_id',
         dim_ip='1.2.3.4')
@@ -329,6 +379,10 @@ def command_json(args):
         shutdown=args.shutdown,
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
+        image_size=args.image_size,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
+        clean_directory_name=args.clean_directory_name,
         only_image=args.only_image
     )
 
@@ -347,6 +401,10 @@ def command_create(args):
         arcsec=args.arcsec + 'arcsec',
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
+        image_size=args.image_size,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
+        clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
         log_level=log_level,
     )
@@ -364,6 +422,10 @@ def command_use(args):
         arcsec=args.arcsec + 'arcsec',
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
+        image_size=args.image_size,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
+        clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
     )
 
@@ -387,8 +449,20 @@ def command_interactive(args):
     get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
+    get_argument(config, 'image_size', 'The image size', data_type=int, help_text='the image size for clean', default=2048)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+
+    get_argument(config, 'special_clean_directory_name', 'Do you want to use a special clean directory name', help_text='Do you want to use a special clean directory name')
+    if config['special_clean_directory_name']:
+        get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
+
+    get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
+
+    if config['frequency_range']:
+        get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
+        get_argument(config, 'max_frequency', 'The maximum frequency', data_type=int, help_text='the maximum frequency', default=1420)
+
     if config['run_type'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
@@ -417,6 +491,10 @@ def command_interactive(args):
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
             only_image=config['only_image'],
+            image_size=config['image_size'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
             log_level=config['log_level'],
         )
     elif config['run_type'] == 'use':
@@ -431,6 +509,10 @@ def command_interactive(args):
             arcsec=config['arcsec'] + 'arcsec',
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
+            image_size=config['image_size'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
             only_image=config['only_image'],
         )
     else:
@@ -445,6 +527,10 @@ def command_interactive(args):
             shutdown=config['shutdown'],
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
+            image_size=config['image_size'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
             only_image=config['only_image']
         )
 
@@ -463,6 +549,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
     common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
+    common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=2048)
 
     subparsers = parser.add_subparsers()
 

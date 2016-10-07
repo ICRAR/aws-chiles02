@@ -205,9 +205,13 @@ def run_command(command):
 
 def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None):
     if key in config:
-        default = config[key]
+        from_config = config[key]
+    else:
+        from_config = None
 
-    if default is not None:
+    if from_config is not None:
+        prompt = '{0} [{1}][{2}]:'.format(prompt, from_config, default)
+    elif default is not None:
         prompt = '{0} [{1}]:'.format(prompt, default)
     else:
         prompt = '{0}:'.format(prompt)
@@ -224,7 +228,10 @@ def get_argument(config, key, prompt, help_text=None, data_type=None, default=No
 
             data = None
         elif data == '':
-            data = default
+            if from_config is not None:
+                data = from_config
+            else:
+                data = default
 
         if allowed is not None:
             if data not in allowed:
@@ -236,7 +243,7 @@ def get_argument(config, key, prompt, help_text=None, data_type=None, default=No
         elif data_type == float:
             config[key] = float(data)
         elif data_type == bool:
-            config[key] = data in ['True', 'true']
+            config[key] = data in ['True', 'true', 'Yes', 'yes']
     else:
         config[key] = data
 
