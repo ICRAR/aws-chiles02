@@ -72,12 +72,17 @@ class WorkToDo:
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
         for frequency_pair in self._list_frequencies:
+            # Use the min and max frequency
+            if self._min_frequency is not None and frequency_pair.top_frequency < self._min_frequency:
+                continue
+            if self._max_frequency is not None and frequency_pair.bottom_frequency > self._max_frequency:
+                continue
+
             expected_tar_file = '{0}/cleaned_{1}_{2}.tar'.format(
                 self._s3_clean_name,
                 frequency_pair.bottom_frequency,
                 frequency_pair.top_frequency,
             )
-            # TODO: Use the min and max frequency
             if expected_tar_file not in cleaned_objects:
                 self._work_to_do.append(frequency_pair)
 
@@ -446,19 +451,15 @@ def command_interactive(args):
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='1.25')
+    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
     get_argument(config, 'image_size', 'The image size', data_type=int, help_text='the image size for clean', default=2048)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-
-    get_argument(config, 'special_clean_directory_name', 'Do you want to use a special clean directory name', help_text='Do you want to use a special clean directory name')
-    if config['special_clean_directory_name']:
-        get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
+    get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean', use_stored=False)
 
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
-
     if config['frequency_range']:
         get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
         get_argument(config, 'max_frequency', 'The maximum frequency', data_type=int, help_text='the maximum frequency', default=1420)
@@ -494,7 +495,7 @@ def command_interactive(args):
             image_size=config['image_size'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
-            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
+            clean_directory_name=config['clean_directory_name'],
             log_level=config['log_level'],
         )
     elif config['run_type'] == 'use':
@@ -512,7 +513,7 @@ def command_interactive(args):
             image_size=config['image_size'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
-            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
+            clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
         )
     else:
@@ -530,7 +531,7 @@ def command_interactive(args):
             image_size=config['image_size'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
-            clean_directory_name=config['clean_directory_name'] if config['special_clean_directory_name'] else None,
+            clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image']
         )
 

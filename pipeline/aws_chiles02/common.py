@@ -203,14 +203,16 @@ def run_command(command):
     return process.returncode
 
 
-def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None):
-    if key in config:
+def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
+    if key in config and use_stored:
         from_config = config[key]
     else:
         from_config = None
 
-    if from_config is not None:
-        prompt = '{0} [{1}][{2}]:'.format(prompt, from_config, default)
+    if from_config is not None and default is not None:
+        prompt = '{0} [{1}](default: {2}):'.format(prompt, from_config, default)
+    elif from_config is not None:
+        prompt = '{0} [{1}]:'.format(prompt, from_config)
     elif default is not None:
         prompt = '{0} [{1}]:'.format(prompt, default)
     else:

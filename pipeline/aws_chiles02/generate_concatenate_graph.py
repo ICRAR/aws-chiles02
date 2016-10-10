@@ -128,7 +128,17 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             session_id = get_session_id()
             instance_details = data_island_manager_running['m4.large'][0]
             host = instance_details['ip_address']
-            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host)
+            graph = BuildGraphConcatenation(
+                bucket_name,
+                volume,
+                PARALLEL_STREAMS,
+                reported_running,
+                add_shutdown,
+                frequency_width,
+                iterations,
+                '2arcsec',  # TODO: Pass as a parameter
+                session_id,
+                host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
