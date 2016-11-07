@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, in_dirs):
     """
     Perform the CLEAN step
 
@@ -54,7 +54,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
               restfreq='1420.405752MHz',
               nchan=-1,
               start='',
-              width='',
+              width=clean_channel_average,
               # Nearest or Linear??
               # Should be identical as we are not averaging channels
               interpolation='nearest',
@@ -90,4 +90,5 @@ do_clean(
     w_projection_planes=int(args.arguments[5]),
     robust=float(args.arguments[6]),
     image_size=int(args.arguments[7]),
-    in_dirs=args.arguments[8:])
+    clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
+    in_dirs=args.arguments[9:])

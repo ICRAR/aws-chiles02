@@ -120,6 +120,7 @@ def create_and_generate(
         w_projection_planes,
         robust,
         image_size,
+        clean_channel_average,
         min_frequency,
         max_frequency,
         clean_directory_name,
@@ -225,6 +226,7 @@ def create_and_generate(
                         w_projection_planes=w_projection_planes,
                         robust=robust,
                         image_size=image_size,
+                        clean_channel_average=clean_channel_average,
                         clean_directory_name=clean_directory_name,
                         only_image=only_image,
                         session_id=session_id,
@@ -253,6 +255,7 @@ def use_and_generate(
         w_projection_planes,
         robust,
         image_size,
+        clean_channel_average,
         min_frequency,
         max_frequency,
         clean_directory_name,
@@ -296,18 +299,12 @@ def use_and_generate(
                 w_projection_planes=w_projection_planes,
                 robust=robust,
                 image_size=image_size,
+                clean_channel_average=clean_channel_average,
                 clean_directory_name=clean_directory_name,
                 only_image=only_image,
                 session_id=session_id,
                 dim_ip=host)
             graph.build_graph()
-
-            # TODO: Remove
-            json_dumps = json.dumps(graph.drop_list, indent=2)
-            LOG.info(json_dumps)
-            with open("/tmp/json_clean.txt", "w") as json_file:
-                json_file.write(json_dumps)
-            # TODO: Remove
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
@@ -332,6 +329,7 @@ def generate_json(
         w_projection_planes,
         robust,
         image_size,
+        clean_channel_average,
         min_frequency,
         max_frequency,
         clean_directory_name,
@@ -361,6 +359,7 @@ def generate_json(
         w_projection_planes=w_projection_planes,
         robust=robust,
         image_size=image_size,
+        clean_channel_average=clean_channel_average,
         clean_directory_name=clean_directory_name,
         only_image=only_image,
         session_id='session_id',
@@ -385,6 +384,7 @@ def command_json(args):
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
         image_size=args.image_size,
+        clean_channel_average=args.clean_channel_average,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
@@ -407,6 +407,7 @@ def command_create(args):
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
         image_size=args.image_size,
+        clean_channel_average=args.clean_channel_average,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
@@ -428,6 +429,7 @@ def command_use(args):
         w_projection_planes=args.w_projection_planes,
         robust=args.robust,
         image_size=args.image_size,
+        clean_channel_average=args.clean_channel_average,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
@@ -455,6 +457,7 @@ def command_interactive(args):
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
     get_argument(config, 'image_size', 'The image size', data_type=int, help_text='the image size for clean', default=2048)
+    get_argument(config, 'clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean', use_stored=False)
@@ -493,6 +496,7 @@ def command_interactive(args):
             robust=config['robust'],
             only_image=config['only_image'],
             image_size=config['image_size'],
+            clean_channel_average=config['clean_channel_average'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],
@@ -511,6 +515,7 @@ def command_interactive(args):
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
             image_size=config['image_size'],
+            clean_channel_average=config['clean_channel_average'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],
@@ -529,6 +534,7 @@ def command_interactive(args):
             w_projection_planes=config['w_projection_planes'],
             robust=config['robust'],
             image_size=config['image_size'],
+            clean_channel_average=config['clean_channel_average'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],

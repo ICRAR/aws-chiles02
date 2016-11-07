@@ -52,6 +52,7 @@ class BuildGraphClean(AbstractBuildGraph):
             w_projection_planes,
             robust,
             image_size,
+            clean_channel_average,
             clean_directory_name,
             only_image,
             session_id,
@@ -67,6 +68,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._w_projection_planes = w_projection_planes
         self._robust = robust
         self._image_size = image_size
+        self._clean_channel_average = clean_channel_average
         self._only_image = only_image
         self._map_frequency_to_node = None
         self._list_ip = []
@@ -101,6 +103,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 robust=self._robust,
                 image_size=self._image_size,
                 w_projection_planes=self._w_projection_planes,
+                clean_channel_average=self._clean_channel_average,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
             result = self.create_directory_container(node_id, 'dir_clean_output')

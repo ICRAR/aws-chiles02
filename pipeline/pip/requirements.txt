@@ -3,5 +3,5 @@ boto3
 ConfigObj
 mako
 pymysql
-pip>=8.1
+pip>=9.0
 sqlalchemy

@@ -53,7 +53,8 @@ def retrieve_files(args):
     bucket = s3.Bucket(args.bucket)
     size = 0
     for key in bucket.objects.all():
-        if key.key.endswith('_calibrated_deepfield.ms.tar'):
+        # if  key.key.endswith('_calibrated_deepfield.ms.tar'):
+        if key.key.startswith('split_4/'):
             obj = s3.Object(key.bucket_name, key.key)
             storage_class = obj.storage_class
             restore = obj.restore

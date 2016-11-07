@@ -287,6 +287,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._w_projection_planes = None
         self._robust = None
         self._image_size = None
+        self._clean_channel_average = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -299,6 +300,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
+        self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -314,7 +316,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
@@ -322,6 +324,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._w_projection_planes,
                 self._robust,
                 self._image_size,
+                self._clean_channel_average,
                 ' '.join(measurement_sets),
             )
         else:
