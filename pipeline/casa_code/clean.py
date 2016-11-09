@@ -50,14 +50,12 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
               imagename=outfile,
               field='deepfield',
               spw='',
-              mode='frequency',
+              mode='frequency' if clean_channel_average == '' else 'channel',
               restfreq='1420.405752MHz',
               nchan=-1,
-              start='',
+              start=0,
               width=clean_channel_average,
-              # Nearest or Linear??
-              # Should be identical as we are not averaging channels
-              interpolation='nearest',
+              interpolation='nearest' if clean_channel_average == '' else 'linear',
               gridmode='widefield',
               niter=iterations,
               gain=0.1,
