@@ -55,7 +55,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
               nchan=-1,
               start=0,
               width=clean_channel_average,
-              interpolation='nearest' if clean_channel_average == '' else 'linear',
+              interpolation='nearest',
               gridmode='widefield',
               niter=iterations,
               gain=0.1,

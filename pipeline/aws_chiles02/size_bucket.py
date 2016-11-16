@@ -39,7 +39,6 @@ logging.getLogger('s3transfer').setLevel(logging.INFO)
 def parser_arguments():
     parser = argparse.ArgumentParser('Size of files in Bucket')
     parser.add_argument('bucket', help='the s3 bucket')
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     args = parser.parse_args()
     LOG.info(args)
@@ -53,12 +52,8 @@ def retrieve_files(args):
     bucket = s3.Bucket(args.bucket)
     size = 0
     for key in bucket.objects.all():
-        obj = s3.Object(key.bucket_name, key.key)
-        storage_class = obj.storage_class
-        restore = obj.restore
         size += key.size
-        if args.verbosity >= 1:
-            LOG.info('{0}, {1}, {2}, {3}'.format(key.key, storage_class, restore, size))
+        LOG.info('{0}, {1}, {2}, {3}'.format(key.key, bytes2human(key.size), size, bytes2human(size)))
 
     LOG.info('Size = {0}'.format(bytes2human(size)))
 

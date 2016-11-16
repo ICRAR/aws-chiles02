@@ -233,6 +233,8 @@ def create_and_generate(
                         dim_ip=host)
                     graph.build_graph()
 
+                    # TODO: Safe the run parameters
+
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                     client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -305,6 +307,8 @@ def use_and_generate(
                 session_id=session_id,
                 dim_ip=host)
             graph.build_graph()
+
+            # TODO: Safe the run parameters
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
@@ -548,12 +552,12 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('arcsec', help='the number of arcsec', default='1.25')
-    common_parser.add_argument('--only_image', action='store_true', help='store only the image to S3', )
+    common_parser.add_argument('arcsec', help='the number of arcsec', default='2')
+    common_parser.add_argument('--only_image', action='store_true', help='store only the image to S3', default=True)
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('--shutdown', action='store_true', help='add a shutdown drop')
+    common_parser.add_argument('--shutdown', action='store_true', help='add a shutdown drop', default=True)
     common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
-    common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
+    common_parser.add_argument('-v', '--verbosity', action='count', help='increase output verbosity', default=0)
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
     common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
     common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=2048)
