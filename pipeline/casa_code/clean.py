@@ -72,6 +72,19 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     # IA used to report the statistics to the log file
     ia.open(outfile+'.image')
     ia.statistics(verbose=True,axes=[0,1])
+    # IA used to make squashed images.
+    ia.moments(moments=[-1],outfile=outfile+'image.mom.mean_freq')
+    ia.moments(moments=[-1],axis=0,outfile=outfile+'image.mom.mean_ra')
+    # IA used to make slices.
+    smry=ia.summary()
+    xpos=2967/4096*smry()['shape'][0]
+    ypos=4095/4096*smry()['shape'][1]
+    slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
+    for n in range(0,len(slice)):
+        print slice['ypos'][n],slice['pixel'][n]
+
+    ## How do I print inside AWS ????
+    ## pl.plot(slice['ypos'],slice['pixel'])
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
