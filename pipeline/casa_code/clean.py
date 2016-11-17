@@ -81,11 +81,13 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ypos=4095/4096*smry()['shape'][1]
     slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
     ## How do I print inside AWS ????
-    import matplotlib.pylab as mp
     #for n in range(0,len(slice)):
     #    print slice['ypos'][n],slice['pixel'][n]
-    mp.plot(slice['ypos'],slice['pixel']*1e3)
-    mp.savefig(outfile+'image.slice.png')
+    pl.plot(slice['ypos'],slice['pixel']*1e3)
+    pl.xlabel('Declination (pixels)')
+    pl.ylabel('Amplitude (mJy)')
+    pl.title('Slice along sidelobe for '+outfile)
+    pl.savefig(outfile+'image.slice.png')
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
