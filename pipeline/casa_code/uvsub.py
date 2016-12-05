@@ -101,12 +101,13 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         LOG.exception('*********\nUVSub exception: \n***********')
 
 
-args = parse_args()
-LOG.info(args)
+if __name__ == "__main__":
+    args = parse_args()
+    LOG.info(args)
 
-do_uvsub(
-        in_dir=args.arguments[0],
-        out_dir=args.arguments[1],
-        out_ms=args.arguments[2],
-        w_projection_planes=int(args.arguments[3]),
-        model=args.arguments[4:])
+    do_uvsub(
+            in_dir=args.arguments[0],
+            out_dir=args.arguments[1],
+            out_ms=args.arguments[2],
+            w_projection_planes=int(args.arguments[3]),
+            model=args.arguments[4:])

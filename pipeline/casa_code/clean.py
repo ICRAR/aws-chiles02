@@ -89,17 +89,18 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
 
-args = parse_args()
-LOG.info(args)
+if __name__ == "__main__":
+    args = parse_args()
+    LOG.info(args)
 
-do_clean(
-    cube_dir=args.arguments[0],
-    min_freq=int(args.arguments[1]),
-    max_freq=int(args.arguments[2]),
-    iterations=int(args.arguments[3]),
-    arcsec=args.arguments[4],
-    w_projection_planes=int(args.arguments[5]),
-    robust=float(args.arguments[6]),
-    image_size=int(args.arguments[7]),
-    clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
-    in_dirs=args.arguments[9:])
+    do_clean(
+        cube_dir=args.arguments[0],
+        min_freq=int(args.arguments[1]),
+        max_freq=int(args.arguments[2]),
+        iterations=int(args.arguments[3]),
+        arcsec=args.arguments[4],
+        w_projection_planes=int(args.arguments[5]),
+        robust=float(args.arguments[6]),
+        image_size=int(args.arguments[7]),
+        clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
+        in_dirs=args.arguments[9:])

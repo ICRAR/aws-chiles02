@@ -48,14 +48,23 @@ PARALLEL_STREAMS = 8
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_uvsub_name, s3_split_name):
+    def __init__(
+            self,
+            width,
+            bucket_name,
+            s3_uvsub_name,
+            s3_split_name,
+            min_frequency,
+            max_frequency):
         self._width = width
         self._bucket_name = bucket_name
         self._s3_uvsub_name = s3_uvsub_name
         self._s3_split_name = s3_split_name
+        self._min_frequency = min_frequency
+        self._max_frequency = max_frequency
+
         self._work_already_done = None
         self._bucket = None
-        self._list_frequencies = None
         self._work_to_do = []
 
     def calculate_work_to_do(self):
@@ -78,6 +87,13 @@ class WorkToDo:
                     elements[2],
                 )
                 if expected_uvsub_name not in uvsub_objects:
+                    frequencies = elements[1].split('_')
+                    # Use the min and max frequency
+                    if self._min_frequency is not None and frequencies[1] < self._min_frequency:
+                        continue
+                    if self._max_frequency is not None and frequencies[0] > self._max_frequency:
+                        continue
+
                     self._work_to_do.append(
                         [
                             elements[1],
@@ -108,14 +124,26 @@ def get_nodes_required(node_count, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, w_projection_planes, ami_id, spot_price, volume, nodes, add_shutdown):
+def create_and_generate(
+        bucket_name,
+        frequency_width,
+        w_projection_planes,
+        ami_id,
+        spot_price,
+        volume,
+        nodes,
+        add_shutdown,
+        min_frequency,
+        max_frequency):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
             width=frequency_width,
             bucket_name=bucket_name,
             s3_uvsub_name=get_s3_uvsub_name(frequency_width),
-            s3_split_name=get_s3_split_name(frequency_width))
+            s3_split_name=get_s3_split_name(frequency_width),
+            min_frequency=min_frequency,
+            max_frequency=max_frequency)
         work_to_do.calculate_work_to_do()
 
         nodes_required, node_count = get_nodes_required(nodes, spot_price)
@@ -217,7 +245,16 @@ def create_and_generate(bucket_name, frequency_width, w_projection_planes, ami_i
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, w_projection_planes, volume, add_shutdown):
+def use_and_generate(
+        host,
+        port,
+        bucket_name,
+        frequency_width,
+        w_projection_planes,
+        volume,
+        add_shutdown,
+        min_frequency,
+        max_frequency):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -237,7 +274,9 @@ def use_and_generate(host, port, bucket_name, frequency_width, w_projection_plan
                 width=frequency_width,
                 bucket_name=bucket_name,
                 s3_uvsub_name=get_s3_uvsub_name(frequency_width),
-                s3_split_name=get_s3_split_name(frequency_width))
+                s3_split_name=get_s3_split_name(frequency_width),
+                min_frequency=min_frequency,
+                max_frequency=max_frequency)
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
@@ -266,12 +305,22 @@ def use_and_generate(host, port, bucket_name, frequency_width, w_projection_plan
             LOG.warning('No nodes are running')
 
 
-def generate_json(width, w_projection_planes, bucket, nodes, volume, shutdown):
+def generate_json(
+        width,
+        w_projection_planes,
+        bucket,
+        nodes,
+        volume,
+        shutdown,
+        min_frequency,
+        max_frequency):
     work_to_do = WorkToDo(
         width=width,
         bucket_name=bucket,
         s3_uvsub_name=get_s3_uvsub_name(width),
-        s3_split_name=get_s3_split_name(width))
+        s3_split_name=get_s3_split_name(width),
+        min_frequency=min_frequency,
+        max_frequency=max_frequency)
     work_to_do.calculate_work_to_do()
 
     node_details = {
@@ -303,6 +352,8 @@ def command_json(args):
         nodes=args.nodes,
         volume=args.volume,
         shutdown=args.shutdown,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
     )
 
 
@@ -316,6 +367,8 @@ def command_create(args):
         volume=args.volume,
         nodes=args.nodes,
         add_shutdown=args.shutdown,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
     )
 
 
@@ -328,6 +381,8 @@ def command_use(args):
         w_projection_planes=args.w_projection_planes,
         volume=args.volume,
         add_shutdown=args.shutdown,
+        min_frequency=args.min_frequency,
+        max_frequency=args.max_frequency,
     )
 
 
@@ -348,6 +403,11 @@ def command_interactive(args):
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+    get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
+    if config['frequency_range']:
+        get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
+        get_argument(config, 'max_frequency', 'The maximum frequency', data_type=int, help_text='the maximum frequency', default=1420)
+
     if config['run_type'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
@@ -371,6 +431,8 @@ def command_interactive(args):
             volume=config['volume'],
             nodes=config['nodes'],
             add_shutdown=config['shutdown'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -381,6 +443,8 @@ def command_interactive(args):
             w_projection_planes=config['w_projection_planes'],
             volume=config['volume'],
             add_shutdown=config['shutdown'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
         )
     else:
         generate_json(
@@ -390,6 +454,8 @@ def command_interactive(args):
             nodes=config['nodes'],
             volume=config['volume'],
             shutdown=config['shutdown'],
+            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
+            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
         )
 
 

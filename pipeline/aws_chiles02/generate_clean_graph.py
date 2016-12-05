@@ -308,7 +308,7 @@ def use_and_generate(
                 dim_ip=host)
             graph.build_graph()
 
-            # TODO: Safe the run parameters
+            # TODO: Save the run parameters
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
@@ -589,7 +589,6 @@ def parser_arguments(command_line=sys.argv[1:]):
 
 if __name__ == '__main__':
     # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
-    # interactive
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)

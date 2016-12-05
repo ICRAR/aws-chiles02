@@ -29,21 +29,17 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime
 from time import sleep
 
 import boto3
 from configobj import ConfigObj
-from sqlalchemy import create_engine, select
 
 from aws_chiles02.build_graph_stats import BuildGraphStats
 from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid, get_log_level
-from aws_chiles02.database_server import DatabaseServer
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
-from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT, AWS_DATABASE_ID, INPUT_MS_SUFFIX_TAR
+from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
-from casa_code.database import CHILES02_METADATA, DAY_NAME, MEASUREMENT_SET
 from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 
@@ -52,10 +48,9 @@ PARALLEL_STREAMS = 8
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_uvsub_name, connection):
-        self._width = width
+    def __init__(self, input_dir, bucket_name, s3_uvsub_name, connection):
+        self._input_dir = input_dir
         self._bucket_name = bucket_name
-        self._s3_uvsub_name = s3_uvsub_name
         self._work_already_done = None
         self._bucket = None
         self._list_frequencies = None
@@ -66,28 +61,20 @@ class WorkToDo:
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
 
-        visstat_data_rows = []
-        for visstat_data in self._connection.execute(
-                select([MEASUREMENT_SET.c.width, DAY_NAME.c.name, MEASUREMENT_SET.c.min_frequency, MEASUREMENT_SET.c.max_frequency]).select_from(
-                    MEASUREMENT_SET.join(DAY_NAME)
-                )):
-            visstat_data_rows.append(
-                '{0} {1} {2} {3}'.format(
-                    visstat_data[MEASUREMENT_SET.c.width],
-                    visstat_data[DAY_NAME.c.name],
-                    visstat_data[MEASUREMENT_SET.c.min_frequency],
-                    visstat_data[MEASUREMENT_SET.c.max_frequency],
-                )
-            )
-
+        found_csv = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
+        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._input_dir)):
+            if key.key.endswith('.csv'):
+                LOG.debug('csv {0} found'.format(key.key))
+                found_csv.append('')
+
+        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._input_dir)):
             if key.key.endswith('.tar'):
                 LOG.debug('uvsub {0} found'.format(key.key))
                 elements = key.key.split('/')
                 frequencies = elements[1].split('_')
                 expected_uvsub_name = '{0} {1} {2} {3}'.format(
-                    self._width,
+                    self._input_dir,
                     elements[2],
                     frequencies[0],
                     frequencies[1]
@@ -106,17 +93,6 @@ class WorkToDo:
         return self._work_to_do
 
 
-class DatabaseException(Exception):
-    """
-    There is a problem with the database
-    """
-    pass
-
-
-def get_s3_uvsub_name(width):
-    return 'uvsub_{0}'.format(width)
-
-
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
@@ -127,68 +103,9 @@ def get_nodes_required(node_count, spot_price):
     return nodes, node_count
 
 
-def setup_database(password, bucket_name):
-    map_day_name = {}
-    database = DatabaseServer(AWS_DATABASE_ID, AWS_REGION)
-    if database.is_terminated():
-        LOG.error('The database server is terminated')
-        raise DatabaseException('The database server is terminated')
-    if database.is_shutting_down():
-        LOG.error('The database server is being shutdown')
-        raise DatabaseException('The database server is being shutdown')
-    if not database.is_running():
-        LOG.info('Starting the database')
-        database.start()
-        sleep(10)
-
-        while not database.is_running():
-            sleep(10)
-
-        sleep(30)
-
-    database_ip = database.ip_address
-    db_login = "mysql+pymysql://root:{0}@{1}/chiles02".format(password, database_ip)
-    engine = create_engine(db_login)
-
-    # Create the tables we need if they don't exist
-    CHILES02_METADATA.create_all(engine)
-
-    # Populate the day name table and map
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = boto3.Session(profile_name='aws-chiles02')
-    s3 = session.resource('s3', use_ssl=False)
-    bucket = s3.Bucket(bucket_name)
-    for key in bucket.objects.filter(Prefix='observation_data'):
-        if key.key.endswith('_calibrated_deepfield.ms.tar'):
-            LOG.info('Found {0}'.format(key.key))
-
-            elements = key.key.split('/')
-            long_name = elements[1]
-            short_name = long_name[:-len(INPUT_MS_SUFFIX_TAR)]
-
-            day_name = connection.execute(select([DAY_NAME]).where(DAY_NAME.c.name == short_name)).fetchone()
-
-            if day_name is None:
-                sql_result = connection.execute(
-                    DAY_NAME.insert(),
-                    name=short_name,
-                    update_time=datetime.now()
-                )
-                day_name_id = sql_result.inserted_primary_key[0]
-            else:
-                day_name_id = day_name[DAY_NAME.c.day_name_id]
-            map_day_name[short_name + '.tar'] = day_name_id
-
-    transaction.commit()
-    return connection, map_day_name, database_ip
-
-
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, nodes, add_shutdown, password, log_level):
+def create_and_generate(bucket_name, input_dir, ami_id, spot_price, volume, nodes, add_shutdown, log_level):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        database_connection, map_day_name, database_ip = setup_database(password, bucket_name)
-
         work_to_do = WorkToDo(frequency_width, bucket_name, get_s3_uvsub_name(frequency_width), database_connection)
         work_to_do.calculate_work_to_do()
 
@@ -300,11 +217,9 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, password):
+def use_and_generate(host, port, bucket_name, input_dir, volume, add_shutdown):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        database_connection, map_day_name, database_ip = setup_database(password, bucket_name)
-
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
@@ -350,8 +265,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def generate_json(width, bucket, nodes, volume, shutdown, password):
-    database_connection, map_day_name, database_ip = setup_database(password, bucket)
+def generate_json(input_dir, bucket, nodes, volume, shutdown):
     work_to_do = WorkToDo(width, bucket, get_s3_uvsub_name(width), database_connection)
     work_to_do.calculate_work_to_do()
 
@@ -381,12 +295,11 @@ def generate_json(width, bucket, nodes, volume, shutdown, password):
 
 def command_json(args):
     generate_json(
-        args.width,
+        args.input_dir,
         args.bucket,
         args.nodes,
         args.volume,
         args.shutdown,
-        args.password,
     )
 
 
@@ -394,13 +307,12 @@ def command_create(args):
     log_level = get_log_level(args)
     create_and_generate(
         args.bucket,
-        args.width,
+        args.input_dir,
         args.ami,
         args.spot_price1,
         args.volume,
         args.nodes,
         args.shutdown,
-        args.password,
         log_level
     )
 
@@ -410,10 +322,9 @@ def command_use(args):
         args.host,
         args.port,
         args.bucket,
-        args.width,
+        args.input_dir,
         args.volume,
         args.shutdown,
-        args.password,
     )
 
 
@@ -434,24 +345,21 @@ def command_interactive(args):
         get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        get_argument(config, 'input_dir', 'Input directory', help_text='the input directory', default='uvsub_4')
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
-        get_argument(config, 'database_password', 'Database password', help_text='the database password')
         get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     elif config['run_type'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'database_password', 'Database password', help_text='the database password')
+        get_argument(config, 'input_dir', 'Input directory', help_text='the input directory', default='uvsub_4')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     else:
         get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        get_argument(config, 'input_dir', 'Input directory', help_text='the input directory', default='uvsub_4')
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
-        get_argument(config, 'database_password', 'Database password', help_text='the database password')
         get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
 
     # Write the arguments
@@ -461,13 +369,12 @@ def command_interactive(args):
     if config['run_type'] == 'create':
         create_and_generate(
             config['bucket_name'],
-            config['width'],
+            config['input_dir'],
             config['ami'],
             config['spot_price'],
             config['volume'],
             config['nodes'],
             config['shutdown'],
-            config['database_password'],
             config['log_level'],
         )
     elif config['run_type'] == 'use':
@@ -475,19 +382,17 @@ def command_interactive(args):
             config['dim'],
             DIM_PORT,
             config['bucket_name'],
-            config['width'],
+            config['input_dir'],
             config['volume'],
             config['shutdown'],
-            config['database_password']
         )
     else:
         generate_json(
-            config['width'],
+            config['input_dir'],
             config['bucket_name'],
             config['nodes'],
             config['volume'],
             config['shutdown'],
-            config['database_password']
         )
 
 
@@ -497,8 +402,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('password', help='the database password')
-    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
+    common_parser.add_argument('input_dir', help='the input directory', default='uvsub_4')
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 

@@ -27,12 +27,9 @@ import getpass
 import httplib
 import json
 import logging
-import os
-from time import sleep
 
 import boto3
 import sys
-from configobj import ConfigObj
 
 from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
 from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_aws_credentials, MeasurementSetData, get_uuid
@@ -323,7 +320,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown):
     work_to_do = WorkToDo(width, bucket, get_s3_split_name(width))
     work_to_do.calculate_work_to_do()
 
@@ -337,7 +334,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, shutdown):
         volume=volume,
         parallel_streams=parallel_streams,
         node_details=node_details,
-        shutdown=shutdown,
+        shutdown=add_shutdown,
         width=width,
         session_id='json_test',
         dim_ip='1.2.3.4'
@@ -373,39 +370,46 @@ def command_use(args):
     )
 
 
-def command_interactive(args):
-    LOG.info(args)
-    sleep(0.5)  # Allow the logging time to print
+def command_json(args):
+    build_json(
+        bucket=args.bucket,
+        width=args.width,
+        volume=args.volume,
+        nodes=args.nodes,
+        parallel_streams=args.parallel_streams,
+        add_shutdown=args.shutdown,
+    )
 
-    path_dirname, filename = os.path.split(__file__)
-    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
-    if os.path.exists(config_file_name):
-        config = ConfigObj(config_file_name)
-    else:
-        config = ConfigObj()
-        config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
+def interactive(config):
+    get_argument(config, 'create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
     get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    if config['create_use'] == 'create':
+    if config['create_use_json'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price_i2.2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
         get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
         get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
-    elif config['create_use'] == 'use':
+    elif config['create_use_json'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
     else:
         get_argument(config, 'nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
         get_argument(config, 'parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
 
-    # Write the arguments
-    config.write()
-
     # Run the command
-    if config['create_use'] == 'create':
+    if config['create_use_json'] == 'create':
+        command_line = 'create {0} {1} {2} {3} {4} {5} {6} {7}'.format(
+            config['bucket_name'],
+            config['volume'],
+            config['ami'],
+            config['spot_price_i2.2xlarge'],
+            config['spot_price_i2_4xlarge'],
+            '--days_per_node ' + config['days_per_node'],
+            '--width ' + config['width'],
+            '--shutdown' if config['shutdown'] else ''
+        )
         create_and_generate(
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
@@ -416,7 +420,15 @@ def command_interactive(args):
             days_per_node=config['days_per_node'],
             add_shutdown=config['shutdown'],
         )
-    elif config['create_use'] == 'use':
+    elif config['create_use_json'] == 'use':
+        command_line = 'use {0} {1} {2} {3} {4} {5}'.format(
+            config['bucket_name'],
+            config['volume'],
+            config['dim'],
+            '--port ' + DIM_PORT,
+            '--width ' + config['width'],
+            '--shutdown' if config['shutdown'] else ''
+        )
         use_and_generate(
             host=config['dim'],
             port=DIM_PORT,
@@ -426,14 +438,18 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
         )
     else:
+        command_line = 'json'.format(
+
+        )
         build_json(
             bucket=config['bucket_name'],
             width=config['width'],
             volume=config['volume'],
             nodes=config['nodes'],
             parallel_streams=config['parallel_streams'],
-            shutdown=config['shutdown'],
+            add_shutdown=config['shutdown'],
         )
+    return parser_arguments(command_line)
 
 
 def parser_arguments(command_line=sys.argv[1:]):
@@ -445,6 +461,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('--output', help='the output name', default=None)
 
     subparsers = parser.add_subparsers()
 
@@ -460,8 +477,8 @@ def parser_arguments(command_line=sys.argv[1:]):
     parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.set_defaults(func=command_use)
 
-    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
-    parser_interactive.set_defaults(func=command_interactive)
+    parser_json = subparsers.add_parser('json', parents=[common_parser], help='use what is running and deploy')
+    parser_json.set_defaults(func=command_json)
 
     args = parser.parse_args(command_line)
     return args

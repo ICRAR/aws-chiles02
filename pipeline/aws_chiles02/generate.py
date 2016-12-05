@@ -20,73 +20,92 @@
 #    MA 02111-1307  USA
 #
 """
-Provide a GIT like interface for the generation code
+Provide a single interface into building the images
 """
 import argparse
+import logging
+import os
 import sys
 
-from aws_chiles02 import generate_clean_graph, generate_concatenate_graph, generate_jpeg2000_graph, generate_mstransform_graph, generate_uvsub_graph
+from configobj import ConfigObj
 
 
 class Generate(object):
     def __init__(self):
         self._arguments = None
-        parser = argparse.ArgumentParser(
-            description='Start the various generate scripts',
-            usage='''generate <command> [<args>]
 
-    The most commonly used generate commands are:
-       clean       Record changes to the repository
-       concatenate Download objects and refs from another repository
-       jpeg2000    Produce the files required for JPEG2000
-       mstransform Split the input data into small chunks
-       uvsub       Perform the sky model subtraction
+        if len(sys.argv) == 0:
+            # Build the command string
+            self._build_interactive_command_line()
+        else:
+            parser = argparse.ArgumentParser(
+                description='Start the various generate scripts',
+                usage='''generate [<args>]
 
-    The normal order is:
-       mstransform
-       uvsub
-       clean
-       jpeg2000
-       concatenate
-    ''')
-        parser.add_argument('command', help='Subcommand to run')
+        The most commonly used generate commands are:
+           --clean       Record changes to the repository
+           --jpeg2000    Produce the files required for JPEG2000
+           --mstransform Split the input data into small chunks
+           --uvsub       Perform the sky model subtraction
 
-        # parse_args defaults to [1:] for args, but I need to
-        # exclude the rest of the args too, or validation will fail
-        args = parser.parse_args(sys.argv[1:2])
-        if not hasattr(self, args.command):
-            print 'Unrecognized command'
-            parser.print_help()
-            exit(1)
+        The normal order is:
+           mstransform
+           uvsub
+           clean
+           jpeg2000
+        ''')
+            group = parser.add_mutually_exclusive_group()
+            group.add_argument('--create', action='store_true', help='Create an EC2 cluster')
+            group.add_argument('--use', action='store_true', help='Use an EC2 cluster')
+            group.add_argument('--json', action='store_true', help='Print the JSOn for the graph')
 
-        # use dispatch pattern to invoke method with same name
-        getattr(self, args.command)()
+            parser.add_argument('--clean', action='store_true', help='Perform a clean')
+            parser.add_argument('--jpeg2000', action='store_true', help='Perform the production of the jpeg2000')
+            parser.add_argument('--mstransform', action='store_true', help='Perform the mstransform')
+            parser.add_argument('--uvsub', action='store_true', help='Perform the uvsub')
 
-    def _run_arguments(self):
-        self._arguments.func(self._arguments)
+            parser.add_argument('--bucket', action='store', help='The S3 bucket to use', default='13b-266')
+            parser.add_argument('--input_dir', action='store', help='The S3 folder to start from')
+            parser.add_argument('--output_dir', action='store', help='The S3 folder to store the results in')
+            parser.add_argument('--volume', action='store', help='The directory on the host to bind to the Docker Apps')
+            parser.add_argument('--arcsec', action='store', help='The number of arcsec', default='2')
+            parser.add_argument('--only_image', action='store_true', help='Store only the image to S3', default=True)
+            parser.add_argument('--frequency_width', type=int, help='The frequency width for the split', default=4)
+            parser.add_argument('--shutdown', action='store_true', help='Add a shutdown drop', default=True)
+            parser.add_argument('--iterations', type=int, help='The number of clean iterations', default=10)
+            parser.add_argument('--w_projection_planes', type=int, help='The number of w projections planes', default=24)
+            parser.add_argument('--robust', type=float, help='The robust value for clean', default=0.8)
+            parser.add_argument('--image_size', type=int, help='The image size for clean', default=2048)
 
-    def clean(self):
-        self._arguments = generate_clean_graph.parser_arguments(sys.argv[2:])
-        self._run_arguments()
+            parser.add_argument('--ami', action='store', help='The AMI to use')
+            parser.add_argument('--spot_price', type=float, action='store', help='The spot price we are prepared to pay')
+            parser.add_argument('--min_frequency', type=int, action='store', help='The minimum frequency for this run')
+            parser.add_argument('--max_frequency', type=int, action='store', help='The maximum frequency for this run')
+            parser.add_argument('--nodes', type=int, action='store', help='The number of nodes to start')
+            parser.add_argument('--dim_ip_address', action='store', help='The DIM IP address')
 
-    def concatenate(self):
-        self._arguments = generate_concatenate_graph.parser_arguments(sys.argv[2:])
-        self._run_arguments()
+            parser.add_argument('-v', '--verbosity', action='count', help='Increase output verbosity', default=0)
 
-    def jpeg2000(self):
-        self._arguments = generate_jpeg2000_graph.parser_arguments(sys.argv[2:])
-        self._run_arguments()
+            # Now build the argument namespace
+            self._arguments = parser.parse_args()
 
-    def mstransform(self):
-        self._arguments = generate_mstransform_graph.parser_arguments(sys.argv[2:])
-        self._run_arguments()
+    def _build_interactive_command_line(self):
+        path_dirname, filename = os.path.split(__file__)
+        config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
+        if os.path.exists(config_file_name):
+            config = ConfigObj(config_file_name)
+        else:
+            config = ConfigObj()
+            config.filename = config_file_name
 
-    def uvsub(self):
-        self._arguments = generate_uvsub_graph.parser_arguments(sys.argv[2:])
-        self._run_arguments()
+        self._arguments = argparse.Namespace()
+
+        # Write the arguments
+        config.write()
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     Generate()
 
 if __name__ == '__main__':

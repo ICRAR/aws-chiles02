@@ -61,10 +61,11 @@ def do_concatenate(out_filename, input_files):
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
-args = parse_args()
-LOG.info(args)
+if __name__ == "__main__":
+    args = parse_args()
+    LOG.info(args)
 
-# ignore the output directory
-do_concatenate(
-        args.arguments[1],
-        args.arguments[2:])
+    # ignore the output directory
+    do_concatenate(
+            args.arguments[1],
+            args.arguments[2:])

@@ -50,9 +50,10 @@ def do_listobs(infile, outfile):
         out_file.write(json_string)
 
 
-args = parse_args()
-LOG.info(args)
+if __name__ == "__main__":
+    args = parse_args()
+    LOG.info(args)
 
-do_listobs(
-        infile=find_file(args.arguments[0]),
-        outfile=args.arguments[1])
+    do_listobs(
+            infile=find_file(args.arguments[0]),
+            outfile=args.arguments[1])

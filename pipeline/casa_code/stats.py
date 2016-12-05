@@ -22,16 +22,13 @@
 """
 Perform the Statistics Calc
 """
+import csv
 import logging
 
-from datetime import datetime
-from sqlalchemy import create_engine
-
 from casa_code.casa_common import parse_args
-from casa_code.database import MEASUREMENT_SET, VISSTAT
 from casa_code.echo import echo
 
-casalog.filter('DEBUGGING')
+#casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')
 LOG = logging.getLogger('stats')
 
@@ -45,7 +42,7 @@ class DataToStore(object):
 
 
 @echo
-def do_stats(in_ms):
+def do_stats(in_ms, out_csv_file):
     """
     Performs the Stats extraction
     Inputs: VIS_name (str), Output (str)
@@ -53,7 +50,7 @@ def do_stats(in_ms):
     example:
      do_stats('vis_1400~1404','vis_1400~1404.stats')
     """
-    LOG.info('stats(vis={0})'.format(in_ms))
+    LOG.info('stats(vis={0}, out_csv_file={1})'.format(in_ms, out_csv_file))
     try:
         ms.open(in_ms)
         scan_summary = ms.getscansummary()
@@ -64,7 +61,6 @@ def do_stats(in_ms):
         number_spectal_windows = len(spectral_window_info)
         number_channels = spectral_window_info['0']['NumChan']
         ms.close()
-        results = []
 
         # This will fail if there is no data
         zerov = visstat(
@@ -80,93 +76,73 @@ def do_stats(in_ms):
         for k in zerov.keys():
             zerov[k] = 0
 
-        for scan_number in scans:
-            for spectral_window_number in range(0, number_spectal_windows):
-                for channel_number in range(0, number_channels):
-                    vis_stats = visstat(
-                        vis=in_ms,
-                        datacolumn='data',
-                        scan=scan_number,
-                        spw=str(spectral_window_number) + ':' + str(channel_number)
-                    )
-                    if vis_stats is None:
-                        results.append(DataToStore(scan_number, spectral_window_number, channel_number, zerov))
-                    else:
-                        # strip off the ['CORRECTED']
-                        results.append(DataToStore(scan_number, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]]))
-
-        return results
+        with open(out_csv_file, 'wb') as csv_file:
+            csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow([
+                'scan',
+                'begin_time',
+                'end_time',
+                'spectral_window',
+                'channel',
+                'max',
+                'mean',
+                'medabsdevmed',
+                'median',
+                'min',
+                'npts',
+                'quartile',
+                'rms',
+                'stddev',
+                'sum',
+                'sumsq',
+                'var',
+            ])
+            for scan_number in scans:
+                begin_time = scan_summary[scan_number]['0']['BeginTime']
+                end_time = scan_summary[scan_number]['0']['EndTime']
+                for spectral_window_number in range(0, number_spectal_windows):
+                    for channel_number in range(0, number_channels):
+                        vis_stats = visstat(
+                            vis=in_ms,
+                            datacolumn='data',
+                            scan=scan_number,
+                            spw=str(spectral_window_number) + ':' + str(channel_number)
+                        )
+                        if vis_stats is None:
+                            write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, zerov)
+                        else:
+                            # strip off the ['CORRECTED']
+                            write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]])
 
     except Exception:
         LOG.exception('*********\nStats exception: \n***********')
         return None
 
 
-@echo
-def store_stats(results_from_stats, password, db_hostname, day_name_id, width, min_frequency, max_frequency):
-    if results is None or len(results) == 0:
-        return
+def write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, result):
+    csv_writer.writerow([
+        scan_number,
+        begin_time,
+        end_time,
+        spectral_window_number,
+        channel_number,
+        result['max'],
+        result['mean'],
+        result['medabsdevmed'],
+        result['median'],
+        result['min'],
+        result['npts'],
+        result['quartile'],
+        result['rms'],
+        result['stddev'],
+        result['sum'],
+        result['sumsq'],
+        result['var'],
+    ])
 
-    db_login = "mysql+pymysql://root:{0}@{1}/chiles02".format(password, db_hostname)
-    engine = create_engine(db_login)
-    connection = engine.connect()
-    transaction = connection.begin()
-    try:
-        sql_result = connection.execute(
-            MEASUREMENT_SET.insert(),
-            day_name_id=day_name_id,
-            width=width,
-            min_frequency=min_frequency,
-            max_frequency=max_frequency,
-            update_time=datetime.now()
-        )
-        measurement_set_id = sql_result.inserted_primary_key[0]
+if __name__ == "__main__":
+    args = parse_args()
+    LOG.info(args)
 
-        insert_data = []
-        for result in results_from_stats:
-            insert_data.append(
-                {
-                    'measurement_set_id': measurement_set_id,
-                    'scan': result.scan_number,
-                    'spectral_window': result.spectral_window_number,
-                    'channel': result.channel_number,
-                    'max': result.stats['max'],
-                    'mean': result.stats['mean'],
-                    'medabsdevmed': result.stats['medabsdevmed'],
-                    'median': result.stats['median'],
-                    'min': result.stats['min'],
-                    'npts': result.stats['npts'],
-                    'quartile': result.stats['quartile'],
-                    'rms': result.stats['rms'],
-                    'stddev': result.stats['stddev'],
-                    'sum': result.stats['sum'],
-                    'sumsq': result.stats['sumsq'],
-                    'var': result.stats['var'],
-                    'update_time': datetime.now()
-                }
-            )
-        connection.execute(
-            VISSTAT.insert(),
-            insert_data
-        )
-        transaction.commit()
-    except Exception:
-        LOG.exception('Insert error')
-        if transaction is not None:
-            transaction.rollback()
+    do_stats(args.arguments[0], args.arguments[1])
 
-
-args = parse_args()
-LOG.info(args)
-
-results = do_stats(args.arguments[0])
-if results is not None:
-    store_stats(
-        results,
-        args.arguments[1],
-        args.arguments[2],
-        args.arguments[3],
-        args.arguments[4],
-        args.arguments[5],
-        args.arguments[6],
-    )
