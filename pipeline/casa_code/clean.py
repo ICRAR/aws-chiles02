@@ -69,6 +69,23 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
+    # Make a smaller verision of the image cube
+    if (image_size>2048):
+        ia.open(outfile+'.image')
+        #box=rg.box([image_size/4,image_size*3/4],[image_size/4,image_size*3/4])
+        #box=rg.box([1024,1024],[3072,3072])
+        box=rg.box([image_size/2-1024,image_size/2-1024],[image_size/2+1024,image_size/2+1024])
+        im2=ia.subimage(outfile+'.image.centre',box,overwrite=T)
+        im2.done()
+        ia.close() 
+
+    # Make a smaller verision of the PDF cube
+    ia.open(outfile+'.psf')
+    box=rg.box([image_size/2-128,image_size/2-128],[image_size/2+128,image_size/2+128])
+    im2=ia.subimage(outfile+'.psf.centre',box,overwrite=T)
+    im2.done()
+    ia.close()
+    
     # IA used to report the statistics to the log file
     ia.open(outfile+'.image')
     ia.statistics(verbose=True,axes=[0,1])

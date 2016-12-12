@@ -181,7 +181,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         if self._only_image:
-            bash = 'tar -cvf {0} {1}.image'.format(
+            bash = 'tar -cvf {0} {1}.image {1}.psf.centre'.format(
                 tar_filename,
                 stem_name,
             )
