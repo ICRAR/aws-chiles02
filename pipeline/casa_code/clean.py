@@ -94,19 +94,53 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ia.moments(moments=[-1], axis=0, outfile=outfile+'image.mom.mean_ra')
 
     # IA used to make slices.
-    smry = ia.summary()
-    xpos = 2967/4096*smry['shape'][0]
-    ypos = 4095/4096*smry['shape'][1]
-    slice = ia.getslice(x=[xpos,xpos],y=[0,ypos])
-
-    # How do I print inside AWS ????
-    # for n in range(0,len(slice)):
-    #    print slice['ypos'][n],slice['pixel'][n]
+    smry=ia.summary()
+    xpos=2967/4096*smry['shape'][0]
+    ypos=4095/4096*smry['shape'][1]
+    slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
+    ## How do I print inside AWS ????
+    for n in range(0,len(slice)):
+        print slice['ypos'][n],slice['pixel'][n]
     pl.plot(slice['ypos'],slice['pixel']*1e3)
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
     pl.savefig(outfile+'image.slice.png')
+    # IA used to make profiles.
+    xpos=1992/4096*smry['shape'][0]
+    ypos=2218/4096*smry['shape'][1]
+    box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
+    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    ## How do I print inside AWS ????
+    for n in range(0,len(slice)):
+        print slice['ypos'][n],slice['pixel'][n]
+    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.xlabel('Frequency (MHz)')
+    pl.ylabel('Amplitude (mJy)')
+    pl.title('Slice central source '+outfile)
+    pl.savefig(outfile+'image.onsource_centre.png')
+    xpos=2972/4096*smry['shape'][0]
+    ypos=155/4096*smry['shape'][1]
+    box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
+    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    ## How do I print inside AWS ????
+    for n in range(0,len(slice)):
+        print slice['ypos'][n],slice['pixel'][n]
+    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.xlabel('Frequency (MHz)')
+    pl.ylabel('Amplitude (mJy)')
+    pl.title('Slice central source '+outfile)
+    pl.savefig(outfile+'image.onsource_south.png')
+    box=rg.box([image_size/2-2,image_size/2-2],[image_size/2+2,image_size/2+2])
+    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    ## How do I print inside AWS ????
+    #for n in range(0,len(slice)):
+    #    print slice['ypos'][n],slice['pixel'][n]
+    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.xlabel('Frequency (MHz)')
+    pl.ylabel('Amplitude (mJy)')
+    pl.title('Slice central source '+outfile)
+    pl.savefig(outfile+'image.boresight.png')
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
