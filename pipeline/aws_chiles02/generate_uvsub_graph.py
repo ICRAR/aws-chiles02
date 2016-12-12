@@ -89,9 +89,9 @@ class WorkToDo:
                 if expected_uvsub_name not in uvsub_objects:
                     frequencies = elements[1].split('_')
                     # Use the min and max frequency
-                    if self._min_frequency is not None and frequencies[1] < self._min_frequency:
+                    if self._min_frequency is not None and int(frequencies[1]) < self._min_frequency:
                         continue
-                    if self._max_frequency is not None and frequencies[0] > self._max_frequency:
+                    if self._max_frequency is not None and int(frequencies[0]) > self._max_frequency:
                         continue
 
                     self._work_to_do.append(

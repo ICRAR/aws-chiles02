@@ -219,6 +219,64 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
             }
         )
 
+        # Centred images
+        if os.path.exists(measurement_set + '.image.centre'):
+            tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.centre.tar'.format(self._min_frequency, self._max_frequency))
+            bash = 'tar -cvf {0} {1}.image.centre {1}.psf.centre'.format(
+                tar_filename,
+                stem_name,
+            )
+            return_code = run_command(bash)
+            path_exists = os.path.exists(tar_filename)
+            if return_code != 0 or not path_exists:
+                message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+                LOG.error(message)
+                self.send_error_message(
+                    message,
+                    self.oid,
+                    self.uid,
+                )
+            transfer.upload_file(
+                tar_filename,
+                bucket_name,
+                key + '.centre',
+                callback=ProgressPercentage(
+                    key,
+                    float(os.path.getsize(tar_filename))
+                ),
+                extra_args={
+                    'StorageClass': 'REDUCED_REDUNDANCY',
+                }
+            )
+
+        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
+        bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.slice.png'.format(
+            tar_filename,
+            stem_name,
+        )
+        return_code = run_command(bash)
+        path_exists = os.path.exists(tar_filename)
+        if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
+            self.send_error_message(
+                message,
+                self.oid,
+                self.uid,
+            )
+        transfer.upload_file(
+            tar_filename,
+            bucket_name,
+            key + '.qa',
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(tar_filename))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
+        )
+
         return return_code
 
 

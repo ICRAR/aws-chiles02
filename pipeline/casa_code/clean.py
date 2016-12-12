@@ -65,45 +65,47 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
               wprojplanes=w_projection_planes,
               weighting='briggs',
               robust=robust,
-              usescratch=False) # Don't overwrite the model data col
+              usescratch=False)  # Don't overwrite the model data col
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
     # Make a smaller verision of the image cube
-    if (image_size>2048):
+    if image_size > 2048:
         ia.open(outfile+'.image')
-        #box=rg.box([image_size/4,image_size*3/4],[image_size/4,image_size*3/4])
-        #box=rg.box([1024,1024],[3072,3072])
-        box=rg.box([image_size/2-1024,image_size/2-1024],[image_size/2+1024,image_size/2+1024])
-        im2=ia.subimage(outfile+'.image.centre',box,overwrite=T)
+        # box=rg.box([image_size/4,image_size*3/4],[image_size/4,image_size*3/4])
+        # box=rg.box([1024,1024],[3072,3072])
+        box = rg.box([image_size/2-1024,image_size/2-1024],[image_size/2+1024,image_size/2+1024])
+        im2 = ia.subimage(outfile+'.image.centre', box, overwrite=True)
         im2.done()
-        ia.close() 
+        ia.close()
 
     # Make a smaller verision of the PDF cube
     ia.open(outfile+'.psf')
-    box=rg.box([image_size/2-128,image_size/2-128],[image_size/2+128,image_size/2+128])
-    im2=ia.subimage(outfile+'.psf.centre',box,overwrite=T)
+    box = rg.box([image_size/2-128, image_size/2-128], [image_size/2+128, image_size/2+128])
+    im2 = ia.subimage(outfile+'.psf.centre', box, overwrite=True)
     im2.done()
     ia.close()
-    
+
     # IA used to report the statistics to the log file
     ia.open(outfile+'.image')
     ia.statistics(verbose=True,axes=[0,1])
     # IA used to make squashed images.
-    ia.moments(moments=[-1],outfile=outfile+'image.mom.mean_freq')
-    ia.moments(moments=[-1],axis=0,outfile=outfile+'image.mom.mean_ra')
+    ia.moments(moments=[-1], outfile=outfile+'image.mom.mean_freq')
+    ia.moments(moments=[-1], axis=0, outfile=outfile+'image.mom.mean_ra')
+
     # IA used to make slices.
-    smry=ia.summary()
-    xpos=2967/4096*smry()['shape'][0]
-    ypos=4095/4096*smry()['shape'][1]
-    slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
-    ## How do I print inside AWS ????
-    #for n in range(0,len(slice)):
+    smry = ia.summary()
+    xpos = 2967/4096*smry['shape'][0]
+    ypos = 4095/4096*smry['shape'][1]
+    slice = ia.getslice(x=[xpos,xpos],y=[0,ypos])
+
+    # How do I print inside AWS ????
+    # for n in range(0,len(slice)):
     #    print slice['ypos'][n],slice['pixel'][n]
     pl.plot(slice['ypos'],slice['pixel']*1e3)
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
-    pl.title('Slice along sidelobe for '+outfile)
+    pl.title('Slice along sidelobe for ' + outfile)
     pl.savefig(outfile+'image.slice.png')
     ia.close()
 
