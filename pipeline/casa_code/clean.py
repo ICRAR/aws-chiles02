@@ -95,53 +95,60 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
 
     # IA used to make slices.
     smry=ia.summary()
-    xpos=2967/4096*smry['shape'][0]
-    ypos=4095/4096*smry['shape'][1]
-    slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
+    xpos=2967.0/4096*smry['shape'][0]
+    ypos=4095.0/4096*smry['shape'][1]
+    slce=[]
+    for m in range(0,smry['shape'][3]):
+        slce.append(ia.getslice(x=[xpos,xpos],y=[0,ypos],coord=[0,0,0,m]))
     ## Print out text version
     fo=open(outfile+'image.slice.txt','w')
-    for line in slice:
-        print>>fo,line        
+    for n in range(0,len(slce[0]['ypos'])):
+        line=[slce[0]['ypos'][n]]
+        for m in range(0,len(slce)):
+            line.append(slce[m]['pixel'][n])
+        print>>fo,line
     fo.close()
-    pl.plot(slice['ypos'],slice['pixel']*1e3)
+    for m in range(0,len(slce)):
+        pl.plot(slce[m]['ypos'],slce[m]['pixel']*1e3)
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
     pl.savefig(outfile+'image.slice.png')
+    
     # IA used to make profiles.
-    xpos=1992/4096*smry['shape'][0]
-    ypos=2218/4096*smry['shape'][1]
+    xpos=1992.0/4096*smry['shape'][0]
+    ypos=2218.0/4096*smry['shape'][1]
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
-    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.onsource_centre.txt','w')
-    for line in slice:
-        print>>fo,line        
+    for n in range(0,len(slce['coords'])):
+        print>>fo,slce['coords'][n],slce['values'][n]
     fo.close()
-    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.plot(slce['coords'],slce['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
     pl.savefig(outfile+'image.onsource_centre.png')
-    xpos=2972/4096*smry['shape'][0]
-    ypos=155/4096*smry['shape'][1]
+    xpos=2972.0/4096*smry['shape'][0]
+    ypos=155.0/4096*smry['shape'][1]
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
-    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.onsource_south.txt','w')
-    for line in slice:
-        print>>fo,line        
+    for n lenrange(0,len((slce['coords'])['coords'])):
+        print>>fo,slce['coords'][n],slce['values'][n]
     fo.close()
-    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.plot(slce['coords'],slce['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
     pl.savefig(outfile+'image.onsource_south.png')
     box=rg.box([image_size/2-2,image_size/2-2],[image_size/2+2,image_size/2+2])
-    slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
+    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.boresight.txt','w')
-    for line in slice:
-        print>>fo,line        
+    for n in range(0,len(slce['coords'])):
+        print>>fo,sk
     fo.close()
-    pl.plot(slice['coords'],slice['values']*1e3)
+    pl.plot(slce['coords'],slce['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
