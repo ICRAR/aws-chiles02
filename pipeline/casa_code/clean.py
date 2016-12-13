@@ -98,9 +98,11 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     xpos=2967/4096*smry['shape'][0]
     ypos=4095/4096*smry['shape'][1]
     slice=ia.getslice(x=[xpos,xpos],y=[0,ypos])
-    ## How do I print inside AWS ????
-    for n in range(0,len(slice)):
-        print slice['ypos'][n],slice['pixel'][n]
+    ## Print out text version
+    fo=open(outfile+'image.slice.txt','w')
+    for line in slice:
+        print>>fo,line        
+    fo.close()
     pl.plot(slice['ypos'],slice['pixel']*1e3)
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
@@ -111,9 +113,10 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ypos=2218/4096*smry['shape'][1]
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
     slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    ## How do I print inside AWS ????
-    for n in range(0,len(slice)):
-        print slice['ypos'][n],slice['pixel'][n]
+    fo=open(outfile+'image.onsource_centre.txt','w')
+    for line in slice:
+        print>>fo,line        
+    fo.close()
     pl.plot(slice['coords'],slice['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
@@ -123,9 +126,10 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ypos=155/4096*smry['shape'][1]
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
     slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    ## How do I print inside AWS ????
-    for n in range(0,len(slice)):
-        print slice['ypos'][n],slice['pixel'][n]
+    fo=open(outfile+'image.onsource_south.txt','w')
+    for line in slice:
+        print>>fo,line        
+    fo.close()
     pl.plot(slice['coords'],slice['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
@@ -133,9 +137,10 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.savefig(outfile+'image.onsource_south.png')
     box=rg.box([image_size/2-2,image_size/2-2],[image_size/2+2,image_size/2+2])
     slice=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    ## How do I print inside AWS ????
-    #for n in range(0,len(slice)):
-    #    print slice['ypos'][n],slice['pixel'][n]
+    fo=open(outfile+'image.boresight.txt','w')
+    for line in slice:
+        print>>fo,line        
+    fo.close()
     pl.plot(slice['coords'],slice['values']*1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
