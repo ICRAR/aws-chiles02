@@ -113,7 +113,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
-    pl.savefig(outfile+'image.slice.png')
+    pl.savefig(outfile+'image.slice.svg')
     
     # IA used to make profiles.
     xpos=1992.0/4096*smry['shape'][0]
@@ -128,7 +128,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.onsource_centre.png')
+    pl.savefig(outfile+'image.onsource_centre.svg')
     xpos=2972.0/4096*smry['shape'][0]
     ypos=155.0/4096*smry['shape'][1]
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
@@ -141,7 +141,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.onsource_south.png')
+    pl.savefig(outfile+'image.onsource_south.svg')
     box=rg.box([image_size/2-2,image_size/2-2],[image_size/2+2,image_size/2+2])
     slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.boresight.txt','w')
@@ -152,7 +152,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.boresight.png')
+    pl.savefig(outfile+'image.boresight.svg')
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
