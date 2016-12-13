@@ -118,7 +118,6 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
     pl.savefig(outfile+'image.slice.svg')
-    ###### End Get Rid
     
     # IA used to make profiles.
     xpos=1992.0/4096*smry['shape'][0]
@@ -139,7 +138,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
     slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.onsource_south.txt','w')
-    for n lenrange(0,len((slce['coords'])['coords'])):
+    for n in range(0,len(slce['coords'])):
         print>>fo,slce['coords'][n],slce['values'][n]
     fo.close()
     pl.plot(slce['coords'],slce['values']*1e3)
@@ -151,7 +150,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
     fo=open(outfile+'image.boresight.txt','w')
     for n in range(0,len(slce['coords'])):
-        print>>fo,sk
+        print>>fo,slce['coords'][n],slce['values'][n]
     fo.close()
     pl.plot(slce['coords'],slce['values']*1e3)
     pl.xlabel('Frequency (MHz)')
