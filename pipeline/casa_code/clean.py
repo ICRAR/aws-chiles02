@@ -97,6 +97,10 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     smry=ia.summary()
     xpos=2967.0/4096*smry['shape'][0]
     ypos=4095.0/4096*smry['shape'][1]
+    box=rg.box([xpos-2,0],[xpos+2,ypos])
+    ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra')
+
+    ## We will get rid of this if the slice above works
     slce=[]
     for m in range(0,smry['shape'][3]):
         slce.append(ia.getslice(x=[xpos,xpos],y=[0,ypos],coord=[0,0,0,m]))
@@ -114,6 +118,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
     pl.savefig(outfile+'image.slice.svg')
+    ###### End Get Rid
     
     # IA used to make profiles.
     xpos=1992.0/4096*smry['shape'][0]
