@@ -23,6 +23,7 @@
 Build the physical graph
 """
 from aws_chiles02.apps_general import CleanupDirectories
+from aws_chiles02.apps_stats import DockerStats, CopyStatsToS3
 from aws_chiles02.apps_uvsub import CopyUvsubFromS3, DockerUvsub, CopyUvsubToS3
 from aws_chiles02.common import get_module_name
 from aws_chiles02.build_graph_common import AbstractBuildGraph
@@ -35,11 +36,12 @@ class CarryOverDataUvsub:
 
 
 class BuildGraphUvsub(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, width, w_projection_planes, session_id, dim_ip):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, scan_statistics, width, w_projection_planes, session_id, dim_ip):
         super(BuildGraphUvsub, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._w_projection_planes = w_projection_planes
+        self._scan_statistics = scan_statistics
         self._s3_uvsub_name = 'uvsub_{0}'.format(width)
         self._s3_split_name = 'split_{0}'.format(width)
         self._list_ip = []
@@ -151,6 +153,42 @@ class BuildGraphUvsub(AbstractBuildGraph):
         copy_uvsub_to_s3.addInput(result)
         copy_uvsub_to_s3.addOutput(s3_uvsub_drop_out)
 
+        scan_statistics_output_drop = None
+        if self._scan_statistics:
+            scan_statistics_app = self.create_app(
+                node_id,
+                get_module_name(DockerStats),
+                'app_copy_uvsub_to_s3',
+                min_frequency=frequencies[0],
+                max_frequency=frequencies[1],
+            )
+
+            memory_drop = self.create_memory_drop(node_id)
+            scan_statistics_app.addInput(result)
+            scan_statistics_app.addOutput(memory_drop)
+
+            copy_stats_to_s3 = self.create_app(
+                node_id,
+                get_module_name(CopyStatsToS3),
+                'app_copy_stats_to_s3',
+                min_frequency=frequencies[0],
+                max_frequency=frequencies[1],
+            )
+            scan_statistics_output_drop = self.create_s3_drop(
+                node_id,
+                self._bucket_name,
+                '{0}/{1}/stats_{2}.csv'.format(
+                    self._s3_uvsub_name,
+                    split_to_process[0],
+                    split_to_process[1],
+                ),
+                'aws-chiles02',
+                oid='s3_out',
+            )
+            copy_stats_to_s3.addInput(result)
+            copy_stats_to_s3.addInput(memory_drop)
+            copy_stats_to_s3.addOutput(scan_statistics_output_drop)
+
         clean_up = self.create_app(
             node_id,
             get_module_name(CleanupDirectories),
@@ -160,6 +198,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
         clean_up.addInput(s3_uvsub_drop_out)
         clean_up.addInput(result)
         clean_up.addInput(measurement_set)
+        if scan_statistics_output_drop is not None:
+            clean_up.addInput(scan_statistics_output_drop)
         clean_up.addOutput(memory_drop)
 
         # Remember the end of the tail

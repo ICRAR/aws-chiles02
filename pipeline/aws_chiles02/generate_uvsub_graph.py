@@ -134,7 +134,8 @@ def create_and_generate(
         nodes,
         add_shutdown,
         min_frequency,
-        max_frequency):
+        max_frequency,
+        scan_statistics):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -229,6 +230,7 @@ def create_and_generate(
                         parallel_streams=PARALLEL_STREAMS,
                         node_details=reported_running,
                         shutdown=add_shutdown,
+                        scan_statistics=scan_statistics,
                         width=frequency_width,
                         w_projection_planes=w_projection_planes,
                         session_id=session_id,
@@ -254,7 +256,8 @@ def use_and_generate(
         volume,
         add_shutdown,
         min_frequency,
-        max_frequency):
+        max_frequency,
+        scan_statistics):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -288,6 +291,7 @@ def use_and_generate(
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
                 shutdown=add_shutdown,
+                scan_statistics=scan_statistics,
                 width=frequency_width,
                 w_projection_planes=w_projection_planes,
                 session_id=session_id,
@@ -313,7 +317,8 @@ def generate_json(
         volume,
         shutdown,
         min_frequency,
-        max_frequency):
+        max_frequency,
+        scan_statistics):
     work_to_do = WorkToDo(
         width=width,
         bucket_name=bucket,
@@ -333,6 +338,7 @@ def generate_json(
         parallel_streams=PARALLEL_STREAMS,
         node_details=node_details,
         shutdown=shutdown,
+        scan_statistics=scan_statistics,
         width=width,
         w_projection_planes=w_projection_planes,
         session_id='session_id',
@@ -354,6 +360,7 @@ def command_json(args):
         shutdown=args.shutdown,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
+        scan_statistics=args.scan_statistics,
     )
 
 
@@ -369,6 +376,7 @@ def command_create(args):
         add_shutdown=args.shutdown,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
+        scan_statistics=args.scan_statistics,
     )
 
 
@@ -383,6 +391,7 @@ def command_use(args):
         add_shutdown=args.shutdown,
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
+        scan_statistics=args.scan_statistics,
     )
 
 
@@ -403,6 +412,7 @@ def command_interactive(args):
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+    get_argument(config, 'scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
     if config['frequency_range']:
         get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
@@ -433,6 +443,7 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            scan_statistics=config['scan_statistics'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -445,6 +456,7 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            scan_statistics=config['scan_statistics'],
         )
     else:
         generate_json(
@@ -456,6 +468,7 @@ def command_interactive(args):
             shutdown=config['shutdown'],
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            scan_statistics=config['scan_statistics'],
         )
 
 
@@ -468,6 +481,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('--scan_statistics', action="store_true", help='generate scan statistics')
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()

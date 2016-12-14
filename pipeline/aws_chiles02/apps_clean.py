@@ -250,7 +250,11 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
             )
 
         tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
-        bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.slice.png'.format(
+        bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.mom.slice_ra ' \
+               '{1}.image.slice.txt {1}.image.slice.svg ' \
+               '{1}.image.onsource_centre.txt {1}.image.onsource_centre.svg ' \
+               '{1}.image.onsource_south.txt {1}.image.onsource_south.svg ' \
+               '{1}.image.boresight.svg'.format(
             tar_filename,
             stem_name,
         )

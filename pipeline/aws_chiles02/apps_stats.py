@@ -133,15 +133,69 @@ class CopyStatsFromS3(BarrierAppDROP, ErrorHandling):
         return 0
 
     def dataURL(self):
-        return 'CopyCleanFromS3'
+        return 'CopyStatsFromS3'
+
+
+class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        super(CopyStatsToS3, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CopyStatsToS3, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def dataURL(self):
+        return 'CopyStatsToS3'
+
+    def run(self):
+        measurement_set_output = self.inputs[0]
+        measurement_set_dir = measurement_set_output.path
+
+        s3_output = self.outputs[0]
+        bucket_name = s3_output.bucket
+        key = s3_output.key
+        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+        # Does the file exists
+        file_name = 'stats_{0}~{1}.csv'.format(self._min_frequency, self._max_frequency)
+        LOG.debug('checking {0} exists'.format(file_name))
+        if not os.path.exists(file_name) or not os.path.isdir(file_name):
+            message = 'Stats: {0} does not exist'.format(file_name)
+            LOG.error(message)
+            self.send_error_message(
+                message,
+                self.oid,
+                self.uid
+            )
+            return 1
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+            file_name,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(file_name))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
+        )
+
+        return 0
 
 
 class DockerStats(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        self._password = None
-        self._database_hostname = None
-        self._day_name_id = None
-        self._width = None
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
@@ -149,21 +203,13 @@ class DockerStats(DockerApp, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(DockerStats, self).initialize(**kwargs)
-        self._password = self._getArg(kwargs, 'password', None)
-        self._database_hostname = self._getArg(kwargs, 'database_hostname', None)
-        self._day_name_id = self._getArg(kwargs, 'day_name_id', None)
-        self._width = self._getArg(kwargs, 'width', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'clean.sh %i0 %o0 %o0 '
+        self._command = 'stats.sh %i0 %i0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        self._command = 'stats.sh %i0/uvsub_{4}~{5} {0} {1} {2} {3} {4} {5}'.format(
-            self._password,
-            self._database_hostname,
-            self._day_name_id,
-            self._width,
+        self._command = 'stats.sh %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv'.format(
             self._min_frequency,
             self._max_frequency,
         )

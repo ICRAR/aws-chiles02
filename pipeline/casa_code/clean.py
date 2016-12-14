@@ -79,7 +79,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         im2.done()
         ia.close()
 
-    # Make a smaller verision of the PDF cube
+    # Make a smaller version of the PDF cube
     ia.open(outfile+'.psf')
     box = rg.box([image_size/2-128, image_size/2-128], [image_size/2+128, image_size/2+128])
     im2 = ia.subimage(outfile+'.psf.centre', box, overwrite=True)
@@ -90,73 +90,74 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ia.open(outfile+'.image')
     ia.statistics(verbose=True,axes=[0,1])
     # IA used to make squashed images.
-    ia.moments(moments=[-1], outfile=outfile+'image.mom.mean_freq')
-    ia.moments(moments=[-1], axis=0, outfile=outfile+'image.mom.mean_ra')
+    ia.moments(moments=[-1], outfile=outfile+'.image.mom.mean_freq')
+    ia.moments(moments=[-1], axis=0, outfile=outfile+'.image.mom.mean_ra')
 
     # IA used to make slices.
-    smry=ia.summary()
-    xpos=2967.0/4096*smry['shape'][0]
-    ypos=4095.0/4096*smry['shape'][1]
-    box=rg.box([xpos-2,0],[xpos+2,ypos])
-    ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra')
+    smry = ia.summary()
+    xpos = 2967.0 / 4096 * smry['shape'][0]
+    ypos = 4095.0 / 4096 * smry['shape'][1]
+    box = rg.box([xpos - 2, 0], [xpos + 2, ypos])
+    ia.moments(moments=[-1], axis=0, region=box, outfile=outfile + 'image.mom.slice_ra')
 
-    ## We will get rid of this if the slice above works
-    slce=[]
-    for m in range(0,smry['shape'][3]):
-        slce.append(ia.getslice(x=[xpos,xpos],y=[0,ypos],coord=[0,0,0,m]))
-    ## Print out text version
-    fo=open(outfile+'image.slice.txt','w')
-    for n in range(0,len(slce[0]['ypos'])):
-        line=[slce[0]['ypos'][n]]
-        for m in range(0,len(slce)):
+    # We will get rid of this if the slice above works
+    slce = []
+    for m in range(0, smry['shape'][3]):
+        slce.append(ia.getslice(x=[xpos, xpos], y=[0, ypos], coord=[0, 0, 0, m]))
+
+    # Print out text version
+    fo = open(outfile + '.image.slice.txt', 'w')
+    for n in range(0, len(slce[0]['ypos'])):
+        line = [slce[0]['ypos'][n]]
+        for m in range(0, len(slce)):
             line.append(slce[m]['pixel'][n])
-        print>>fo,line
+        print>> fo, line
     fo.close()
-    for m in range(0,len(slce)):
-        pl.plot(slce[m]['ypos'],slce[m]['pixel']*1e3)
+    for m in range(0, len(slce)):
+        pl.plot(slce[m]['ypos'], slce[m]['pixel'] * 1e3)
     pl.xlabel('Declination (pixels)')
     pl.ylabel('Amplitude (mJy)')
     pl.title('Slice along sidelobe for ' + outfile)
-    pl.savefig(outfile+'image.slice.svg')
-    
+    pl.savefig(outfile + '.image.slice.svg')
+
     # IA used to make profiles.
-    xpos=1992.0/4096*smry['shape'][0]
-    ypos=2218.0/4096*smry['shape'][1]
-    box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
-    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    fo=open(outfile+'image.onsource_centre.txt','w')
-    for n in range(0,len(slce['coords'])):
-        print>>fo,slce['coords'][n],slce['values'][n]
+    xpos = 1992.0 / 4096 * smry['shape'][0]
+    ypos = 2218.0 / 4096 * smry['shape'][1]
+    box = rg.box([xpos - 2, ypos - 2], [xpos + 2, ypos + 2])
+    slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
+    fo = open(outfile + '.image.onsource_centre.txt', 'w')
+    for n in range(0, len(slce['coords'])):
+        print>> fo, slce['coords'][n], slce['values'][n]
     fo.close()
-    pl.plot(slce['coords'],slce['values']*1e3)
+    pl.plot(slce['coords'], slce['values'] * 1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
-    pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.onsource_centre.svg')
-    xpos=2972.0/4096*smry['shape'][0]
-    ypos=155.0/4096*smry['shape'][1]
-    box=rg.box([xpos-2,ypos-2],[xpos+2,ypos+2])
-    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    fo=open(outfile+'image.onsource_south.txt','w')
-    for n in range(0,len(slce['coords'])):
-        print>>fo,slce['coords'][n],slce['values'][n]
+    pl.title('Slice central source ' + outfile)
+    pl.savefig(outfile + '.image.onsource_centre.svg')
+    xpos = 2972.0 / 4096 * smry['shape'][0]
+    ypos = 155.0 / 4096 * smry['shape'][1]
+    box = rg.box([xpos - 2, ypos - 2], [xpos + 2, ypos + 2])
+    slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
+    fo = open(outfile + '.image.onsource_south.txt', 'w')
+    for n in range(0, len(slce['coords'])):
+        print>> fo, slce['coords'][n], slce['values'][n]
     fo.close()
-    pl.plot(slce['coords'],slce['values']*1e3)
+    pl.plot(slce['coords'], slce['values'] * 1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
-    pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.onsource_south.svg')
-    box=rg.box([image_size/2-2,image_size/2-2],[image_size/2+2,image_size/2+2])
-    slce=ia.getprofile(region=box,unit='MHz',function='mean',axis=3)
-    fo=open(outfile+'image.boresight.txt','w')
-    for n in range(0,len(slce['coords'])):
-        print>>fo,slce['coords'][n],slce['values'][n]
+    pl.title('Slice central source ' + outfile)
+    pl.savefig(outfile + '.image.onsource_south.svg')
+    box = rg.box([image_size / 2 - 2, image_size / 2 - 2], [image_size / 2 + 2, image_size / 2 + 2])
+    slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
+    fo = open(outfile + 'image.boresight.txt', 'w')
+    for n in range(0, len(slce['coords'])):
+        print>> fo, slce['coords'][n], slce['values'][n]
     fo.close()
-    pl.plot(slce['coords'],slce['values']*1e3)
+    pl.plot(slce['coords'], slce['values'] * 1e3)
     pl.xlabel('Frequency (MHz)')
     pl.ylabel('Amplitude (mJy)')
-    pl.title('Slice central source '+outfile)
-    pl.savefig(outfile+'image.boresight.svg')
+    pl.title('Slice central source ' + outfile)
+    pl.savefig(outfile + '.image.boresight.svg')
     ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
