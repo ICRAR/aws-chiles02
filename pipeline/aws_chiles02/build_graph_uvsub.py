@@ -183,7 +183,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
             scan_statistics_output_drop = self.create_s3_drop(
                 node_id,
                 self._bucket_name,
-                '{0}/{1}/stats_{2}.csv'.format(
+                '{0}/{1}/stats_{2}.gz'.format(
                     self._s3_uvsub_name,
                     split_to_process[0],
                     split_to_process[1],

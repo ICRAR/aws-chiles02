@@ -174,18 +174,36 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
             )
             return 1
 
+        # Make the tar file
+        tar_filename = os.path.join(measurement_set_dir, 'stats_{0}~{1}.tar.gz'.format(self._min_frequency, self._max_frequency))
+        os.chdir(measurement_set_dir)
+        bash = 'tar -cvzf {0} {1}'.format(
+            tar_filename,
+            stem_name,
+        )
+        return_code = run_command(bash)
+        path_exists = os.path.exists(tar_filename)
+        if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
+            self.send_error_message(
+                message,
+                self.oid,
+                self.uid,
+            )
+
         session = boto3.Session(profile_name='aws-chiles02')
         s3 = session.resource('s3', use_ssl=False)
 
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-            file_name,
+            tar_filename,
             bucket_name,
             key,
             callback=ProgressPercentage(
                 key,
-                float(os.path.getsize(file_name))
+                float(os.path.getsize(tar_filename))
             ),
             extra_args={
                 'StorageClass': 'REDUCED_REDUNDANCY',

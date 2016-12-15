@@ -33,14 +33,6 @@ logging.info('Starting logger for...')
 LOG = logging.getLogger('stats')
 
 
-class DataToStore(object):
-    def __init__(self, scan_number, spectral_window_number, channel_number, stats):
-        self.scan_number = scan_number
-        self.spectral_window_number = spectral_window_number
-        self.channel_number = channel_number
-        self.stats = stats
-
-
 @echo
 def do_stats(in_ms, out_csv_file, observation):
     """
@@ -147,4 +139,3 @@ if __name__ == "__main__":
     LOG.info(args)
 
     do_stats(args.arguments[0], args.arguments[1], args.arguments[2])
-
