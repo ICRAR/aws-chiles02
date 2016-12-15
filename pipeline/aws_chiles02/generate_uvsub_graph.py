@@ -135,7 +135,8 @@ def create_and_generate(
         add_shutdown,
         min_frequency,
         max_frequency,
-        scan_statistics):
+        scan_statistics,
+        dump_json):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -237,6 +238,11 @@ def create_and_generate(
                         dim_ip=host)
                     graph.build_graph()
 
+                    if dump_json:
+                        json_dumps = json.dumps(graph.drop_list, indent=2)
+                        with open("/tmp/json_uvsub.txt", "w") as json_file:
+                            json_file.write(json_dumps)
+
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                     client = DataIslandManagerClient(host, DIM_PORT)
 
@@ -257,7 +263,8 @@ def use_and_generate(
         add_shutdown,
         min_frequency,
         max_frequency,
-        scan_statistics):
+        scan_statistics,
+        dump_json):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -297,6 +304,11 @@ def use_and_generate(
                 session_id=session_id,
                 dim_ip=host)
             graph.build_graph()
+
+            if dump_json:
+                json_dumps = json.dumps(graph.drop_list, indent=2)
+                with open("/tmp/json_uvsub.txt", "w") as json_file:
+                    json_file.write(json_dumps)
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
@@ -377,6 +389,7 @@ def command_create(args):
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         scan_statistics=args.scan_statistics,
+        dump_json=False,
     )
 
 
@@ -392,6 +405,7 @@ def command_use(args):
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         scan_statistics=args.scan_statistics,
+        dump_json=False,
     )
 
 
@@ -422,8 +436,10 @@ def command_interactive(args):
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
+        get_argument(config, 'dump_json', 'Dump the json', data_type=bool, help_text='dump the json', default=False)
     elif config['run_type'] == 'use':
         get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+        get_argument(config, 'dump_json', 'Dump the json', data_type=bool, help_text='dump the json', default=False)
     else:
         get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
 
@@ -444,6 +460,7 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             scan_statistics=config['scan_statistics'],
+            dump_json=config['dump_json'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -457,6 +474,7 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             scan_statistics=config['scan_statistics'],
+            dump_json=config['dump_json'],
         )
     else:
         generate_json(

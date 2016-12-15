@@ -161,7 +161,8 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
         key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
         # Does the file exists
-        file_name = 'stats_{0}~{1}.csv'.format(self._min_frequency, self._max_frequency)
+        stem_name = 'stats_{0}~{1}.csv'.format(self._min_frequency, self._max_frequency)
+        file_name = os.path.join(measurement_set_dir, stem_name)
         LOG.debug('checking {0} exists'.format(file_name))
         if not os.path.exists(file_name) or not os.path.isdir(file_name):
             message = 'Stats: {0} does not exist'.format(file_name)

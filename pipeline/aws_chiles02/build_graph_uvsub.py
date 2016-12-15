@@ -155,16 +155,19 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         scan_statistics_output_drop = None
         if self._scan_statistics:
-            scan_statistics_app = self.create_app(
+            scan_statistics_app = self.create_docker_app(
                 node_id,
                 get_module_name(DockerStats),
-                'app_copy_uvsub_to_s3',
+                'app_stats',
+                CONTAINER_CHILES02,
+                'stats',
                 min_frequency=frequencies[0],
                 max_frequency=frequencies[1],
             )
 
             memory_drop = self.create_memory_drop(node_id)
             scan_statistics_app.addInput(result)
+            scan_statistics_app.addInput(s3_uvsub_drop_out)
             scan_statistics_app.addOutput(memory_drop)
 
             copy_stats_to_s3 = self.create_app(
