@@ -42,7 +42,7 @@ class DataToStore(object):
 
 
 @echo
-def do_stats(in_ms, out_csv_file):
+def do_stats(in_ms, out_csv_file, observation):
     """
     Performs the Stats extraction
     Inputs: VIS_name (str), Output (str)
@@ -79,6 +79,7 @@ def do_stats(in_ms, out_csv_file):
         with open(out_csv_file, 'wb') as csv_file:
             csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow([
+                'observation',
                 'scan',
                 'begin_time',
                 'end_time',
@@ -109,18 +110,19 @@ def do_stats(in_ms, out_csv_file):
                             spw=str(spectral_window_number) + ':' + str(channel_number)
                         )
                         if vis_stats is None:
-                            write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, zerov)
+                            write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, zerov)
                         else:
                             # strip off the ['CORRECTED']
-                            write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]])
+                            write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]])
 
     except Exception:
         LOG.exception('*********\nStats exception: \n***********')
         return None
 
 
-def write_line(csv_writer, scan_number, begin_time, end_time, spectral_window_number, channel_number, result):
+def write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, result):
     csv_writer.writerow([
+        observation,
         scan_number,
         begin_time,
         end_time,
@@ -144,5 +146,5 @@ if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    do_stats(args.arguments[0], args.arguments[1])
+    do_stats(args.arguments[0], args.arguments[1], args.arguments[2])
 

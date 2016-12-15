@@ -164,7 +164,7 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
         stem_name = 'stats_{0}~{1}.csv'.format(self._min_frequency, self._max_frequency)
         file_name = os.path.join(measurement_set_dir, stem_name)
         LOG.debug('checking {0} exists'.format(file_name))
-        if not os.path.exists(file_name) or not os.path.isdir(file_name):
+        if not os.path.exists(file_name) or not os.path.isfile(file_name):
             message = 'Stats: {0} does not exist'.format(file_name)
             LOG.error(message)
             self.send_error_message(
@@ -199,6 +199,7 @@ class DockerStats(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
+        self._observation = None
         self._command = None
         super(DockerStats, self).__init__(oid, uid, **kwargs)
 
@@ -206,13 +207,15 @@ class DockerStats(DockerApp, ErrorHandling):
         super(DockerStats, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._observation = self._getArg(kwargs, 'observation', None)
         self._command = 'stats.sh %i0 %i0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        self._command = 'stats.sh %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv'.format(
+        self._command = 'stats.sh %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv {2}'.format(
             self._min_frequency,
             self._max_frequency,
+            self._observation,
         )
         super(DockerStats, self).run()
 

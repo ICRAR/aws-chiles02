@@ -155,6 +155,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         scan_statistics_output_drop = None
         if self._scan_statistics:
+            observation = split_to_process[1]
+            observation = observation[:-4]
             scan_statistics_app = self.create_docker_app(
                 node_id,
                 get_module_name(DockerStats),
@@ -163,6 +165,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 'stats',
                 min_frequency=frequencies[0],
                 max_frequency=frequencies[1],
+                observation=observation,
             )
 
             memory_drop = self.create_memory_drop(node_id)
