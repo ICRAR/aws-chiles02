@@ -254,7 +254,7 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                '{1}.image.slice.txt {1}.image.slice.svg ' \
                '{1}.image.onsource_centre.txt {1}.image.onsource_centre.svg ' \
                '{1}.image.onsource_south.txt {1}.image.onsource_south.svg ' \
-               '{1}.image.boresight.svg'.format(
+               '{1}.image.boresight.txt {1}.image.boresight.svg'.format(
             tar_filename,
             stem_name,
         )
