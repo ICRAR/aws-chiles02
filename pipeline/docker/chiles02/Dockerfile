@@ -59,7 +59,6 @@ RUN source /opt/chiles02/env/bin/activate ; \
 # Update the path
 env PATH /opt/chiles02/scripts:$PATH
 env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline:/opt/chiles02/env/lib64/python2.7/site-packages
-# env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline:/opt/chiles02/env/lib64/python2.7/site-packages
 
 VOLUME /dfms_root
 
