@@ -9,13 +9,14 @@ sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel
 virtualenv ~/virtualenv/aws-chiles02
 source ~/virtualenv/aws-chiles02/bin/activate
 pip install -U pip
-pip install boto3 argparse ConfigObj
+pip install boto3 argparse ConfigObj mako
 
 virtualenv ~/virtualenv/dfms
 source ~/virtualenv/dfms/bin/activate
 
 cd dfms
 python setup.py install
+pip install boto3 argparse ConfigObj mako
 
 sudo tee -a /etc/security/limits.conf << 'EOF'
 

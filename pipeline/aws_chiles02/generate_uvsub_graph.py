@@ -214,9 +214,9 @@ def create_and_generate(
                 )
                 data_island_manager.start_instances()
                 data_island_manager_running = get_reported_running(
-                        uuid,
-                        1,
-                        wait=600
+                    uuid,
+                    1,
+                    wait=600
                 )
 
                 if len(data_island_manager_running['m4.large']) == 1:

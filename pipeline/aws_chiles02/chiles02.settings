@@ -36,7 +36,7 @@
 #
 
 # # OREGON
-ami_id = "ami-956bb2f5"
+ami_id = "ami-ccb700ac"
 key_name = "aws-chiles02-oregon"
 security_groups = "sg-981c9cfc"
 region = "us-west-2"

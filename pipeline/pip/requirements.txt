@@ -2,6 +2,4 @@ argparse
 boto3
 ConfigObj
 mako
-pymysql
 pip>=9.0
-sqlalchemy

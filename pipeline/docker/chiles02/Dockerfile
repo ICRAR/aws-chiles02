@@ -53,8 +53,8 @@ RUN chmod oug+x /opt/chiles02/scripts/*.sh
 RUN pip install --upgrade pip
 RUN pip install virtualenv
 RUN virtualenv /opt/chiles02/env
-# RUN source /opt/chiles02/env/bin/activate ; \
-#     pip install pymysql sqlalchemy
+RUN source /opt/chiles02/env/bin/activate ; \
+    pip install --upgrade pip
 
 # Update the path
 env PATH /opt/chiles02/scripts:$PATH
