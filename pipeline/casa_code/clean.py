@@ -152,7 +152,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     pl.clf()
     box = rg.box([image_size / 2 - 2, image_size / 2 - 2], [image_size / 2 + 2, image_size / 2 + 2])
     slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
-    fo = open(outfile + 'image.boresight.txt', 'w')
+    fo = open(outfile + '.image.boresight.txt', 'w')
     for n in range(0, len(slce['coords'])):
         print>> fo, slce['coords'][n], slce['values'][n]
     fo.close()
