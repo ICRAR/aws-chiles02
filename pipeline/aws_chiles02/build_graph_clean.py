@@ -200,7 +200,8 @@ class BuildGraphClean(AbstractBuildGraph):
         s3_objects = []
         prefix = '{0}/{1}_{2}'.format(self._s3_uvsub_name, frequency_pair.bottom_frequency, frequency_pair.top_frequency)
         for key in self._bucket.objects.filter(Prefix=prefix):
-            s3_objects.append(key.key)
+            if not key.key.startswith('stats'):
+                s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []

@@ -44,7 +44,7 @@ from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 8
+PARALLEL_STREAMS = 7
 
 
 class WorkToDo:
