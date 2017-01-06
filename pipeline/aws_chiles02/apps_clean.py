@@ -363,6 +363,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -378,7 +379,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
@@ -387,6 +388,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._robust,
                 self._image_size,
                 self._clean_channel_average,
+                self._produce_qa,
                 ' '.join(measurement_sets),
             )
         else:

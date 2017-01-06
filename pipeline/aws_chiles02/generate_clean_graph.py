@@ -125,7 +125,8 @@ def create_and_generate(
         max_frequency,
         clean_directory_name,
         only_image,
-        log_level):
+        log_level,
+        produce_qa):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -230,7 +231,9 @@ def create_and_generate(
                         clean_directory_name=clean_directory_name,
                         only_image=only_image,
                         session_id=session_id,
-                        dim_ip=host)
+                        dim_ip=host,
+                        produce_qa=produce_qa,
+                    )
                     graph.build_graph()
 
                     # TODO: Safe the run parameters
@@ -261,7 +264,8 @@ def use_and_generate(
         min_frequency,
         max_frequency,
         clean_directory_name,
-        only_image):
+        only_image,
+        produce_qa):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -305,7 +309,9 @@ def use_and_generate(
                 clean_directory_name=clean_directory_name,
                 only_image=only_image,
                 session_id=session_id,
-                dim_ip=host)
+                dim_ip=host,
+                produce_qa=produce_qa,
+            )
             graph.build_graph()
 
             # TODO: Save the run parameters
@@ -337,7 +343,8 @@ def generate_json(
         min_frequency,
         max_frequency,
         clean_directory_name,
-        only_image):
+        only_image,
+        produce_qa):
     work_to_do = WorkToDo(
         width,
         bucket,
@@ -367,7 +374,8 @@ def generate_json(
         clean_directory_name=clean_directory_name,
         only_image=only_image,
         session_id='session_id',
-        dim_ip='1.2.3.4')
+        dim_ip='1.2.3.4',
+        produce_qa=produce_qa)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -392,7 +400,8 @@ def command_json(args):
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
-        only_image=args.only_image
+        only_image=args.only_image,
+        produce_qa=args.produce_qa,
     )
 
 
@@ -416,6 +425,7 @@ def command_create(args):
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
+        produce_qa=args.produce_qa,
         log_level=log_level,
     )
 
@@ -437,6 +447,7 @@ def command_use(args):
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         clean_directory_name=args.clean_directory_name,
+        produce_qa=args.produce_qa,
         only_image=args.only_image,
     )
 
@@ -465,6 +476,7 @@ def command_interactive(args):
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean', use_stored=False)
+    get_argument(config, 'produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
 
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
     if config['frequency_range']:
@@ -505,6 +517,7 @@ def command_interactive(args):
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],
             log_level=config['log_level'],
+            produce_qa=config['produce_qa'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -524,6 +537,7 @@ def command_interactive(args):
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
+            produce_qa=config['produce_qa'],
         )
     else:
         generate_json(
@@ -542,7 +556,8 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             clean_directory_name=config['clean_directory_name'],
-            only_image=config['only_image']
+            only_image=config['only_image'],
+            produce_qa=config['produce_qa'],
         )
 
 

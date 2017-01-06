@@ -56,7 +56,8 @@ class BuildGraphClean(AbstractBuildGraph):
             clean_directory_name,
             only_image,
             session_id,
-            dim_ip):
+            dim_ip,
+            produce_qa):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
@@ -70,6 +71,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._image_size = image_size
         self._clean_channel_average = clean_channel_average
         self._only_image = only_image
+        self._produce_qa = produce_qa
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -104,6 +106,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 image_size=self._image_size,
                 w_projection_planes=self._w_projection_planes,
                 clean_channel_average=self._clean_channel_average,
+                produce_qa=self._produce_qa,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
             result = self.create_directory_container(node_id, 'dir_clean_output')
