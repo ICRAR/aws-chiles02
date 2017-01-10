@@ -115,7 +115,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 get_module_name(DockerApp),
                 'app_convert_jpeg2000',
                 CONTAINER_SV,
-                'sv_convert --input %i0 --input-options normalisation-dist LOG normalisation-domain CHANNEL --output %o0 --output-options Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts=“{128,128},{64,64}" Cblk="{32,32}" Qstep=0.0001 --stats',
+                'sv_convert --input %i0 --input-options normalisation-dist LOG normalisation-domain CHANNEL --output %o0 --output-options Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes Cprecincts="{128,128},{64,64}" Cblk="{32,32}" Qstep=0.0001 --stats',
                 user='root',
             )
 
