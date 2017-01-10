@@ -91,9 +91,12 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         ia.open(outfile+'.image')
         ia.statistics(verbose=True,axes=[0,1])
         # IA used to make squashed images.
-        ia.moments(moments=[-1], outfile=outfile+'.image.mom.mean_freq')
-        ia.moments(moments=[-1], axis=0, outfile=outfile+'.image.mom.mean_ra')
-
+        #ia.moments(moments=[-1], outfile=outfile+'.image.mom.mean_freq')
+        #ia.moments(moments=[-1], axis=0, outfile=outfile+'.image.mom.mean_ra')
+        c=ia.collapse(function='mean', axes=3,outfile=outfile+'.image.mom.mean_freq')
+        c.done()
+        c=ia.collapse(function='mean', axes=0, outfile=outfile+'.image.mom.mean_ra')
+        c.done()
         # IA used to make slices.
         smry = ia.summary()
         xpos = 2967.0 / 4096 * smry['shape'][0]
