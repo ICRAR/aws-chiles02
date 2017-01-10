@@ -176,7 +176,18 @@ def command_json(args):
         'spot_price': 0.99
     }
 
-    graph = BuildGraphJpeg2000(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, 'session_id', '1.2.3.4')
+    graph = BuildGraphJpeg2000(
+        args.bucket,
+        args.volume,
+        args.parallel_streams,
+        node_details,
+        args.shutdown,
+        args.width,
+        args.iterations,
+        'session_id',
+        '1.2.3.4',
+        args.arcsec
+    )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
