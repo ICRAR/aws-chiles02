@@ -81,8 +81,8 @@ class WorkToDo:
             LOG.info('split {0} found'.format(key.key))
             elements = key.key.split('/')
             if len(elements) == 3:
-                expected_uvsub_name = 'uvsub_{0}/{1}/{2}'.format(
-                    self._width,
+                expected_uvsub_name = '{0}/{1}/{2}'.format(
+                    self._s3_uvsub_name,
                     elements[1],
                     elements[2],
                 )
@@ -110,10 +110,6 @@ def get_s3_split_name(width):
     return 'split_{0}'.format(width)
 
 
-def get_s3_uvsub_name(width):
-    return 'uvsub_{0}'.format(width)
-
-
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
@@ -136,16 +132,18 @@ def create_and_generate(
         min_frequency,
         max_frequency,
         scan_statistics,
+        uvsub_directory_name,
         dump_json):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
             width=frequency_width,
             bucket_name=bucket_name,
-            s3_uvsub_name=get_s3_uvsub_name(frequency_width),
+            s3_uvsub_name=uvsub_directory_name,
             s3_split_name=get_s3_split_name(frequency_width),
             min_frequency=min_frequency,
-            max_frequency=max_frequency)
+            max_frequency=max_frequency,
+        )
         work_to_do.calculate_work_to_do()
 
         nodes_required, node_count = get_nodes_required(nodes, spot_price)
@@ -234,6 +232,7 @@ def create_and_generate(
                         scan_statistics=scan_statistics,
                         width=frequency_width,
                         w_projection_planes=w_projection_planes,
+                        uvsub_directory_name=uvsub_directory_name,
                         session_id=session_id,
                         dim_ip=host)
                     graph.build_graph()
@@ -264,6 +263,7 @@ def use_and_generate(
         min_frequency,
         max_frequency,
         scan_statistics,
+        uvsub_directory_name,
         dump_json):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
@@ -283,10 +283,11 @@ def use_and_generate(
             work_to_do = WorkToDo(
                 width=frequency_width,
                 bucket_name=bucket_name,
-                s3_uvsub_name=get_s3_uvsub_name(frequency_width),
+                s3_uvsub_name=uvsub_directory_name,
                 s3_split_name=get_s3_split_name(frequency_width),
                 min_frequency=min_frequency,
-                max_frequency=max_frequency)
+                max_frequency=max_frequency,
+            )
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
@@ -301,8 +302,10 @@ def use_and_generate(
                 scan_statistics=scan_statistics,
                 width=frequency_width,
                 w_projection_planes=w_projection_planes,
+                uvsub_directory_name=uvsub_directory_name,
                 session_id=session_id,
-                dim_ip=host)
+                dim_ip=host,
+            )
             graph.build_graph()
 
             if dump_json:
@@ -330,14 +333,16 @@ def generate_json(
         shutdown,
         min_frequency,
         max_frequency,
-        scan_statistics):
+        scan_statistics,
+        uvsub_directory_name):
     work_to_do = WorkToDo(
         width=width,
         bucket_name=bucket,
-        s3_uvsub_name=get_s3_uvsub_name(width),
+        s3_uvsub_name=uvsub_directory_name,
         s3_split_name=get_s3_split_name(width),
         min_frequency=min_frequency,
-        max_frequency=max_frequency)
+        max_frequency=max_frequency,
+    )
     work_to_do.calculate_work_to_do()
 
     node_details = {
@@ -353,6 +358,7 @@ def generate_json(
         scan_statistics=scan_statistics,
         width=width,
         w_projection_planes=w_projection_planes,
+        uvsub_directory_name=uvsub_directory_name,
         session_id='session_id',
         dim_ip='1.2.3.4')
     graph.build_graph()
@@ -373,6 +379,7 @@ def command_json(args):
         min_frequency=args.min_frequency,
         max_frequency=args.max_frequency,
         scan_statistics=args.scan_statistics,
+        uvsub_directory_name=args.uvsub_directory_name,
     )
 
 
@@ -390,6 +397,7 @@ def command_create(args):
         max_frequency=args.max_frequency,
         scan_statistics=args.scan_statistics,
         dump_json=False,
+        uvsub_directory_name=args.uvsub_directory_name,
     )
 
 
@@ -406,6 +414,7 @@ def command_use(args):
         max_frequency=args.max_frequency,
         scan_statistics=args.scan_statistics,
         dump_json=False,
+        uvsub_directory_name=args.uvsub_directory_name,
     )
 
 
@@ -427,6 +436,7 @@ def command_interactive(args):
     get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
     get_argument(config, 'scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
+    get_argument(config, 'uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
     if config['frequency_range']:
         get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
@@ -460,6 +470,7 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             scan_statistics=config['scan_statistics'],
+            uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
         )
     elif config['run_type'] == 'use':
@@ -474,6 +485,7 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             scan_statistics=config['scan_statistics'],
+            uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
         )
     else:
@@ -487,6 +499,7 @@ def command_interactive(args):
             min_frequency=config['min_frequency'] if config['frequency_range'] else None,
             max_frequency=config['max_frequency'] if config['frequency_range'] else None,
             scan_statistics=config['scan_statistics'],
+            uvsub_directory_name=config['uvsub_directory_name'],
         )
 
 

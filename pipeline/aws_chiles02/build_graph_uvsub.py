@@ -36,13 +36,13 @@ class CarryOverDataUvsub:
 
 
 class BuildGraphUvsub(AbstractBuildGraph):
-    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, scan_statistics, width, w_projection_planes, session_id, dim_ip):
+    def __init__(self, work_to_do, bucket_name, volume, parallel_streams, node_details, shutdown, scan_statistics, width, w_projection_planes, uvsub_directory_name, session_id, dim_ip):
         super(BuildGraphUvsub, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
         self._w_projection_planes = w_projection_planes
         self._scan_statistics = scan_statistics
-        self._s3_uvsub_name = 'uvsub_{0}'.format(width)
+        self._s3_uvsub_name = uvsub_directory_name
         self._s3_split_name = 'split_{0}'.format(width)
         self._list_ip = []
         self._node_index = 0
