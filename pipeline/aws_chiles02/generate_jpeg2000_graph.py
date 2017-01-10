@@ -46,7 +46,7 @@ LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations, arcsec):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
@@ -124,7 +124,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             session_id = get_session_id()
             instance_details = data_island_manager_running['m4.large'][0]
             host = instance_details['ip_address']
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host)
+            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host, arcsec)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -137,7 +137,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, arcsec):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -155,7 +155,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host)
+            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host, arcsec)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -193,6 +193,7 @@ def command_create(args):
         args.volume,
         args.shutdown,
         args.iterations,
+        args.arcsec + 'arcsec',
     )
 
 
@@ -205,6 +206,7 @@ def command_use(args):
         args.volume,
         args.shutdown,
         args.iterations,
+        args.arcsec + 'arcsec',
     )
 
 
@@ -225,6 +227,8 @@ def command_interactive(args):
     get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
     get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
+
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
         get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
@@ -244,6 +248,7 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
+            config['arcsec'] + 'arcsec',
         )
     else:
         use_and_generate(
@@ -254,6 +259,7 @@ def command_interactive(args):
             config['volume'],
             config['shutdown'],
             config['iterations'],
+            config['arcsec'] + 'arcsec',
         )
 
 
@@ -262,6 +268,7 @@ def parser_arguments(command_line=sys.argv[1:]):
 
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
+    common_parser.add_argument('arcsec', help='the number of arcsec', default='2')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
