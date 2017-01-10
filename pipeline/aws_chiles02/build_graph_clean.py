@@ -57,13 +57,15 @@ class BuildGraphClean(AbstractBuildGraph):
             only_image,
             session_id,
             dim_ip,
-            produce_qa):
+            produce_qa,
+            uvsub_directory_name,
+            fits_directory_name):
         super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._work_to_do = work_to_do
         self._parallel_streams = parallel_streams
-        self._s3_clean_name = 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec) if clean_directory_name is None else clean_directory_name
-        self._s3_fits_name = 'fits_{0}_{1}_{2}'.format(width, iterations, arcsec)
-        self._s3_uvsub_name = 'uvsub_{0}'.format(width)
+        self._s3_clean_name = clean_directory_name
+        self._s3_fits_name = fits_directory_name
+        self._s3_uvsub_name = uvsub_directory_name
         self._iterations = iterations
         self._arcsec = arcsec
         self._w_projection_planes = w_projection_planes

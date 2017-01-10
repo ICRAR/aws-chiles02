@@ -40,15 +40,13 @@ class CarryOverDataJpeg2000:
 
 
 class BuildGraphJpeg2000(AbstractBuildGraph):
-    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, width, iterations, session_id, dim_ip, arcsec):
+    def __init__(self, bucket_name, volume, parallel_streams, node_details, shutdown, fits_directory_name, jpeg2000_directory_name, session_id, dim_ip):
         super(BuildGraphJpeg2000, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
         self._parallel_streams = parallel_streams
-        self._s3_fits_name = 'fits_{0}_{1}_{2}'.format(width, iterations, arcsec)
-        self._s3_jpeg2000_name = 'jpeg_{0}_{1}_{2}'.format(width, iterations, arcsec)
-        self._iterations = iterations
+        self._s3_fits_name = fits_directory_name
+        self._s3_jpeg2000_name = jpeg2000_directory_name
         values = node_details.values()
         self._node_id = values[0][0]['ip_address']
-        self._width = width
         self._s3_client = None
 
     def new_carry_over_data(self):

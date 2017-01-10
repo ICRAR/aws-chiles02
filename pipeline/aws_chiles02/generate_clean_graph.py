@@ -91,10 +91,6 @@ class WorkToDo:
         return self._work_to_do
 
 
-def get_s3_clean_name(width, iterations, arcsec):
-    return 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec)
-
-
 def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     nodes = []
     node_count = max(len(work_to_do) / frequencies_per_node, 1)
@@ -126,15 +122,17 @@ def create_and_generate(
         clean_directory_name,
         only_image,
         log_level,
-        produce_qa):
+        produce_qa,
+        uvsub_directory_name,
+        fits_directory_name):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
             frequency_width,
             bucket_name,
-            get_s3_clean_name(frequency_width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+            clean_directory_name,
             min_frequency,
-            max_frequency
+            max_frequency,
         )
         work_to_do.calculate_work_to_do()
 
@@ -233,6 +231,8 @@ def create_and_generate(
                         session_id=session_id,
                         dim_ip=host,
                         produce_qa=produce_qa,
+                        uvsub_directory_name=uvsub_directory_name,
+                        fits_directory_name=fits_directory_name,
                     )
                     graph.build_graph()
 
@@ -265,7 +265,9 @@ def use_and_generate(
         max_frequency,
         clean_directory_name,
         only_image,
-        produce_qa):
+        produce_qa,
+        uvsub_directory_name,
+        fits_directory_name):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -284,7 +286,7 @@ def use_and_generate(
             work_to_do = WorkToDo(
                 frequency_width,
                 bucket_name,
-                get_s3_clean_name(frequency_width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+                clean_directory_name,
                 min_frequency,
                 max_frequency
             )
@@ -311,6 +313,8 @@ def use_and_generate(
                 session_id=session_id,
                 dim_ip=host,
                 produce_qa=produce_qa,
+                uvsub_directory_name=uvsub_directory_name,
+                fits_directory_name=fits_directory_name,
             )
             graph.build_graph()
 
@@ -344,13 +348,15 @@ def generate_json(
         max_frequency,
         clean_directory_name,
         only_image,
-        produce_qa):
+        produce_qa,
+        uvsub_directory_name,
+        fits_directory_name):
     work_to_do = WorkToDo(
         width,
         bucket,
-        get_s3_clean_name(width, iterations, arcsec) if clean_directory_name is None else clean_directory_name,
+        clean_directory_name,
         min_frequency,
-        max_frequency
+        max_frequency,
     )
     work_to_do.calculate_work_to_do()
 
@@ -372,6 +378,8 @@ def generate_json(
         image_size=image_size,
         clean_channel_average=clean_channel_average,
         clean_directory_name=clean_directory_name,
+        uvsub_directory_name=uvsub_directory_name,
+        fits_directory_name=fits_directory_name,
         only_image=only_image,
         session_id='session_id',
         dim_ip='1.2.3.4',
@@ -402,6 +410,8 @@ def command_json(args):
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
         produce_qa=args.produce_qa,
+        uvsub_directory_name=args.uvsub_directory_name,
+        fits_directory_name=args.fits_directory_name,
     )
 
 
@@ -427,6 +437,8 @@ def command_create(args):
         only_image=args.only_image,
         produce_qa=args.produce_qa,
         log_level=log_level,
+        uvsub_directory_name=args.uvsub_directory_name,
+        fits_directory_name=args.fits_directory_name,
     )
 
 
@@ -449,6 +461,8 @@ def command_use(args):
         clean_directory_name=args.clean_directory_name,
         produce_qa=args.produce_qa,
         only_image=args.only_image,
+        uvsub_directory_name=args.uvsub_directory_name,
+        fits_directory_name=args.fits_directory_name,
     )
 
 
@@ -475,7 +489,9 @@ def command_interactive(args):
     get_argument(config, 'clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
     get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean', use_stored=False)
+    get_argument(config, 'uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
+    get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
+    get_argument(config, 'fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
     get_argument(config, 'produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
 
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
@@ -518,6 +534,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             log_level=config['log_level'],
             produce_qa=config['produce_qa'],
+            uvsub_directory_name=config['uvsub_directory_name'],
+            fits_directory_name=config['fits_directory_name'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -538,6 +556,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
             produce_qa=config['produce_qa'],
+            uvsub_directory_name=config['uvsub_directory_name'],
+            fits_directory_name=config['fits_directory_name'],
         )
     else:
         generate_json(
@@ -558,6 +578,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
             produce_qa=config['produce_qa'],
+            uvsub_directory_name=config['uvsub_directory_name'],
+            fits_directory_name=config['fits_directory_name']
         )
 
 

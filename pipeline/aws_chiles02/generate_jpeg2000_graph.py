@@ -46,7 +46,7 @@ LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations, arcsec):
+def create_and_generate(bucket_name, ami_id, spot_price, volume, add_shutdown, fits_directory_name, jpeg2000_directory_name):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
@@ -124,7 +124,17 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             session_id = get_session_id()
             instance_details = data_island_manager_running['m4.large'][0]
             host = instance_details['ip_address']
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, reported_running, add_shutdown, frequency_width, iterations, session_id, host, arcsec)
+            graph = BuildGraphJpeg2000(
+                bucket_name=bucket_name,
+                volume=volume,
+                parallel_streams=PARALLEL_STREAMS,
+                node_details=reported_running,
+                shutdown=add_shutdown,
+                fits_directory_name=fits_directory_name,
+                jpeg2000_directory_name=jpeg2000_directory_name,
+                session_id=session_id,
+                dim_ip=host
+            )
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -137,7 +147,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations, arcsec):
+def use_and_generate(host, port, bucket_name, volume, add_shutdown, fits_directory_name, jpeg2000_directory_name):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -155,7 +165,17 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphJpeg2000(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host, arcsec)
+            graph = BuildGraphJpeg2000(
+                bucket_name=bucket_name,
+                volume=volume,
+                parallel_streams=PARALLEL_STREAMS,
+                node_details=nodes_running,
+                shutdown=add_shutdown,
+                fits_directory_name=fits_directory_name,
+                jpeg2000_directory_name=jpeg2000_directory_name,
+                session_id=session_id,
+                dim_ip=host
+            )
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -177,16 +197,15 @@ def command_json(args):
     }
 
     graph = BuildGraphJpeg2000(
-        args.bucket,
-        args.volume,
-        args.parallel_streams,
-        node_details,
-        args.shutdown,
-        args.width,
-        args.iterations,
-        'session_id',
-        '1.2.3.4',
-        args.arcsec
+        bucket_name=args.bucket,
+        volume=args.volume,
+        parallel_streams=args.parallel_streams,
+        node_details=node_details,
+        shutdown=args.shutdown,
+        fits_directory_name='fits_dir',
+        jpeg2000_directory_name='jpeg_dir',
+        session_id='session_id',
+        dim_ip='1.2.3.4',
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -197,27 +216,25 @@ def command_json(args):
 
 def command_create(args):
     create_and_generate(
-        args.bucket,
-        args.width,
-        args.ami,
-        args.spot_price1,
-        args.volume,
-        args.shutdown,
-        args.iterations,
-        args.arcsec + 'arcsec',
+        bucket_name=args.bucket,
+        ami_id=args.ami,
+        spot_price=args.spot_price1,
+        volume=args.volume,
+        add_shutdown=args.shutdown,
+        fits_directory_name=args.fits_directory_name,
+        jpeg2000_directory_name=args.jpeg2000_directory_name,
     )
 
 
 def command_use(args):
     use_and_generate(
-        args.host,
-        args.port,
-        args.bucket,
-        args.width,
-        args.volume,
-        args.shutdown,
-        args.iterations,
-        args.arcsec + 'arcsec',
+        host=args.host,
+        port=args.port,
+        bucket_name=args.bucket,
+        volume=args.volume,
+        add_shutdown=args.shutdown,
+        fits_directory_name=args.fits_directory_name,
+        jpeg2000_directory_name=args.jpeg2000_directory_name,
     )
 
 
@@ -235,10 +252,9 @@ def command_interactive(args):
     get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
     get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
     get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-    get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-    get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+    get_argument(config, 'fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+    get_argument(config, 'jpeg2000_directory_name', 'The directory name for JPEG2000 files', help_text='the directory name for JPEG2000')
     get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
 
     if config['create_use'] == 'create':
         get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -252,25 +268,23 @@ def command_interactive(args):
     # Run the command
     if config['create_use'] == 'create':
         create_and_generate(
-            config['bucket_name'],
-            config['width'],
-            config['ami'],
-            config['spot_price'],
-            config['volume'],
-            config['shutdown'],
-            config['iterations'],
-            config['arcsec'] + 'arcsec',
+            bucket_name=config['bucket_name'],
+            ami_id=config['ami'],
+            spot_price=config['spot_price'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
+            fits_directory_name=config['fits_directory_name'],
+            jpeg2000_directory_name=config['jpeg2000_directory_name'],
         )
     else:
         use_and_generate(
-            config['dim'],
-            DIM_PORT,
-            config['bucket_name'],
-            config['width'],
-            config['volume'],
-            config['shutdown'],
-            config['iterations'],
-            config['arcsec'] + 'arcsec',
+            host=config['dim'],
+            port=DIM_PORT,
+            bucket_name=config['bucket_name'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
+            fits_directory_name=config['fits_directory_name'],
+            jpeg2000_directory_name=config['jpeg2000_directory_name'],
         )
 
 
@@ -281,9 +295,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('arcsec', help='the number of arcsec', default='2')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
-    common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()
