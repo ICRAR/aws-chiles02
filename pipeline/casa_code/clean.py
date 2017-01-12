@@ -87,6 +87,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     ia.close()
 
     if produce_qa == 'yes':
+        import numpy as np
         # IA used to report the statistics to the log file
         ia.open(outfile+'.image')
         ia.statistics(verbose=True,axes=[0,1])
@@ -163,11 +164,10 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         for n in range(0, len(slce['coords'])):
             print>> fo, slce['coords'][n], slce['values'][n]
         fo.close()
-        pl.plot(slce['coords'], slce['values'] * 1e3)
-        pl.xlabel('Frequency (MHz)')
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice central source ' + outfile)
         pl.savefig(outfile + '.image.boresight.svg')
+        pl.clf()
         # RMS Stats
         sts=ia.statistics(axes=[0,1],verbose=F)
         fo = open(outfile + '.image.rms.txt', 'w')
@@ -179,6 +179,40 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.ylabel('RMS (mJy)')
         pl.title('RMS for ' + outfile)
         pl.savefig(outfile + '.image.rms.svg')
+        pl.clf()
+        # Histograms
+        sts=ia.histograms()
+        fo = open(outfile + '.image.histo.txt', 'w')
+        for n in range(0, len(sts['values'])):
+            print>> fo, sts['values'][n],sts['counts'][n]
+        fo.close()
+        pl.plot(sts['values'] * 1e3, np.log10(sts['counts']))
+        pl.xlabel('Bin (mJy)')
+        pl.ylabel('log10 of No. of Values')
+        pl.title('Histogram for ' + outfile)
+        pl.savefig(outfile + '.image.histo.svg')
+        pl.clf()
+        # Beams
+        sts=ia.summary()['perplanebeams']
+        bmj=[]
+        bmn=[]
+        bmp=[]
+        fo = open(outfile + '.image.beam.txt', 'w')
+        for n in range(0, sts['nChannels']):
+            print>> fo, slce['coords'][n],sts['beams']['*'+str(n)]['*0']
+        fo.close()
+        for n in range(0, sts['nChannels']):
+            bmj.append(sts['beams']['*'+str(n)]['*0']['major']['value']);
+            bmn.append(sts['beams']['*'+str(n)]['*0']['minor']['value']);
+            bmp.append(sts['beams']['*'+str(n)]['*0']['positionangle']['value']/57.3)
+        pl.plot(slce['coords'],bmj)
+        pl.plot(slce['coords'],bmn)
+        pl.plot(slce['coords'],bmp)
+        pl.xlabel('Frequency (MHz)')
+        pl.ylabel('Beam Axes (major, minor & PA (rad)')
+        pl.title('Beam Parameters for ' + outfile)
+        pl.savefig(outfile + '.image.beam.svg')
+        pl.clf()
         ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
