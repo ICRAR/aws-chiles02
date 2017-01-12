@@ -193,7 +193,7 @@ def create_and_generate(
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50, need_node_manager=True),
                     AWS_REGION,
                     tags=[
                         {

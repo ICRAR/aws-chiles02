@@ -95,7 +95,7 @@ def create_and_generate(bucket_name, ami_id, spot_price, volume, add_shutdown, f
                     'spot_price': spot_price
                 }
             ],
-            get_data_island_manager_user_data(boto_data, hosts, uuid),
+            get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=True),
             AWS_REGION,
             tags=[
                 {

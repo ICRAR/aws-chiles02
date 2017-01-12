@@ -164,7 +164,7 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         carry_over_data = self._map_carry_over_data[self._node_id]
         carry_over_data.barrier_drop = barrier_drop
 
-        self.copy_logfiles_and_shutdown()
+        self.copy_logfiles_and_shutdown(True)
 
     @staticmethod
     def _get_fits_file_name(s3_object):

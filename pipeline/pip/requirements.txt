@@ -2,3 +2,4 @@ boto3
 ConfigObj
 mako
 pip>=9.0
+requests

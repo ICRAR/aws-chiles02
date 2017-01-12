@@ -48,10 +48,11 @@ PARALLEL_STREAMS = 12
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_clean_name, min_frequency, max_frequency):
+    def __init__(self, width, bucket_name, s3_clean_name, min_frequency, max_frequency, s3_uvsub_name):
         self._width = width
         self._bucket_name = bucket_name
         self._s3_clean_name = s3_clean_name
+        self._s3_uvsub_name = s3_uvsub_name
         self._min_frequency = min_frequency
         self._max_frequency = max_frequency
         self._work_already_done = None
@@ -69,6 +70,14 @@ class WorkToDo:
             cleaned_objects.append(key.key)
             LOG.info('{0} found'.format(key.key))
 
+        uvsub_frequencies = []
+        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
+            elements = key.key.split('/')
+            if len(elements) == 3:
+                if elements[1] not in uvsub_frequencies:
+                    uvsub_frequencies.append(elements[1])
+                    LOG.info('{0} found'.format(key.key))
+
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
         for frequency_pair in self._list_frequencies:
@@ -83,7 +92,8 @@ class WorkToDo:
                 frequency_pair.bottom_frequency,
                 frequency_pair.top_frequency,
             )
-            if expected_tar_file not in cleaned_objects:
+            uvsub_frequency = '{0}_{1}'.format(frequency_pair.bottom_frequency, frequency_pair.top_frequency)
+            if expected_tar_file not in cleaned_objects and uvsub_frequency in uvsub_frequencies:
                 self._work_to_do.append(frequency_pair)
 
     @property
@@ -133,6 +143,7 @@ def create_and_generate(
             clean_directory_name,
             min_frequency,
             max_frequency,
+            uvsub_directory_name,
         )
         work_to_do.calculate_work_to_do()
 
@@ -288,7 +299,8 @@ def use_and_generate(
                 bucket_name,
                 clean_directory_name,
                 min_frequency,
-                max_frequency
+                max_frequency,
+                uvsub_directory_name,
             )
             work_to_do.calculate_work_to_do()
 
@@ -493,6 +505,7 @@ def command_interactive(args):
     get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
     get_argument(config, 'fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
     get_argument(config, 'produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
+    get_argument(config, 'clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
 
     get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
     if config['frequency_range']:
@@ -536,6 +549,7 @@ def command_interactive(args):
             produce_qa=config['produce_qa'],
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
+            clean_tclean=config['clean_tclean'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -558,6 +572,7 @@ def command_interactive(args):
             produce_qa=config['produce_qa'],
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
+            clean_tclean=config['clean_tclean'],
         )
     else:
         generate_json(
@@ -579,7 +594,8 @@ def command_interactive(args):
             only_image=config['only_image'],
             produce_qa=config['produce_qa'],
             uvsub_directory_name=config['uvsub_directory_name'],
-            fits_directory_name=config['fits_directory_name']
+            fits_directory_name=config['fits_directory_name'],
+            clean_tclean=config['clean_tclean'],
         )
 
 

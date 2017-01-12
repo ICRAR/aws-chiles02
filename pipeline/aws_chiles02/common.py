@@ -94,6 +94,19 @@ def get_list_frequency_groups(frequency_width):
     return list_frequencies
 
 
+def get_required_frequencies(frequency_string, width):
+    frequencies_in = frequency_string.split(',')
+    frequencies_required = set()
+    for frequency in frequencies_in:
+        elements = frequency.split('-')
+        if len(elements) == 2:
+            from_frequency = elements[0]
+        else:
+            frequencies_required.add(frequency)
+
+    frequency_list = get_list_frequency_groups(width)
+
+
 def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
     """
 

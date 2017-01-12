@@ -40,6 +40,7 @@ setup(
         'dfms',
         'mako',
         'pip>=9.0',
+        'requests',
     ],
     packages=[
         'aws_chiles02',
