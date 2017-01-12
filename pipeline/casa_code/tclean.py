@@ -43,7 +43,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         os.makedirs(cube_dir)
 
     outfile = os.path.join(cube_dir, 'clean_{0}~{1}'.format(min_freq, max_freq))
-    LOG.info('clean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
+    LOG.info('tclean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
     try:
         # dump_all()
         tclean(vis=in_dirs,

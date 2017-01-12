@@ -134,7 +134,8 @@ def create_and_generate(
         log_level,
         produce_qa,
         uvsub_directory_name,
-        fits_directory_name):
+        fits_directory_name,
+        clean_tclean):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -244,6 +245,7 @@ def create_and_generate(
                         produce_qa=produce_qa,
                         uvsub_directory_name=uvsub_directory_name,
                         fits_directory_name=fits_directory_name,
+                        clean_tclean=clean_tclean
                     )
                     graph.build_graph()
 
@@ -278,7 +280,8 @@ def use_and_generate(
         only_image,
         produce_qa,
         uvsub_directory_name,
-        fits_directory_name):
+        fits_directory_name,
+        clean_tclean):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -327,6 +330,7 @@ def use_and_generate(
                 produce_qa=produce_qa,
                 uvsub_directory_name=uvsub_directory_name,
                 fits_directory_name=fits_directory_name,
+                clean_tclean=clean_tclean,
             )
             graph.build_graph()
 
@@ -362,13 +366,15 @@ def generate_json(
         only_image,
         produce_qa,
         uvsub_directory_name,
-        fits_directory_name):
+        fits_directory_name,
+        clean_tclean):
     work_to_do = WorkToDo(
         width,
         bucket,
         clean_directory_name,
         min_frequency,
         max_frequency,
+        uvsub_directory_name,
     )
     work_to_do.calculate_work_to_do()
 
@@ -395,7 +401,8 @@ def generate_json(
         only_image=only_image,
         session_id='session_id',
         dim_ip='1.2.3.4',
-        produce_qa=produce_qa)
+        produce_qa=produce_qa,
+        clean_tclean=clean_tclean)
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -424,6 +431,7 @@ def command_json(args):
         produce_qa=args.produce_qa,
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
+        clean_tclean=args.clean_tclean,
     )
 
 
@@ -451,6 +459,7 @@ def command_create(args):
         log_level=log_level,
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
+        clean_tclean=args.clean_tclean,
     )
 
 
@@ -475,6 +484,7 @@ def command_use(args):
         only_image=args.only_image,
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
+        clean_tclean=args.clean_tclean,
     )
 
 
