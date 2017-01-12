@@ -191,7 +191,7 @@ if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    do_clean(
+    do_tclean(
         cube_dir=args.arguments[0],
         min_freq=int(args.arguments[1]),
         max_freq=int(args.arguments[2]),
