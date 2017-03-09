@@ -1,0 +1,11 @@
+astroplan
+astropy
+boto3
+matplotlib
+numpy
+pandas
+pip
+scikit-learn
+scipy
+setuptools
+sqlalchemy

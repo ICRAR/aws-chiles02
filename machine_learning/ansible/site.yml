@@ -1,8 +1,0 @@
----
-
-- name: Apply common configuration to all target nodes
-  hosts: local
-  connection: local
-  roles:
-    - common
-    - python
