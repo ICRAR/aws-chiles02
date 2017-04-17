@@ -88,15 +88,47 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         ms.open(in_dir)
         fq = ms.getspectralwindowinfo()['0']['RefFreq']
         ms.close()
-        im.settaylorterms(ntaylorterms=len(model), reffreq=fq)
+        # Special steps for outliers
+        ntt=len(model)
+        if (ntt>2):
+          tmp_name=os.path.join(out_dir, out_ms+'.tmp')
+          ntt==2
+        
+        im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
 
         #
-        im.ft(model=model, incremental=False)
+        im.ft(model=model[0:ntt], incremental=False)
         im.close()
 
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
-        split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+        # Do we have outliers??
+        if (len(model)>ntt):
+           split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
+           im.open(thems=tmp_name, usescratch=True)
+           # Select all data in this case
+           im.selectvis()
+
+           # These are the parameters for the generation of the model
+           # Not sure how many of them are important here -- all except mode?
+           im.defineimage(
+               nx=4096,
+               ny=4096,
+               cellx='2arcsec',
+               celly='2arcsec',
+               mode='mfs',
+               facets=1
+           )
+           im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
+           im.settaylorterms(ntaylorterms=1)
+           #
+           im.ft(model=model[ntt:-1], incremental=False)
+           im.close()
+           uvsub(vis=tmp_name, reverse=False)
+           split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+        else: 
+           split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
