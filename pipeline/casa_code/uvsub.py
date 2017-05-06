@@ -92,11 +92,13 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         ntt=len(model)
         if (ntt>2):
           tmp_name=os.path.join(out_dir, out_ms+'.tmp')
-          ntt==2
+          ntt=2
+        print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
         
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
 
         #
+        print 'Models in this pass: '+model[0:ntt]
         im.ft(model=model[0:ntt], incremental=False)
         im.close()
 
@@ -104,6 +106,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         uvsub(vis=in_dir, reverse=False)
         # Do we have outliers??
         if (len(model)>ntt):
+           print 'Using remaing '+str(len(model)+ntt)+' for outlier subtraction'
            split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
            im.open(thems=tmp_name, usescratch=True)
            # Select all data in this case
@@ -122,6 +125,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
            im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
            im.settaylorterms(ntaylorterms=1)
            #
+           print 'Models in this pass: '+model[ntt:-1]
            im.ft(model=model[ntt:-1], incremental=False)
            im.close()
            uvsub(vis=tmp_name, reverse=False)

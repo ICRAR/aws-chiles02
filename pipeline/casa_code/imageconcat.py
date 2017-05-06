@@ -42,15 +42,15 @@ def do_concatenate(out_filename, input_files):
 
     try:
         # IA used to report the statistics to the log file
-        for input_file in input_files:
-            ia.open(input_file)
-            ia.statistics(verbose=True,axes=[0,1])
-            ia.close()
+        # for input_file in input_files:
+        #     ia.open(input_file)
+        #     ia.statistics(verbose=True,axes=[0,1])
+        #     ia.close()
 
         # ia doesn't need an import - it is just available in casa
         # TODO: Uncomment this
-        # final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
-        # final.done()
+        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
+        final.done()
 
         # ia.open(out_filename)
         # ia.statistics(verbose=True,axes=[0,1])
