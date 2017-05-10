@@ -33,32 +33,25 @@ from time import sleep
 import sys
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph_find_bad_measurement_set import BuildGraphFindBadMeasurementSet
-from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
+from aws_chiles02.build_graph_concatenate import BuildGraphConcatenation
+from aws_chiles02.common import get_session_id, get_aws_credentials, get_uuid, get_input_mode, TKINTER
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
+from aws_chiles02.get_argument import GetArguments
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
 from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 1
+PARALLEL_STREAMS = 16
 
 
-def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
-    nodes = []
-    node_count = max(len(work_to_do) / frequencies_per_node, 1)
-    nodes.append({
-        'number_instances': node_count,
-        'instance_type': 'i2.2xlarge',
-        'spot_price': spot_price
-    })
-
-    return nodes, node_count
+def get_s3_clean_name(width, iterations, arcsec):
+    return 'clean_{0}_{1}_{2}'.format(width, iterations, arcsec)
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, bottom_frequency, nodes, add_shutdown):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume, add_shutdown, iterations):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
@@ -66,8 +59,8 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
             ami_id,
             [
                 {
-                    'number_instances': nodes,
-                    'instance_type': 'i2.2xlarge',
+                    'number_instances': 1,
+                    'instance_type': 'i2.4xlarge',
                     'spot_price': spot_price
                 }
             ],
@@ -80,7 +73,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
                 },
                 {
                     'Key': 'Name',
-                    'Value': 'DALiuGE NM - Find bad MS',
+                    'Value': 'DALiuGE NM - Concatenate',
                 },
                 {
                     'Key': 'uuid',
@@ -92,78 +85,74 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
 
         reported_running = get_reported_running(
             uuid,
-            nodes,
+            1,
+            wait=600
+        )
+        hosts = build_hosts(reported_running)
+
+        # Create the Data Island Manager
+        data_island_manager = EC2Controller(
+            ami_id,
+            [
+                {
+                    'number_instances': 1,
+                    'instance_type': 'm4.large',
+                    'spot_price': spot_price
+                }
+            ],
+            get_data_island_manager_user_data(boto_data, hosts, uuid),
+            AWS_REGION,
+            tags=[
+                {
+                    'Key': 'Owner',
+                    'Value': getpass.getuser(),
+                },
+                {
+                    'Key': 'Name',
+                    'Value': 'DALiuGE DIM - Concatenate',
+                },
+                {
+                    'Key': 'uuid',
+                    'Value': uuid,
+                },
+            ]
+        )
+        data_island_manager.start_instances()
+        data_island_manager_running = get_reported_running(
+            uuid,
+            1,
             wait=600
         )
 
-        if len(reported_running) == 0:
-            LOG.error('Nothing has reported ready')
-        else:
-            hosts = build_hosts(reported_running)
+        if len(data_island_manager_running['m4.large']) == 1:
+            # Now build the graph
+            session_id = get_session_id()
+            instance_details = data_island_manager_running['m4.large'][0]
+            host = instance_details['ip_address']
+            graph = BuildGraphConcatenation(
+                bucket_name,
+                volume,
+                PARALLEL_STREAMS,
+                reported_running,
+                add_shutdown,
+                frequency_width,
+                iterations,
+                '2arcsec',  # TODO: Pass as a parameter
+                session_id,
+                host)
+            graph.build_graph()
 
-            # Create the Data Island Manager
-            data_island_manager = EC2Controller(
-                ami_id,
-                [
-                    {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price
-                    }
-                ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid),
-                AWS_REGION,
-                tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'DALiuGE DIM - Find bad MS',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
-            )
-            data_island_manager.start_instances()
-            data_island_manager_running = get_reported_running(
-                    uuid,
-                    1,
-                    wait=600
-            )
+            LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+            client = DataIslandManagerClient(host, DIM_PORT)
 
-            if len(data_island_manager_running['m4.large']) == 1:
-                # Now build the graph
-                session_id = get_session_id()
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
-                graph = BuildGraphFindBadMeasurementSet(
-                    bucket_name,
-                    volume,
-                    PARALLEL_STREAMS,
-                    reported_running,
-                    add_shutdown,
-                    frequency_width,
-                    bottom_frequency,
-                    session_id,
-                    host,
-                )
-                graph.build_graph()
-
-                LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
-                client = DataIslandManagerClient(host, DIM_PORT)
-
-                client.create_session(session_id)
-                client.append_graph(session_id, graph.drop_list)
-                client.deploy_session(session_id, get_roots(graph.drop_list))
+            client.create_session(session_id)
+            client.append_graph(session_id, graph.drop_list)
+            client.deploy_session(session_id, get_roots(graph.drop_list))
     else:
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, bottom_frequency, add_shutdown):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, iterations):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -181,17 +170,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, bottom_fr
         if len(nodes_running) > 0:
             # Now build the graph
             session_id = get_session_id()
-            graph = BuildGraphFindBadMeasurementSet(
-                bucket_name,
-                volume,
-                PARALLEL_STREAMS,
-                nodes_running,
-                add_shutdown,
-                frequency_width,
-                bottom_frequency,
-                session_id,
-                host,
-            )
+            graph = BuildGraphConcatenation(bucket_name, volume, PARALLEL_STREAMS, nodes_running, add_shutdown, frequency_width, iterations, session_id, host)
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -207,23 +186,16 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, bottom_fr
 
 def command_json(args):
     node_details = {
-        'i2.2xlarge': ['node_{0}'.format(i) for i in range(0, args.nodes)]
+        'number_instances': 1,
+        'instance_type': 'm4.large',
+        'spot_price': 0.99
     }
-    graph = BuildGraphFindBadMeasurementSet(
-        args.bucket,
-        args.volume,
-        PARALLEL_STREAMS,
-        node_details,
-        args.shutdown,
-        args.width,
-        args.bottom_frequency,
-        'session_id',
-        '1.2.3.4',
-    )
+
+    graph = BuildGraphConcatenation(args.bucket, args.volume, args.parallel_streams, node_details, args.shutdown, args.width, args.iterations, 'session_id', '1.2.3.4')
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_clean.txt", "w") as json_file:
+    with open("/tmp/json_split.txt", "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -234,9 +206,8 @@ def command_create(args):
         args.ami,
         args.spot_price1,
         args.volume,
-        args.bottom_frequency,
-        args.nodes,
         args.shutdown,
+        args.iterations,
     )
 
 
@@ -247,8 +218,8 @@ def command_use(args):
         args.bucket,
         args.width,
         args.volume,
-        args.bottom_frequency,
         args.shutdown,
+        args.iterations,
     )
 
 
@@ -263,23 +234,23 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
-    if config['create_use'] == 'create':
-        get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
-        get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'bottom_frequency', 'Bottom frequency', data_type=int, help_text='the bottom frequency to look at')
-        get_argument(config, 'nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
-        get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+    mode = get_input_mode()
+    if mode == TKINTER and False:
+        # TODO:
+        pass
     else:
-        get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
-        get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        get_argument(config, 'bottom_frequency', 'Bottom frequency', data_type=int, help_text='the bottom frequency to look at')
-        get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        args = GetArguments(config=config, mode=mode)
+        args.get('create_use', 'create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=10)
+        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        if config['create_use'] == 'create':
+            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+            args.get('spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
+        else:
+            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
 
     # Write the arguments
     config.write()
@@ -290,11 +261,10 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['ami'],
-            config['spot_price'],
+            config['spot_price_i2_4xlarge'],
             config['volume'],
-            config['bottom_frequency'],
-            config['nodes'],
             config['shutdown'],
+            config['iterations'],
         )
     else:
         use_and_generate(
@@ -303,32 +273,31 @@ def command_interactive(args):
             config['bucket_name'],
             config['width'],
             config['volume'],
-            config['bottom_frequency'],
             config['shutdown'],
+            config['iterations'],
         )
 
 
 def parser_arguments(command_line=sys.argv[1:]):
-    parser = argparse.ArgumentParser('Try and find the bad Measurement Set in the CLEAN physical graph for a day ')
+    parser = argparse.ArgumentParser('Build the CONCATENATION physical graph for a day')
 
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('bottom_frequency', type=int, help='the bottom frequency')
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop', default=True)
+    common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
+    common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
     common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
 
     subparsers = parser.add_subparsers()
 
     parser_json = subparsers.add_parser('json', parents=[common_parser], help='display the json')
-    parser_json.add_argument('--nodes', type=int, help='the number of nodes', default=1)
+    parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
     parser_json.set_defaults(func=command_json)
 
     parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
     parser_create.add_argument('spot_price', type=float, help='the spot price')
-    parser_create.add_argument('--nodes', type=int, help='the number of node', default=1)
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')

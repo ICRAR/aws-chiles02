@@ -32,10 +32,16 @@ import uuid
 from cStringIO import StringIO
 from os.path import join, expanduser
 
+import readline
+
+import sys
 from configobj import ConfigObj
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
+NOT_TTY = 'not tty terminal'
+TTY = 'tty'
+TKINTER = 'Tkinter'
 LOG = logging.getLogger(__name__)
 
 
@@ -94,17 +100,51 @@ def get_list_frequency_groups(frequency_width):
     return list_frequencies
 
 
+def pair_in_set(frequency_pair, frequencies_required):
+    for frequency in range(frequency_pair.bottom_frequency, frequency_pair.top_frequency + 1):
+        if frequency in frequencies_required:
+            return True
+
+    return False
+
+
 def get_required_frequencies(frequency_string, width):
+    """
+    Get a range of frequency pairs
+    :param frequency_string:
+    :param width:
+    :return:
+
+    >>> get_required_frequencies('', 4)
+
+    >>> get_required_frequencies('1321', 4)
+    [FrequencyPair(1320, 1324)]
+    >>> get_required_frequencies('1321, 999', 4)
+    [FrequencyPair(996, 1000), FrequencyPair(1320, 1324)]
+    >>> get_required_frequencies('999-1005', 4)
+    [FrequencyPair(996, 1000), FrequencyPair(1000, 1004), FrequencyPair(1004, 1008)]
+    >>> get_required_frequencies('980, 1199-1205, 1005-1008, 1300', 4)
+    [FrequencyPair(976, 980), FrequencyPair(980, 984), FrequencyPair(1004, 1008), FrequencyPair(1008, 1012), FrequencyPair(1196, 1200), FrequencyPair(1200, 1204), FrequencyPair(1204, 1208), FrequencyPair(1296, 1300), FrequencyPair(1300, 1304)]
+    """
+    if frequency_string.strip() == '':
+        return None
+
     frequencies_in = frequency_string.split(',')
     frequencies_required = set()
     for frequency in frequencies_in:
         elements = frequency.split('-')
         if len(elements) == 2:
-            from_frequency = elements[0]
+            for inner_frequency in range(int(elements[0]), int(elements[1]) + 1):
+                frequencies_required.add(inner_frequency)
         else:
-            frequencies_required.add(frequency)
+            frequencies_required.add(int(frequency))
 
-    frequency_list = get_list_frequency_groups(width)
+    list_frequency_pair = []
+    for frequency_pair in get_list_frequency_groups(width):
+        if pair_in_set(frequency_pair, frequencies_required):
+            list_frequency_pair.append(frequency_pair)
+
+    return list_frequency_pair
 
 
 def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
@@ -216,51 +256,22 @@ def run_command(command):
     return process.returncode
 
 
-def get_argument(config, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
-    if key in config and use_stored:
-        from_config = config[key]
+def module_exists(module_name):
+    try:
+        __import__(module_name)
+    except ImportError:
+        return False
     else:
-        from_config = None
+        return True
 
-    if from_config is not None and default is not None:
-        prompt = '{0} [{1}](default: {2}):'.format(prompt, from_config, default)
-    elif from_config is not None:
-        prompt = '{0} [{1}]:'.format(prompt, from_config)
-    elif default is not None:
-        prompt = '{0} [{1}]:'.format(prompt, default)
+
+def get_input_mode():
+    if module_exists(TKINTER):
+        return TKINTER
+    elif sys.stdout.isatty():
+        return TTY
     else:
-        prompt = '{0}:'.format(prompt)
-
-    data = None
-
-    while data is None:
-        data = raw_input(prompt)
-        if data == '?':
-            if help_text is not None:
-                print '\n' + help_text + '\n'
-            else:
-                print '\nNo help available\n'
-
-            data = None
-        elif data == '':
-            if from_config is not None:
-                data = from_config
-            else:
-                data = default
-
-        if allowed is not None:
-            if data not in allowed:
-                data = None
-
-    if data_type is not None:
-        if data_type == int:
-            config[key] = int(data)
-        elif data_type == float:
-            config[key] = float(data)
-        elif data_type == bool:
-            config[key] = data in ['True', 'true', 'Yes', 'yes']
-    else:
-        config[key] = data
+        return NOT_TTY
 
 
 def get_aws_credentials(profile_name):

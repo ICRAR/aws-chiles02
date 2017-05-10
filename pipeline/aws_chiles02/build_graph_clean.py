@@ -39,44 +39,22 @@ class CarryOverDataClean:
 
 
 class BuildGraphClean(AbstractBuildGraph):
-    def __init__(
-            self,
-            work_to_do,
-            bucket_name,
-            volume,
-            parallel_streams,
-            node_details,
-            shutdown,
-            width,
-            iterations,
-            arcsec,
-            w_projection_planes,
-            robust,
-            image_size,
-            clean_channel_average,
-            clean_directory_name,
-            only_image,
-            session_id,
-            dim_ip,
-            produce_qa,
-            uvsub_directory_name,
-            fits_directory_name,
-            clean_tclean):
-        super(BuildGraphClean, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
-        self._work_to_do = work_to_do
-        self._parallel_streams = parallel_streams
-        self._s3_clean_name = clean_directory_name
-        self._s3_fits_name = fits_directory_name
-        self._s3_uvsub_name = uvsub_directory_name
-        self._iterations = iterations
-        self._arcsec = arcsec
-        self._w_projection_planes = w_projection_planes
-        self._robust = robust
-        self._image_size = image_size
-        self._clean_channel_average = clean_channel_average
-        self._only_image = only_image
-        self._produce_qa = produce_qa
-        self._clean_tclean = clean_tclean
+    def __init__(self, **kwargs):
+        super(BuildGraphClean, self).__init__(**kwargs)
+        self._work_to_do = kwargs['work_to_do']
+        self._parallel_streams = kwargs['parallel_streams']
+        self._s3_clean_name = kwargs['clean_directory_name']
+        self._s3_fits_name = kwargs['fits_directory_name']
+        self._s3_uvsub_name = kwargs['uvsub_directory_name']
+        self._iterations = kwargs['iterations']
+        self._arcsec = kwargs['arcsec']
+        self._w_projection_planes = kwargs['w_projection_planes']
+        self._robust = kwargs['robust']
+        self._image_size = kwargs['image_size']
+        self._clean_channel_average = kwargs['clean_channel_average']
+        self._only_image = kwargs['only_image']
+        self._produce_qa = kwargs['produce_qa']
+        self._clean_tclean = kwargs['clean_tclean']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
