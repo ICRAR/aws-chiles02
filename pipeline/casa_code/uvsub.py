@@ -98,7 +98,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
 
         #
-        print 'Models in this pass: '+model[0:ntt]
+        print 'Models in this pass: '+str(model[0:ntt])
         im.ft(model=model[0:ntt], incremental=False)
         im.close()
 
@@ -125,7 +125,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
            im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
            im.settaylorterms(ntaylorterms=1)
            #
-           print 'Models in this pass: '+model[ntt:-1]
+           print 'Models in this pass: '+str(model[ntt:-1])
            im.ft(model=model[ntt:-1], incremental=False)
            im.close()
            uvsub(vis=tmp_name, reverse=False)
