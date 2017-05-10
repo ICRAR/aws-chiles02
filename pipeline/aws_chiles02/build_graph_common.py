@@ -38,16 +38,16 @@ class AbstractBuildGraph:
     #  - Subclasses implement methods decorated with @abstractmethod
     __metaclass__ = ABCMeta
 
-    def __init__(self, bucket_name, shutdown, node_details, volume, session_id, dim_ip):
+    def __init__(self, **kwargs):
         self._drop_list = []
         self._map_carry_over_data = {}
-        self._bucket_name = bucket_name
-        self._shutdown = shutdown
+        self._bucket_name = kwargs['bucket_name']
+        self._shutdown = kwargs['shutdown']
         self._bucket = None
-        self._node_details = node_details
-        self._volume = volume
-        self._session_id = session_id
-        self._dim_ip = dim_ip
+        self._node_details = kwargs['node_details']
+        self._volume = kwargs['volume']
+        self._session_id = kwargs['session_id']
+        self._dim_ip = kwargs['dim_ip']
         self._counters = {}
 
         for key, list_ips in self._node_details.iteritems():

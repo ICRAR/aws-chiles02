@@ -27,14 +27,19 @@ import getpass
 import httplib
 import json
 import logging
+import os
+from time import sleep
 
 import boto3
 import sys
 
+from configobj import ConfigObj
+
 from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_argument, get_aws_credentials, MeasurementSetData, get_uuid
+from aws_chiles02.common import get_session_id, get_list_frequency_groups, FrequencyPair, get_aws_credentials, MeasurementSetData, get_uuid, get_input_mode, TKINTER
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, get_nodes_running, build_hosts
+from aws_chiles02.get_argument import GetArguments
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, SIZE_1GB, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
 from dfms.droputils import get_roots
@@ -381,22 +386,38 @@ def command_json(args):
     )
 
 
-def interactive(config):
-    get_argument(config, 'create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
-    get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-    get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-    get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-    get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    if config['create_use_json'] == 'create':
-        get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price_i2.2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
-        get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
-        get_argument(config, 'days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
-    elif config['create_use_json'] == 'use':
-        get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+def command_interactive(args):
+    LOG.info(args)
+    sleep(0.5)  # Allow the logging time to print
+    path_dirname, filename = os.path.split(__file__)
+    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
+    if os.path.exists(config_file_name):
+        config = ConfigObj(config_file_name)
     else:
-        get_argument(config, 'nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
-        get_argument(config, 'parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
+        config = ConfigObj()
+        config.filename = config_file_name
+
+    mode = get_input_mode()
+    if mode == TKINTER and False:
+        # TODO:
+        pass
+    else:
+        args = GetArguments(config=config, mode=mode)
+        args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
+        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        if config['create_use_json'] == 'create':
+            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+            args.get('spot_price_i2.2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
+            args.get('spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
+            args.get('days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
+        elif config['create_use_json'] == 'use':
+            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+        else:
+            args.get('nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
+            args.get('parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
 
     # Run the command
     if config['create_use_json'] == 'create':
@@ -479,6 +500,9 @@ def parser_arguments(command_line=sys.argv[1:]):
 
     parser_json = subparsers.add_parser('json', parents=[common_parser], help='use what is running and deploy')
     parser_json.set_defaults(func=command_json)
+
+    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
+    parser_interactive.set_defaults(func=command_interactive)
 
     args = parser.parse_args(command_line)
     return args

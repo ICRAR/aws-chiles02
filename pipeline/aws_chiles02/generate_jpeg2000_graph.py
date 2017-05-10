@@ -34,9 +34,10 @@ import sys
 from configobj import ConfigObj
 
 from aws_chiles02.build_graph_jpeg2000 import BuildGraphJpeg2000
-from aws_chiles02.common import get_session_id, get_argument, get_aws_credentials, get_uuid
+from aws_chiles02.common import get_session_id, get_aws_credentials, get_uuid, TKINTER, get_input_mode
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
+from aws_chiles02.get_argument import GetArguments
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
 from dfms.droputils import get_roots
@@ -46,10 +47,12 @@ LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
 
 
-def create_and_generate(bucket_name, ami_id, spot_price, volume, add_shutdown, fits_directory_name, jpeg2000_directory_name):
+def create_and_generate(**kwargs):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         uuid = get_uuid()
+        ami_id = kwargs['ami_id']
+        spot_price = kwargs['spot_price']
         ec2_data = EC2Controller(
             ami_id,
             [
@@ -125,13 +128,13 @@ def create_and_generate(bucket_name, ami_id, spot_price, volume, add_shutdown, f
             instance_details = data_island_manager_running['m4.large'][0]
             host = instance_details['ip_address']
             graph = BuildGraphJpeg2000(
-                bucket_name=bucket_name,
-                volume=volume,
+                bucket_name=kwargs['bucket_name'],
+                volume=kwargs['volume'],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=reported_running,
-                shutdown=add_shutdown,
-                fits_directory_name=fits_directory_name,
-                jpeg2000_directory_name=jpeg2000_directory_name,
+                shutdown=kwargs['add_shutdown'],
+                fits_directory_name=kwargs['fits_directory_name'],
+                jpeg2000_directory_name=kwargs['jpeg2000_directory_name'],
                 session_id=session_id,
                 dim_ip=host
             )
@@ -147,9 +150,11 @@ def create_and_generate(bucket_name, ami_id, spot_price, volume, add_shutdown, f
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, volume, add_shutdown, fits_directory_name, jpeg2000_directory_name):
+def use_and_generate(**kwargs):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
+        host = kwargs['host']
+        port = kwargs['port']
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
@@ -166,13 +171,13 @@ def use_and_generate(host, port, bucket_name, volume, add_shutdown, fits_directo
             # Now build the graph
             session_id = get_session_id()
             graph = BuildGraphJpeg2000(
-                bucket_name=bucket_name,
-                volume=volume,
+                bucket_name=kwargs['bucket_name'],
+                volume=kwargs['volume'],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
-                shutdown=add_shutdown,
-                fits_directory_name=fits_directory_name,
-                jpeg2000_directory_name=jpeg2000_directory_name,
+                shutdown=kwargs['add_shutdown'],
+                fits_directory_name=kwargs['fits_directory_name'],
+                jpeg2000_directory_name=kwargs['jpeg2000_directory_name'],
                 session_id=session_id,
                 dim_ip=host
             )
@@ -249,18 +254,24 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
-    get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-    get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-    get_argument(config, 'fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
-    get_argument(config, 'jpeg2000_directory_name', 'The directory name for JPEG2000 files', help_text='the directory name for JPEG2000')
-    get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-
-    if config['create_use'] == 'create':
-        get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+    mode = get_input_mode()
+    if mode == TKINTER and False:
+        # TODO:
+        pass
     else:
-        get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+        args = GetArguments(config=config, mode=mode)
+        args.get('create_use', 'Create or use', allowed=['create', 'use'], help_text='the use a network or create a network')
+        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+        args.get('jpeg2000_directory_name', 'The directory name for JPEG2000 files', help_text='the directory name for JPEG2000')
+        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+
+        if config['create_use'] == 'create':
+            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+            args.get('spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+        else:
+            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
 
     # Write the arguments
     config.write()

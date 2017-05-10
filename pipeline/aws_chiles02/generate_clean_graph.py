@@ -35,9 +35,10 @@ import sys
 from configobj import ConfigObj
 
 from aws_chiles02.build_graph_clean import BuildGraphClean
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, get_argument, get_aws_credentials, get_uuid, get_log_level
+from aws_chiles02.common import get_session_id, get_list_frequency_groups, get_aws_credentials, get_uuid, get_log_level, get_required_frequencies, get_input_mode, TKINTER
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
+from aws_chiles02.get_argument import GetArguments
 from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
 from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
 from dfms.droputils import get_roots
@@ -48,16 +49,13 @@ PARALLEL_STREAMS = 12
 
 
 class WorkToDo:
-    def __init__(self, width, bucket_name, s3_clean_name, min_frequency, max_frequency, s3_uvsub_name):
+    def __init__(self, **kwargs):
+        width = kwargs['frequency_width']
         self._width = width
-        self._bucket_name = bucket_name
-        self._s3_clean_name = s3_clean_name
-        self._s3_uvsub_name = s3_uvsub_name
-        self._min_frequency = min_frequency
-        self._max_frequency = max_frequency
-        self._work_already_done = None
-        self._bucket = None
-        self._list_frequencies = None
+        self._bucket_name = kwargs['bucket_name']
+        self._s3_clean_name = kwargs['clean_directory_name']
+        self._s3_uvsub_name = kwargs['uvsub_directory_name']
+        self._frequency_range = get_required_frequencies(kwargs['frequency_range'], width)
         self._work_to_do = []
 
     def calculate_work_to_do(self):
@@ -65,13 +63,13 @@ class WorkToDo:
         s3 = session.resource('s3', use_ssl=False)
 
         cleaned_objects = []
-        self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_clean_name)):
+        bucket = s3.Bucket(self._bucket_name)
+        for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_clean_name)):
             cleaned_objects.append(key.key)
             LOG.info('{0} found'.format(key.key))
 
         uvsub_frequencies = []
-        for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
+        for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
             elements = key.key.split('/')
             if len(elements) == 3:
                 if elements[1] not in uvsub_frequencies:
@@ -79,12 +77,10 @@ class WorkToDo:
                     LOG.info('{0} found'.format(key.key))
 
         # Get work we've already done
-        self._list_frequencies = get_list_frequency_groups(self._width)
-        for frequency_pair in self._list_frequencies:
-            # Use the min and max frequency
-            if self._min_frequency is not None and frequency_pair.top_frequency < self._min_frequency:
-                continue
-            if self._max_frequency is not None and frequency_pair.bottom_frequency > self._max_frequency:
+        list_frequencies = get_list_frequency_groups(self._width)
+        for frequency_pair in list_frequencies:
+            # Use the frequency
+            if self._frequency_range is not None and frequency_pair not in self._frequency_range:
                 continue
 
             expected_tar_file = '{0}/cleaned_{1}_{2}.tar'.format(
@@ -113,45 +109,33 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(
-        bucket_name,
-        frequency_width,
-        ami_id,
-        spot_price,
-        volume,
-        frequencies_per_node,
-        add_shutdown,
-        iterations,
-        arcsec,
-        w_projection_planes,
-        robust,
-        image_size,
-        clean_channel_average,
-        min_frequency,
-        max_frequency,
-        clean_directory_name,
-        only_image,
-        log_level,
-        produce_qa,
-        uvsub_directory_name,
-        fits_directory_name,
-        clean_tclean):
+def create_and_generate(**kwargs):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
+        frequency_width = kwargs['frequency_width']
+        bucket_name = kwargs['bucket_name']
+        clean_directory_name = kwargs['clean_directory_name']
+        uvsub_directory_name = kwargs['uvsub_directory_name']
         work_to_do = WorkToDo(
-            frequency_width,
-            bucket_name,
-            clean_directory_name,
-            min_frequency,
-            max_frequency,
-            uvsub_directory_name,
+            bucket_name=bucket_name,
+            frequency_width=frequency_width,
+            frequency_range=kwargs['frequency_range'],
+            clean_directory_name=clean_directory_name,
+            uvsub_directory_name=uvsub_directory_name,
         )
         work_to_do.calculate_work_to_do()
 
-        nodes_required, node_count = get_nodes_required(work_to_do.work_to_do, frequencies_per_node, spot_price)
+        spot_price = kwargs['spot_price']
+        nodes_required, node_count = get_nodes_required(
+            work_to_do.work_to_do,
+            kwargs['frequencies_per_node'],
+            spot_price)
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
+            ami_id = kwargs['ami_id']
+            log_level = kwargs['log_level']
+            clean_tclean = kwargs['clean_tclean']
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
@@ -164,7 +148,7 @@ def create_and_generate(
                     },
                     {
                         'Key': 'Name',
-                        'Value': 'DALiuGE NM - Clean',
+                        'Value': 'DALiuGE NM - Clean' if clean_tclean == 'clean' else 'DALiuGE NM - Tclean',
                     },
                     {
                         'Key': 'uuid',
@@ -204,7 +188,7 @@ def create_and_generate(
                         },
                         {
                             'Key': 'Name',
-                            'Value': 'DALiuGE DIM - Clean',
+                            'Value': 'DALiuGE DIM - Clean' if clean_tclean == 'clean' else 'DALiuGE DIM - Tclean',
                         },
                         {
                             'Key': 'uuid',
@@ -227,24 +211,24 @@ def create_and_generate(
                     graph = BuildGraphClean(
                         work_to_do=work_to_do.work_to_do,
                         bucket_name=bucket_name,
-                        volume=volume,
+                        volume=kwargs['volume'],
                         parallel_streams=PARALLEL_STREAMS,
                         node_details=reported_running,
-                        shutdown=add_shutdown,
+                        shutdown=kwargs['add_shutdown'],
                         width=frequency_width,
-                        iterations=iterations,
-                        arcsec=arcsec,
-                        w_projection_planes=w_projection_planes,
-                        robust=robust,
-                        image_size=image_size,
-                        clean_channel_average=clean_channel_average,
+                        iterations=kwargs['iterations'],
+                        arcsec=kwargs['arcsec'],
+                        w_projection_planes=kwargs['w_projection_planes'],
+                        robust=kwargs['robust'],
+                        image_size=kwargs['image_size'],
+                        clean_channel_average=kwargs['clean_channel_average'],
                         clean_directory_name=clean_directory_name,
-                        only_image=only_image,
+                        only_image=kwargs['only_image'],
                         session_id=session_id,
                         dim_ip=host,
-                        produce_qa=produce_qa,
+                        produce_qa=kwargs['produce_qa'],
                         uvsub_directory_name=uvsub_directory_name,
-                        fits_directory_name=fits_directory_name,
+                        fits_directory_name=kwargs['fits_directory_name'],
                         clean_tclean=clean_tclean
                     )
                     graph.build_graph()
@@ -261,29 +245,11 @@ def create_and_generate(
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(
-        host,
-        port,
-        bucket_name,
-        frequency_width,
-        volume,
-        add_shutdown,
-        iterations,
-        arcsec,
-        w_projection_planes,
-        robust,
-        image_size,
-        clean_channel_average,
-        min_frequency,
-        max_frequency,
-        clean_directory_name,
-        only_image,
-        produce_qa,
-        uvsub_directory_name,
-        fits_directory_name,
-        clean_tclean):
+def use_and_generate(**kwargs):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
+        host = kwargs['host']
+        port = kwargs['port']
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
@@ -297,13 +263,16 @@ def use_and_generate(
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
+            frequency_width = kwargs['frequency_width']
+            bucket_name = kwargs['bucket_name']
+            clean_directory_name = kwargs['clean_directory_name']
+            uvsub_directory_name = kwargs['uvsub_directory_name']
             work_to_do = WorkToDo(
-                frequency_width,
-                bucket_name,
-                clean_directory_name,
-                min_frequency,
-                max_frequency,
-                uvsub_directory_name,
+                frequency_width=frequency_width,
+                bucket_name=bucket_name,
+                clean_directory_name=clean_directory_name,
+                frequency_range=kwargs['frequency_range'],
+                uvsub_directory_name=uvsub_directory_name,
             )
             work_to_do.calculate_work_to_do()
 
@@ -312,25 +281,25 @@ def use_and_generate(
             graph = BuildGraphClean(
                 work_to_do=work_to_do.work_to_do,
                 bucket_name=bucket_name,
-                volume=volume,
+                volume=kwargs['volume'],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
-                shutdown=add_shutdown,
+                shutdown=kwargs['add_shutdown'],
                 width=frequency_width,
-                iterations=iterations,
-                arcsec=arcsec,
-                w_projection_planes=w_projection_planes,
-                robust=robust,
-                image_size=image_size,
-                clean_channel_average=clean_channel_average,
+                iterations=kwargs['iterations'],
+                arcsec=kwargs['arcsec'],
+                w_projection_planes=kwargs['w_projection_planes'],
+                robust=kwargs['robust'],
+                image_size=kwargs['image_size'],
+                clean_channel_average=kwargs['clean_channel_average'],
                 clean_directory_name=clean_directory_name,
-                only_image=only_image,
+                only_image=kwargs['only_image'],
                 session_id=session_id,
                 dim_ip=host,
-                produce_qa=produce_qa,
+                produce_qa=kwargs['produce_qa'],
                 uvsub_directory_name=uvsub_directory_name,
-                fits_directory_name=fits_directory_name,
-                clean_tclean=clean_tclean,
+                fits_directory_name=kwargs['fits_directory_name'],
+                clean_tclean=kwargs['clean_tclean'],
             )
             graph.build_graph()
 
@@ -347,62 +316,46 @@ def use_and_generate(
             LOG.warning('No nodes are running')
 
 
-def generate_json(
-        width,
-        bucket,
-        iterations,
-        arcsec,
-        nodes,
-        volume,
-        parallel_streams,
-        shutdown,
-        w_projection_planes,
-        robust,
-        image_size,
-        clean_channel_average,
-        min_frequency,
-        max_frequency,
-        clean_directory_name,
-        only_image,
-        produce_qa,
-        uvsub_directory_name,
-        fits_directory_name,
-        clean_tclean):
+def generate_json(**kwargs):
+    width = kwargs['width']
+    bucket = kwargs['bucket']
+    clean_directory_name = kwargs['clean_directory_name']
+    uvsub_directory_name = kwargs['uvsub_directory_name']
     work_to_do = WorkToDo(
-        width,
-        bucket,
-        clean_directory_name,
-        min_frequency,
-        max_frequency,
-        uvsub_directory_name,
+        width=width,
+        bucket=bucket,
+        clean_directory_name=clean_directory_name,
+        frequency_range=kwargs['frequency_range'],
+        uvsub_directory_name=uvsub_directory_name,
     )
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)]
+        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, kwargs['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
         bucket_name=bucket,
-        volume=volume,
-        parallel_streams=parallel_streams,
+        volume=kwargs['volume'],
+        parallel_streams=kwargs['parallel_streams'],
         node_details=node_details,
-        shutdown=shutdown,
+        shutdown=kwargs['shutdown'],
         width=width,
-        iterations=iterations,
-        arcsec=arcsec + 'arcsec',
-        w_projection_planes=w_projection_planes,
-        robust=robust,
-        image_size=image_size,
-        clean_channel_average=clean_channel_average,
+        iterations=kwargs['iterations'],
+        arcsec=kwargs['arcsec'] + 'arcsec',
+        w_projection_planes=kwargs['w_projection_planes'],
+        robust=kwargs['robust'],
+        image_size=kwargs['mage_size'],
+        clean_channel_average=kwargs['clean_channel_average'],
         clean_directory_name=clean_directory_name,
         uvsub_directory_name=uvsub_directory_name,
-        fits_directory_name=fits_directory_name,
-        only_image=only_image,
+        fits_directory_name=kwargs['fits_directory_name'],
+        only_image=kwargs['only_image'],
         session_id='session_id',
         dim_ip='1.2.3.4',
-        produce_qa=produce_qa,
-        clean_tclean=clean_tclean)
+        produce_qa=kwargs['produce_qa'],
+        clean_tclean=kwargs['clean_tclean'],
+    )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -424,8 +377,7 @@ def command_json(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
-        min_frequency=args.min_frequency,
-        max_frequency=args.max_frequency,
+        frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
         produce_qa=args.produce_qa,
@@ -451,8 +403,7 @@ def command_create(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
-        min_frequency=args.min_frequency,
-        max_frequency=args.max_frequency,
+        frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
         produce_qa=args.produce_qa,
@@ -477,8 +428,7 @@ def command_use(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
-        min_frequency=args.min_frequency,
-        max_frequency=args.max_frequency,
+        frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         produce_qa=args.produce_qa,
         only_image=args.only_image,
@@ -499,38 +449,40 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    get_argument(config, 'run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
-    get_argument(config, 'bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-    get_argument(config, 'volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-    get_argument(config, 'width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-    get_argument(config, 'iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-    get_argument(config, 'arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
-    get_argument(config, 'w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
-    get_argument(config, 'robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
-    get_argument(config, 'image_size', 'The image size', data_type=int, help_text='the image size for clean', default=2048)
-    get_argument(config, 'clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
-    get_argument(config, 'only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
-    get_argument(config, 'shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-    get_argument(config, 'uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
-    get_argument(config, 'clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
-    get_argument(config, 'fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
-    get_argument(config, 'produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
-    get_argument(config, 'clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
-
-    get_argument(config, 'frequency_range', 'Do you want to specify a range of frequencies', data_type=bool, help_text='Do you want to specify a range of frequencies', default=False)
-    if config['frequency_range']:
-        get_argument(config, 'min_frequency', 'The minimum frequency', data_type=int, help_text='the minimum frequency', default=944)
-        get_argument(config, 'max_frequency', 'The maximum frequency', data_type=int, help_text='the maximum frequency', default=1420)
-
-    if config['run_type'] == 'create':
-        get_argument(config, 'ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-        get_argument(config, 'spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
-        get_argument(config, 'frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
-        get_argument(config, 'log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
-    elif config['run_type'] == 'use':
-        get_argument(config, 'dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+    mode = get_input_mode()
+    if mode == TKINTER and False:
+        # TODO:
+        pass
     else:
-        get_argument(config, 'nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
+        args = GetArguments(config=config, mode=mode)
+        args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
+        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
+        args.get('arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
+        args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
+        args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
+        args.get('image_size', 'The image size', data_type=int, help_text='the image size for clean', default=4096)
+        args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
+        args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
+        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
+        args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
+        args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+        args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
+        args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
+        args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
+
+        if config['run_type'] == 'create':
+            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+            args.get('spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
+            args.get('frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
+            args.get('log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
+        elif config['run_type'] == 'use':
+            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+        else:
+            args.get('nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
 
     # Write the arguments
     config.write()
@@ -552,8 +504,7 @@ def command_interactive(args):
             only_image=config['only_image'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
-            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
-            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             log_level=config['log_level'],
             produce_qa=config['produce_qa'],
@@ -575,8 +526,7 @@ def command_interactive(args):
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
-            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
-            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
             produce_qa=config['produce_qa'],
@@ -598,8 +548,7 @@ def command_interactive(args):
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
-            min_frequency=config['min_frequency'] if config['frequency_range'] else None,
-            max_frequency=config['max_frequency'] if config['frequency_range'] else None,
+            frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
             produce_qa=config['produce_qa'],
@@ -610,6 +559,7 @@ def command_interactive(args):
 
 
 def parser_arguments(command_line=sys.argv[1:]):
+    # TODO: Add all the arguments
     parser = argparse.ArgumentParser('Build the CLEAN physical graph for a day')
 
     common_parser = argparse.ArgumentParser(add_help=False)
@@ -623,7 +573,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('-v', '--verbosity', action='count', help='increase output verbosity', default=0)
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
     common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
-    common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=2048)
+    common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=4096)
 
     subparsers = parser.add_subparsers()
 

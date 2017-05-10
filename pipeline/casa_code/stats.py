@@ -28,7 +28,7 @@ import logging
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
 
-#casalog.filter('DEBUGGING')
+# casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')
 LOG = logging.getLogger('stats')
 
@@ -50,7 +50,7 @@ def do_stats(in_ms, out_csv_file, observation):
 
         # This assumes all spw have the same no channels as the first
         spectral_window_info = ms.getspectralwindowinfo()
-        number_spectal_windows = len(spectral_window_info)
+        number_spectral_windows = len(spectral_window_info)
         number_channels = spectral_window_info['0']['NumChan']
         ms.close()
 
@@ -93,7 +93,7 @@ def do_stats(in_ms, out_csv_file, observation):
             for scan_number in scans:
                 begin_time = scan_summary[scan_number]['0']['BeginTime']
                 end_time = scan_summary[scan_number]['0']['EndTime']
-                for spectral_window_number in range(0, number_spectal_windows):
+                for spectral_window_number in range(0, number_spectral_windows):
                     for channel_number in range(0, number_channels):
                         vis_stats = visstat(
                             vis=in_ms,
