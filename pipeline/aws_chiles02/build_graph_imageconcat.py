@@ -22,13 +22,10 @@
 """
 Build the physical graph
 """
-import boto3
-
-from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3
 from aws_chiles02.apps_general import CleanupDirectories
-from aws_chiles02.apps_tclean import DockerTclean
-from aws_chiles02.common import get_module_name
+from aws_chiles02.apps_imageconcat import CopyImageconcatFromS3, DockerImageconcat, CopyFitsToS3, CopyImageconcatToS3
 from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
@@ -38,26 +35,15 @@ class CarryOverDataClean:
         self.clean_up = None
 
 
-class BuildGraphClean(AbstractBuildGraph):
+class BuildGraphImageconcat(AbstractBuildGraph):
     def __init__(self, **keywords):
-        super(BuildGraphClean, self).__init__(**keywords)
+        super(BuildGraphImageconcat, self).__init__(**keywords)
         self._work_to_do = keywords['work_to_do']
         self._parallel_streams = keywords['parallel_streams']
-        self._s3_clean_name = keywords['clean_directory_name']
-        self._s3_fits_name = keywords['fits_directory_name']
-        self._s3_uvsub_name = keywords['uvsub_directory_name']
-        self._iterations = keywords['iterations']
-        self._arcsec = keywords['arcsec']
-        self._w_projection_planes = keywords['w_projection_planes']
-        self._robust = keywords['robust']
-        self._image_size = keywords['image_size']
-        self._clean_channel_average = keywords['clean_channel_average']
-        self._only_image = keywords['only_image']
-        self._produce_qa = keywords['produce_qa']
-        self._clean_tclean = keywords['clean_tclean']
-        self._map_frequency_to_node = None
-        self._list_ip = []
-        self._s3_client = None
+        self._clean_directory_name = keywords['clean_directory_name']
+        self._fits_directory_name = keywords['fits_directory_name']
+        self._imageconcat_directory_name = keywords['imageconcat_directory_name'],
+        self._cleaned_objects = keywords['cleaned_objects']
 
     def new_carry_over_data(self):
         return CarryOverDataClean()
@@ -65,59 +51,45 @@ class BuildGraphClean(AbstractBuildGraph):
     def build_graph(self):
         self._build_node_map()
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
-        self._s3_client = s3.meta.client
-        self._bucket = s3.Bucket(self._bucket_name)
-
-        # Add the start drops
         for frequency_pair in self._work_to_do:
             node_id = self._get_next_node(frequency_pair)
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
-            casa_py_clean_drop = self.create_docker_app(
+            casa_imageconcat_drop = self.create_docker_app(
                 node_id,
-                get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
-                'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
+                get_module_name(DockerImageconcat),
+                'app_imageconcat',
                 CONTAINER_CHILES02,
-                'clean' if self._clean_tclean == 'clean' else 'tclean',
+                'imageconcat',
                 min_frequency=frequency_pair.bottom_frequency,
                 max_frequency=frequency_pair.top_frequency,
-                iterations=self._iterations,
-                arcsec=self._arcsec,
-                robust=self._robust,
-                image_size=self._image_size,
-                w_projection_planes=self._w_projection_planes,
-                clean_channel_average=self._clean_channel_average,
-                produce_qa=self._produce_qa,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
             result = self.create_directory_container(node_id, 'dir_clean_output')
             for drop in s3_drop_outs:
-                casa_py_clean_drop.addInput(drop)
-            casa_py_clean_drop.addOutput(result)
+                casa_imageconcat_drop.addInput(drop)
+            casa_imageconcat_drop.addOutput(result)
 
-            copy_clean_to_s3 = self.create_app(
+            copy_imageconcat_to_s3 = self.create_app(
                 node_id,
-                get_module_name(CopyCleanToS3),
-                'app_copy_clean_to_s3',
+                get_module_name(CopyImageconcatToS3),
+                'app_copy_imageconcat_to_s3',
                 min_frequency=frequency_pair.bottom_frequency,
                 max_frequency=frequency_pair.top_frequency,
-                only_image=self._only_image,
             )
-            s3_clean_drop_out = self.create_s3_drop(
+            s3_imageconcat_drop_out = self.create_s3_drop(
                 node_id,
                 self._bucket_name,
-                '{0}/cleaned_{1}_{2}.tar'.format(
-                    self._s3_clean_name,
+                '{0}/image_{1}_{2}.tar'.format(
+                    self._imageconcat_directory_name,
                     frequency_pair.bottom_frequency,
                     frequency_pair.top_frequency,
                 ),
                 'aws-chiles02',
                 oid='s3_out',
             )
-            copy_clean_to_s3.addInput(result)
-            copy_clean_to_s3.addOutput(s3_clean_drop_out)
+            copy_imageconcat_to_s3.addInput(result)
+            copy_imageconcat_to_s3.addOutput(s3_imageconcat_drop_out)
 
             copy_fits_to_s3 = self.create_app(
                 node_id,
@@ -129,8 +101,8 @@ class BuildGraphClean(AbstractBuildGraph):
             s3_fits_drop_out = self.create_s3_drop(
                 node_id,
                 self._bucket_name,
-                '{0}/cleaned_{1}_{2}.fits'.format(
-                    self._s3_fits_name,
+                '{0}/image_{1}_{2}.fits'.format(
+                    self._fits_directory_name,
                     frequency_pair.bottom_frequency,
                     frequency_pair.top_frequency,
                 ),
@@ -144,7 +116,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
             # Give the memory drop somewhere to go
             memory_drop = self.create_memory_drop(node_id)
-            barrier_drop.addInput(s3_clean_drop_out)
+            barrier_drop.addInput(s3_imageconcat_drop_out)
             barrier_drop.addInput(s3_fits_drop_out)
             barrier_drop.addOutput(memory_drop)
 
@@ -183,52 +155,53 @@ class BuildGraphClean(AbstractBuildGraph):
                 count = 0
 
     def _build_s3_download(self, node_id, frequency_pair):
-        s3_objects = []
-        prefix = '{0}/{1}_{2}'.format(self._s3_uvsub_name, frequency_pair.bottom_frequency, frequency_pair.top_frequency)
-        for key in self._bucket.objects.filter(Prefix=prefix):
-            if not key.key.startswith('stats'):
-                s3_objects.append(key.key)
-
+        s3_objects = frequency_pair.pairs
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []
         counter = 0
         for s3_object in s3_objects:
-            s3_drop = self.create_s3_drop(
-                node_id,
-                self._bucket_name,
-                s3_object,
-                'aws-chiles02',
-                oid='s3_in',
+            expected_file = '{0}/cleaned_{1}_{2}.tar.centre'.format(
+                self._clean_directory_name,
+                s3_object.bottom_frequency,
+                s3_object.top_frequency,
             )
-            copy_from_s3 = self.create_app(
-                node_id,
-                get_module_name(CopyCleanFromS3),
-                'app_copy_from_s3',
-                min_frequency=frequency_pair.bottom_frequency,
-                max_frequency=frequency_pair.top_frequency,
+            if expected_file in self._cleaned_objects:
+                s3_drop = self.create_s3_drop(
+                    node_id,
+                    self._bucket_name,
+                    expected_file,
+                    'aws-chiles02',
+                    oid='s3_in',
+                )
+                copy_from_s3 = self.create_app(
+                    node_id,
+                    get_module_name(CopyImageconcatFromS3),
+                    'app_copy_from_s3',
+                    min_frequency=s3_object.bottom_frequency,
+                    max_frequency=s3_object.top_frequency,
+                    clean_directory_name=self._clean_directory_name,
+                )
+                measurement_set = self.create_directory_container(
+                    node_id,
+                    'dir_in_ms'
+                )
 
-            )
-            measurement_set = self.create_directory_container(
-                node_id,
-                'dir_in_ms'
-            )
+                # The order of arguments is important so don't put anything in front of these
+                copy_from_s3.addInput(s3_drop)
+                copy_from_s3.addOutput(measurement_set)
 
-            # The order of arguments is important so don't put anything in front of these
-            copy_from_s3.addInput(s3_drop)
-            copy_from_s3.addOutput(measurement_set)
+                carry_over_data = self._map_carry_over_data[node_id]
+                if carry_over_data.s3_out is not None:
+                    copy_from_s3.addInput(carry_over_data.s3_out)
 
-            carry_over_data = self._map_carry_over_data[node_id]
-            if carry_over_data.s3_out is not None:
-                copy_from_s3.addInput(carry_over_data.s3_out)
+                if parallel_streams[counter] is not None:
+                    copy_from_s3.addInput(parallel_streams[counter])
 
-            if parallel_streams[counter] is not None:
-                copy_from_s3.addInput(parallel_streams[counter])
+                parallel_streams[counter] = measurement_set
+                s3_out_drops.append(measurement_set)
 
-            parallel_streams[counter] = measurement_set
-            s3_out_drops.append(measurement_set)
-
-            counter += 1
-            if counter >= self._parallel_streams:
-                counter = 0
+                counter += 1
+                if counter >= self._parallel_streams:
+                    counter = 0
 
         return s3_out_drops

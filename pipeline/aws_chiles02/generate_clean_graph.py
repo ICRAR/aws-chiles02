@@ -49,13 +49,13 @@ PARALLEL_STREAMS = 12
 
 
 class WorkToDo:
-    def __init__(self, **kwargs):
-        width = kwargs['frequency_width']
+    def __init__(self, **keywords):
+        width = keywords['frequency_width']
         self._width = width
-        self._bucket_name = kwargs['bucket_name']
-        self._s3_clean_name = kwargs['clean_directory_name']
-        self._s3_uvsub_name = kwargs['uvsub_directory_name']
-        self._frequency_range = get_required_frequencies(kwargs['frequency_range'], width)
+        self._bucket_name = keywords['bucket_name']
+        self._s3_clean_name = keywords['clean_directory_name']
+        self._s3_uvsub_name = keywords['uvsub_directory_name']
+        self._frequency_range = get_required_frequencies(keywords['frequency_range'], width)
         self._work_to_do = []
 
     def calculate_work_to_do(self):
@@ -109,33 +109,33 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(**kwargs):
+def create_and_generate(**keywords):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        frequency_width = kwargs['frequency_width']
-        bucket_name = kwargs['bucket_name']
-        clean_directory_name = kwargs['clean_directory_name']
-        uvsub_directory_name = kwargs['uvsub_directory_name']
+        frequency_width = keywords['frequency_width']
+        bucket_name = keywords['bucket_name']
+        clean_directory_name = keywords['clean_directory_name']
+        uvsub_directory_name = keywords['uvsub_directory_name']
         work_to_do = WorkToDo(
             bucket_name=bucket_name,
             frequency_width=frequency_width,
-            frequency_range=kwargs['frequency_range'],
+            frequency_range=keywords['frequency_range'],
             clean_directory_name=clean_directory_name,
             uvsub_directory_name=uvsub_directory_name,
         )
         work_to_do.calculate_work_to_do()
 
-        spot_price = kwargs['spot_price']
+        spot_price = keywords['spot_price']
         nodes_required, node_count = get_nodes_required(
             work_to_do.work_to_do,
-            kwargs['frequencies_per_node'],
+            keywords['frequencies_per_node'],
             spot_price)
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
-            ami_id = kwargs['ami_id']
-            log_level = kwargs['log_level']
-            clean_tclean = kwargs['clean_tclean']
+            ami_id = keywords['ami_id']
+            log_level = keywords['log_level']
+            clean_tclean = keywords['clean_tclean']
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
@@ -211,24 +211,24 @@ def create_and_generate(**kwargs):
                     graph = BuildGraphClean(
                         work_to_do=work_to_do.work_to_do,
                         bucket_name=bucket_name,
-                        volume=kwargs['volume'],
+                        volume=keywords['volume'],
                         parallel_streams=PARALLEL_STREAMS,
                         node_details=reported_running,
-                        shutdown=kwargs['add_shutdown'],
+                        shutdown=keywords['add_shutdown'],
                         width=frequency_width,
-                        iterations=kwargs['iterations'],
-                        arcsec=kwargs['arcsec'],
-                        w_projection_planes=kwargs['w_projection_planes'],
-                        robust=kwargs['robust'],
-                        image_size=kwargs['image_size'],
-                        clean_channel_average=kwargs['clean_channel_average'],
+                        iterations=keywords['iterations'],
+                        arcsec=keywords['arcsec'],
+                        w_projection_planes=keywords['w_projection_planes'],
+                        robust=keywords['robust'],
+                        image_size=keywords['image_size'],
+                        clean_channel_average=keywords['clean_channel_average'],
                         clean_directory_name=clean_directory_name,
-                        only_image=kwargs['only_image'],
+                        only_image=keywords['only_image'],
                         session_id=session_id,
                         dim_ip=host,
-                        produce_qa=kwargs['produce_qa'],
+                        produce_qa=keywords['produce_qa'],
                         uvsub_directory_name=uvsub_directory_name,
-                        fits_directory_name=kwargs['fits_directory_name'],
+                        fits_directory_name=keywords['fits_directory_name'],
                         clean_tclean=clean_tclean
                     )
                     graph.build_graph()
@@ -245,11 +245,11 @@ def create_and_generate(**kwargs):
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(**kwargs):
+def use_and_generate(**keywords):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        host = kwargs['host']
-        port = kwargs['port']
+        host = keywords['host']
+        port = keywords['port']
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
@@ -263,15 +263,15 @@ def use_and_generate(**kwargs):
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            frequency_width = kwargs['frequency_width']
-            bucket_name = kwargs['bucket_name']
-            clean_directory_name = kwargs['clean_directory_name']
-            uvsub_directory_name = kwargs['uvsub_directory_name']
+            frequency_width = keywords['frequency_width']
+            bucket_name = keywords['bucket_name']
+            clean_directory_name = keywords['clean_directory_name']
+            uvsub_directory_name = keywords['uvsub_directory_name']
             work_to_do = WorkToDo(
                 frequency_width=frequency_width,
                 bucket_name=bucket_name,
                 clean_directory_name=clean_directory_name,
-                frequency_range=kwargs['frequency_range'],
+                frequency_range=keywords['frequency_range'],
                 uvsub_directory_name=uvsub_directory_name,
             )
             work_to_do.calculate_work_to_do()
@@ -281,25 +281,25 @@ def use_and_generate(**kwargs):
             graph = BuildGraphClean(
                 work_to_do=work_to_do.work_to_do,
                 bucket_name=bucket_name,
-                volume=kwargs['volume'],
+                volume=keywords['volume'],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
-                shutdown=kwargs['add_shutdown'],
+                shutdown=keywords['add_shutdown'],
                 width=frequency_width,
-                iterations=kwargs['iterations'],
-                arcsec=kwargs['arcsec'],
-                w_projection_planes=kwargs['w_projection_planes'],
-                robust=kwargs['robust'],
-                image_size=kwargs['image_size'],
-                clean_channel_average=kwargs['clean_channel_average'],
+                iterations=keywords['iterations'],
+                arcsec=keywords['arcsec'],
+                w_projection_planes=keywords['w_projection_planes'],
+                robust=keywords['robust'],
+                image_size=keywords['image_size'],
+                clean_channel_average=keywords['clean_channel_average'],
                 clean_directory_name=clean_directory_name,
-                only_image=kwargs['only_image'],
+                only_image=keywords['only_image'],
                 session_id=session_id,
                 dim_ip=host,
-                produce_qa=kwargs['produce_qa'],
+                produce_qa=keywords['produce_qa'],
                 uvsub_directory_name=uvsub_directory_name,
-                fits_directory_name=kwargs['fits_directory_name'],
-                clean_tclean=kwargs['clean_tclean'],
+                fits_directory_name=keywords['fits_directory_name'],
+                clean_tclean=keywords['clean_tclean'],
             )
             graph.build_graph()
 
@@ -316,45 +316,45 @@ def use_and_generate(**kwargs):
             LOG.warning('No nodes are running')
 
 
-def generate_json(**kwargs):
-    width = kwargs['width']
-    bucket = kwargs['bucket']
-    clean_directory_name = kwargs['clean_directory_name']
-    uvsub_directory_name = kwargs['uvsub_directory_name']
+def generate_json(**keywords):
+    width = keywords['width']
+    bucket = keywords['bucket']
+    clean_directory_name = keywords['clean_directory_name']
+    uvsub_directory_name = keywords['uvsub_directory_name']
     work_to_do = WorkToDo(
         width=width,
         bucket=bucket,
         clean_directory_name=clean_directory_name,
-        frequency_range=kwargs['frequency_range'],
+        frequency_range=keywords['frequency_range'],
         uvsub_directory_name=uvsub_directory_name,
     )
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, kwargs['nodes'])]
+        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
         bucket_name=bucket,
-        volume=kwargs['volume'],
-        parallel_streams=kwargs['parallel_streams'],
+        volume=keywords['volume'],
+        parallel_streams=keywords['parallel_streams'],
         node_details=node_details,
-        shutdown=kwargs['shutdown'],
+        shutdown=keywords['shutdown'],
         width=width,
-        iterations=kwargs['iterations'],
-        arcsec=kwargs['arcsec'] + 'arcsec',
-        w_projection_planes=kwargs['w_projection_planes'],
-        robust=kwargs['robust'],
-        image_size=kwargs['mage_size'],
-        clean_channel_average=kwargs['clean_channel_average'],
+        iterations=keywords['iterations'],
+        arcsec=keywords['arcsec'] + 'arcsec',
+        w_projection_planes=keywords['w_projection_planes'],
+        robust=keywords['robust'],
+        image_size=keywords['mage_size'],
+        clean_channel_average=keywords['clean_channel_average'],
         clean_directory_name=clean_directory_name,
         uvsub_directory_name=uvsub_directory_name,
-        fits_directory_name=kwargs['fits_directory_name'],
-        only_image=kwargs['only_image'],
+        fits_directory_name=keywords['fits_directory_name'],
+        only_image=keywords['only_image'],
         session_id='session_id',
         dim_ip='1.2.3.4',
-        produce_qa=kwargs['produce_qa'],
-        clean_tclean=kwargs['clean_tclean'],
+        produce_qa=keywords['produce_qa'],
+        clean_tclean=keywords['clean_tclean'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)

@@ -24,7 +24,6 @@ My Docker Apps
 """
 import logging
 import os
-import shutil
 
 import boto3
 from boto3.s3.transfer import S3Transfer
@@ -42,16 +41,17 @@ logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
 
 
-class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
+class CopyImageconcatFromS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        super(CopyConcatenateFromS3, self).__init__(oid, uid, **kwargs)
+        self._max_frequency = None
+        self._min_frequency = None
+        super(CopyImageconcatFromS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(CopyConcatenateFromS3, self).initialize(**kwargs)
+        super(CopyImageconcatFromS3, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
-
-    def dataURL(self):
-        return 'CopyConcatenateFromS3'
 
     def run(self):
         s3_input = self.inputs[0]
@@ -63,16 +63,14 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        # Does the directory exist
-        if os.path.exists(measurement_set_dir):
-            for filename in os.listdir(measurement_set_dir):
-                LOG.debug('filename: {0}'.format(filename))
-                if filename.endswith('.image'):
-                    LOG.warn('Measurement Set: {0} exists'.format(filename))
-                    return 0
+        measurement_set = os.path.join(measurement_set_dir, 'cleaned_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        LOG.debug('Checking {0} exists'.format(measurement_set))
+        if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
+            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
+            return 0
 
-        else:
-            # Make the directory
+        # Make the directory
+        if not os.path.exists(measurement_set_dir):
             os.makedirs(measurement_set_dir)
 
         full_path_tar_file = os.path.join(measurement_set_dir, TAR_FILE)
@@ -85,13 +83,13 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.download_file(
-                bucket_name,
+            bucket_name,
+            key,
+            full_path_tar_file,
+            callback=ProgressPercentage(
                 key,
-                full_path_tar_file,
-                callback=ProgressPercentage(
-                    key,
-                    s3_size
-                )
+                s3_size
+            )
         )
         if not os.path.exists(full_path_tar_file):
             message = 'The tar file {0} does not exist'.format(full_path_tar_file)
@@ -119,8 +117,9 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, measurement_set_dir)
         return_code = run_command(bash)
 
-        if return_code != 0:
-            message = 'tar return_code: {0}'.format(return_code)
+        path_exists = os.path.exists(measurement_set)
+        if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists)
             LOG.error(message)
             self.send_error_message(
                 message,
@@ -131,32 +130,28 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
 
         os.remove(full_path_tar_file)
 
-        # Remove the stuff we don't need
-        LOG.info('measurement_set_dir: {0}'.format(measurement_set_dir))
-        for filename in os.listdir(measurement_set_dir):
-            LOG.debug('filename: {0}'.format(filename))
-            if filename.endswith(tuple(['.flux', '.model', '.residual', '.psf'])):
-                full_name = os.path.join(measurement_set_dir, filename)
-                LOG.info('full_name: {0}'.format(full_name))
-                shutil.rmtree(full_name, ignore_errors=True)
-
         return 0
 
+    def dataURL(self):
+        return 'CopyImageconcatFromS3'
 
-class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
+
+class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        self._width = None
-        self._iterations = None
-        super(CopyConcatenateToS3, self).__init__(oid, uid, **kwargs)
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        self._only_image = None
+        super(CopyImageconcatToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(CopyConcatenateToS3, self).initialize(**kwargs)
-        self._width = self._getArg(kwargs, 'width ', None)
-        self._iterations = self._getArg(kwargs, 'iterations', None)
+        super(CopyImageconcatToS3, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):
-        return 'CopyConcatenateToS3'
+        return 'CopyImageconcatToS3'
 
     def run(self):
         measurement_set_output = self.inputs[0]
@@ -166,12 +161,13 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         bucket_name = s3_output.bucket
         key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+
         # Does the file exists
-        stem_name = 'image_{0}_{1}'.format(self._width, self._iterations)
+        stem_name = 'imageconcat_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.debug('checking {0}.cube exists'.format(measurement_set))
-        if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
-            message = 'Measurement_set: {0}.cube does not exist'.format(measurement_set)
+        LOG.debug('checking {0}.image exists'.format(measurement_set))
+        if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
+            message = 'Measurement_set: {0}.image does not exist'.format(measurement_set)
             LOG.error(message)
             self.send_error_message(
                 message,
@@ -181,9 +177,12 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.cube.tar'.format(self._width, self._iterations))
+        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.cube'.format(tar_filename, stem_name)
+        bash = 'tar -cvf {0} {1}.image'.format(
+            tar_filename,
+            stem_name,
+        )
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
@@ -192,7 +191,7 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
             self.send_error_message(
                 message,
                 self.oid,
-                self.uid
+                self.uid,
             )
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -205,87 +204,69 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
             bucket_name,
             key,
             callback=ProgressPercentage(
-                    key,
-                    float(os.path.getsize(tar_filename))
+                key,
+                float(os.path.getsize(tar_filename))
             ),
             extra_args={
                 'StorageClass': 'REDUCED_REDUNDANCY',
             }
         )
 
-        # Clean up
-        shutil.rmtree(measurement_set_dir, ignore_errors=True)
-
         return return_code
 
 
-class CasaConcatenate(BarrierAppDROP, ErrorHandling):
+class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
-        self._measurement_sets = None
         self._max_frequency = None
         self._min_frequency = None
-
-        super(DockerConcatenate, self).__init__(oid, uid, **kwargs)
+        self._command = None
+        super(CopyFitsToS3, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
-        super(CasaConcatenate, self).initialize(**kwargs)
-        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
+        super(CopyFitsToS3, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
-    def run(self):
-        # Because of the lifecycle the drop isn't attached when the command is
-        # created so we have to do it later
-        measurement_sets = []
-        for measurement_set in self._measurement_sets:
-            LOG.debug('measurement_set: {0}'.format(measurement_set))
-            for file_name in os.listdir(measurement_set):
-                if file_name.endswith(".image"):
-                    dfms_name = '{0}/{1}'.format(measurement_set, file_name)
-                    LOG.info('dfms_name: {0}'.format(dfms_name))
-                    measurement_sets.append(dfms_name)
-                    break
+    def dataURL(self):
+        return 'CopyFitsToS3'
 
-        measurement_set_output = self.outputs[0]
+    def run(self):
+        measurement_set_output = self.inputs[0]
         measurement_set_dir = measurement_set_output.path
 
-        if os.path.exists(measurement_set_dir):
-            LOG.info('Directory {0} exists'.format(measurement_set_dir))
-        else:
-            # Make the directory
-            os.makedirs(measurement_set_dir)
+        s3_output = self.outputs[0]
+        bucket_name = s3_output.bucket
+        key = s3_output.key
+        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
+        # Does the file exists
+        stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        measurement_set = os.path.join(measurement_set_dir, stem_name)
+        LOG.debug('checking {0}.fits exists'.format(measurement_set))
+        fits_file = measurement_set + '.fits'
+        if not os.path.exists(fits_file) or not os.path.isfile(fits_file):
+            LOG.warn('Measurement_set: {0}.fits does not exist'.format(measurement_set))
+            return 0
 
-        first_freq=None
-        last_freq=None
-            
-        if (self._min_frequency!=None):
-            first_freq=self._min_frequency
-        if  (self._max_frequency!=None):
-            last_freq=self._max_frequency
-        # If not set make best effort to extract first and last freq from the file name
-        if (first_freq==None):
-            first_freq=measurement_sets[0]
-            j=first_freq.find('~');i=first_freq[0:j].rfind('_')
-            #if ((i>0)&(j>0)):
-            first_freq=first_freq[(i+1):j]
-        if (last_freq==None):
-            last_freq =measurement_sets[-1]
-            j=last_freq.find('~');i=last_freq[0:j].rfind('_')
-            #if ((i>0)&(j>0)):
-            last_freq=last_freq[(i+1):j]
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
 
-        command = 'cd {0} && casa --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casa_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
-            measurement_set_dir,
-            first_freq,
-            last_freq,
-            ' '.join(measurement_sets),
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+            fits_file,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(fits_file))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
         )
-        return_code = run_command(command)
-        return return_code
 
-    def dataURL(self):
-        return 'CasaConcatenate'
+        return 0
 
 
 class DockerImageconcat(DockerApp, ErrorHandling):
@@ -313,34 +294,13 @@ class DockerImageconcat(DockerApp, ErrorHandling):
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
                     dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
-                    LOG.info('dfms_name: {0}'.format(dfms_name))
                     measurement_sets.append(dfms_name)
                     break
-                
-        first_freq=None
-        last_freq=None
-            
-        if (self._min_frequency!=None):
-            first_freq=self._min_frequency
-        if  (self._max_frequency!=None):
-            last_freq=self._max_frequency
-        # If not set make best effort to extract first and last freq from the file name
-        if (first_freq==None):
-            first_freq=measurement_sets[0]
-            j=first_freq.find('~');i=first_freq[0:j].rfind('_')
-            #if ((i>0)&(j>0)):
-            first_freq=first_freq[(i+1):j]
-        if (last_freq==None):
-            last_freq =measurement_sets[-1]
-            j=last_freq.find('~');i=last_freq[0:j].rfind('_')
-            #if ((i>0)&(j>0)):
-            last_freq=last_freq[(i+1):j]
-            
-        #def do_concatenate(out_filename, input_files):
-        self._command = 'imageconcat.sh %o0 image_{1}_{2}.cube {0}'.format(
+
+        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2}'.format(
+            self._min_frequency,
+            self._max_frequency,
             ' '.join(measurement_sets),
-            first_freq,
-            last_freq,
         )
         super(DockerImageconcat, self).run()
 

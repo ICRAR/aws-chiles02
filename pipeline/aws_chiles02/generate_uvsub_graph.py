@@ -49,12 +49,12 @@ PARALLEL_STREAMS = 7
 
 
 class WorkToDo:
-    def __init__(self, **kwargs):
-        self._width = kwargs['width']
-        self._bucket_name = kwargs['bucket_name']
-        self._s3_uvsub_name = kwargs['s3_uvsub_name']
-        self._s3_split_name = kwargs['s3_split_name']
-        self._frequency_range = get_required_frequencies(kwargs['frequency_range'], self._width)
+    def __init__(self, **keywords):
+        self._width = keywords['width']
+        self._bucket_name = keywords['bucket_name']
+        self._s3_uvsub_name = keywords['s3_uvsub_name']
+        self._s3_split_name = keywords['s3_split_name']
+        self._frequency_range = get_required_frequencies(keywords['frequency_range'], self._width)
 
         self._work_already_done = None
         self._bucket = None
@@ -112,22 +112,22 @@ def get_nodes_required(node_count, spot_price):
     return nodes, node_count
 
 
-def create_and_generate(**kwargs):
+def create_and_generate(**keywords):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        bucket_name = kwargs['bucket_name']
+        bucket_name = keywords['bucket_name']
         work_to_do = WorkToDo(
-            width=kwargs['frequency_width'],
+            width=keywords['frequency_width'],
             bucket_name=bucket_name,
-            s3_uvsub_name=kwargs['uvsub_directory_name'],
-            s3_split_name=get_s3_split_name(kwargs['frequency_width']),
-            frequency_range=kwargs['frequency_range'],
+            s3_uvsub_name=keywords['uvsub_directory_name'],
+            s3_split_name=get_s3_split_name(keywords['frequency_width']),
+            frequency_range=keywords['frequency_range'],
         )
         work_to_do.calculate_work_to_do()
 
-        nodes = kwargs['nodes']
-        spot_price = kwargs['spot_price']
-        ami_id = kwargs['ami_id']
+        nodes = keywords['nodes']
+        spot_price = keywords['spot_price']
+        ami_id = keywords['ami_id']
 
         nodes_required, node_count = get_nodes_required(nodes, spot_price)
 
@@ -208,19 +208,19 @@ def create_and_generate(**kwargs):
                     graph = BuildGraphUvsub(
                         work_to_do=work_to_do.work_to_do,
                         bucket_name=bucket_name,
-                        volume=kwargs['volume'],
+                        volume=keywords['volume'],
                         parallel_streams=PARALLEL_STREAMS,
                         node_details=reported_running,
-                        shutdown=kwargs['add_shutdown'],
-                        scan_statistics=kwargs['scan_statistics'],
-                        width=kwargs['frequency_width'],
-                        w_projection_planes=kwargs['w_projection_planes'],
-                        uvsub_directory_name=kwargs['uvsub_directory_name'],
+                        shutdown=keywords['add_shutdown'],
+                        scan_statistics=keywords['scan_statistics'],
+                        width=keywords['frequency_width'],
+                        w_projection_planes=keywords['w_projection_planes'],
+                        uvsub_directory_name=keywords['uvsub_directory_name'],
                         session_id=session_id,
                         dim_ip=host)
                     graph.build_graph()
 
-                    if kwargs['dump_json']:
+                    if keywords['dump_json']:
                         json_dumps = json.dumps(graph.drop_list, indent=2)
                         with open("/tmp/json_uvsub.txt", "w") as json_file:
                             json_file.write(json_dumps)
@@ -235,11 +235,11 @@ def create_and_generate(**kwargs):
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(**kwargs):
+def use_and_generate(**keywords):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        host = kwargs['host']
-        port = kwargs['port']
+        host = keywords['host']
+        port = keywords['port']
         connection = httplib.HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
@@ -253,15 +253,15 @@ def use_and_generate(**kwargs):
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            frequency_width = kwargs['frequency_width']
-            bucket_name = kwargs['bucket_name']
-            uvsub_directory_name = kwargs['uvsub_directory_name']
+            frequency_width = keywords['frequency_width']
+            bucket_name = keywords['bucket_name']
+            uvsub_directory_name = keywords['uvsub_directory_name']
             work_to_do = WorkToDo(
                 width=frequency_width,
                 bucket_name=bucket_name,
                 s3_uvsub_name=uvsub_directory_name,
                 s3_split_name=get_s3_split_name(frequency_width),
-                frequency_range=kwargs['frequency_range'],
+                frequency_range=keywords['frequency_range'],
             )
             work_to_do.calculate_work_to_do()
 
@@ -270,20 +270,20 @@ def use_and_generate(**kwargs):
             graph = BuildGraphUvsub(
                 work_to_do=work_to_do.work_to_do,
                 bucket_name=bucket_name,
-                volume=kwargs['volume'],
+                volume=keywords['volume'],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
-                shutdown=kwargs['add_shutdown'],
-                scan_statistics=kwargs['scan_statistics'],
+                shutdown=keywords['add_shutdown'],
+                scan_statistics=keywords['scan_statistics'],
                 width=frequency_width,
-                w_projection_planes=kwargs['w_projection_planes'],
+                w_projection_planes=keywords['w_projection_planes'],
                 uvsub_directory_name=uvsub_directory_name,
                 session_id=session_id,
                 dim_ip=host,
             )
             graph.build_graph()
 
-            if kwargs['dump_json']:
+            if keywords['dump_json']:
                 json_dumps = json.dumps(graph.drop_list, indent=2)
                 with open("/tmp/json_uvsub.txt", "w") as json_file:
                     json_file.write(json_dumps)
@@ -299,32 +299,32 @@ def use_and_generate(**kwargs):
             LOG.warning('No nodes are running')
 
 
-def generate_json(**kwargs):
-    width = kwargs['width']
-    bucket = kwargs['bucket']
-    uvsub_directory_name = kwargs['uvsub_directory_name']
+def generate_json(**keywords):
+    width = keywords['width']
+    bucket = keywords['bucket']
+    uvsub_directory_name = keywords['uvsub_directory_name']
     work_to_do = WorkToDo(
         width=width,
         bucket_name=bucket,
         s3_uvsub_name=uvsub_directory_name,
         s3_split_name=get_s3_split_name(width),
-        frequency_range=kwargs['frequency_range'],
+        frequency_range=keywords['frequency_range'],
     )
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, kwargs['nodes'])],
+        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])],
     }
     graph = BuildGraphUvsub(
         work_to_do=work_to_do.work_to_do,
         bucket_name=bucket,
-        volume=kwargs['volume'],
+        volume=keywords['volume'],
         parallel_streams=PARALLEL_STREAMS,
         node_details=node_details,
-        shutdown=kwargs['shutdown'],
-        scan_statistics=kwargs['scan_statistics'],
+        shutdown=keywords['shutdown'],
+        scan_statistics=keywords['scan_statistics'],
         width=width,
-        w_projection_planes=kwargs['w_projection_planes'],
+        w_projection_planes=keywords['w_projection_planes'],
         uvsub_directory_name=uvsub_directory_name,
         session_id='session_id',
         dim_ip='1.2.3.4')
