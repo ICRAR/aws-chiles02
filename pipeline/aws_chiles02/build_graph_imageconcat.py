@@ -29,7 +29,7 @@ from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
-class CarryOverDataClean:
+class CarryOverDataImageconcat:
     def __init__(self):
         self.s3_out = None
         self.clean_up = None
@@ -42,11 +42,11 @@ class BuildGraphImageconcat(AbstractBuildGraph):
         self._parallel_streams = keywords['parallel_streams']
         self._clean_directory_name = keywords['clean_directory_name']
         self._fits_directory_name = keywords['fits_directory_name']
-        self._imageconcat_directory_name = keywords['imageconcat_directory_name'],
+        self._imageconcat_directory_name = keywords['imageconcat_directory_name']
         self._cleaned_objects = keywords['cleaned_objects']
 
     def new_carry_over_data(self):
-        return CarryOverDataClean()
+        return CarryOverDataImageconcat()
 
     def build_graph(self):
         self._build_node_map()
@@ -65,7 +65,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
                 max_frequency=frequency_pair.top_frequency,
                 measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
             )
-            result = self.create_directory_container(node_id, 'dir_clean_output')
+            result = self.create_directory_container(node_id, 'dir_imageconcat_output')
             for drop in s3_drop_outs:
                 casa_imageconcat_drop.addInput(drop)
             casa_imageconcat_drop.addOutput(result)
