@@ -294,15 +294,18 @@ class DockerImageconcat(DockerApp, ErrorHandling):
             for file_name in os.listdir(measurement_set):
                 LOG.debug('Looking at: {0}'.format(file_name))
                 if file_name.endswith(".image.centre"):
+                    LOG.debug('Adding: {0}'.format(file_name))
                     dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'imageconcat.sh %o0/image_{0}_{1}.cube {2}'.format(
+        LOG.debug('measurement_sets: {0}'.format(measurement_sets))
+        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2}'.format(
             self._min_frequency,
             self._max_frequency,
             ' '.join(measurement_sets),
         )
+        LOG.debug(self._command)
         super(DockerImageconcat, self).run()
 
     def dataURL(self):

@@ -9,5 +9,5 @@ mkdir -p $1
 chmod oug+rwx $1
 cd $1
 
-# outdir, min_freq, max_freq
+# outdir,
 casa --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casa_code/imageconcat.py $@

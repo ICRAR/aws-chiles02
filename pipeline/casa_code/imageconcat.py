@@ -23,6 +23,7 @@
 Perform the MS Transform
 """
 import logging
+import os
 
 from casa_code.casa_common import parse_args
 from casa_code.echo import echo
@@ -33,12 +34,17 @@ LOG = logging.getLogger('imageconcat')
 
 
 @echo
-def do_concatenate(out_filename, input_files):
+def do_imageconcat(cube_dir, out_filename, input_files):
     """
     Perform the CONCATENATION step
     :param input_files:
     :param out_filename:
     """
+    if not os.path.exists(cube_dir):
+        os.makedirs(cube_dir)
+
+    outfile = os.path.join(cube_dir, out_filename)
+    LOG.info('imageconcat(vis={0}, imagename={1})'.format(str(input_files), outfile))
 
     try:
         # IA used to report the statistics to the log file
@@ -48,16 +54,14 @@ def do_concatenate(out_filename, input_files):
         #     ia.close()
 
         # ia doesn't need an import - it is just available in casa
-        # TODO: Uncomment this
-        final = ia.imageconcat(infiles=input_files, outfile=out_filename, relax=True, overwrite=True)
+        final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
 
         # ia.open(out_filename)
         # ia.statistics(verbose=True,axes=[0,1])
         # ia.close()
-        # TODO: Uncomment this
 
-        exportfits(imagename=out_filename, fitsimage='{0}.fits'.format(out_filename))
+        exportfits(imagename=outfile, fitsimage='{0}.fits'.format(outfile))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
@@ -65,7 +69,7 @@ if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    # ignore the output directory
-    do_concatenate(
-            args.arguments[1],
-            args.arguments[2:])
+    do_imageconcat(
+        args.arguments[0],
+        args.arguments[1],
+        args.arguments[2:])
