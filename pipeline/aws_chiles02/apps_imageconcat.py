@@ -282,8 +282,8 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._command = 'imageconcat.sh'
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._command = 'imageconcat.sh'
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -292,12 +292,13 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         for measurement_set in self._measurement_sets:
             LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
-                if file_name.endswith(".image"):
+                LOG.debug('Looking at: {0}'.format(file_name))
+                if file_name.endswith(".image.centre"):
                     dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
                     measurement_sets.append(dfms_name)
                     break
 
-        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2}'.format(
+        self._command = 'imageconcat.sh %o0/image_{0}_{1}.cube {2}'.format(
             self._min_frequency,
             self._max_frequency,
             ' '.join(measurement_sets),

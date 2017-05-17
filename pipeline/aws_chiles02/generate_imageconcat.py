@@ -291,6 +291,7 @@ def create_and_generate(**keywords):
 
                 graph = BuildGraphImageconcat(
                     work_to_do=work_to_do.work_to_do,
+                    cleaned_objects=work_to_do.cleaned_objects,
                     bucket_name=bucket_name,
                     volume=keywords['volume'],
                     parallel_streams=PARALLEL_STREAMS,
@@ -352,6 +353,7 @@ def use_and_generate(**keywords):
             session_id = get_session_id()
             graph = BuildGraphImageconcat(
                 work_to_do=work_to_do.work_to_do,
+                cleaned_objects=work_to_do.cleaned_objects,
                 bucket_name=bucket_name,
                 volume=keywords['volume'],
                 parallel_streams=PARALLEL_STREAMS,
