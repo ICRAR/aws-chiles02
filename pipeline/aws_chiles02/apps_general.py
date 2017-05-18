@@ -96,12 +96,12 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-            parameter_file,
+            parameter_file.path,
             bucket_name,
             key,
             callback=ProgressPercentage(
                 key,
-                float(os.path.getsize(parameter_file))
+                float(os.path.getsize(parameter_file.path)),
             ),
             extra_args={
                 'StorageClass': 'REDUCED_REDUNDANCY',
