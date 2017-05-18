@@ -134,7 +134,8 @@ class BuildGraphImageconcat(AbstractBuildGraph):
             clean_up.addInput(memory_drop)
             carry_over_data.clean_up = clean_up
 
-        self.copy_logfiles_and_shutdown(True)
+        self.copy_parameter_data(self._imageconcat_directory_name)
+        self.copy_logfiles_and_shutdown()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

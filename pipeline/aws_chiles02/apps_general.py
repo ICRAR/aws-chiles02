@@ -82,7 +82,7 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
 
     def run(self):
         parameter_file = self.inputs[0]
-        with open(parameter_file, 'w') as the_file:
+        with open(parameter_file.path, 'w') as the_file:
             the_file.write(self._parameter_data)
 
         s3_output = self.outputs[0]

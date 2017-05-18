@@ -38,21 +38,11 @@ class CarryOverDataMsTransform:
 
 
 class BuildGraphMsTransform(AbstractBuildGraph):
-    def __init__(
-            self,
-            work_to_do,
-            bucket_name,
-            volume,
-            parallel_streams,
-            node_details,
-            shutdown,
-            width,
-            session_id,
-            dim_ip):
-        super(BuildGraphMsTransform, self).__init__(bucket_name, shutdown, node_details, volume, session_id, dim_ip)
-        self._work_to_do = work_to_do
-        self._parallel_streams = parallel_streams
-        self._s3_split_name = 'split_{0}'.format(width)
+    def __init__(self, **keywords):
+        super(BuildGraphMsTransform, self).__init__(**keywords)
+        self._work_to_do = keywords['work_to_do']
+        self._parallel_streams = keywords['parallel_streams']
+        self._s3_split_name = 'split_{0}'.format(keywords['width'])
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))

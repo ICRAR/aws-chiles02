@@ -78,21 +78,21 @@ class AbstractBuildGraph:
     def get_uuid():
         return str(uuid.uuid4())
 
-    def copy_parameter_data(self, node_id, folder_name):
+    def copy_parameter_data(self, folder_name):
         file_drop = self.create_file_drop(
-            node_id,
+            self._dim_ip,
             os.path.join(self._volume, 'parameter_data.json'),
             oid='parameter_data'
         )
         s3_drop = self.create_s3_drop(
-            node_id,
+            self._dim_ip,
             self._bucket_name,
             '{0}/parameter_data.json'.format(folder_name),
             'aws-chiles02',
             oid='s3_out',
         )
         copy_drop = self.create_app(
-            node_id,
+            self._dim_ip,
             get_module_name(CopyParameters),
             'app_copy_parameters',
             parameter_data=self._parameter_data,
@@ -101,7 +101,7 @@ class AbstractBuildGraph:
         copy_drop.addInput(file_drop)
         copy_drop.addOutput(s3_drop)
 
-    def copy_logfiles_and_shutdown(self, shutdown_dim=False):
+    def copy_logfiles_and_shutdown(self, shutdown_dim=True):
         """
         Copy the logfile to S3 and shutdown
         """

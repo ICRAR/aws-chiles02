@@ -162,7 +162,8 @@ class BuildGraphClean(AbstractBuildGraph):
             clean_up.addInput(memory_drop)
             carry_over_data.clean_up = clean_up
 
-        self.copy_logfiles_and_shutdown(True)
+        self.copy_parameter_data(self._s3_clean_name)
+        self.copy_logfiles_and_shutdown()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

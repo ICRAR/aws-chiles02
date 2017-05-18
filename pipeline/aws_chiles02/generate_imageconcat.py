@@ -179,6 +179,7 @@ def generate_json(**keywords):
         imageconcat_directory_name=imageconcat_directory_name,
         session_id='session_id',
         dim_ip='1.2.3.4',
+        run_note=keywords['run_note'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -259,7 +260,7 @@ def create_and_generate(**keywords):
                         'spot_price': spot_price
                     }
                 ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50, need_node_manager=True),
+                get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50),
                 AWS_REGION,
                 tags=[
                     {
@@ -303,6 +304,7 @@ def create_and_generate(**keywords):
                     imageconcat_directory_name=imageconcat_directory_name,
                     session_id=session_id,
                     dim_ip=host,
+                    run_note=keywords['run_note'],
                 )
                 graph.build_graph()
 
@@ -365,6 +367,7 @@ def use_and_generate(**keywords):
                 imageconcat_directory_name=imageconcat_directory_name,
                 session_id=session_id,
                 dim_ip=host,
+                run_note=keywords['run_note'],
             )
             graph.build_graph()
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -392,6 +395,7 @@ def command_create(args):
         clean_directory_name=args.clean_directory_name,
         fits_directory_name=args.fits_directory_name,
         imageconcat_directory_name=args.imageconcat_directory_name,
+        run_note=args.run_note_imageconcat,
     )
 
 
@@ -408,6 +412,7 @@ def command_use(args):
         clean_directory_name=args.clean_directory_name,
         fits_directory_name=args.fits_directory_name,
         imageconcat_directory_name=args.imageconcat_directory_name,
+        run_note=args.run_note_imageconcat,
     )
 
 
@@ -423,6 +428,7 @@ def command_json(args):
         clean_directory_name=args.clean_directory_name,
         fits_directory_name=args.fits_directory_name,
         imageconcat_directory_name=args.imageconcat_directory_name,
+        run_note=args.run_note_imageconcat,
     )
 
 
@@ -453,6 +459,7 @@ def command_interactive(args):
         args.get('imageconcat_directory_name', 'The directory name for imageconcat', help_text='the directory name for imageconcat')
         args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
+        args.get('run_note_imageconcat', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -481,6 +488,7 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
+            run_note=config['run_note_imageconcat']
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -495,6 +503,7 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
+            run_note=config['run_note_imageconcat']
         )
     else:
         generate_json(
@@ -508,6 +517,7 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
+            run_note=config['run_note_imageconcat']
         )
 
 

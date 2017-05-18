@@ -55,7 +55,6 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         # Copy the parameters
         node_id = self._get_next_node()
-        self.copy_parameter_data(node_id, self._s3_uvsub_name)
         count_on_node = 0
         for split_to_process in self._work_to_do:
             self._build_uvsub_chain(split_to_process, count_on_node, node_id)
@@ -65,7 +64,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 count_on_node = 0
                 node_id = self._get_next_node()
 
-        self.copy_logfiles_and_shutdown(True)
+        self.copy_parameter_data(self._s3_uvsub_name)
+        self.copy_logfiles_and_shutdown()
 
     def _get_next_node(self):
         next_node = self._list_ip[self._node_index]

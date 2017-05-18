@@ -176,7 +176,7 @@ def create_and_generate(**keywords):
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50, need_node_manager=True),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50),
                     AWS_REGION,
                     tags=[
                         {
@@ -416,7 +416,7 @@ def command_interactive(args):
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
-        args.get('run_note', 'A single line note about this run', help_text='A single line note about this run', default='No note')
+        args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -447,7 +447,7 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
-            run_note=config['run_note']
+            run_note=config['run_note_uvsub']
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -462,7 +462,7 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
-            run_note=config['run_note']
+            run_note=config['run_note_uvsub']
         )
     else:
         generate_json(
@@ -475,7 +475,7 @@ def command_interactive(args):
             frequency_range=config['frequency_range'],
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
-            run_note=config['run_note']
+            run_note=config['run_note_uvsub']
         )
 
 

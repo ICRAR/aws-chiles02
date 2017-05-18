@@ -179,7 +179,7 @@ def create_and_generate(**keywords):
                             'spot_price': spot_price
                         }
                     ],
-                    get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=True, log_level=log_level),
+                    get_data_island_manager_user_data(boto_data, hosts, uuid, log_level=log_level),
                     AWS_REGION,
                     tags=[
                         {
@@ -229,11 +229,10 @@ def create_and_generate(**keywords):
                         produce_qa=keywords['produce_qa'],
                         uvsub_directory_name=uvsub_directory_name,
                         fits_directory_name=keywords['fits_directory_name'],
-                        clean_tclean=clean_tclean
+                        clean_tclean=clean_tclean,
+                        run_note=keywords['run_note'],
                     )
                     graph.build_graph()
-
-                    # TODO: Safe the run parameters
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
                     client = DataIslandManagerClient(host, DIM_PORT)
@@ -300,10 +299,9 @@ def use_and_generate(**keywords):
                 uvsub_directory_name=uvsub_directory_name,
                 fits_directory_name=keywords['fits_directory_name'],
                 clean_tclean=keywords['clean_tclean'],
+                run_note=keywords['run_note'],
             )
             graph.build_graph()
-
-            # TODO: Save the run parameters
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
             client = DataIslandManagerClient(host, port)
@@ -355,6 +353,7 @@ def generate_json(**keywords):
         dim_ip='1.2.3.4',
         produce_qa=keywords['produce_qa'],
         clean_tclean=keywords['clean_tclean'],
+        run_note=keywords['run_note'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -384,6 +383,7 @@ def command_json(args):
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
         clean_tclean=args.clean_tclean,
+        run_note=args.run_note_clean,
     )
 
 
@@ -411,6 +411,7 @@ def command_create(args):
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
         clean_tclean=args.clean_tclean,
+        run_note=args.run_note_clean,
     )
 
 
@@ -435,6 +436,7 @@ def command_use(args):
         uvsub_directory_name=args.uvsub_directory_name,
         fits_directory_name=args.fits_directory_name,
         clean_tclean=args.clean_tclean,
+        run_note=args.run_note_clean,
     )
 
 
@@ -473,6 +475,7 @@ def command_interactive(args):
         args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
+        args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -511,6 +514,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
+            run_note=config['run_note_clean'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -533,6 +537,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
+            run_note=config['run_note_clean'],
         )
     else:
         generate_json(
@@ -555,6 +560,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
+            run_note=config['run_note_clean'],
         )
 
 

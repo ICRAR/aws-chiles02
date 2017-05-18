@@ -98,7 +98,7 @@ def create_and_generate(**kwargs):
                     'spot_price': spot_price
                 }
             ],
-            get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=True),
+            get_data_island_manager_user_data(boto_data, hosts, uuid),
             AWS_REGION,
             tags=[
                 {
