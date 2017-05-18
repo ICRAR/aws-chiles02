@@ -56,11 +56,17 @@ def do_imageconcat(cube_dir, out_filename, input_files):
         # ia doesn't need an import - it is just available in casa
         final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
-
+        imcontsub(imagename=outfile,linefile=outfile+'.line',contfile=outfile+'.cont',fitorder=1)
+        ia.open(outfile+'.cont')
+        imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
+        imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
+        ia.close()
+        final = ia.imageconcat(infiles=[outfile+'.cont.1',outfile+'.cont.2'],outfile=outfile+'.cont', relax=True, overwrite=True)
+        final.done()
         # ia.open(out_filename)
         # ia.statistics(verbose=True,axes=[0,1])
         # ia.close()
-
+        ###  could save outfile+'.cont',outfile+'.line', rather than outfile ###
         exportfits(imagename=outfile, fitsimage='{0}.fits'.format(outfile))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
