@@ -75,15 +75,17 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **keywords):
         super(CopyParameters, self).initialize(**keywords)
-        self._parameter_data = self._getArg(keywords, 'parameter_data', None)
+        # The data is in a string so we need to load it to write it
+        self._parameter_data = json.loads(self._getArg(keywords, 'parameter_data', None))
 
     def dataURL(self):
         return type(self).__name__
 
     def run(self):
+        LOG.info('parameter_data: {0}'.format(self._parameter_data))
         parameter_file = '/tmp/parameter_data.json'
-        with open(parameter_file, 'w') as the_file:
-            the_file.write(self._parameter_data)
+        with open(parameter_file, 'w') as json_file:
+            json_file.write(json.dumps(self._parameter_data, indent=2))
 
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
@@ -121,7 +123,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         return type(self).__name__
 
     def run(self):
-        log_file_dir = '/mnt/dfms/dfms_root'
+        log_file_dir = '/mnt/dfms/dfms_root' if os.path.exists('/mnt/dfms/dfms_root') else '/tmp'
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key

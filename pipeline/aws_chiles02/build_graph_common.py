@@ -51,7 +51,7 @@ class AbstractBuildGraph:
         self._session_id = keywords['session_id']
         self._dim_ip = keywords['dim_ip']
         self._counters = {}
-        self._parameter_data = json.dumps(keywords, indent=2)
+        self._parameter_data = json.dumps(keywords)
 
         for key, list_ips in self._node_details.iteritems():
             for instance_details in list_ips:
@@ -104,31 +104,21 @@ class AbstractBuildGraph:
         """
         Copy the logfile to S3 and shutdown
         """
-        if shutdown_dim:
+        s3_drop_out, dim_copy_log_drop = self._copy_logs(self._dim_ip)
+
+        dim_shutdown_drop = None
+        if shutdown_dim and self._shutdown:
             dim_shutdown_drop = self.create_bash_shell_app(self._dim_ip, 'sudo shutdown -h +5 "DFMS node shutting down" &')
+            dim_shutdown_drop.addInput(s3_drop_out)
 
         for list_ips in self._node_details.values():
             for instance_details in list_ips:
                 node_id = instance_details['ip_address']
 
-                copy_log_drop = self.create_app(node_id, get_module_name(CopyLogFilesApp), 'copy_log_files_app')
-
-                # After everything is complete
-                for drop in self._drop_list:
-                    if drop['type'] in ['plain', 'container'] and drop['node'] == node_id:
-                        copy_log_drop.addInput(drop)
-
-                s3_drop_out = self.create_s3_drop(
-                    node_id,
-                    self._bucket_name,
-                    '{0}/{1}.tar'.format(
-                        self._session_id,
-                        node_id,
-                    ),
-                    'aws-chiles02',
-                    oid='s3_out'
-                )
-                copy_log_drop.addOutput(s3_drop_out)
+                s3_drop_out, copy_log_drop = self._copy_logs(node_id)
+                memory_drop = self.create_memory_drop(self._dim_ip)
+                copy_log_drop.addOutput(memory_drop)
+                dim_copy_log_drop.addInput(memory_drop)
 
                 if self._shutdown:
                     shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DFMS node shutting down" &')
@@ -139,6 +129,25 @@ class AbstractBuildGraph:
                         shutdown_drop.addOutput(memory_drop)
 
                         dim_shutdown_drop.addInput(memory_drop)
+
+    def _copy_logs(self, node_id):
+        copy_log_drop = self.create_app(node_id, get_module_name(CopyLogFilesApp), 'copy_log_files_app')
+        # After everything is complete
+        for drop in self._drop_list:
+            if drop['type'] in ['plain', 'container'] and drop['node'] == node_id:
+                copy_log_drop.addInput(drop)
+        s3_drop_out = self.create_s3_drop(
+            node_id,
+            self._bucket_name,
+            '{0}/{1}.tar'.format(
+                self._session_id,
+                node_id,
+            ),
+            'aws-chiles02',
+            oid='s3_out'
+        )
+        copy_log_drop.addOutput(s3_drop_out)
+        return s3_drop_out, copy_log_drop
 
     def tag_all_app_drops(self, tags):
         for drop in self._drop_list:
