@@ -81,8 +81,8 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
         return type(self).__name__
 
     def run(self):
-        parameter_file = self.inputs[0]
-        with open(parameter_file.path, 'w') as the_file:
+        parameter_file = '/tmp/parameter_data.json'
+        with open(parameter_file, 'w') as the_file:
             the_file.write(self._parameter_data)
 
         s3_output = self.outputs[0]
@@ -96,12 +96,12 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
-            parameter_file.path,
+            parameter_file,
             bucket_name,
             key,
             callback=ProgressPercentage(
                 key,
-                float(os.path.getsize(parameter_file.path)),
+                float(os.path.getsize(parameter_file)),
             ),
             extra_args={
                 'StorageClass': 'REDUCED_REDUNDANCY',
@@ -185,10 +185,10 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                     LOG.info('Removing directory {0}'.format(input_file))
 
                     def rmtree_onerror(func, path, exc_info):
-                        message = 'onerror(func={0}, path={1}, exc_info={2}'.format(func, path, exc_info)
-                        LOG.error(message)
+                        error_message = 'onerror(func={0}, path={1}, exc_info={2})'.format(func, path, exc_info)
+                        LOG.error(error_message)
                         self.send_error_message(
-                            message,
+                            error_message,
                             self.oid,
                             self.uid
                         )

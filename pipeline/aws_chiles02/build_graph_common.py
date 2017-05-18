@@ -79,9 +79,8 @@ class AbstractBuildGraph:
         return str(uuid.uuid4())
 
     def copy_parameter_data(self, folder_name):
-        file_drop = self.create_file_drop(
+        memory_drop = self.create_memory_drop(
             self._dim_ip,
-            os.path.join(self._volume, 'parameter_data.json'),
             oid='parameter_data'
         )
         s3_drop = self.create_s3_drop(
@@ -98,7 +97,7 @@ class AbstractBuildGraph:
             parameter_data=self._parameter_data,
         )
 
-        copy_drop.addInput(file_drop)
+        copy_drop.addInput(memory_drop)
         copy_drop.addOutput(s3_drop)
 
     def copy_logfiles_and_shutdown(self, shutdown_dim=True):
