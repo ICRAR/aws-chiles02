@@ -36,14 +36,14 @@ class CarryOverDataUvsub:
 
 
 class BuildGraphUvsub(AbstractBuildGraph):
-    def __init__(self, **kwargs):
-        super(BuildGraphUvsub, self).__init__(**kwargs)
-        self._work_to_do = kwargs['work_to_do']
-        self._parallel_streams = kwargs['parallel_streams']
-        self._w_projection_planes = kwargs['w_projection_planes']
-        self._scan_statistics = kwargs['scan_statistics']
-        self._s3_uvsub_name = kwargs['uvsub_directory_name']
-        self._s3_split_name = 'split_{0}'.format(kwargs['width'])
+    def __init__(self, **keywords):
+        super(BuildGraphUvsub, self).__init__(**keywords)
+        self._work_to_do = keywords['work_to_do']
+        self._parallel_streams = keywords['parallel_streams']
+        self._w_projection_planes = keywords['w_projection_planes']
+        self._scan_statistics = keywords['scan_statistics']
+        self._s3_uvsub_name = keywords['uvsub_directory_name']
+        self._s3_split_name = 'split_{0}'.format(keywords['width'])
         self._list_ip = []
         self._node_index = 0
 
@@ -53,7 +53,9 @@ class BuildGraphUvsub(AbstractBuildGraph):
     def build_graph(self):
         self._build_node_map()
 
+        # Copy the parameters
         node_id = self._get_next_node()
+        self.copy_parameter_data(node_id, self._s3_uvsub_name)
         count_on_node = 0
         for split_to_process in self._work_to_do:
             self._build_uvsub_chain(split_to_process, count_on_node, node_id)

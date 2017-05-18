@@ -134,7 +134,7 @@ def get_required_frequencies(frequency_string, width):
     [FrequencyPair(976, 980), FrequencyPair(980, 984), FrequencyPair(1004, 1008), FrequencyPair(1008, 1012), FrequencyPair(1196, 1200), FrequencyPair(1200, 1204), FrequencyPair(1204, 1208), \
      FrequencyPair(1296, 1300), FrequencyPair(1300, 1304)]
     """
-    if frequency_string.strip() == '':
+    if frequency_string.strip() == '' or frequency_string.strip() == 'None':
         return None
 
     frequencies_in = frequency_string.split(',')

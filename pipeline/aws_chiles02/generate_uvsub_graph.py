@@ -217,7 +217,9 @@ def create_and_generate(**keywords):
                         w_projection_planes=keywords['w_projection_planes'],
                         uvsub_directory_name=keywords['uvsub_directory_name'],
                         session_id=session_id,
-                        dim_ip=host)
+                        dim_ip=host,
+                        run_note=keywords['run_note'],
+                    )
                     graph.build_graph()
 
                     if keywords['dump_json']:
@@ -280,6 +282,7 @@ def use_and_generate(**keywords):
                 uvsub_directory_name=uvsub_directory_name,
                 session_id=session_id,
                 dim_ip=host,
+                run_note=keywords['run_note'],
             )
             graph.build_graph()
 
@@ -327,7 +330,9 @@ def generate_json(**keywords):
         w_projection_planes=keywords['w_projection_planes'],
         uvsub_directory_name=uvsub_directory_name,
         session_id='session_id',
-        dim_ip='1.2.3.4')
+        dim_ip='1.2.3.4',
+        run_note=keywords['run_note'],
+    )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
@@ -346,6 +351,7 @@ def command_json(args):
         frequency_range=args.frequency_range,
         scan_statistics=args.scan_statistics,
         uvsub_directory_name=args.uvsub_directory_name,
+        run_note=args.run_note,
     )
 
 
@@ -363,6 +369,7 @@ def command_create(args):
         scan_statistics=args.scan_statistics,
         dump_json=False,
         uvsub_directory_name=args.uvsub_directory_name,
+        run_note=args.run_note,
     )
 
 
@@ -379,6 +386,7 @@ def command_use(args):
         scan_statistics=args.scan_statistics,
         dump_json=False,
         uvsub_directory_name=args.uvsub_directory_name,
+        run_note=args.run_note,
     )
 
 
@@ -408,6 +416,7 @@ def command_interactive(args):
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
+        args.get('run_note', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -438,6 +447,7 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
+            run_note=config['run_note']
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -452,6 +462,7 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
+            run_note=config['run_note']
         )
     else:
         generate_json(
@@ -464,6 +475,7 @@ def command_interactive(args):
             frequency_range=config['frequency_range'],
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
+            run_note=config['run_note']
         )
 
 

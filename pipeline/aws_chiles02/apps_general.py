@@ -68,13 +68,54 @@ class ErrorHandling(object):
         return self._session_id
 
 
-class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
-    def __init__(self, oid, uid, **kwargs):
-        super(CopyLogFilesApp, self).__init__(oid, uid, **kwargs)
+class CopyParameters(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **keywords):
+        super(CopyParameters, self).__init__(oid, uid, **keywords)
+        self._parameter_data = None
 
-    def initialize(self, **kwargs):
-        super(CopyLogFilesApp, self).initialize(**kwargs)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+    def initialize(self, **keywords):
+        super(CopyParameters, self).initialize(**keywords)
+        self._parameter_data = self._getArg(keywords, 'parameter_data', None)
+
+    def dataURL(self):
+        return type(self).__name__
+
+    def run(self):
+        parameter_file = self.inputs[0]
+        with open(parameter_file, 'w') as the_file:
+            the_file.write(self._parameter_data)
+
+        s3_output = self.outputs[0]
+        bucket_name = s3_output.bucket
+        key = s3_output.key
+        LOG.info('bucket: {0}, key: {1}'.format(bucket_name, key))
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+            parameter_file,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(parameter_file))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
+        )
+
+
+class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **keywords):
+        super(CopyLogFilesApp, self).__init__(oid, uid, **keywords)
+
+    def initialize(self, **keywords):
+        super(CopyLogFilesApp, self).initialize(**keywords)
+        self._session_id = self._getArg(keywords, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -122,14 +163,14 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
 
 
 class CleanupDirectories(BarrierAppDROP, ErrorHandling):
-    def __init__(self, oid, uid, **kwargs):
+    def __init__(self, oid, uid, **keywords):
         self._dry_run = None
-        super(CleanupDirectories, self).__init__(oid, uid, **kwargs)
+        super(CleanupDirectories, self).__init__(oid, uid, **keywords)
 
-    def initialize(self, **kwargs):
-        super(CleanupDirectories, self).initialize(**kwargs)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
-        self._dry_run = self._getArg(kwargs, 'dry_run', None)
+    def initialize(self, **keywords):
+        super(CleanupDirectories, self).initialize(**keywords)
+        self._session_id = self._getArg(keywords, 'session_id', None)
+        self._dry_run = self._getArg(keywords, 'dry_run', None)
 
     def dataURL(self):
         return type(self).__name__
@@ -174,13 +215,13 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
 
 
 class InitializeSqliteApp(BarrierAppDROP, ErrorHandling):
-    def __init__(self, oid, uid, **kwargs):
+    def __init__(self, oid, uid, **keywords):
         self._connection = None
-        super(InitializeSqliteApp, self).__init__(oid, uid, **kwargs)
+        super(InitializeSqliteApp, self).__init__(oid, uid, **keywords)
 
-    def initialize(self, **kwargs):
-        super(InitializeSqliteApp, self).initialize(**kwargs)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+    def initialize(self, **keywords):
+        super(InitializeSqliteApp, self).initialize(**keywords)
+        self._session_id = self._getArg(keywords, 'session_id', None)
 
     def dataURL(self):
         return type(self).__name__

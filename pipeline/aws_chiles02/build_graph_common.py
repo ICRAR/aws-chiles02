@@ -22,11 +22,13 @@
 """
 The abstract graph builder
 """
+import json
+
 import os
 import uuid
 from abc import ABCMeta, abstractmethod
 
-from aws_chiles02.apps_general import CopyLogFilesApp
+from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters
 from aws_chiles02.common import get_module_name
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
@@ -49,6 +51,7 @@ class AbstractBuildGraph:
         self._session_id = keywords['session_id']
         self._dim_ip = keywords['dim_ip']
         self._counters = {}
+        self._parameter_data = json.dumps(keywords, indent=2)
 
         for key, list_ips in self._node_details.iteritems():
             for instance_details in list_ips:
@@ -74,6 +77,29 @@ class AbstractBuildGraph:
     @staticmethod
     def get_uuid():
         return str(uuid.uuid4())
+
+    def copy_parameter_data(self, node_id, folder_name):
+        file_drop = self.create_file_drop(
+            node_id,
+            os.path.join(self._volume, 'parameter_data.json'),
+            oid='parameter_data'
+        )
+        s3_drop = self.create_s3_drop(
+            node_id,
+            self._bucket_name,
+            '{0}/parameter_data.json'.format(folder_name),
+            'aws-chiles02',
+            oid='s3_out',
+        )
+        copy_drop = self.create_app(
+            node_id,
+            get_module_name(CopyParameters),
+            'app_copy_parameters',
+            parameter_data=self._parameter_data,
+        )
+
+        copy_drop.addInput(file_drop)
+        copy_drop.addOutput(s3_drop)
 
     def copy_logfiles_and_shutdown(self, shutdown_dim=False):
         """
