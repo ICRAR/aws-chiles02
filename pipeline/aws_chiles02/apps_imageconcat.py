@@ -63,7 +63,7 @@ class CopyImageconcatFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'cleaned_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(measurement_set_dir, 'clean_{0}~{1}.image.centre'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
@@ -163,11 +163,11 @@ class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
 
         # Does the file exists
-        stem_name = 'imageconcat_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        stem_name = 'image_{0}_{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.debug('checking {0}.image exists'.format(measurement_set))
-        if not os.path.exists(measurement_set + '.image') or not os.path.isdir(measurement_set + '.image'):
-            message = 'Measurement_set: {0}.image does not exist'.format(measurement_set)
+        if not os.path.exists(measurement_set + '.cube') or not os.path.isdir(measurement_set + '.cube'):
+            message = 'Measurement_set: {0}.cube does not exist'.format(measurement_set)
             LOG.error(message)
             self.send_error_message(
                 message,
@@ -177,9 +177,9 @@ class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.image'.format(
+        bash = 'tar -cvf {0} {1}.cube'.format(
             tar_filename,
             stem_name,
         )
@@ -240,7 +240,7 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         key = s3_output.key
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
         # Does the file exists
-        stem_name = 'clean_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        stem_name = 'image_{0}_{1}'.format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, stem_name)
         LOG.debug('checking {0}.fits exists'.format(measurement_set))
         fits_file = measurement_set + '.fits'
