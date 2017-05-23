@@ -70,8 +70,8 @@ class ErrorHandling(object):
 
 class CopyParameters(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **keywords):
-        super(CopyParameters, self).__init__(oid, uid, **keywords)
         self._parameter_data = None
+        super(CopyParameters, self).__init__(oid, uid, **keywords)
 
     def initialize(self, **keywords):
         super(CopyParameters, self).initialize(**keywords)

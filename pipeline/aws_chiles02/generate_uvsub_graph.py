@@ -105,7 +105,7 @@ def get_s3_split_name(width):
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
-        'instance_type': 'i2.2xlarge',
+        'instance_type': 'i3.2xlarge',
         'spot_price': spot_price
     }]
 
@@ -158,7 +158,7 @@ def create_and_generate(**keywords):
             reported_running = get_reported_running(
                 uuid,
                 node_count,
-                wait=600
+                wait=900
             )
 
             if len(reported_running) == 0:
@@ -197,7 +197,7 @@ def create_and_generate(**keywords):
                 data_island_manager_running = get_reported_running(
                     uuid,
                     1,
-                    wait=600
+                    wait=900
                 )
 
                 if len(data_island_manager_running['m4.large']) == 1:
@@ -316,7 +316,7 @@ def generate_json(**keywords):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])],
+        'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])],
     }
     graph = BuildGraphUvsub(
         work_to_do=work_to_do.work_to_do,
@@ -420,7 +420,7 @@ def command_interactive(args):
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+            args.get('spot_price_i3_2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
             args.get('nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
             args.get('dump_json', 'Dump the json', data_type=bool, help_text='dump the json', default=False)
         elif config['run_type'] == 'use':
@@ -439,7 +439,7 @@ def command_interactive(args):
             frequency_width=config['width'],
             w_projection_planes=config['w_projection_planes'],
             ami_id=config['ami'],
-            spot_price=config['spot_price'],
+            spot_price=config['spot_price_i3_2xlarge'],
             volume=config['volume'],
             nodes=config['nodes'],
             add_shutdown=config['shutdown'],

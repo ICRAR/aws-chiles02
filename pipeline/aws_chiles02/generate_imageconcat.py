@@ -216,7 +216,7 @@ def create_and_generate(**keywords):
             [
                 {
                     'number_instances': nodes,
-                    'instance_type': 'i2.2xlarge',
+                    'instance_type': 'i3.xlarge',
                     'spot_price': spot_price
                 }
             ],
@@ -242,7 +242,7 @@ def create_and_generate(**keywords):
         reported_running = get_reported_running(
             uuid,
             1,
-            wait=600
+            wait=900
         )
 
         if len(reported_running) == 0:
@@ -281,7 +281,7 @@ def create_and_generate(**keywords):
             data_island_manager_running = get_reported_running(
                 uuid,
                 1,
-                wait=600
+                wait=900
             )
 
             if len(data_island_manager_running['m4.large']) == 1:
@@ -463,7 +463,7 @@ def command_interactive(args):
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i2_2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
+            args.get('spot_price_i3_xlarge', 'Spot Price for i3.xlarge', help_text='the spot price')
             args.get('nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
         elif config['run_type'] == 'use':
             args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -477,7 +477,7 @@ def command_interactive(args):
     if config['run_type'] == 'create':
         create_and_generate(
             ami_id=config['ami'],
-            spot_price=config['spot_price_i2_2xlarge'],
+            spot_price=config['spot_price_i3_xlarge'],
             nodes=config['nodes'],
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
