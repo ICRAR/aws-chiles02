@@ -25,29 +25,55 @@ Check the uvsubs
 import argparse
 import logging
 
-from aws_chiles02.common import set_logging_level
-from aws_chiles02.generate_uvsub_graph import WorkToDo, get_s3_uvsub_name, get_s3_split_name
+from os.path import exists, split
+
+from configobj import ConfigObj
+
+from aws_chiles02.common import set_logging_level, get_input_mode
+from aws_chiles02.generate_uvsub_graph import WorkToDo, get_s3_split_name
+from aws_chiles02.get_argument import GetArguments
 
 LOG = logging.getLogger(__name__)
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser('Check what data has been removed the sky model from')
-    parser.add_argument('bucket', help='the bucket to access')
-    parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
-    return parser.parse_args()
+def get_arguments():
+    path_dirname, filename = split(__file__)
+    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
+    if exists(config_file_name):
+        config = ConfigObj(config_file_name)
+    else:
+        config = ConfigObj()
+        config.filename = config_file_name
+
+    mode = get_input_mode()
+    args = GetArguments(config=config, mode=mode)
+    args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+    args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+    args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
+    args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
+
+    # Write the arguments
+    config.write()
+
+    return config
 
 
 def main():
-    arguments = parse_arguments()
-    set_logging_level(arguments.verbosity)
+    keywords = get_arguments()
 
-    work_to_do = WorkToDo(arguments.width, arguments.bucket, get_s3_uvsub_name(arguments.width), get_s3_split_name(arguments.width))
+    work_to_do = WorkToDo(
+        width=keywords['width'],
+        bucket_name=keywords['bucket_name'],
+        s3_uvsub_name=keywords['uvsub_directory_name'],
+        s3_split_name=get_s3_split_name(keywords['width']),
+        frequency_range=keywords['frequency_range'],
+    )
     work_to_do.calculate_work_to_do()
 
+    LOG.info("These are items still needing to be processed.")
     for work_item in work_to_do.work_to_do:
         LOG.info(work_item)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

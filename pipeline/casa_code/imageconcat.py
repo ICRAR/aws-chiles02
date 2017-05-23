@@ -56,20 +56,20 @@ def do_imageconcat(cube_dir, out_filename, input_files):
         # ia doesn't need an import - it is just available in casa
         final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
-        imcontsub(imagename=outfile,linefile=outfile+'.line',contfile=outfile+'.cont',fitorder=1)
+        imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=1)
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
-        imsubimage(imagename=outfile+'.cont',chans='0~0',outfile=outfile+'.cont.1',overwrite=T)
-        imsubimage(imagename=outfile+'.cont',chans=str(ia.shape()[3]-1)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',overwrite=T)
+        imsubimage(imagename=outfile+'.cont', chans='0~0', outfile=outfile+'.cont.1', overwrite=True)
+        imsubimage(imagename=outfile+'.cont', chans=str(ia.shape()[3]-1)+'~'+str(ia.shape()[3]-1), outfile=outfile+'.cont.2', overwrite=True)
         ia.close()
-        final = ia.imageconcat(infiles=[outfile+'.cont.1',outfile+'.cont.2'],outfile=outfile+'.cont', relax=True, overwrite=True)
+        final = ia.imageconcat(infiles=[outfile+'.cont.1',outfile+'.cont.2'], outfile=outfile+'.cont', relax=True, overwrite=True)
         final.done()
         ### OR ###-- still averages data
-        ### imrebin(imagename=outfile+'.cont',outfile=outfile+'.cont.2ch',factor=[1,1,1,ia.shape()[3]/2]) 
-        ### OR ### 
+        ### imrebin(imagename=outfile+'.cont',outfile=outfile+'.cont.2ch',factor=[1,1,1,ia.shape()[3]/2])
+        ### OR ###
         ### imregrid(imagename=outfile+'.cont',outfile=outfile+'.cont.2ch',axes=[3],shape=[shp[0],shp[1],shp[2],2]
-        ### OR ### 
+        ### OR ###
         ### imsubimage(imagename=outfile+'.cont',outfile=outfile+'.cont.2ch',axes=[3],shape=[shp[0],shp[1],shp[2],2]
         # ia.open(out_filename)
         # ia.statistics(verbose=True,axes=[0,1])

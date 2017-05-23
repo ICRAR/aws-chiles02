@@ -1,6 +1,7 @@
 argparse
 boto3
 ConfigObj
+jsonpickle
 mako
 pip>=9.0
 requests

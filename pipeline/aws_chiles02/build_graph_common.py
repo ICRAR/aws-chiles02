@@ -22,8 +22,7 @@
 """
 The abstract graph builder
 """
-import json
-
+import jsonpickle
 import os
 import uuid
 from abc import ABCMeta, abstractmethod
@@ -51,7 +50,7 @@ class AbstractBuildGraph:
         self._session_id = keywords['session_id']
         self._dim_ip = keywords['dim_ip']
         self._counters = {}
-        self._parameter_data = json.dumps(keywords)
+        self._parameter_data = jsonpickle.encode(keywords)
 
         for key, list_ips in self._node_details.iteritems():
             for instance_details in list_ips:
@@ -86,7 +85,7 @@ class AbstractBuildGraph:
         s3_drop = self.create_s3_drop(
             self._dim_ip,
             self._bucket_name,
-            '{0}/parameter_data.json'.format(folder_name),
+            '{0}/aa_parameter_data.json'.format(folder_name),
             'aws-chiles02',
             oid='s3_out',
         )

@@ -22,7 +22,7 @@
 """
 My Docker Apps
 """
-import json
+import jsonpickle
 import logging
 import os
 import shutil
@@ -54,7 +54,7 @@ class ErrorHandling(object):
             'uid': uid,
             'message': message_text,
         }
-        json_message = json.dumps(message, indent=2)
+        json_message = jsonpickle.encode(message)
         queue.send_message(
             MessageBody=json_message,
         )
@@ -76,7 +76,7 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
     def initialize(self, **keywords):
         super(CopyParameters, self).initialize(**keywords)
         # The data is in a string so we need to load it to write it
-        self._parameter_data = json.loads(self._getArg(keywords, 'parameter_data', None))
+        self._parameter_data = jsonpickle.decode(self._getArg(keywords, 'parameter_data', None))
 
     def dataURL(self):
         return type(self).__name__
@@ -85,7 +85,7 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
         LOG.info('parameter_data: {0}'.format(self._parameter_data))
         parameter_file = '/tmp/parameter_data.json'
         with open(parameter_file, 'w') as json_file:
-            json_file.write(json.dumps(self._parameter_data, indent=2))
+            json_file.write(jsonpickle.encode(self._parameter_data))
 
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket

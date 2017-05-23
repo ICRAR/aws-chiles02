@@ -315,13 +315,13 @@ def use_and_generate(**keywords):
 
 
 def generate_json(**keywords):
-    width = keywords['width']
-    bucket = keywords['bucket']
+    frequency_width = keywords['frequency_width']
+    bucket_name = keywords['bucket_name']
     clean_directory_name = keywords['clean_directory_name']
     uvsub_directory_name = keywords['uvsub_directory_name']
     work_to_do = WorkToDo(
-        width=width,
-        bucket=bucket,
+        frequency_width=frequency_width,
+        bucket_name=bucket_name,
         clean_directory_name=clean_directory_name,
         frequency_range=keywords['frequency_range'],
         uvsub_directory_name=uvsub_directory_name,
@@ -333,17 +333,17 @@ def generate_json(**keywords):
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
-        bucket_name=bucket,
+        bucket_name=bucket_name,
         volume=keywords['volume'],
         parallel_streams=keywords['parallel_streams'],
         node_details=node_details,
         shutdown=keywords['shutdown'],
-        width=width,
+        width=frequency_width,
         iterations=keywords['iterations'],
         arcsec=keywords['arcsec'] + 'arcsec',
         w_projection_planes=keywords['w_projection_planes'],
         robust=keywords['robust'],
-        image_size=keywords['mage_size'],
+        image_size=keywords['image_size'],
         clean_channel_average=keywords['clean_channel_average'],
         clean_directory_name=clean_directory_name,
         uvsub_directory_name=uvsub_directory_name,
@@ -541,8 +541,8 @@ def command_interactive(args):
         )
     else:
         generate_json(
-            width=config['width'],
-            bucket=config['bucket_name'],
+            frequency_width=config['width'],
+            bucket_name=config['bucket_name'],
             iterations=config['iterations'],
             arcsec=config['arcsec'] + 'arcsec',
             nodes=config['nodes'],

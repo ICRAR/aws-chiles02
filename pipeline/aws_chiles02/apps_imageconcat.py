@@ -179,7 +179,7 @@ class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
         # Make the tar file
         tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}.cube'.format(
+        bash = 'tar -cvf {0} {1}.cube {1}.cube.line {1}.cube.cont {1}.cube.fits'.format(
             tar_filename,
             stem_name,
         )

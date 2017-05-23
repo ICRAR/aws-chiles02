@@ -38,6 +38,7 @@ setup(
         'boto3',
         'ConfigObj',
         'dfms',
+        'jsonpickle',
         'mako',
         'pip>=9.0',
         'requests',
