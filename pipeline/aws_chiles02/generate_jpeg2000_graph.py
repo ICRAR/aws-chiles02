@@ -58,7 +58,7 @@ def create_and_generate(**kwargs):
             [
                 {
                     'number_instances': 1,
-                    'instance_type': 'i2.2xlarge',
+                    'instance_type': 'i3.2xlarge',
                     'spot_price': spot_price
                 }
             ],
@@ -84,7 +84,7 @@ def create_and_generate(**kwargs):
         reported_running = get_reported_running(
             uuid,
             1,
-            wait=600
+            wait=900
         )
         hosts = build_hosts(reported_running)
 
@@ -119,7 +119,7 @@ def create_and_generate(**kwargs):
         data_island_manager_running = get_reported_running(
             uuid,
             1,
-            wait=600
+            wait=900
         )
 
         if len(data_island_manager_running['m4.large']) == 1:
@@ -269,7 +269,7 @@ def command_interactive(args):
 
         if config['create_use'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price', 'Spot Price for i2.2xlarge', help_text='the spot price')
+            args.get('spot_price_i3_2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
         else:
             args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
 
@@ -281,7 +281,7 @@ def command_interactive(args):
         create_and_generate(
             bucket_name=config['bucket_name'],
             ami_id=config['ami'],
-            spot_price=config['spot_price'],
+            spot_price=config['spot_price_i3_2xlarge'],
             volume=config['volume'],
             add_shutdown=config['shutdown'],
             fits_directory_name=config['fits_directory_name'],

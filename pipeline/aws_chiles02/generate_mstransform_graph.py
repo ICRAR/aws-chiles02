@@ -149,7 +149,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         node_count += count
         nodes.append({
             'number_instances': count,
-            'instance_type': 'i2.4xlarge',
+            'instance_type': 'i3.4xlarge',
             'spot_price': spot_price2
         })
     if counts[0] > 0:
@@ -157,7 +157,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         node_count += count
         nodes.append({
             'number_instances': count,
-            'instance_type': 'i2.2xlarge',
+            'instance_type': 'i3.2xlarge',
             'spot_price': spot_price1
         })
 
@@ -208,7 +208,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             reported_running = get_reported_running(
                 uuid,
                 node_count,
-                wait=600
+                wait=900
             )
             hosts = build_hosts(reported_running)
 
@@ -243,7 +243,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             data_island_manager_running = get_reported_running(
                 uuid,
                 1,
-                wait=600
+                wait=900
             )
 
             if len(data_island_manager_running['m4.large']) == 1:
@@ -330,8 +330,8 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
-        'i2.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
+        'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
+        'i3.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
     }
     graph = BuildGraphMsTransform(
         work_to_do=work_to_do.work_to_do,
@@ -410,8 +410,8 @@ def command_interactive(args):
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         if config['create_use_json'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i2.2xlarge', 'Spot Price for i2.2xlarge', help_text='the spot price')
-            args.get('spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
+            args.get('spot_price_i3.2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
+            args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', help_text='the spot price')
             args.get('days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
         elif config['create_use_json'] == 'use':
             args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
@@ -425,8 +425,8 @@ def command_interactive(args):
             config['bucket_name'],
             config['volume'],
             config['ami'],
-            config['spot_price_i2.2xlarge'],
-            config['spot_price_i2_4xlarge'],
+            config['spot_price_i3.2xlarge'],
+            config['spot_price_i3_4xlarge'],
             '--days_per_node ' + config['days_per_node'],
             '--width ' + config['width'],
             '--shutdown' if config['shutdown'] else ''
@@ -435,8 +435,8 @@ def command_interactive(args):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             ami_id=config['ami'],
-            spot_price1=config['spot_price_i2.2xlarge'],
-            spot_price2=config['spot_price_i2_4xlarge'],
+            spot_price1=config['spot_price_i3.2xlarge'],
+            spot_price2=config['spot_price_i3_4xlarge'],
             volume=config['volume'],
             days_per_node=config['days_per_node'],
             add_shutdown=config['shutdown'],
@@ -488,8 +488,8 @@ def parser_arguments(command_line=sys.argv[1:]):
 
     parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
     parser_create.add_argument('ami', help='the ami to use')
-    parser_create.add_argument('spot_price1', type=float, help='the spot price for the i2.2xlarge instances')
-    parser_create.add_argument('spot_price2', type=float, help='the spot price for the i2.4xlarge instances')
+    parser_create.add_argument('spot_price1', type=float, help='the spot price for the i3.2xlarge instances')
+    parser_create.add_argument('spot_price2', type=float, help='the spot price for the i3.4xlarge instances')
     parser_create.add_argument('--days_per_node', type=int, help='the number of days per node', default=1)
     parser_create.set_defaults(func=command_create)
 

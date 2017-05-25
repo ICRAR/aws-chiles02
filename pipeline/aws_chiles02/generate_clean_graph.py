@@ -102,7 +102,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     node_count = max(len(work_to_do) / frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
-        'instance_type': 'i2.4xlarge',
+        'instance_type': 'i3.4xlarge',
         'spot_price': spot_price
     })
 
@@ -161,7 +161,7 @@ def create_and_generate(**keywords):
             reported_running = get_reported_running(
                 uuid,
                 node_count,
-                wait=600
+                wait=900
             )
 
             if len(reported_running) == 0:
@@ -200,7 +200,7 @@ def create_and_generate(**keywords):
                 data_island_manager_running = get_reported_running(
                         uuid,
                         1,
-                        wait=600
+                        wait=900
                 )
 
                 if len(data_island_manager_running['m4.large']) == 1:
@@ -329,7 +329,7 @@ def generate_json(**keywords):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i2.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
+        'i3.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
@@ -479,7 +479,7 @@ def command_interactive(args):
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i2_4xlarge', 'Spot Price for i2.4xlarge', help_text='the spot price')
+            args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', help_text='the spot price')
             args.get('frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
             args.get('log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
         elif config['run_type'] == 'use':
@@ -496,7 +496,7 @@ def command_interactive(args):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i2_4xlarge'],
+            spot_price=config['spot_price_i3_4xlarge'],
             volume=config['volume'],
             frequencies_per_node=config['frequencies_per_node'],
             add_shutdown=config['shutdown'],

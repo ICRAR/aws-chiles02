@@ -86,7 +86,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         reported_running = get_reported_running(
             uuid,
             1,
-            wait=600
+            wait=900
         )
         hosts = build_hosts(reported_running)
 
@@ -121,7 +121,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price, volume
         data_island_manager_running = get_reported_running(
             uuid,
             1,
-            wait=600
+            wait=900
         )
 
         if len(data_island_manager_running['m4.large']) == 1:
