@@ -20,22 +20,25 @@ service docker stop
 sleep 10
 
 build_raid () {
-  echo "Drive count = $1"
-  echo "Drives = $2"
+  drive_count=$1
+  shift
+  drives=$@
+  echo "Drive count = $drive_count"
+  echo "Drives = $drives"
 
   # Overwrite first few blocks in case there is a filesystem, otherwise mdadm will prompt for input
-  for drive in $2; do
+  for drive in $drives; do
     dd if=/dev/zero of=$drive bs=4096 count=1024
   done
 
-  if (( $1 > 1 )); then
-    mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$1 $2
+  if (( $drive_count > 1 )); then
+    mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$drive_count $drives
     blockdev --setra 65536 /dev/md0
     pvcreate /dev/md0
     vgcreate dfms-group /dev/md0
   else
-    pvcreate $2
-    vgcreate dfms-group $2
+    pvcreate $drives
+    vgcreate dfms-group $drives
   fi
   lvcreate -L 20G --name swap dfms-group
   docker-storage-setup

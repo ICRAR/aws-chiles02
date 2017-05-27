@@ -241,7 +241,7 @@ def create_and_generate(**keywords):
 
         reported_running = get_reported_running(
             uuid,
-            1,
+            nodes,
             wait=900
         )
 
