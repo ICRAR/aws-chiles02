@@ -253,6 +253,8 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
         bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.mom.slice_ra ' \
                '{1}.image.slice.txt {1}.image.slice.svg ' \
                '{1}.image.rms.txt {1}.image.rms.svg ' \
+               '{1}.image.histo.txt {1}.image.histo.svg ' \
+               '{1}.image.beam.txt {1}.image.beam.svg ' \
                '{1}.image.onsource_centre.txt {1}.image.onsource_centre.svg ' \
                '{1}.image.onsource_south.txt {1}.image.onsource_south.svg ' \
                '{1}.image.boresight.txt {1}.image.boresight.svg'.format(
