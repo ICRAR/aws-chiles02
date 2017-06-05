@@ -94,16 +94,16 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         # IA used to make squashed images.
         #ia.moments(moments=[-1], outfile=outfile+'.image.mom.mean_freq')
         #ia.moments(moments=[-1], axis=0, outfile=outfile+'.image.mom.mean_ra')
-        c=ia.collapse(function='mean', axes=3,outfile=outfile+'.image.mom.mean_freq')
+        c=ia.collapse(function='mean', axes=3,outfile=outfile+'.image.mom.mean_freq',overwrite=True)
         c.done()
-        c=ia.collapse(function='mean', axes=0, outfile=outfile+'.image.mom.mean_ra')
+        c=ia.collapse(function='mean', axes=0, outfile=outfile+'.image.mom.mean_ra',overwrite=True)
         c.done()
         # IA used to make slices.
         smry = ia.summary()
         xpos = 2967.0 / 4096 * smry['shape'][0]
         ypos = 4095.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, 0], [xpos + 2, ypos])
-        ia.moments(moments=[-1], axis=0, region=box, outfile=outfile + 'image.mom.slice_ra')
+        ia.moments(moments=[-1], axis=0, region=box, outfile=outfile + 'image.mom.slice_ra',overwrite=True)
 
         # We will get rid of this if the slice above works
         slce = []
@@ -184,7 +184,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         sts=ia.histograms()
         fo = open(outfile + '.image.histo.txt', 'w')
         for n in range(0, len(sts['values'])):
-            print>> fo, sts['values'][n],sts['counts'][n]
+            print>> fo, sts['values'][n], sts['counts'][n]
         fo.close()
         pl.plot(sts['values'] * 1e3, np.log10(sts['counts']))
         pl.xlabel('Bin (mJy)')
@@ -192,27 +192,29 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.title('Histogram for ' + outfile)
         pl.savefig(outfile + '.image.histo.svg')
         pl.clf()
-        # Beams
-        sts=ia.summary()['perplanebeams']
-        bmj=[]
-        bmn=[]
-        bmp=[]
-        fo = open(outfile + '.image.beam.txt', 'w')
-        for n in range(0, sts['nChannels']):
-            print>> fo, slce['coords'][n],sts['beams']['*'+str(n)]['*0']
-        fo.close()
-        for n in range(0, sts['nChannels']):
-            bmj.append(sts['beams']['*'+str(n)]['*0']['major']['value']);
-            bmn.append(sts['beams']['*'+str(n)]['*0']['minor']['value']);
-            bmp.append(sts['beams']['*'+str(n)]['*0']['positionangle']['value']/57.3)
-        pl.plot(slce['coords'],bmj)
-        pl.plot(slce['coords'],bmn)
-        pl.plot(slce['coords'],bmp)
-        pl.xlabel('Frequency (MHz)')
-        pl.ylabel('Beam Axes (major, minor & PA (rad)')
-        pl.title('Beam Parameters for ' + outfile)
-        pl.savefig(outfile + '.image.beam.svg')
-        pl.clf()
+        # Beams --- sometimes this information is missing, so only generate if what is needed is there
+        sts=ia.summary()
+        if 'perplanebeams' in sts.keys():
+            sts=sts['perplanebeams']
+            bmj=[]
+            bmn=[]
+            bmp=[]
+            fo = open(outfile + '.image.beam.txt', 'w')
+            for n in range(0, sts['nChannels']):
+                print>> fo, slce['coords'][n], sts['beams']['*'+str(n)]['*0']
+            fo.close()
+            for n in range(0, sts['nChannels']):
+                bmj.append(sts['beams']['*'+str(n)]['*0']['major']['value']);
+                bmn.append(sts['beams']['*'+str(n)]['*0']['minor']['value']);
+                bmp.append(sts['beams']['*'+str(n)]['*0']['positionangle']['value']/57.3)
+            pl.plot(slce['coords'],bmj)
+            pl.plot(slce['coords'],bmn)
+            pl.plot(slce['coords'],bmp)
+            pl.xlabel('Frequency (MHz)')
+            pl.ylabel('Beam Axes (major, minor & PA (rad)')
+            pl.title('Beam Parameters for ' + outfile)
+            pl.savefig(outfile + '.image.beam.svg')
+            pl.clf()
         ia.close()
 
     exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
