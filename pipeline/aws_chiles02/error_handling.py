@@ -26,7 +26,7 @@ import json
 
 import boto3
 
-from aws_chiles02.settings_file import AWS_REGION
+from .settings_file import AWS_REGION
 
 
 class ErrorListener(object):

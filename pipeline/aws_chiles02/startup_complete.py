@@ -22,9 +22,9 @@
 """
 Startup is complete so put a message on the queue
 """
+import argparse
 import json
 import logging
-import argparse
 import urllib2
 
 import boto3

@@ -24,11 +24,11 @@ The common generate code
 """
 import json
 import logging
-
-import boto3
 import time
 
-from aws_chiles02.settings_file import AWS_REGION, QUEUE
+import boto3
+
+from .settings_file import AWS_REGION, QUEUE
 
 LOG = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ def get_reported_running(uuid, count, wait=600):
                 message.delete()
                 LOG.info('{0} of {1} started'.format(messages_received, count))
 
+    LOG.info('The running nodes: {0}'.format(nodes_running))
     return nodes_running
 
 
@@ -74,6 +75,7 @@ def get_nodes_running(host_list):
                 nodes_running[instance.instance_type] = ip_addresses
             ip_addresses.append(message_details)
 
+    LOG.info('The running nodes: {0}'.format(nodes_running))
     return nodes_running
 
 

@@ -27,11 +27,12 @@ Clean up multipart files
 """
 
 import argparse
-import logging
 import datetime
+import logging
+
 import boto3
 
-from aws_chiles02.common import set_logging_level
+from .common import set_logging_level
 from constants import utc
 
 LOG = logging.getLogger(__name__)

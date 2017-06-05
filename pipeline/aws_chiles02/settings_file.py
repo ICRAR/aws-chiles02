@@ -22,7 +22,7 @@
 """
 Settings file
 """
-from os.path import expanduser, dirname, exists
+from os.path import dirname, exists, expanduser
 
 from configobj import ConfigObj
 

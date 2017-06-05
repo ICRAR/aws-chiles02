@@ -24,17 +24,16 @@ Collect EC2 metric data
 """
 import csv
 import logging
-import os
+from datetime import datetime, timedelta
 
 import boto3
+import os
 import requests
-from datetime import datetime, timedelta
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.apps_general import ErrorHandling
-from aws_chiles02.common import ProgressPercentage
 from dfms.drop import BarrierAppDROP
-
+from .apps_general import ErrorHandling
+from .common import ProgressPercentage
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.INFO)

@@ -26,12 +26,11 @@ import base64
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 from os.path import dirname, join
 
 from mako.lookup import TemplateLookup
 
-from aws_chiles02.settings_file import QUEUE, AWS_REGION
+from .settings_file import AWS_REGION, QUEUE
 
 LOG = logging.getLogger(__name__)
 

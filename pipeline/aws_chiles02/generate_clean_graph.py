@@ -27,20 +27,20 @@ import getpass
 import httplib
 import json
 import logging
-import os
+import sys
 from time import sleep
 
 import boto3
-import sys
+import os
 from configobj import ConfigObj
 
-from aws_chiles02.build_graph_clean import BuildGraphClean
-from aws_chiles02.common import get_session_id, get_list_frequency_groups, get_aws_credentials, get_uuid, get_log_level, get_required_frequencies, get_input_mode, TKINTER
-from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import get_reported_running, build_hosts, get_nodes_running
-from aws_chiles02.get_argument import GetArguments
-from aws_chiles02.settings_file import AWS_REGION, AWS_AMI_ID, DIM_PORT
-from aws_chiles02.user_data import get_node_manager_user_data, get_data_island_manager_user_data
+from .build_graph_clean import BuildGraphClean
+from .common import TKINTER, get_aws_credentials, get_input_mode, get_list_frequency_groups, get_log_level, get_required_frequencies, get_session_id, get_uuid
+from .ec2_controller import EC2Controller
+from .generate_common import build_hosts, get_nodes_running, get_reported_running
+from .get_argument import GetArguments
+from .settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT
+from .user_data import get_data_island_manager_user_data, get_node_manager_user_data
 from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
 

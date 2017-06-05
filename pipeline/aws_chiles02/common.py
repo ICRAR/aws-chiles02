@@ -22,20 +22,21 @@
 """
 Common code to
 """
+import contextlib
 import getpass
 import logging
-import os
 import subprocess
+import sys
 import threading
 import time
 import uuid
 from cStringIO import StringIO
-from os.path import join, expanduser
+from os.path import expanduser, join
 
-import sys
+import os
 from configobj import ConfigObj
 
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
+from .settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
 NOT_TTY = 'not tty terminal'
 TTY = 'tty'
@@ -79,6 +80,7 @@ class ChunkedFrequencyPair(FrequencyPair):
     @property
     def pairs(self):
         return self._pairs
+
 
 class MeasurementSetData:
     def __init__(self, full_tar_name, size):
@@ -162,42 +164,42 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
     :param number_of_groups:
     :return:
     >>> make_groups_of_frequencies(get_list_frequency_groups(4), 8)
-    [[FrequencyPair(940, 944), FrequencyPair(972, 976), FrequencyPair(1004, 1008), FrequencyPair(1036, 1040), FrequencyPair(1068, 1072), FrequencyPair(1100, 1104), FrequencyPair(1132, 1136), 
-      FrequencyPair(1164, 1168), FrequencyPair(1196, 1200), FrequencyPair(1228, 1232), FrequencyPair(1260, 1264), FrequencyPair(1292, 1296), FrequencyPair(1324, 1328), FrequencyPair(1356, 1360), 
-      FrequencyPair(1388, 1392), FrequencyPair(1420, 1424)], 
-     [FrequencyPair(944, 948), FrequencyPair(976, 980), FrequencyPair(1008, 1012), FrequencyPair(1040, 1044), FrequencyPair(1072, 1076), FrequencyPair(1104, 1108), FrequencyPair(1136, 1140), 
-      FrequencyPair(1168, 1172), FrequencyPair(1200, 1204), FrequencyPair(1232, 1236), FrequencyPair(1264, 1268), FrequencyPair(1296, 1300), FrequencyPair(1328, 1332), FrequencyPair(1360, 1364), 
-      FrequencyPair(1392, 1396)], 
-     [FrequencyPair(948, 952), FrequencyPair(980, 984), FrequencyPair(1012, 1016), FrequencyPair(1044, 1048), FrequencyPair(1076, 1080), FrequencyPair(1108, 1112), FrequencyPair(1140, 1144), 
-      FrequencyPair(1172, 1176), FrequencyPair(1204, 1208), FrequencyPair(1236, 1240), FrequencyPair(1268, 1272), FrequencyPair(1300, 1304), FrequencyPair(1332, 1336), FrequencyPair(1364, 1368), 
-      FrequencyPair(1396, 1400)], 
-     [FrequencyPair(952, 956), FrequencyPair(984, 988), FrequencyPair(1016, 1020), FrequencyPair(1048, 1052), FrequencyPair(1080, 1084), FrequencyPair(1112, 1116), FrequencyPair(1144, 1148), 
-      FrequencyPair(1176, 1180), FrequencyPair(1208, 1212), FrequencyPair(1240, 1244), FrequencyPair(1272, 1276), FrequencyPair(1304, 1308), FrequencyPair(1336, 1340), FrequencyPair(1368, 1372), 
-      FrequencyPair(1400, 1404)], 
-     [FrequencyPair(956, 960), FrequencyPair(988, 992), FrequencyPair(1020, 1024), FrequencyPair(1052, 1056), FrequencyPair(1084, 1088), FrequencyPair(1116, 1120), FrequencyPair(1148, 1152), 
-      FrequencyPair(1180, 1184), FrequencyPair(1212, 1216), FrequencyPair(1244, 1248), FrequencyPair(1276, 1280), FrequencyPair(1308, 1312), FrequencyPair(1340, 1344), FrequencyPair(1372, 1376), 
-      FrequencyPair(1404, 1408)], 
-     [FrequencyPair(960, 964), FrequencyPair(992, 996), FrequencyPair(1024, 1028), FrequencyPair(1056, 1060), FrequencyPair(1088, 1092), FrequencyPair(1120, 1124), FrequencyPair(1152, 1156), 
-      FrequencyPair(1184, 1188), FrequencyPair(1216, 1220), FrequencyPair(1248, 1252), FrequencyPair(1280, 1284), FrequencyPair(1312, 1316), FrequencyPair(1344, 1348), FrequencyPair(1376, 1380), 
-      FrequencyPair(1408, 1412)], 
-     [FrequencyPair(964, 968), FrequencyPair(996, 1000), FrequencyPair(1028, 1032), FrequencyPair(1060, 1064), FrequencyPair(1092, 1096), FrequencyPair(1124, 1128), FrequencyPair(1156, 1160), 
-      FrequencyPair(1188, 1192), FrequencyPair(1220, 1224), FrequencyPair(1252, 1256), FrequencyPair(1284, 1288), FrequencyPair(1316, 1320), FrequencyPair(1348, 1352), FrequencyPair(1380, 1384), 
-      FrequencyPair(1412, 1416)], 
-     [FrequencyPair(968, 972), FrequencyPair(1000, 1004), FrequencyPair(1032, 1036), FrequencyPair(1064, 1068), FrequencyPair(1096, 1100), FrequencyPair(1128, 1132), FrequencyPair(1160, 1164), 
-      FrequencyPair(1192, 1196), FrequencyPair(1224, 1228), FrequencyPair(1256, 1260), FrequencyPair(1288, 1292), FrequencyPair(1320, 1324), FrequencyPair(1352, 1356), FrequencyPair(1384, 1388), 
+    [[FrequencyPair(940, 944), FrequencyPair(972, 976), FrequencyPair(1004, 1008), FrequencyPair(1036, 1040), FrequencyPair(1068, 1072), FrequencyPair(1100, 1104), FrequencyPair(1132, 1136),
+      FrequencyPair(1164, 1168), FrequencyPair(1196, 1200), FrequencyPair(1228, 1232), FrequencyPair(1260, 1264), FrequencyPair(1292, 1296), FrequencyPair(1324, 1328), FrequencyPair(1356, 1360),
+      FrequencyPair(1388, 1392), FrequencyPair(1420, 1424)],
+     [FrequencyPair(944, 948), FrequencyPair(976, 980), FrequencyPair(1008, 1012), FrequencyPair(1040, 1044), FrequencyPair(1072, 1076), FrequencyPair(1104, 1108), FrequencyPair(1136, 1140),
+      FrequencyPair(1168, 1172), FrequencyPair(1200, 1204), FrequencyPair(1232, 1236), FrequencyPair(1264, 1268), FrequencyPair(1296, 1300), FrequencyPair(1328, 1332), FrequencyPair(1360, 1364),
+      FrequencyPair(1392, 1396)],
+     [FrequencyPair(948, 952), FrequencyPair(980, 984), FrequencyPair(1012, 1016), FrequencyPair(1044, 1048), FrequencyPair(1076, 1080), FrequencyPair(1108, 1112), FrequencyPair(1140, 1144),
+      FrequencyPair(1172, 1176), FrequencyPair(1204, 1208), FrequencyPair(1236, 1240), FrequencyPair(1268, 1272), FrequencyPair(1300, 1304), FrequencyPair(1332, 1336), FrequencyPair(1364, 1368),
+      FrequencyPair(1396, 1400)],
+     [FrequencyPair(952, 956), FrequencyPair(984, 988), FrequencyPair(1016, 1020), FrequencyPair(1048, 1052), FrequencyPair(1080, 1084), FrequencyPair(1112, 1116), FrequencyPair(1144, 1148),
+      FrequencyPair(1176, 1180), FrequencyPair(1208, 1212), FrequencyPair(1240, 1244), FrequencyPair(1272, 1276), FrequencyPair(1304, 1308), FrequencyPair(1336, 1340), FrequencyPair(1368, 1372),
+      FrequencyPair(1400, 1404)],
+     [FrequencyPair(956, 960), FrequencyPair(988, 992), FrequencyPair(1020, 1024), FrequencyPair(1052, 1056), FrequencyPair(1084, 1088), FrequencyPair(1116, 1120), FrequencyPair(1148, 1152),
+      FrequencyPair(1180, 1184), FrequencyPair(1212, 1216), FrequencyPair(1244, 1248), FrequencyPair(1276, 1280), FrequencyPair(1308, 1312), FrequencyPair(1340, 1344), FrequencyPair(1372, 1376),
+      FrequencyPair(1404, 1408)],
+     [FrequencyPair(960, 964), FrequencyPair(992, 996), FrequencyPair(1024, 1028), FrequencyPair(1056, 1060), FrequencyPair(1088, 1092), FrequencyPair(1120, 1124), FrequencyPair(1152, 1156),
+      FrequencyPair(1184, 1188), FrequencyPair(1216, 1220), FrequencyPair(1248, 1252), FrequencyPair(1280, 1284), FrequencyPair(1312, 1316), FrequencyPair(1344, 1348), FrequencyPair(1376, 1380),
+      FrequencyPair(1408, 1412)],
+     [FrequencyPair(964, 968), FrequencyPair(996, 1000), FrequencyPair(1028, 1032), FrequencyPair(1060, 1064), FrequencyPair(1092, 1096), FrequencyPair(1124, 1128), FrequencyPair(1156, 1160),
+      FrequencyPair(1188, 1192), FrequencyPair(1220, 1224), FrequencyPair(1252, 1256), FrequencyPair(1284, 1288), FrequencyPair(1316, 1320), FrequencyPair(1348, 1352), FrequencyPair(1380, 1384),
+      FrequencyPair(1412, 1416)],
+     [FrequencyPair(968, 972), FrequencyPair(1000, 1004), FrequencyPair(1032, 1036), FrequencyPair(1064, 1068), FrequencyPair(1096, 1100), FrequencyPair(1128, 1132), FrequencyPair(1160, 1164),
+      FrequencyPair(1192, 1196), FrequencyPair(1224, 1228), FrequencyPair(1256, 1260), FrequencyPair(1288, 1292), FrequencyPair(1320, 1324), FrequencyPair(1352, 1356), FrequencyPair(1384, 1388),
       FrequencyPair(1416, 1420)]]
     >>> make_groups_of_frequencies(get_list_frequency_groups(8), 12)
-    [[FrequencyPair(940, 948), FrequencyPair(1036, 1044), FrequencyPair(1132, 1140), FrequencyPair(1228, 1236), FrequencyPair(1324, 1332), FrequencyPair(1420, 1428)], 
-     [FrequencyPair(948, 956), FrequencyPair(1044, 1052), FrequencyPair(1140, 1148), FrequencyPair(1236, 1244), FrequencyPair(1332, 1340)], 
-     [FrequencyPair(956, 964), FrequencyPair(1052, 1060), FrequencyPair(1148, 1156), FrequencyPair(1244, 1252), FrequencyPair(1340, 1348)], 
-     [FrequencyPair(964, 972), FrequencyPair(1060, 1068), FrequencyPair(1156, 1164), FrequencyPair(1252, 1260), FrequencyPair(1348, 1356)], 
-     [FrequencyPair(972, 980), FrequencyPair(1068, 1076), FrequencyPair(1164, 1172), FrequencyPair(1260, 1268), FrequencyPair(1356, 1364)], 
-     [FrequencyPair(980, 988), FrequencyPair(1076, 1084), FrequencyPair(1172, 1180), FrequencyPair(1268, 1276), FrequencyPair(1364, 1372)], 
-     [FrequencyPair(988, 996), FrequencyPair(1084, 1092), FrequencyPair(1180, 1188), FrequencyPair(1276, 1284), FrequencyPair(1372, 1380)], 
-     [FrequencyPair(996, 1004), FrequencyPair(1092, 1100), FrequencyPair(1188, 1196), FrequencyPair(1284, 1292), FrequencyPair(1380, 1388)], 
-     [FrequencyPair(1004, 1012), FrequencyPair(1100, 1108), FrequencyPair(1196, 1204), FrequencyPair(1292, 1300), FrequencyPair(1388, 1396)], 
-     [FrequencyPair(1012, 1020), FrequencyPair(1108, 1116), FrequencyPair(1204, 1212), FrequencyPair(1300, 1308), FrequencyPair(1396, 1404)], 
-     [FrequencyPair(1020, 1028), FrequencyPair(1116, 1124), FrequencyPair(1212, 1220), FrequencyPair(1308, 1316), FrequencyPair(1404, 1412)], 
+    [[FrequencyPair(940, 948), FrequencyPair(1036, 1044), FrequencyPair(1132, 1140), FrequencyPair(1228, 1236), FrequencyPair(1324, 1332), FrequencyPair(1420, 1428)],
+     [FrequencyPair(948, 956), FrequencyPair(1044, 1052), FrequencyPair(1140, 1148), FrequencyPair(1236, 1244), FrequencyPair(1332, 1340)],
+     [FrequencyPair(956, 964), FrequencyPair(1052, 1060), FrequencyPair(1148, 1156), FrequencyPair(1244, 1252), FrequencyPair(1340, 1348)],
+     [FrequencyPair(964, 972), FrequencyPair(1060, 1068), FrequencyPair(1156, 1164), FrequencyPair(1252, 1260), FrequencyPair(1348, 1356)],
+     [FrequencyPair(972, 980), FrequencyPair(1068, 1076), FrequencyPair(1164, 1172), FrequencyPair(1260, 1268), FrequencyPair(1356, 1364)],
+     [FrequencyPair(980, 988), FrequencyPair(1076, 1084), FrequencyPair(1172, 1180), FrequencyPair(1268, 1276), FrequencyPair(1364, 1372)],
+     [FrequencyPair(988, 996), FrequencyPair(1084, 1092), FrequencyPair(1180, 1188), FrequencyPair(1276, 1284), FrequencyPair(1372, 1380)],
+     [FrequencyPair(996, 1004), FrequencyPair(1092, 1100), FrequencyPair(1188, 1196), FrequencyPair(1284, 1292), FrequencyPair(1380, 1388)],
+     [FrequencyPair(1004, 1012), FrequencyPair(1100, 1108), FrequencyPair(1196, 1204), FrequencyPair(1292, 1300), FrequencyPair(1388, 1396)],
+     [FrequencyPair(1012, 1020), FrequencyPair(1108, 1116), FrequencyPair(1204, 1212), FrequencyPair(1300, 1308), FrequencyPair(1396, 1404)],
+     [FrequencyPair(1020, 1028), FrequencyPair(1116, 1124), FrequencyPair(1212, 1220), FrequencyPair(1308, 1316), FrequencyPair(1404, 1412)],
      [FrequencyPair(1028, 1036), FrequencyPair(1124, 1132), FrequencyPair(1220, 1228), FrequencyPair(1316, 1324), FrequencyPair(1412, 1420)]]
     """
     groups = []
@@ -488,3 +490,16 @@ def set_boto_logging_level(level):
     logging.getLogger('boto3').setLevel(level)
     logging.getLogger('botocore').setLevel(level)
     logging.getLogger('nose').setLevel(level)
+
+
+@contextlib.contextmanager
+def stopwatch(message):
+    """
+    Context manager to print how long a block of code took.
+    """
+    t0 = time.time()
+    try:
+        yield
+    finally:
+        t1 = time.time()
+        print('Total elapsed time for {0}: {1:.3f}'.format(message, t1 - t0))

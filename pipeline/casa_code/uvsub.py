@@ -25,8 +25,8 @@ Perform the UV Subtraction
 import logging
 import os
 
-from casa_code.casa_common import parse_args
-from casa_code.echo import echo
+from .casa_common import parse_args
+from .echo import echo
 
 casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')
@@ -94,7 +94,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
           tmp_name=os.path.join(out_dir, out_ms+'.tmp')
           ntt=2
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
-        
+
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
 
         #
@@ -130,7 +130,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
            im.close()
            uvsub(vis=tmp_name, reverse=False)
            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
-        else: 
+        else:
            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
 
     except Exception:

@@ -22,17 +22,17 @@
 """
 
 """
+import argparse
 import fnmatch
 import logging
-import argparse
-import os
 from os import walk
 from os.path import exists, isdir, join, split
 
 import boto3
+import os
 from boto3.s3.transfer import S3Transfer, TransferConfig
 
-from aws_chiles02.common import run_command, ProgressPercentage, bytes2human
+from .common import ProgressPercentage, bytes2human, run_command
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.INFO)

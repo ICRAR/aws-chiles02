@@ -24,11 +24,12 @@
 """
 Check the CVEL output
 """
-import logging
 import argparse
+import logging
+
 import boto3
 
-from aws_chiles02.common import get_list_frequency_groups, set_logging_level
+from .common import get_list_frequency_groups, set_logging_level
 
 LOG = logging.getLogger(__name__)
 

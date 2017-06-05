@@ -28,7 +28,7 @@ import time
 
 import boto3
 
-from aws_chiles02.settings_file import AWS_SUBNETS, AWS_SECURITY_GROUPS, AWS_KEY_NAME
+from .settings_file import AWS_KEY_NAME, AWS_SECURITY_GROUPS, AWS_SUBNETS
 
 LOG = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class EC2Controller(object):
                             LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
                             instance_ids[count] = None
                         count += 1
-                    time.sleep(10)
+                    time.sleep(20)
 
             if self._tags is not None:
                 valid_instance_ids = filter(lambda x: x != 'failed' and x != 'cancelled', instance_ids)

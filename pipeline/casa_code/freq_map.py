@@ -21,7 +21,7 @@
 #
 import logging
 
-from casa_code.echo import echo
+from .echo import echo
 
 LOG = logging.getLogger(__name__)
 

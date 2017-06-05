@@ -27,7 +27,7 @@ import logging
 
 import boto3
 
-from aws_chiles02.common import bytes2human
+from .common import bytes2human
 
 LOG = logging.getLogger(__name__)
 

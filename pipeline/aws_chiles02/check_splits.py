@@ -22,14 +22,14 @@
 """
 Check the splits
 """
+import argparse
+import collections
 import logging
 
-import argparse
 import boto3
-import collections
 
-from aws_chiles02.common import get_list_frequency_groups, FrequencyPair, set_logging_level
-from aws_chiles02.generate_mstransform_graph import MeasurementSetData
+from .common import FrequencyPair, get_list_frequency_groups, set_logging_level
+from .generate_mstransform_graph import MeasurementSetData
 
 LOG = logging.getLogger(__name__)
 

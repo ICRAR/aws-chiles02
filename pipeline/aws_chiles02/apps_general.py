@@ -22,18 +22,18 @@
 """
 My Docker Apps
 """
-import jsonpickle
 import logging
-import os
 import shutil
 import sqlite3
 
 import boto3
+import jsonpickle
+import os
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.common import run_command, ProgressPercentage
-from aws_chiles02.settings_file import AWS_REGION
-from dfms.drop import BarrierAppDROP, FileDROP, DirectoryContainer
+from dfms.drop import BarrierAppDROP, DirectoryContainer, FileDROP
+from .common import ProgressPercentage, run_command
+from .settings_file import AWS_REGION
 
 LOG = logging.getLogger(__name__)
 

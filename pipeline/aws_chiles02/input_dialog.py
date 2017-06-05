@@ -22,10 +22,11 @@
 """
 The Tkinter dialogs
 """
-import os
-from Tkinter import *
 import ttk
+from Tkinter import *
 from abc import ABCMeta
+
+import os
 from configobj import ConfigObj
 
 

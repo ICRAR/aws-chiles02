@@ -22,15 +22,16 @@
 """
 The abstract graph builder
 """
-import jsonpickle
-import os
 import uuid
 from abc import ABCMeta, abstractmethod
 
-from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters
-from aws_chiles02.common import get_module_name
+import jsonpickle
+import os
+
+from .apps_general import CopyLogFilesApp, CopyParameters
+from .common import get_module_name
 from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict, DirectoryContainer, BarrierAppDROP
+from dfms.drop import BarrierAppDROP, DirectoryContainer, dropdict
 
 
 class AbstractBuildGraph:

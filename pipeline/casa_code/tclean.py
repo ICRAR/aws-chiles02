@@ -25,8 +25,8 @@ Perform the Clean
 import logging
 import os
 
-from casa_code.casa_common import parse_args
-from casa_code.echo import echo
+from .casa_common import parse_args
+from .echo import echo
 
 casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')

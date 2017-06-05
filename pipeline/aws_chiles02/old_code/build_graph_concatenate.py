@@ -23,10 +23,10 @@
 Build the physical graph
 """
 import boto3
-
 from aws_chiles02.apps_concatenate import CopyConcatenateFromS3, CopyConcatenateToS3, DockerImageconcat
-from aws_chiles02.common import get_module_name
+
 from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 

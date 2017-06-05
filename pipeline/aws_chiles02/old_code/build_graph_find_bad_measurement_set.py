@@ -24,9 +24,9 @@ Build the physical graph
 """
 import boto3
 
-from aws_chiles02.apps_clean import DockerClean, CopyCleanFromS3
-from aws_chiles02.common import get_module_name
+from aws_chiles02.apps_clean import CopyCleanFromS3, DockerClean
 from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
