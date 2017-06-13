@@ -43,7 +43,7 @@ SCAN = Table(
     'scan',
     METADATA,
     Column('scan_id', BigInteger, primary_key=True),
-    Column('observation_id', BigInteger, ForeignKey('layer.layer_id'), nullable=False),
+    Column('observation_id', BigInteger, ForeignKey('observation.observation_id'), nullable=False),
     Column('scan_number', Integer, nullable=False),
     Column('begin_time', Float, nullable=False),
     Column('end_time', Float, nullable=False),

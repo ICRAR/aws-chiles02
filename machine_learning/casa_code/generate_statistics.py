@@ -224,7 +224,7 @@ def parse_args():
     parser = argparse.ArgumentParser('Get the arguments')
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
-    parser.add_argument('arguments', nargs='+', help='the arguments')
+    # parser.add_argument('arguments', nargs='*', help='the arguments')
 
     parser.add_argument('--nologger', action="store_true")
     parser.add_argument('--log2term', action="store_true")
