@@ -33,9 +33,9 @@ import boto3
 from s3transfer import S3Transfer
 from sqlalchemy import create_engine
 
-from .common import ProgressPercentage, run_command, stopwatch
-from .database import DATABASE_PATH, METADATA, OBSERVATION, SCAN, SQLITE
-from .get_statistics import GetStatistics
+from casa_code.common import ProgressPercentage, run_command, stopwatch
+from casa_code.database import DATABASE_PATH, METADATA, OBSERVATION, SCAN, SQLITE
+from casa_code.get_statistics import GetStatistics
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = '/mnt/data/tar_file.tar'
@@ -235,7 +235,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and __package__ is None:
     logging.basicConfig(level=logging.INFO)
 
     args = parse_args()

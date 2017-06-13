@@ -25,6 +25,7 @@ Common code to
 import contextlib
 import getpass
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -33,10 +34,9 @@ import uuid
 from cStringIO import StringIO
 from os.path import expanduser, join
 
-import os
 from configobj import ConfigObj
 
-from .settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
+from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR
 
 NOT_TTY = 'not tty terminal'
 TTY = 'tty'

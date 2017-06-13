@@ -28,8 +28,8 @@ import logging
 
 import boto3
 
-from .common import FrequencyPair, get_list_frequency_groups, set_logging_level
-from .generate_mstransform_graph import MeasurementSetData
+from aws_chiles02.common import FrequencyPair, get_list_frequency_groups, set_logging_level
+from aws_chiles02.generate_mstransform_graph import MeasurementSetData
 
 LOG = logging.getLogger(__name__)
 

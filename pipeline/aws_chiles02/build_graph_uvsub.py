@@ -22,12 +22,12 @@
 """
 Build the physical graph
 """
-from .apps_general import CleanupDirectories
-from .apps_stats import CopyStatsToS3, DockerStats
-from .apps_uvsub import CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub
-from .build_graph_common import AbstractBuildGraph
-from .common import get_module_name
-from .settings_file import CONTAINER_CHILES02
+from aws_chiles02.apps_general import CleanupDirectories
+from aws_chiles02.apps_stats import CopyStatsToS3, DockerStats
+from aws_chiles02.apps_uvsub import CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub
+from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
+from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
 class CarryOverDataUvsub:

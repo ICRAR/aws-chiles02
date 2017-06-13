@@ -30,7 +30,7 @@ from os.path import dirname, join
 
 from mako.lookup import TemplateLookup
 
-from .settings_file import AWS_REGION, QUEUE
+from aws_chiles02.settings_file import AWS_REGION, QUEUE
 
 LOG = logging.getLogger(__name__)
 

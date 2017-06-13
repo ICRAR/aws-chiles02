@@ -22,13 +22,14 @@
 """
 Build the physical graph
 """
-import boto3
 import os
 
-from .apps_jpeg2000 import CopyFitsFromS3, CopyJpeg2000ToS3
-from .build_graph_common import AbstractBuildGraph
-from .common import get_module_name
-from .settings_file import CONTAINER_SV
+import boto3
+
+from aws_chiles02.apps_jpeg2000 import CopyFitsFromS3, CopyJpeg2000ToS3
+from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
+from aws_chiles02.settings_file import CONTAINER_SV
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
 

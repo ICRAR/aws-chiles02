@@ -23,9 +23,9 @@
 My Docker Apps
 """
 import logging
+import os
 
 import boto3
-import os
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling

@@ -23,10 +23,9 @@
 My Docker Apps
 """
 import logging
-
 import os
 
-from .apps_general import ErrorHandling
+from aws_chiles02.apps_general import ErrorHandling
 from dfms.apps.dockerapp import DockerApp
 
 LOG = logging.getLogger(__name__)

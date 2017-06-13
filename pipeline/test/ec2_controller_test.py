@@ -22,9 +22,9 @@
 """
 Test the Boto3 EC2 controller
 """
+import argparse
 import base64
 import logging
-import argparse
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 

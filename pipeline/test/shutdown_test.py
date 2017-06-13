@@ -22,11 +22,11 @@
 """
 Test shutting down a server from DFMS
 """
+import argparse
 import json
 import logging
-import argparse
 
-from aws_chiles02.common import get_uuid, get_module_name, get_session_id
+from aws_chiles02.common import get_module_name, get_session_id, get_uuid
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.drop import dropdict
 from dfms.droputils import get_roots

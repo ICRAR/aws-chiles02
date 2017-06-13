@@ -32,7 +32,7 @@ from configobj import ConfigObj
 from aws_chiles02.common import make_groups_of_frequencies
 from dfms import droputils
 from dfms.apps.dockerapp import DockerApp
-from dfms.drop import FileDROP, BarrierAppDROP, DirectoryContainer
+from dfms.drop import BarrierAppDROP, DirectoryContainer, FileDROP
 from mock.s3_drop import MockS3DROP
 
 logging.basicConfig(level=logging.DEBUG)

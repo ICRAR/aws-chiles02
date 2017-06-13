@@ -27,10 +27,10 @@ import getpass
 import httplib
 import json
 import logging
+import os
 import sys
 from time import sleep
 
-import os
 from aws_chiles02.build_graph_concatenate import BuildGraphConcatenation
 from configobj import ConfigObj
 

@@ -22,10 +22,10 @@
 """
 
 """
-import os
 import argparse
+import os
 
-from .echo import echo
+from casa_code.echo import echo
 
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 

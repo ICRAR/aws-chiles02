@@ -28,7 +28,7 @@ import time
 
 import boto3
 
-from .settings_file import AWS_REGION, QUEUE
+from aws_chiles02.settings_file import AWS_REGION, QUEUE
 
 LOG = logging.getLogger(__name__)
 

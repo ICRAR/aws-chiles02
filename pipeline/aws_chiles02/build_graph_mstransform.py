@@ -23,13 +23,12 @@
 Build the physical graph
 """
 import operator
-
 import os
 
-from .apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform
-from .build_graph_common import AbstractBuildGraph
-from .common import get_module_name, get_observation, make_groups_of_frequencies
-from .settings_file import CONTAINER_CHILES02, SIZE_1GB
+from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform
+from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
+from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
 
 
 class CarryOverDataMsTransform:

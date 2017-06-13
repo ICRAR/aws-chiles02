@@ -27,7 +27,7 @@ write_files:
     permissions: "0544"
     owner: "root"
     content: |
-      VG=dfms-group
+      VG=daliuge-group
       DATA_SIZE=100GB
 % endif
   - path: "/root/.aws/credentials"

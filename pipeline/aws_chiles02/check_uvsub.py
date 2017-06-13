@@ -27,9 +27,9 @@ from os.path import exists, split
 
 from configobj import ConfigObj
 
-from .common import get_input_mode
-from .generate_uvsub_graph import WorkToDo, get_s3_split_name
-from .get_argument import GetArguments
+from aws_chiles02.common import get_input_mode
+from aws_chiles02.generate_uvsub_graph import WorkToDo, get_s3_split_name
+from aws_chiles02.get_argument import GetArguments
 
 LOG = logging.getLogger(__name__)
 

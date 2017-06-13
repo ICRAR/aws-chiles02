@@ -32,7 +32,7 @@ import logging
 
 import boto3
 
-from .common import set_logging_level
+from aws_chiles02.common import set_logging_level
 from constants import utc
 
 LOG = logging.getLogger(__name__)

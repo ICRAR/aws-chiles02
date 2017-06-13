@@ -25,14 +25,14 @@
 import argparse
 import fnmatch
 import logging
+import os
 from os import walk
 from os.path import exists, isdir, join, split
 
 import boto3
-import os
 from boto3.s3.transfer import S3Transfer, TransferConfig
 
-from .common import ProgressPercentage, bytes2human, run_command
+from aws_chiles02.common import ProgressPercentage, bytes2human, run_command
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.INFO)

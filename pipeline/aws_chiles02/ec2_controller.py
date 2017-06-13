@@ -28,7 +28,7 @@ import time
 
 import boto3
 
-from .settings_file import AWS_KEY_NAME, AWS_SECURITY_GROUPS, AWS_SUBNETS
+from aws_chiles02.settings_file import AWS_KEY_NAME, AWS_SECURITY_GROUPS, AWS_SUBNETS
 
 LOG = logging.getLogger(__name__)
 

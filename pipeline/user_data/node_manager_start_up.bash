@@ -35,21 +35,21 @@ build_raid () {
     mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$drive_count $drives
     blockdev --setra 65536 /dev/md0
     pvcreate /dev/md0
-    vgcreate dfms-group /dev/md0
+    vgcreate daliuge-group /dev/md0
   else
     pvcreate $drives
-    vgcreate dfms-group $drives
+    vgcreate daliuge-group $drives
   fi
-  lvcreate -L 20G --name swap dfms-group
+  lvcreate -L 20G --name swap daliuge-group
   docker-storage-setup
-  lvcreate --extents 100%FREE --name data dfms-group
+  lvcreate --extents 100%FREE --name data daliuge-group
 
-  mkfs.xfs -K /dev/dfms-group/data
-  mkdir -p /mnt/dfms
-  mount /dev/dfms-group/data /mnt/dfms
+  mkfs.xfs -K /dev/daliuge-group/data
+  mkdir -p /mnt/daliuge
+  mount /dev/daliuge-group/data /mnt/daliuge
 
-  mkswap /dev/dfms-group/swap
-  swapon /dev/dfms-group/swap
+  mkswap /dev/daliuge-group/swap
+  swapon /dev/daliuge-group/swap
 }
 
 if [ -b "/dev/nvme0n1" ]; then
@@ -121,10 +121,10 @@ elif [ -b "/dev/xvdb" ]; then
     build_raid $ephemeral_count $drives
 
   else
-    mkdir -p /mnt/dfms
+    mkdir -p /mnt/daliuge
     mkfs.xfs -K /dev/xvdb
 
-    mount /dev/xvdb /mnt/dfms
+    mount /dev/xvdb /mnt/daliuge
     dd if=/dev/zero of=/mnt/swapfile bs=1M count=1024
     mkswap /mnt/swapfile
     swapon /mnt/swapfile
@@ -137,9 +137,9 @@ df -h
 # More file handles
 ulimit -n 20480
 
-# Create the DFMS root
-mkdir -p /mnt/dfms/dfms_root
-chmod -R 0777 /mnt/dfms
+# Create the daliuge root
+mkdir -p /mnt/daliuge/dfms_root
+chmod -R 0777 /mnt/daliuge
 
 rm -rf /var/lib/docker
 service docker start
@@ -165,13 +165,13 @@ docker run jtmalarecki/sv /bin/echo 'Hello sv container'
 % endif
 
 cd /home/ec2-user
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && git pull'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && git pull'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && git pull'
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && python setup.py install'
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 
 cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dlg nm --daemon -${log_level} --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/dfms/dfms_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && dlg nm --daemon -${log_level} --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/daliuge/dfms_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
 sleep 10
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py ${queue} ${region} "${uuid}"'

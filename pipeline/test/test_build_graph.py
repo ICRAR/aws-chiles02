@@ -24,7 +24,7 @@ Test the building of graphs
 """
 import unittest
 
-from aws_chiles02.common import MeasurementSetData, FrequencyPair
+from aws_chiles02.common import FrequencyPair, MeasurementSetData
 
 
 class TestBuildGraph(unittest.TestCase):

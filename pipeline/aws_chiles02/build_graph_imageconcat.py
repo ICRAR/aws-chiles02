@@ -22,11 +22,11 @@
 """
 Build the physical graph
 """
-from .apps_general import CleanupDirectories
-from .apps_imageconcat import CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, DockerImageconcat
-from .build_graph_common import AbstractBuildGraph
-from .common import get_module_name
-from .settings_file import CONTAINER_CHILES02
+from aws_chiles02.apps_general import CleanupDirectories
+from aws_chiles02.apps_imageconcat import CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, DockerImageconcat
+from aws_chiles02.build_graph_common import AbstractBuildGraph
+from aws_chiles02.common import get_module_name
+from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
 class CarryOverDataImageconcat:

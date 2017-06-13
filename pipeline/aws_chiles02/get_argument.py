@@ -24,7 +24,7 @@ Get command line arguments
 """
 import readline
 
-from .common import TTY
+from aws_chiles02.common import TTY
 
 
 class GetArguments:

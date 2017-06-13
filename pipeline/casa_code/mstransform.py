@@ -26,8 +26,8 @@ import logging
 import os
 import shutil
 
-from .freq_map import freq_map
-from .casa_common import find_file, parse_args
+from casa_code.casa_common import find_file, parse_args
+from casa_code.freq_map import freq_map
 
 casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')

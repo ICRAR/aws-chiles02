@@ -24,7 +24,7 @@
 """
 import logging
 
-from sqlalchemy import MetaData, Column, String, BigInteger, Table, ForeignKey, Integer, Float
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, Integer, MetaData, String, Table
 
 SQLITE = 'sqlite:///'
 DATABASE_PATH = '/mnt/data/scan_statistics.sqlite'

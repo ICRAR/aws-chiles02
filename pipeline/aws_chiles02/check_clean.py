@@ -29,7 +29,7 @@ import logging
 
 import boto3
 
-from .common import get_list_frequency_groups, set_logging_level
+from aws_chiles02.common import get_list_frequency_groups, set_logging_level
 
 LOG = logging.getLogger(__name__)
 
