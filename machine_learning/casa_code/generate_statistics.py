@@ -231,7 +231,6 @@ def parse_args():
     parser.add_argument('--logfile')
     parser.add_argument('-c', '--call')
 
-    LOG.info(args)
     return parser.parse_args()
 
 
@@ -239,6 +238,7 @@ if __name__ == "__main__" and __package__ is None:
     logging.basicConfig(level=logging.INFO)
 
     args = parse_args()
+    LOG.info(args)
 
     generate_statistics = GenerateStatistics(args.bucket_name, args.folder_name)
     try:
