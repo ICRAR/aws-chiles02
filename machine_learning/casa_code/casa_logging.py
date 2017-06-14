@@ -24,10 +24,15 @@
 """
 import sys
 
+try:
+    global casalog
+    a = casalog
+except:
+    import casalog
+
 
 class CasaLogger(object):
     def __init__(self, origin):
-        global casalog
         self._log = casalog
         self._origin = origin
 
