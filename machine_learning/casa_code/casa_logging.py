@@ -25,6 +25,7 @@
 import sys
 
 from taskinit import casalog
+import string
 
 class CasaLogger(object):
     def __init__(self, origin):
