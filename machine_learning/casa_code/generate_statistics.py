@@ -43,8 +43,7 @@ MEASUREMENT_SET_DIR = '/mnt/data/measurement_set'
 
 
 class GenerateStatisticsException(Exception):
-    def __init__(self, message):
-        Exception.__init__(message)
+    pass
 
 
 class GenerateStatistics(object):
