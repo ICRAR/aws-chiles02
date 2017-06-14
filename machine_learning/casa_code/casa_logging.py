@@ -24,20 +24,20 @@
 """
 import sys
 
-from taskinit import casalog
-import string
 
 class CasaLogger(object):
     def __init__(self, origin):
-        self._log = casalog
         self._origin = origin
 
     def info(self, message):
-        self._log.post(message, priority=string("INFO"), origin=self._origin)
+        self._post(message, priority="INFO")
 
     def warning(self, message):
-        self._log.post(message, priority=string("WARNING"), origin=self._origin)
+        self._post(message, priority="WARNING")
 
     def exception(self, message):
         exception_info = sys.exc_info()
-        self._log.post(message + "\n" + exception_info, priority=string("SEVERE"), origin=self._origin)
+        self._post(message + "\n" + exception_info, priority="SEVERE")
+
+    def _post(self, message, priority):
+        print '{0}:{1}:{2}'.format(self._origin, priority, message)
