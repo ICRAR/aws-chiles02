@@ -24,7 +24,7 @@
 """
 import logging
 
-from sqlalchemy import BigInteger, Column, Float, ForeignKey, Integer, MetaData, String, Table
+from sqlalchemy import Column, Float, ForeignKey, Integer, MetaData, String, Table
 
 SQLITE = 'sqlite:///'
 DATABASE_PATH = '/mnt/data/scan_statistics.sqlite'
@@ -35,15 +35,15 @@ METADATA = MetaData()
 OBSERVATION = Table(
     'observation',
     METADATA,
-    Column('observation_id', BigInteger, primary_key=True),
+    Column('observation_id', Integer, primary_key=True),
     Column('description', String(128), nullable=False),
 )
 
 SCAN = Table(
     'scan',
     METADATA,
-    Column('scan_id', BigInteger, primary_key=True),
-    Column('observation_id', BigInteger, ForeignKey('observation.observation_id'), nullable=False),
+    Column('scan_id', Integer, primary_key=True),
+    Column('observation_id', Integer, ForeignKey('observation.observation_id'), nullable=False),
     Column('scan_number', Integer, nullable=False),
     Column('begin_time', Float, nullable=False),
     Column('end_time', Float, nullable=False),
