@@ -33,7 +33,7 @@ LOG = logging.getLogger(__name__)
 METADATA = MetaData()
 
 OBSERVATION = Table(
-    'day',
+    'observation',
     METADATA,
     Column('observation_id', BigInteger, primary_key=True),
     Column('description', String(128), nullable=False),
