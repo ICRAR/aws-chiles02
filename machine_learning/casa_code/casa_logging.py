@@ -27,6 +27,7 @@ import sys
 
 class CasaLogger(object):
     def __init__(self, origin):
+        global casalog
         self._log = casalog
         self._origin = origin
 
