@@ -14,3 +14,4 @@ echo "Create the ~/.aws/credentials file"
 echo "Start casa and run
 from astroplan import download_IERS_A
 download_IERS_A()"
+echo "Add export PYTHONPATH=/home/ec2-user/aws-chiles02/machine_learning to ~/.bashrc"

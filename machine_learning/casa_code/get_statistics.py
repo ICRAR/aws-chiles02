@@ -23,15 +23,13 @@
 Create a CSV of statistics from the Measurement set
 """
 
-# casalog.filter('DEBUGGING')
-import logging
-
 from astroplan import Observer
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
 
-logging.info('Starting logger for...')
-LOG = logging.getLogger(__name__)
+from casa_code.casa_logging import CasaLogger
+
+LOG = CasaLogger(__name__)
 
 
 class GetStatistics(object):

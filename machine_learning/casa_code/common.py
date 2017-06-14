@@ -23,14 +23,15 @@
 
 """
 import contextlib
-import logging
 import os
 import subprocess
 import threading
 import time
 from cStringIO import StringIO
 
-LOG = logging.getLogger(__name__)
+from casa_code.casa_logging import CasaLogger
+
+LOG = CasaLogger(__name__)
 SYMBOLS = {
     'customary': ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'),
     'customary_ext': ('byte', 'kilo', 'mega', 'giga', 'tera', 'peta', 'exa', 'zetta', 'iotta'),

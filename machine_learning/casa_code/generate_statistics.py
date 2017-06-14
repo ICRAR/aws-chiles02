@@ -23,7 +23,6 @@
 
 """
 import argparse
-import logging
 import os
 import shutil
 import time
@@ -33,11 +32,12 @@ import boto3
 from s3transfer import S3Transfer
 from sqlalchemy import create_engine
 
+from casa_code.casa_logging import CasaLogger
 from casa_code.common import ProgressPercentage, run_command, stopwatch
 from casa_code.database import DATABASE_PATH, METADATA, OBSERVATION, SCAN, SQLITE
 from casa_code.get_statistics import GetStatistics
 
-LOG = logging.getLogger(__name__)
+LOG = CasaLogger(__name__)
 TAR_FILE = '/mnt/data/tar_file.tar'
 MEASUREMENT_SET_DIR = '/mnt/data/measurement_set'
 
@@ -234,8 +234,6 @@ def parse_args():
 
 
 if __name__ == "__main__" and __package__ is None:
-    logging.basicConfig(level=logging.INFO)
-
     args = parse_args()
     LOG.info(args)
 

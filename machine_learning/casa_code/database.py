@@ -22,13 +22,11 @@
 """
 
 """
-import logging
 
 from sqlalchemy import Column, Float, ForeignKey, Integer, MetaData, String, Table
 
 SQLITE = 'sqlite:///'
 DATABASE_PATH = '/mnt/data/scan_statistics.sqlite'
-LOG = logging.getLogger(__name__)
 
 METADATA = MetaData()
 
