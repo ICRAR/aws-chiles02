@@ -54,7 +54,7 @@ class GenerateStatistics(object):
 
         self._connection = None
         self._map_observations = {}
-        self._measurement_sets = None
+        self._measurement_sets = []
         self._s3 = None
         self._insert_scan = SCAN.insert()
         self._insert_observation = OBSERVATION.insert()
