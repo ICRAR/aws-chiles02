@@ -120,6 +120,7 @@ fi
 
 # Print free disk space
 df -h
+mkdir -p /mnt/data/measurement_set
 
 cd /home/ec2-user/aws-chiles02/machine_learning/casa_code
 git pull

@@ -37,7 +37,7 @@ class CasaLogger(object):
 
     def exception(self, message):
         exception_info = sys.exc_info()
-        self._post(message + "\n" + exception_info, priority="SEVERE")
+        self._post('{0}\n{1}'.format(message, exception_info), priority="SEVERE")
 
     def _post(self, message, priority):
         print '{0}:{1}:{2}'.format(self._origin, priority, message)
