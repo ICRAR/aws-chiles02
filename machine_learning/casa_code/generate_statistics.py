@@ -32,7 +32,7 @@ import boto3
 from s3transfer import S3Transfer
 from sqlalchemy import create_engine
 
-from casa_code.casa_logging import CasaLogger
+from casa_code.casa_logging import CasaLogger, echo
 from casa_code.common import ProgressPercentage, run_command, stopwatch
 from casa_code.database import DATABASE_PATH, METADATA, OBSERVATION, SCAN, SQLITE
 from casa_code.get_statistics import GetStatistics
@@ -88,6 +88,7 @@ class GenerateStatistics(object):
 
         self.copy_to_s3()
 
+    @echo
     def copy_from_s3(self, measurement_set):
         s3_object = self._s3.Object(self._bucket_name, measurement_set)
         s3_size = s3_object.content_length
@@ -126,6 +127,7 @@ class GenerateStatistics(object):
 
         return measurement_set_path
 
+    @echo
     def add_to_database(self, measurement_set, observation_name):
         transaction = self._connection.begin()
         observation_id = self.get_observation_id(observation_name)
@@ -156,6 +158,7 @@ class GenerateStatistics(object):
         )
 
     @staticmethod
+    @echo
     def get_observation_name(tarred_measurement_set):
         observation_name = splitext(basename(tarred_measurement_set))
         return observation_name
@@ -208,6 +211,7 @@ class GenerateStatistics(object):
 
         )
 
+    @echo
     def get_observation_id(self, observation_name):
         observation_id = self._map_observations.get(observation_name)
         if observation_id is None:
@@ -215,7 +219,7 @@ class GenerateStatistics(object):
             self._map_observations[observation_name] = observation_id
             self._connection.execute(
                 self._insert_scan,
-                id=observation_id,
+                observation_id=observation_id,
                 description=observation_name,
             )
         LOG.info('Obs: {0} - {1}'.format(observation_name, observation_id))
