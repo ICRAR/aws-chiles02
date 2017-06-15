@@ -20,7 +20,7 @@
 #    MA 02111-1307  USA
 #
 """
-
+A fake logger for CASA
 """
 import sys
 
