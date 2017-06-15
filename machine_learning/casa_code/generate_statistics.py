@@ -218,7 +218,7 @@ class GenerateStatistics(object):
             observation_id = len(self._map_observations) + 1
             self._map_observations[observation_name] = observation_id
             self._connection.execute(
-                self._insert_scan,
+                self._insert_observation,
                 observation_id=observation_id,
                 description=observation_name,
             )
