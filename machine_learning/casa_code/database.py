@@ -41,7 +41,7 @@ SCAN = Table(
     'scan',
     METADATA,
     Column('scan_id', Integer, primary_key=True),
-    Column('observation_id', Integer, ForeignKey('observation.observation_id'), nullable=False),
+    Column('observation_id', Integer, nullable=False),
     Column('scan_number', Integer, nullable=False),
     Column('begin_time', Float, nullable=False),
     Column('end_time', Float, nullable=False),
