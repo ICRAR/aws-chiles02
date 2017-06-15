@@ -91,6 +91,7 @@ def upload_data(bucket_name, folder_name, source_folder):
     for filename in listdir(source_folder):
         source_file = join(source_folder, filename)
         key = '{0}/{1}'.format(folder_name, filename)
+        LOG.info('Copying {0} to {1}'.format(source_file, key))
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.upload_file(
@@ -108,6 +109,7 @@ def upload_data(bucket_name, folder_name, source_folder):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser('Get the arguments')
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
