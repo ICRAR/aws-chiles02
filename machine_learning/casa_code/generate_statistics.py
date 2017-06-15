@@ -160,9 +160,10 @@ class GenerateStatistics(object):
     @staticmethod
     @echo
     def get_observation_name(tarred_measurement_set):
-        observation_name = splitext(basename(tarred_measurement_set))
+        (observation_name, _) = splitext(basename(tarred_measurement_set))
         return observation_name
 
+    @echo
     def write_row(self,
                   observation_id,
                   scan_number,
@@ -208,7 +209,6 @@ class GenerateStatistics(object):
             sum=sum,
             sumsq=sumsq,
             var=var,
-
         )
 
     @echo
