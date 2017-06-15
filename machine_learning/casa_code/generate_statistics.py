@@ -124,6 +124,8 @@ class GenerateStatistics(object):
             message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists)
             raise GenerateStatisticsException(message)
 
+        return measurement_set_path
+
     def add_to_database(self, measurement_set, observation_name):
         transaction = self._connection.begin()
         observation_id = self.get_observation_id(observation_name)
