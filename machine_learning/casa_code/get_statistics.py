@@ -119,4 +119,4 @@ class GetStatistics(object):
         right_ascension = self._field_details[field_id]['m0']
         declination = self._field_details[field_id]['m1']
         target = SkyCoord(right_ascension['value'], declination['value'], unit=right_ascension['unit'])
-        return self._observer.target_hour_angle(time, target)
+        return self._observer.target_hour_angle(time, target).to_string(decimal=True)
