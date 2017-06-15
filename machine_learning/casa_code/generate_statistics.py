@@ -218,6 +218,7 @@ class GenerateStatistics(object):
                 id=observation_id,
                 description=observation_name,
             )
+        LOG.info('Obs: {0} - {1}'.format(observation_name, observation_id))
         return observation_id
 
 

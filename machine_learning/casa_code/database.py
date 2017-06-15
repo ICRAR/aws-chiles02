@@ -23,7 +23,7 @@
 
 """
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, MetaData, String, Table
+from sqlalchemy import Column, Float, Integer, MetaData, String, Table
 
 SQLITE = 'sqlite:///'
 DATABASE_PATH = '/mnt/data/scan_statistics.sqlite'
