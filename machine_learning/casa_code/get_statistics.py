@@ -83,7 +83,7 @@ class GetStatistics(object):
                     if vis_stats is not None:
                         frequency = self._get_frequency(spectral_window_number, channel_number)
                         result = vis_stats[vis_stats.keys()[0]]
-                        database_visitor.writerow(
+                        database_visitor.write_row(
                             observation_id,
                             scan_number,
                             begin_time,
