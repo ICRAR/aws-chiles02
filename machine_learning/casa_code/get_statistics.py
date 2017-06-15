@@ -27,9 +27,7 @@ from astroplan import Observer
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
 
-from casa import ms
 from casa_code.casa_logging import CasaLogger
-from task_visstat import visstat
 
 LOG = CasaLogger(__name__)
 
