@@ -23,10 +23,10 @@
 
 """
 import argparse
-import os
 import shutil
 import time
-from os.path import basename, getsize, splitext
+from os import remove
+from os.path import basename, getsize, splitext, join, exists
 
 import boto3
 from s3transfer import S3Transfer
@@ -102,12 +102,12 @@ class GenerateStatistics(object):
                 s3_size
             )
         )
-        if not os.path.exists(TAR_FILE):
+        if not exists(TAR_FILE):
             message = 'The tar file {0} does not exist'.format(TAR_FILE)
             raise GenerateStatisticsException(message)
 
         # Check the sizes match
-        tar_size = os.path.getsize(TAR_FILE)
+        tar_size = getsize(TAR_FILE)
         if s3_size != tar_size:
             message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(TAR_FILE, s3_size, tar_size)
             raise GenerateStatisticsException(message)
@@ -115,9 +115,13 @@ class GenerateStatistics(object):
         # The tar file exists and is the same size
         bash = 'tar -xvf {0} -C {1}'.format(TAR_FILE, MEASUREMENT_SET_DIR)
         return_code = run_command(bash)
-        path_exists = os.path.exists(measurement_set)
+
+        elements = measurement_set.split('/')
+        elements = elements[1].split('_')
+        measurement_set_path = join(MEASUREMENT_SET_DIR, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
+        path_exists = exists(measurement_set_path)
         if return_code != 0 or not path_exists:
-            message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists)
+            message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists)
             raise GenerateStatisticsException(message)
 
     def add_to_database(self, measurement_set, observation_name):
@@ -129,7 +133,7 @@ class GenerateStatistics(object):
 
     @staticmethod
     def delete_processed_data(measurement_set):
-        os.remove(TAR_FILE)
+        remove(TAR_FILE)
         shutil.rmtree(measurement_set)
 
     def copy_to_s3(self):
