@@ -62,7 +62,7 @@ class GetStatistics(object):
         vla = EarthLocation.from_geodetic('107d37m05.819s', '34d04m43.497s', 2124)
         self._observer = Observer(location=vla, timezone=time_ref)
 
-        for scan_number in scan_summary.keys():
+        for scan_number in sorted(scan_summary.keys()):
             begin_time = scan_summary[scan_number]['0']['BeginTime']
             end_time = scan_summary[scan_number]['0']['EndTime']
             field_id = scan_summary[scan_number]['0']['FieldId']
@@ -70,7 +70,7 @@ class GetStatistics(object):
             hour_angle_begin_time = self._get_hour_angle(begin_time, field_id)
             hour_angle_end_time = self._get_hour_angle(end_time, field_id)
 
-            for spectral_window_number in self._spectral_window_info.keys():
+            for spectral_window_number in sorted(self._spectral_window_info.keys()):
                 number_channels = self._spectral_window_info[spectral_window_number]['NumChan']
                 for channel_number in range(0, number_channels):
                     vis_stats = visstat(
