@@ -69,7 +69,13 @@ class GenerateStatistics(object):
         self._insert_scan = SCAN.insert()
 
     def setup(self):
-        makedirs(ROOT_DIR)
+        if not exists(ROOT_DIR):
+            try:
+                makedirs(ROOT_DIR)
+            except OSError as exception:
+                if not exists(ROOT_DIR):
+                    raise exception
+
         session = boto3.Session(profile_name='aws-chiles02')
         self._s3 = session.resource('s3', use_ssl=False)
         engine = create_engine(self._database_login)
