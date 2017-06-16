@@ -90,22 +90,29 @@ def upload_data(bucket_name, folder_name, source_folder):
 
     for filename in listdir(source_folder):
         source_file = join(source_folder, filename)
+        source_file_size = getsize(source_file)
         key = '{0}/{1}'.format(folder_name, filename)
-        LOG.info('Copying {0} to {1}'.format(source_file, key))
-        s3_client = s3.meta.client
-        transfer = S3Transfer(s3_client)
-        transfer.upload_file(
-            source_file,
-            bucket_name,
-            key,
-            callback=ProgressPercentage(
+        LOG.info('Copying {0} ({1}) to {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
+
+        # If it doesn't exist or the size is wrong copy it
+        s3_object = s3.Object(bucket_name, key)
+        if s3_object is None or s3_object.content_length != source_file_size:
+            s3_client = s3.meta.client
+            transfer = S3Transfer(s3_client)
+            transfer.upload_file(
+                source_file,
+                bucket_name,
                 key,
-                float(getsize(source_file))
-            ),
-            extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
-            }
-        )
+                callback=ProgressPercentage(
+                    key,
+                    float(source_file_size)
+                ),
+                extra_args={
+                    'StorageClass': 'REDUCED_REDUNDANCY',
+                }
+            )
+        else:
+            LOG.info('File {0} ({1}) exists as {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
 
 
 if __name__ == "__main__":
