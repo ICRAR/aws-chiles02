@@ -1,6 +1,6 @@
 #!/bin/sh
 #PBS -N pbs-generate-statistics
-#PBS -l nodes=1:ppn=1:compute,walltime=12:00:00
+#PBS -l nodes=1:ppn=2:compute,walltime=48:00:00
 #PBS -t 1-4937
 #PBS -q usmall
 # usmall is 32 items on the queue usmall2 is 8
