@@ -1,4 +1,5 @@
 astroplan
 astropy
 boto3
+configobj
 sqlalchemy

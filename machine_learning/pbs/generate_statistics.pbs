@@ -7,5 +7,5 @@
 #PBS -j oe
 
 cd /home/kevin/aws-chiles02/machine_learning/casa_code
-/mnt/science1/kevin/casa-release-4.7.2-el6/bin/
-13b-266 uvsub_deep_2017_05_25 ${PBS_ARRAYID}
+export PYTHONPATH=/home/kevin/aws-chiles02/machine_learning
+/mnt/science1/kevin/casa-release-4.7.2-el6/bin/casa --nologger --log2term -c generate_statistics.py 13b-266 uvsub_deep_2017_05_25 ${PBS_ARRAYID}

@@ -7,7 +7,7 @@ tar -xvf casa-release-4.7.2-el6.tar.gz
 rm casa-release-4.7.2-el6.tar.gz
 ~/casa-release-4.7.2-el6/bin/casa--nologger --log2term
 curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | ~/casa-release-4.7.2-el6/bin/python
-~/casa-release-4.7.2-el6/bin/pip install astroplan astropy
+~/casa-release-4.7.2-el6/bin/pip install astroplan astropy boto3 configobj sqlalchemy
 
 
 echo "Create the ~/.aws/credentials file"

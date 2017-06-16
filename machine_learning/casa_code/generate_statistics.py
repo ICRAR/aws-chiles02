@@ -202,6 +202,8 @@ def parse_args():
     This is called via Casa so we have to be a bit careful
     :return:
     """
+    path_dirname, _ = split(abspath(__file__))
+    settings_file_name = join(path_dirname, 'scan.settings')
     parser = argparse.ArgumentParser()
     parser.add_argument('--nologger', action="store_true")
     parser.add_argument('--log2term', action="store_true")
@@ -210,6 +212,7 @@ def parse_args():
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
     parser.add_argument('task_id', type=int)
+    parser.add_argument('--settings_file', help='The settings file', default=settings_file_name)
 
     return parser.parse_args()
 
@@ -219,15 +222,13 @@ if __name__ == "__main__":
     LOG.info(args)
 
     # Check the settings file exists
-    path_dirname, _ = split(abspath(__file__))
-    settings_file_name = join(path_dirname, 'scan.settings')
-    if not exists(settings_file_name):
-        raise RuntimeError('No configuration file {0}'.format(settings_file_name))
+    if not exists(args.settings_file_name):
+        raise RuntimeError('No configuration file {0}'.format(args.settings_file_name))
 
     LOG.info('PYTHONPATH = {0}'.format(sys.path))
 
     keyword_dictionary = vars(args)
-    keyword_dictionary.update(ConfigObj(settings_file_name))
+    keyword_dictionary.update(ConfigObj(args.settings_file_name))
 
     LOG.debug('args: {0}'.format(keyword_dictionary))
     generate_stats = GenerateStatistics(**keyword_dictionary)
