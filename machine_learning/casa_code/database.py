@@ -23,10 +23,7 @@
 
 """
 
-from sqlalchemy import Column, Float, Integer, MetaData, String, Table
-
-SQLITE = 'sqlite:///'
-DATABASE_PATH = '/mnt/data/scan_statistics.sqlite'
+from sqlalchemy import Column, Float, ForeignKey, Integer, MetaData, String, Table
 
 METADATA = MetaData()
 
@@ -40,8 +37,8 @@ OBSERVATION = Table(
 SCAN = Table(
     'scan',
     METADATA,
-    Column('scan_id', Integer, primary_key=True),
-    Column('observation_id', Integer, index=True, nullable=False),
+    Column('scan_id', Integer, primary_key=True, autoincrement=True),
+    Column('observation_id', Integer, ForeignKey('observation.observation_id'), nullable=False),
     Column('scan_number', Integer, index=True, nullable=False),
     Column('begin_time', Float, index=True, nullable=False),
     Column('end_time', Float, index=True, nullable=False),
@@ -62,5 +59,16 @@ SCAN = Table(
     Column('sum', Float, nullable=False),
     Column('sumsq', Float, nullable=False),
     Column('var', Float, nullable=False),
-    sqlite_autoincrement=True,
 )
+
+TASK = Table(
+    'task',
+    METADATA,
+    Column('task_id', Integer, primary_key=True, autoincrement=True),
+    Column('observation_id', Integer, ForeignKey('observation.observation_id'), nullable=False),
+    Column('s3_key', String(256), nullable=False),
+    Column('status', Integer, nullable=False),
+)
+
+TASK_NOT_PROCESSED = 0
+TASK_PROCESSED = 1

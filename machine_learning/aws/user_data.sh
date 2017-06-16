@@ -125,4 +125,4 @@ mkdir -p /mnt/data/measurement_set
 cd /home/ec2-user/aws-chiles02/machine_learning/casa_code
 git pull
 
-sudo shutdown -h +5 "All done!"
+#sudo shutdown -h +5 "All done!"

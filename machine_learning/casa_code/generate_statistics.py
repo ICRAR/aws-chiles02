@@ -24,22 +24,22 @@
 """
 import argparse
 import shutil
-import time
-from os import remove
-from os.path import basename, getsize, splitext, join, exists
+import sys
+from os import makedirs
+from os.path import abspath, exists, getsize, join, split
 
 import boto3
+from configobj import ConfigObj
 from s3transfer import S3Transfer
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 
 from casa_code.casa_logging import CasaLogger, echo
 from casa_code.common import ProgressPercentage, run_command, stopwatch
-from casa_code.database import DATABASE_PATH, METADATA, OBSERVATION, SCAN, SQLITE
+from casa_code.database import SCAN, TASK
 from casa_code.get_statistics import GetStatistics
 
 LOG = CasaLogger(__name__)
-TAR_FILE = '/mnt/data/tar_file.tar'
-MEASUREMENT_SET_DIR = '/mnt/data/measurement_set'
+ROOT_DIR = '/mnt/ssd01/lscratch/kevin'
 
 
 class GenerateStatisticsException(Exception):
@@ -47,49 +47,54 @@ class GenerateStatisticsException(Exception):
 
 
 class GenerateStatistics(object):
-    def __init__(self, bucket_name, folder_name):
-        self._bucket_name = bucket_name
-        self._folder_name = folder_name
+    def __init__(self, **keywords):
+        for arg in ['database_user',
+                    'database_password',
+                    'database_hostname',
+                    'database_name',
+                    'bucket_name',
+                    'folder_name',
+                    'run_id']:
+            if keywords.get(arg) is None:
+                raise RuntimeError('Missing the keyword {0}'.format(arg))
 
+        self._bucket_name = keywords['bucket_name']
+        self._folder_name = keywords['folder_name']
+        self._run_id = keywords['run_id']
+        self._database_login = 'mysql+pymysql://{0}:{1}@{2}/{3}'.format(keywords['database_user'], keywords['database_password'], keywords['database_hostname'], keywords['database_name'])
+        self._run_id = keywords['run_id']
         self._connection = None
-        self._map_observations = {}
-        self._measurement_sets = []
         self._s3 = None
+        self._observation_id = None
+        self._s3_key = None
         self._insert_scan = SCAN.insert()
-        self._insert_observation = OBSERVATION.insert()
 
-    def create_database(self):
-        engine = create_engine(SQLITE + DATABASE_PATH)
-
-        # Create the database and import data
-        METADATA.create_all(engine)
-        self._connection = engine.connect()
-
-    def get_list_measurement_sets(self):
+    def setup(self):
         session = boto3.Session(profile_name='aws-chiles02')
         self._s3 = session.resource('s3', use_ssl=False)
+        engine = create_engine(self._database_login)
+        self._connection = engine.connect()
 
-        bucket = self._s3.Bucket(self._bucket_name)
+        row = self._connection(select([TASK])).where(TASK.c.task_id == self._run_id).fetchone()
+        self._observation_id = row[TASK.c.observation_id]
+        self._s3_key = row[TASK.c.s3_key]
 
-        for key in bucket.objects.filter(Prefix='{0}'.format(self._folder_name)):
-            self._measurement_sets.append(key.key)
+        makedirs(ROOT_DIR)
 
     def run(self):
-        self.create_database()
-        self.get_list_measurement_sets()
+        self.setup()
 
-        for tarred_measurement_set in self._measurement_sets:
-            with stopwatch('Copy from S3'):
-                measurement_set = self.copy_from_s3(tarred_measurement_set)
-            with stopwatch('Add to database'):
-                observation_name = self.get_observation_name(tarred_measurement_set)
-                self.add_to_database(measurement_set, observation_name)
-            self.delete_processed_data(measurement_set)
-
-        self.copy_to_s3()
+        with stopwatch('Copy from S3'):
+            measurement_set, temp_directory = self.copy_from_s3(self._s3_key)
+        with stopwatch('Add to database'):
+            self.add_to_database(measurement_set)
+        self.delete_processed_data(temp_directory)
 
     @echo
     def copy_from_s3(self, measurement_set):
+        temp_directory = join(ROOT_DIR, 'run_{0}'.format(self._run_id))
+        makedirs(temp_directory)
+        tar_file = join(temp_directory, 'tar_file.tar')
         s3_object = self._s3.Object(self._bucket_name, measurement_set)
         s3_size = s3_object.content_length
         s3_client = self._s3.meta.client
@@ -97,71 +102,46 @@ class GenerateStatistics(object):
         transfer.download_file(
             self._bucket_name,
             measurement_set,
-            TAR_FILE,
+            tar_file,
             callback=ProgressPercentage(
                 measurement_set,
                 s3_size
             )
         )
-        if not exists(TAR_FILE):
-            message = 'The tar file {0} does not exist'.format(TAR_FILE)
+        if not exists(tar_file):
+            message = 'The tar file {0} does not exist'.format(tar_file)
             raise GenerateStatisticsException(message)
 
         # Check the sizes match
-        tar_size = getsize(TAR_FILE)
+        tar_size = getsize(tar_file)
         if s3_size != tar_size:
-            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(TAR_FILE, s3_size, tar_size)
+            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(tar_file, s3_size, tar_size)
             raise GenerateStatisticsException(message)
 
         # The tar file exists and is the same size
-        bash = 'tar -xvf {0} -C {1}'.format(TAR_FILE, MEASUREMENT_SET_DIR)
+        bash = 'tar -xvf {0} -C {1}'.format(tar_file, temp_directory)
         return_code = run_command(bash)
 
         elements = measurement_set.split('/')
         elements = elements[1].split('_')
-        measurement_set_path = join(MEASUREMENT_SET_DIR, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
+        measurement_set_path = join(temp_directory, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
         path_exists = exists(measurement_set_path)
         if return_code != 0 or not path_exists:
             message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists)
             raise GenerateStatisticsException(message)
 
-        return measurement_set_path
+        return measurement_set_path, temp_directory
 
     @echo
-    def add_to_database(self, measurement_set, observation_name):
+    def add_to_database(self, measurement_set):
         transaction = self._connection.begin()
-        observation_id = self.get_observation_id(observation_name)
         get_statistics = GetStatistics(measurement_set)
-        get_statistics.extract_statistics(self, observation_id)
+        get_statistics.extract_statistics(self, self._observation_id)
         transaction.commit()
 
     @staticmethod
-    def delete_processed_data(measurement_set):
-        remove(TAR_FILE)
-        shutil.rmtree(measurement_set)
-
-    def copy_to_s3(self):
-        key = 'statistics/{0}'.format(time.strftime('%Y%m%d%H%M%S'))
-        s3_client = self._s3.meta.client
-        transfer = S3Transfer(s3_client)
-        transfer.upload_file(
-            DATABASE_PATH,
-            self._bucket_name,
-            key,
-            callback=ProgressPercentage(
-                key,
-                float(getsize(DATABASE_PATH))
-            ),
-            extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
-            }
-        )
-
-    @staticmethod
-    @echo
-    def get_observation_name(tarred_measurement_set):
-        (observation_name, _) = splitext(basename(tarred_measurement_set))
-        return observation_name
+    def delete_processed_data(temp_directory):
+        shutil.rmtree(temp_directory)
 
     @echo
     def write_row(self,
@@ -211,45 +191,43 @@ class GenerateStatistics(object):
             var=var,
         )
 
-    @echo
-    def get_observation_id(self, observation_name):
-        observation_id = self._map_observations.get(observation_name)
-        if observation_id is None:
-            observation_id = len(self._map_observations) + 1
-            self._map_observations[observation_name] = observation_id
-            self._connection.execute(
-                self._insert_observation,
-                observation_id=observation_id,
-                description=observation_name,
-            )
-        LOG.info('Obs: {0} - {1}'.format(observation_name, observation_id))
-        return observation_id
-
 
 def parse_args():
     """
     This is called via Casa so we have to be a bit careful
     :return:
     """
-    parser = argparse.ArgumentParser('Get the arguments')
-    parser.add_argument('bucket_name', help='the bucket name')
-    parser.add_argument('folder_name', help='the folder in the bucket with the data')
-    # parser.add_argument('arguments', nargs='*', help='the arguments')
-
+    parser = argparse.ArgumentParser()
     parser.add_argument('--nologger', action="store_true")
     parser.add_argument('--log2term', action="store_true")
     parser.add_argument('--logfile')
     parser.add_argument('-c', '--call')
+    parser.add_argument('bucket_name', help='the bucket name')
+    parser.add_argument('folder_name', help='the folder in the bucket with the data')
+    parser.add_argument('run_id', type=int)
 
     return parser.parse_args()
 
 
-if __name__ == "__main__" and __package__ is None:
+if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    generate_statistics = GenerateStatistics(args.bucket_name, args.folder_name)
+    # Check the settings file exists
+    path_dirname, _ = split(abspath(__file__))
+    settings_file_name = join(path_dirname, 'scan.settings')
+    if not exists(settings_file_name):
+        raise RuntimeError('No configuration file {0}'.format(settings_file_name))
+
+    LOG.info('PYTHONPATH = {0}'.format(sys.path))
+
+    keyword_dictionary = vars(args)
+    keyword_dictionary.update(ConfigObj(settings_file_name))
+
+    LOG.debug('args: {0}'.format(keyword_dictionary))
+    generate_stats = GenerateStatistics(**keyword_dictionary)
     try:
-        generate_statistics.run()
+        generate_stats.run()
     except GenerateStatisticsException:
         LOG.exception('GenerateStatisticsException')
+    LOG.info('All done.')

@@ -29,6 +29,9 @@ class CasaLogger(object):
     def __init__(self, origin):
         self._origin = origin
 
+    def debug(self, message):
+        self._post(message, priority="DEBUG")
+
     def info(self, message):
         self._post(message, priority="INFO")
 

@@ -1,6 +1,7 @@
 astroplan
 astropy
 boto3
+configobj
 matplotlib
 numpy
 pandas
