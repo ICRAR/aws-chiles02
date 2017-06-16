@@ -61,7 +61,12 @@ class GenerateStatistics(object):
         self._bucket_name = keywords['bucket_name']
         self._folder_name = keywords['folder_name']
         self._task_id = keywords['task_id']
-        self._database_login = 'mysql+pymysql://{0}:{1}@{2}/{3}'.format(keywords['database_user'], keywords['database_password'], keywords['database_hostname'], keywords['database_name'])
+        self._database_login = 'mysql+pymysql://{0}:{1}@{2}/{3}'.format(
+            keywords['database_user'],
+            keywords['database_password'],
+            keywords['database_hostname'],
+            keywords['database_name']
+        )
         self._connection = None
         self._s3 = None
         self._observation_id = None
@@ -81,7 +86,7 @@ class GenerateStatistics(object):
         engine = create_engine(self._database_login)
         self._connection = engine.connect()
 
-        row = self._connection(select([TASK])).where(TASK.c.task_id == self._task_id).fetchone()
+        row = self._connection.execute(select([TASK]).where(TASK.c.task_id == self._task_id)).fetchone()
         self._task_id = row[TASK.c.task_id]
         self._observation_id = row[TASK.c.observation_id]
         self._s3_key = row[TASK.c.s3_key]
