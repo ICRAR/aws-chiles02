@@ -97,7 +97,7 @@ def upload_data(bucket_name, folder_name, source_folder):
 
         # If it doesn't exist or the size is wrong copy it
         s3_objects = list(bucket.objects.filter(Prefix=key))
-        if len(s3_objects) > 0 and s3_objects[0].key == key and s3_objects[0].content_length == source_file_size:
+        if len(s3_objects) > 0 and s3_objects[0].key == key and s3_objects[0].size == source_file_size:
             LOG.info('File {0} ({1}) exists as {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
         else:
             s3_client = s3.meta.client
