@@ -212,7 +212,7 @@ def parse_args():
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
     parser.add_argument('task_id', type=int)
-    parser.add_argument('--settings_file', help='The settings file', default=settings_file_name)
+    parser.add_argument('--settings_file_name', help='The settings file', default=settings_file_name)
 
     return parser.parse_args()
 
