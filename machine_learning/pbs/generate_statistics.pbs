@@ -1,0 +1,11 @@
+#!/bin/sh
+#PBS -N pbs-generate-statistics
+#PBS -l nodes=1:ppn=1:compute,walltime=12:00:00
+#PBS -t 1-4937
+#PBS -q usmall
+# usmall is 32 items on the queue usmall2 is 8
+#PBS -j oe
+
+cd /home/kevin/aws-chiles02/machine_learning/casa_code
+/mnt/science1/kevin/casa-release-4.7.2-el6/bin/
+13b-266 uvsub_deep_2017_05_25 ${PBS_ARRAYID}

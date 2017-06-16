@@ -35,7 +35,7 @@ from sqlalchemy import create_engine, select
 
 from casa_code.casa_logging import CasaLogger, echo
 from casa_code.common import ProgressPercentage, run_command, stopwatch
-from casa_code.database import SCAN, TASK
+from casa_code.database import SCAN, TASK, TASK_NOT_PROCESSED, TASK_PROCESSED
 from casa_code.get_statistics import GetStatistics
 
 LOG = CasaLogger(__name__)
@@ -54,15 +54,14 @@ class GenerateStatistics(object):
                     'database_name',
                     'bucket_name',
                     'folder_name',
-                    'run_id']:
+                    'task_id']:
             if keywords.get(arg) is None:
                 raise RuntimeError('Missing the keyword {0}'.format(arg))
 
         self._bucket_name = keywords['bucket_name']
         self._folder_name = keywords['folder_name']
-        self._run_id = keywords['run_id']
+        self._task_id = keywords['task_id']
         self._database_login = 'mysql+pymysql://{0}:{1}@{2}/{3}'.format(keywords['database_user'], keywords['database_password'], keywords['database_hostname'], keywords['database_name'])
-        self._run_id = keywords['run_id']
         self._connection = None
         self._s3 = None
         self._observation_id = None
@@ -70,19 +69,22 @@ class GenerateStatistics(object):
         self._insert_scan = SCAN.insert()
 
     def setup(self):
+        makedirs(ROOT_DIR)
         session = boto3.Session(profile_name='aws-chiles02')
         self._s3 = session.resource('s3', use_ssl=False)
         engine = create_engine(self._database_login)
         self._connection = engine.connect()
 
-        row = self._connection(select([TASK])).where(TASK.c.task_id == self._run_id).fetchone()
+        row = self._connection(select([TASK])).where(TASK.c.task_id == self._task_id).fetchone()
+        self._task_id = row[TASK.c.task_id]
         self._observation_id = row[TASK.c.observation_id]
         self._s3_key = row[TASK.c.s3_key]
-
-        makedirs(ROOT_DIR)
+        return row[TASK.c.status] == TASK_NOT_PROCESSED
 
     def run(self):
-        self.setup()
+        if not self.setup():
+            # We've done this one
+            return
 
         with stopwatch('Copy from S3'):
             measurement_set, temp_directory = self.copy_from_s3(self._s3_key)
@@ -92,7 +94,7 @@ class GenerateStatistics(object):
 
     @echo
     def copy_from_s3(self, measurement_set):
-        temp_directory = join(ROOT_DIR, 'run_{0}'.format(self._run_id))
+        temp_directory = join(ROOT_DIR, 'run_{0}'.format(self._task_id))
         makedirs(temp_directory)
         tar_file = join(temp_directory, 'tar_file.tar')
         s3_object = self._s3.Object(self._bucket_name, measurement_set)
@@ -137,6 +139,9 @@ class GenerateStatistics(object):
         transaction = self._connection.begin()
         get_statistics = GetStatistics(measurement_set)
         get_statistics.extract_statistics(self, self._observation_id)
+        self._connection.execute(
+            TASK.update().where(TASK.c.task_id == self._task_id).values(status=TASK_PROCESSED)
+        )
         transaction.commit()
 
     @staticmethod
@@ -204,7 +209,7 @@ def parse_args():
     parser.add_argument('-c', '--call')
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
-    parser.add_argument('run_id', type=int)
+    parser.add_argument('task_id', type=int)
 
     return parser.parse_args()
 
