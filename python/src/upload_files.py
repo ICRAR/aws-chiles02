@@ -87,6 +87,7 @@ class ProgressPercentage:
 def upload_data(bucket_name, folder_name, source_folder):
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
+    bucket = s3.Bucket(bucket_name)
 
     for filename in listdir(source_folder):
         source_file = join(source_folder, filename)
@@ -95,8 +96,10 @@ def upload_data(bucket_name, folder_name, source_folder):
         LOG.info('Copying {0} ({1}) to {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
 
         # If it doesn't exist or the size is wrong copy it
-        s3_object = s3.Object(bucket_name, key)
-        if s3_object is None or s3_object.content_length != source_file_size:
+        s3_objects = list(bucket.objects.filter(Prefix=key))
+        if len(s3_objects) > 0 and s3_objects[0].key == key and s3_objects[0].content_length == source_file_size:
+            LOG.info('File {0} ({1}) exists as {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
+        else:
             s3_client = s3.meta.client
             transfer = S3Transfer(s3_client)
             transfer.upload_file(
@@ -111,8 +114,6 @@ def upload_data(bucket_name, folder_name, source_folder):
                     'StorageClass': 'REDUCED_REDUNDANCY',
                 }
             )
-        else:
-            LOG.info('File {0} ({1}) exists as {2}'.format(source_file, bytes2human(source_file_size, '{0:.2f}{1}'), key))
 
 
 if __name__ == "__main__":
