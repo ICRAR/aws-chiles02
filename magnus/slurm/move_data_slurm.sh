@@ -3,7 +3,7 @@
 #
 #SBATCH --job-name=move_data
 #SBATCH --account=pawsey0216
-#SBATCH --time=04:00:00
+#SBATCH --time=10:00:00
 #SBATCH --ntasks=24
 #SBATCH --ntasks-per-node=24
 #SBATCH --nodes=1
