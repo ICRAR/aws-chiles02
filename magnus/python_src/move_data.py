@@ -134,82 +134,75 @@ def run_command(command):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('bucket_name', help='the bucket name')
-    parser.add_argument('folder_name', help='the folder in the bucket with the data')
+    parser.add_argument('key', help='the folder in the bucket with the data')
     parser.add_argument('destination', help='the folder to put the data in')
-    parser.add_argument('task_id', type=int, help='the task id from slurm')
 
     return parser.parse_args()
 
 
-def copy_from_s3(bucket_name, folder_name, destination, task_id):
-    bottom_frequency = 944 + (task_id * 4)
+def copy_from_s3(bucket_name, key, destination):
+    elements = key.split('/')
 
-    # Anything to process?
-    if bottom_frequency >= 1420:
-        return
-
-    band = '{0}_{1}'.format(bottom_frequency, bottom_frequency + 4)
-
-    s3_folder_name = join(folder_name, band)
-    full_destination = join(destination, folder_name, band)
+    full_destination = join(destination, elements[0], elements[1])
     if not exists(full_destination):
-        makedirs(full_destination)
-
-    list_keys = []
+        try:
+            makedirs(full_destination)
+        except OSError:
+            if not exists(full_destination):
+                LOG.error("Couldn't create the directory")
+                return
 
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
-    bucket = s3.Bucket(bucket_name)
-    for key in bucket.objects.filter(Prefix='{0}'.format(s3_folder_name)):
-        list_keys.append(key.key)
 
     tar_file = join(full_destination, 'tar_file.tar')
-    for key in list_keys:
-        # Does it already exist
-        (observation_name, _) = splitext(basename(key))
-        if exists(join(full_destination, observation_name)):
-            continue
 
-        s3_object = s3.Object(bucket_name, key)
-        s3_size = s3_object.content_length
-        s3_client = s3.meta.client
-        transfer = S3Transfer(s3_client)
-        transfer.download_file(
-            bucket_name,
+    # Does it already exist
+    (observation_name, _) = splitext(basename(key))
+    if exists(join(full_destination, observation_name)):
+        return
+
+    s3_object = s3.Object(bucket_name, key)
+    s3_size = s3_object.content_length
+    s3_client = s3.meta.client
+    transfer = S3Transfer(s3_client)
+    transfer.download_file(
+        bucket_name,
+        key,
+        tar_file,
+        callback=ProgressPercentage(
             key,
-            tar_file,
-            callback=ProgressPercentage(
-                key,
-                s3_size
-            )
+            s3_size
         )
-        if not exists(tar_file):
-            LOG.error('The tar file {0} does not exist'.format(tar_file))
-            return
+    )
+    if not exists(tar_file):
+        LOG.error('The tar file {0} does not exist'.format(tar_file))
+        return
 
-        # Check the sizes match
-        tar_size = getsize(tar_file)
-        if s3_size != tar_size:
-            LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(tar_file, s3_size, tar_size))
-            return
+    # Check the sizes match
+    tar_size = getsize(tar_file)
+    if s3_size != tar_size:
+        LOG.error('The sizes for {0} differ S3: {1}, local FS: {2}'.format(tar_file, s3_size, tar_size))
+        return
 
-        # The tar file exists and is the same size
-        bash = 'tar -xvf {0} -C {1}'.format(tar_file, full_destination)
-        return_code = run_command(bash)
+    # The tar file exists and is the same size
+    bash = 'tar -xvf {0} -C {1}'.format(tar_file, full_destination)
+    return_code = run_command(bash)
 
-        measurement_set_path = join(full_destination, 'uvsub_{0}~{1}'.format(bottom_frequency, bottom_frequency + 4))
-        path_exists = exists(measurement_set_path)
-        if return_code != 0 or not path_exists:
-            LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists))
-            return
+    elements = elements[1].split('_')
+    measurement_set_path = join(full_destination, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
+    path_exists = exists(measurement_set_path)
+    if return_code != 0 or not path_exists:
+        LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists))
+        return
 
-        remove(tar_file)
-        rename(measurement_set_path, join(full_destination, observation_name))
+    remove(tar_file)
+    rename(measurement_set_path, join(full_destination, observation_name))
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     args = parse_args()
 
-    LOG.info('Processing task id {0}'.format(args.task_id))
-    copy_from_s3(args.bucket_name, args.folder_name, args.destination, args.task_id)
+    LOG.info(args)
+    copy_from_s3(args.bucket_name, args.key, args.destination)

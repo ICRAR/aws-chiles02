@@ -5,11 +5,10 @@
 #SBATCH --account=pawsey0216
 #SBATCH --time=10:00:00
 #SBATCH --nodes=1
-#SBATCH --array=0-127
 #SBATCH --partition=copyq
 #SBATCH --cluster=zeus
 #SBATCH --ntasks=1
 #SBATCH --export=NONE
 
 cd /group/pawsey0216/kvinsen/aws-chiles02/magnus/python_src
-python move_data.py 13b-266 uvsub_deep_2017_05_25 ${SLURM_ARRAY_TASK_ID} /group/pawsey0216/kvinsen/chiles_data
+cat list_keys.txt | xargs -I KEY --max-procs=8 bash -c python move_data.py 13b-266 KEY /group/pawsey0216/kvinsen/chiles_data
