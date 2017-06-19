@@ -4,10 +4,12 @@
 #SBATCH --job-name=move_data
 #SBATCH --account=pawsey0216
 #SBATCH --time=10:00:00
-#SBATCH --ntasks=24
-#SBATCH --ntasks-per-node=24
 #SBATCH --nodes=1
-#SBATCH --array=0-5
+#SBATCH --array=0-127
+#SBATCH --partition=copyq
+#SBATCH --cluster=zeus
+#SBATCH --ntasks=1
+#SBATCH --export=NONE
 
-# with the node=1 this will run 24 versions of move_data on the same one
-aprun -n 24 -N 24 $SLURM_SUBMIT_DIR/move_data.sh
+cd /group/pawsey0216/kvinsen/aws-chiles02/magnus/python_src
+python move_data.py 13b-266 uvsub_deep_2017_05_25 ${SLURM_ARRAY_TASK_ID} /group/pawsey0216/kvinsen/chiles_data
