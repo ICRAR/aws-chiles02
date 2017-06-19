@@ -2,8 +2,8 @@
 #PBS -N pbs-generate-statistics
 #PBS -l nodes=1:ppn=2:compute,walltime=48:00:00
 #PBS -t 1-4937
-#PBS -q usmall
-# usmall is 32 items on the queue usmall2 is 8
+#PBS -q small
+# usmall is 32 items on the queue small is 8
 #PBS -j oe
 
 cd /home/kevin/aws-chiles02/machine_learning/casa_code
