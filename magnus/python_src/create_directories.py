@@ -40,7 +40,7 @@ def parse_args():
 
 def create_directories(key_list, destination):
     with open(key_list, "r") as input_file:
-        for key in input_file.read():
+        for key in input_file:
             elements = key.split('/')
             full_destination = join(destination, elements[0], elements[1])
             if not exists(full_destination):
