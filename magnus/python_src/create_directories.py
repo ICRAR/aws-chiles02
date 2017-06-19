@@ -24,40 +24,33 @@ Move the data from S3
 """
 import argparse
 import logging
-import os
-import subprocess
-import threading
-import time
-from cStringIO import StringIO
-from os import makedirs, remove, rename
-from os.path import basename, exists, getsize, join, splitext
-
-import boto3
-from s3transfer import S3Transfer
+from os import makedirs
+from os.path import exists, join
 
 LOG = logging.getLogger(__name__)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('bucket_name', help='the bucket name')
-    parser.add_argument('folder_name', help='the folder in the bucket with the data')
-    parser.add_argument('output_file', help='the file to put the data in')
+    parser.add_argument('key_list', help='the key list file')
+    parser.add_argument('destination', help='the root destination')
+
     return parser.parse_args()
 
 
-def build_file(bucket_name, folder_name, output_file):
-    session = boto3.Session(profile_name='aws-chiles02')
-    s3 = session.resource('s3', use_ssl=False)
-    bucket = s3.Bucket(bucket_name)
-    with open(output_file, "w") as output_file1:
-        for key in bucket.objects.filter(Prefix='{0}'.format(folder_name)):
-            if key.key.endswith('.tar'):
-                output_file1.write(key.key + '\n')
+def create_directories(key_list, destination):
+    with open(key_list, "r") as input_file:
+        for key in input_file.read():
+            elements = key.split('/')
+            full_destination = join(destination, elements[0], elements[1])
+            if not exists(full_destination):
+                LOG.info('Creating {0}'.format(full_destination))
+                makedirs(full_destination)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     args = parse_args()
+
     LOG.info(args)
-    build_file(args.bucket_name, args.folder_name, args.output_file)
+    create_directories(args.key_list, args.destination)

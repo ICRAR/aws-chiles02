@@ -25,11 +25,13 @@ Move the data from S3
 import argparse
 import logging
 import os
+import shutil
 import subprocess
 import threading
 import time
+import uuid
 from cStringIO import StringIO
-from os import makedirs, remove, rename
+from os import makedirs, rename
 from os.path import basename, exists, getsize, join, splitext
 
 import boto3
@@ -145,22 +147,22 @@ def copy_from_s3(bucket_name, key, destination):
 
     full_destination = join(destination, elements[0], elements[1])
     if not exists(full_destination):
-        try:
-            makedirs(full_destination)
-        except OSError:
-            if not exists(full_destination):
-                LOG.error("Couldn't create the directory")
-                return
-
-    session = boto3.Session(profile_name='aws-chiles02')
-    s3 = session.resource('s3', use_ssl=False)
-
-    tar_file = join(full_destination, 'tar_file.tar')
+        LOG.error("Couldn't find the directory {0}".format(full_destination))
+        return
 
     # Does it already exist
     (observation_name, _) = splitext(basename(key))
     if exists(join(full_destination, observation_name)):
         return
+
+    temp_name = uuid.uuid4()
+    temp_destination = join(full_destination, temp_name)
+    makedirs(temp_destination)
+
+    session = boto3.Session(profile_name='aws-chiles02')
+    s3 = session.resource('s3', use_ssl=False)
+
+    tar_file = join(temp_destination, 'tar_file.tar')
 
     s3_object = s3.Object(bucket_name, key)
     s3_size = s3_object.content_length
@@ -186,18 +188,18 @@ def copy_from_s3(bucket_name, key, destination):
         return
 
     # The tar file exists and is the same size
-    bash = 'tar -xvf {0} -C {1}'.format(tar_file, full_destination)
+    bash = 'tar -xvf {0} -C {1}'.format(tar_file, temp_destination)
     return_code = run_command(bash)
 
     elements = elements[1].split('_')
-    measurement_set_path = join(full_destination, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
+    measurement_set_path = join(temp_destination, 'uvsub_{0}~{1}'.format(elements[0], elements[1]))
     path_exists = exists(measurement_set_path)
     if return_code != 0 or not path_exists:
         LOG.error('tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set_path, path_exists))
         return
 
-    remove(tar_file)
     rename(measurement_set_path, join(full_destination, observation_name))
+    shutil.rmtree(temp_destination)
 
 
 if __name__ == "__main__":
