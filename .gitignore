@@ -1,8 +1,4 @@
-/pipeline/pipeline.iml
-/python/python.iml
-/old-pipeline/old-pipeline.iml
 /.idea
-/pipeline/aws_chiles02/*.settings
 /out
 
 # Byte-compiled / optimized / DLL files
@@ -16,5 +12,6 @@ __pycache__/
 /pipeline/aws_chiles02.egg-info/
 /pipeline/build/
 /pipeline/.eggs/
-/machine_learning/machine_learning.iml
 /pipeline/dist/
+*.settings
+*.iml
