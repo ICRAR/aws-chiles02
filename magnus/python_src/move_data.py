@@ -155,7 +155,7 @@ def copy_from_s3(bucket_name, key, destination):
     if exists(join(full_destination, observation_name)):
         return
 
-    temp_name = uuid.uuid4()
+    temp_name = str(uuid.uuid4())
     temp_destination = join(full_destination, temp_name)
     makedirs(temp_destination)
 
