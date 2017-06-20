@@ -2,7 +2,7 @@
 
 # We are one of -N <NUMBER> running on a node as part of an array job
 # Show the environment variables
-TASK_ID=`printf %d $((SLURM_ARRAY_TASK_ID * 16 + ALPS_APP_PE))`
+TASK_ID=`printf %d $((SLURM_ARRAY_TASK_ID * 8 + ALPS_APP_PE))`
 IP_ADDRESS=`hostname --ip-address`
 echo "ALPS_APP_PE             = $ALPS_APP_PE
 SLURM_SUBMIT_DIR        = $SLURM_SUBMIT_DIR
