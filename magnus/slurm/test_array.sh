@@ -16,4 +16,7 @@ SLURM_ARRAY_TASK_ID     = $SLURM_ARRAY_TASK_ID
 SLURM_ARRAY_JOB_ID      = $SLURM_ARRAY_JOB_ID
 
 IP_ADDRESS              = $IP_ADDRESS
-TASK_ID                 = $TASK_ID"
+TASK_ID                 = $TASK_ID
+########################################"
+
+ps
