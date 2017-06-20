@@ -88,10 +88,13 @@ class GenerateStatistics(object):
         self._connection = engine.connect()
 
         row = self._connection.execute(select([TASK]).where(TASK.c.task_id == self._task_id)).fetchone()
-        self._task_id = row[TASK.c.task_id]
-        self._observation_id = row[TASK.c.observation_id]
-        self._s3_key = row[TASK.c.s3_key]
-        return row[TASK.c.status] == TASK_NOT_PROCESSED
+        if row is not None:
+            self._task_id = row[TASK.c.task_id]
+            self._observation_id = row[TASK.c.observation_id]
+            self._s3_key = row[TASK.c.s3_key]
+            return row[TASK.c.status] == TASK_NOT_PROCESSED
+
+        return False
 
     def run(self):
         if not self.setup():
