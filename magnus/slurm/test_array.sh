@@ -14,4 +14,4 @@ echo "SLURM_ARRAY_TASK_ID 	  = $SLURM_ARRAY_TASK_ID"
 echo "SLURM_ARRAY_JOB_ID      = $SLURM_ARRAY_JOB_ID"
 
 task_id=`printf %d $((SLURM_ARRAY_TASK_ID * 24 + ALPS_APP_PE))`
-echo "task_id = $task_id"
+echo "task_id                 = $task_id"
