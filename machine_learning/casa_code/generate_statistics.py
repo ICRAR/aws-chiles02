@@ -229,6 +229,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--nologger', action='store_true')
     parser.add_argument('--log2term', action='store_true')
+    parser.add_argument('--nogui', action='store_true')
     parser.add_argument('--logfile')
     parser.add_argument('-c', '--call')
     parser.add_argument('bucket_name', help='the bucket name')
