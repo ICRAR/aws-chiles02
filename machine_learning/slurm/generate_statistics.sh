@@ -19,6 +19,7 @@ IP_ADDRESS              = $IP_ADDRESS
 TASK_ID                 = $TASK_ID
 ########################################"
 
+CASA_LOG=$SLURM_SUBMIT_DIR/casa_${TASK_ID}_${SLURM_ARRAY_TASK_ID}_${ALPS_APP_PE}.log
 cd /group/pawsey0216/kvinsen/aws-chiles02/machine_learning/casa_code
 export PYTHONPATH=/group/pawsey0216/kvinsen/aws-chiles02/machine_learning
-/group/pawsey0216/kvinsen/casa-release-4.7.2-el6/bin/casa --logfile $SLURM_SUBMIT_DIR/casa_$SLURM_ARRAY_TASK_ID_$ALPS_APP_PE.$TASK_ID.log --nologger --log2term --nogui -c generate_statistics.py 13b-266 uvsub_deep_2017_05_25 ${TASK_ID} --magnus --settings_file_name /group/pawsey0216/kvinsen/aws-chiles02/machine_learning/casa_code/scan.settings
+/group/pawsey0216/kvinsen/casa-release-4.7.2-el6/bin/casa --logfile $CASA_LOG --nologger --log2term --nogui -c generate_statistics.py 13b-266 uvsub_deep_2017_05_25 ${TASK_ID} --magnus --settings_file_name /group/pawsey0216/kvinsen/aws-chiles02/machine_learning/casa_code/scan.settings

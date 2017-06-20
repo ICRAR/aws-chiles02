@@ -72,7 +72,7 @@ class GenerateStatistics(object):
         self._observation_id = None
         self._s3_key = None
         self._insert_scan = SCAN.insert()
-        self._root_dir = '/scratch/pawsey0216/kvinsen/chiles_data' if self._magnus else '/mnt/ssd01/lscratch/kevin'
+        self._root_dir = '/group/pawsey0216/kvinsen/chiles_data' if self._magnus else '/mnt/ssd01/lscratch/kevin'
 
     def setup(self):
         if not exists(self._root_dir):
