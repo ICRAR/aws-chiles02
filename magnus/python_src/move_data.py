@@ -153,6 +153,7 @@ def copy_from_s3(bucket_name, key, destination):
     # Does it already exist
     (observation_name, _) = splitext(basename(key))
     if exists(join(full_destination, observation_name)):
+        LOG.info("The directory {0} already exists".format(full_destination))
         return
 
     temp_name = str(uuid.uuid4())

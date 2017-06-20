@@ -39,7 +39,6 @@ from casa_code.database import SCAN, TASK, TASK_NOT_PROCESSED, TASK_PROCESSED
 from casa_code.get_statistics import GetStatistics
 
 LOG = CasaLogger(__name__)
-ROOT_DIR = '/mnt/ssd01/lscratch/kevin'
 
 
 class GenerateStatisticsException(Exception):
@@ -61,6 +60,7 @@ class GenerateStatistics(object):
         self._bucket_name = keywords['bucket_name']
         self._folder_name = keywords['folder_name']
         self._task_id = keywords['task_id']
+        self._magnus = keywords['magnus']
         self._database_login = 'mysql+pymysql://{0}:{1}@{2}/{3}'.format(
             keywords['database_user'],
             keywords['database_password'],
@@ -72,13 +72,14 @@ class GenerateStatistics(object):
         self._observation_id = None
         self._s3_key = None
         self._insert_scan = SCAN.insert()
+        self._root_dir = '/scratch/pawsey0216/kvinsen/chiles_data' if self._magnus else '/mnt/ssd01/lscratch/kevin'
 
     def setup(self):
-        if not exists(ROOT_DIR):
+        if not exists(self._root_dir):
             try:
-                makedirs(ROOT_DIR)
+                makedirs(self._root_dir)
             except OSError as exception:
-                if not exists(ROOT_DIR):
+                if not exists(self._root_dir):
                     raise exception
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -97,15 +98,21 @@ class GenerateStatistics(object):
             # We've done this one
             return
 
-        with stopwatch('Copy from S3'):
-            measurement_set, temp_directory = self.copy_from_s3(self._s3_key)
-        with stopwatch('Add to database'):
-            self.add_to_database(measurement_set)
-        self.delete_processed_data(temp_directory)
+        if self._magnus:
+            measurement_set = join(self._root_dir, self._s3_key)
+            measurement_set = measurement_set[:-4]
+            with stopwatch('Add to database'):
+                self.add_to_database(measurement_set)
+        else:
+            with stopwatch('Copy from S3'):
+                measurement_set, temp_directory = self.copy_from_s3(self._s3_key)
+            with stopwatch('Add to database'):
+                self.add_to_database(measurement_set)
+            self.delete_processed_data(temp_directory)
 
     @echo
     def copy_from_s3(self, measurement_set):
-        temp_directory = join(ROOT_DIR, 'run_{0}'.format(self._task_id))
+        temp_directory = join(self._s3_key, 'run_{0}'.format(self._task_id))
         makedirs(temp_directory)
         tar_file = join(temp_directory, 'tar_file.tar')
         s3_object = self._s3.Object(self._bucket_name, measurement_set)
@@ -216,14 +223,15 @@ def parse_args():
     path_dirname, _ = split(abspath(__file__))
     settings_file_name = join(path_dirname, 'scan.settings')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--nologger', action="store_true")
-    parser.add_argument('--log2term', action="store_true")
+    parser.add_argument('--nologger', action='store_true')
+    parser.add_argument('--log2term', action='store_true')
     parser.add_argument('--logfile')
     parser.add_argument('-c', '--call')
     parser.add_argument('bucket_name', help='the bucket name')
     parser.add_argument('folder_name', help='the folder in the bucket with the data')
     parser.add_argument('task_id', type=int)
     parser.add_argument('--settings_file_name', help='The settings file', default=settings_file_name)
+    parser.add_argument('--magnus', action='store_true', default=False)
 
     return parser.parse_args()
 
