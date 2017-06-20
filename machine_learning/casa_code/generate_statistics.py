@@ -98,6 +98,7 @@ class GenerateStatistics(object):
 
     def run(self):
         if not self.setup():
+            LOG.info("The task_id: {0} has been processed or doesn't exist".format(self._task_id))
             # We've done this one
             return
 
