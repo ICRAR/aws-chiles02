@@ -7,5 +7,5 @@
 #SBATCH --nodes=1
 #SBATCH --array=0-127
 
-# with the node=1 this will run 8 versions of generate_statistics across the node
-aprun -n 8 -N 8 $SLURM_SUBMIT_DIR/generate_statistics.sh
+# with the node=1 this will run 4 versions of generate_statistics across the node
+aprun -n 4 -N 4 $SLURM_SUBMIT_DIR/generate_statistics.sh
