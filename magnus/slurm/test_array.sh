@@ -19,4 +19,5 @@ IP_ADDRESS              = $IP_ADDRESS
 TASK_ID                 = $TASK_ID
 ########################################"
 
+id `whoami`
 ps
