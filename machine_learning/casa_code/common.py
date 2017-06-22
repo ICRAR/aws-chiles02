@@ -143,7 +143,7 @@ def read_queue_file(filename, row_number):
             lines = queue_file.readlines()
 
         if row_number >= 0 or row_number < len(lines):
-            line = lines[row_number]
+            line = lines[row_number].strip()
             if line.isdigit():
                 try:
                     return int(line)
