@@ -34,7 +34,7 @@ from s3transfer import S3Transfer
 from sqlalchemy import create_engine, select
 
 from casa_code.casa_logging import CasaLogger, echo
-from casa_code.common import ProgressPercentage, run_command, stopwatch, read_queue_file
+from casa_code.common import ProgressPercentage, read_queue_file, run_command, stopwatch
 from casa_code.database import SCAN, TASK, TASK_NOT_PROCESSED, TASK_PROCESSED
 from casa_code.get_statistics import GetStatistics
 

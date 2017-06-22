@@ -28,10 +28,9 @@ import subprocess
 import threading
 import time
 from cStringIO import StringIO
-
 from os.path import exists
 
-from casa_code.casa_logging import CasaLogger
+from casa_code.casa_logging import CasaLogger, echo
 
 LOG = CasaLogger(__name__)
 SYMBOLS = {
@@ -137,13 +136,23 @@ def run_command(command):
     return process.returncode
 
 
-def read_queue_file(filename, task_id):
+@echo
+def read_queue_file(filename, row_number):
     if exists(filename):
         with open(filename, "r") as queue_file:
             lines = queue_file.readlines()
 
-        if task_id >= 0 or task_id < len(lines):
-            line = lines[task_id]
+        if row_number >= 0 or row_number < len(lines):
+            line = lines[row_number]
             if line.isdigit():
-                return int(line)
+                try:
+                    return int(line)
+                except ValueError:
+                    return None
+            else:
+                LOG.warning('The text "{0}" for the task id is wrong'.format(line))
+        else:
+            LOG.warning('The row number {0} is out of range'.format(row_number))
+    else:
+        LOG.warning('The file {0} does not exist'.format(filename))
     return None

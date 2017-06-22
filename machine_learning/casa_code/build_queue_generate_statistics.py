@@ -55,9 +55,10 @@ def run(**keywords):
 def parse_args():
     path_dirname, _ = split(abspath(__file__))
     settings_file_name = join(path_dirname, 'scan.settings')
+    queue_file_name = join(path_dirname, 'queue.txt')
     parser = argparse.ArgumentParser()
     parser.add_argument('--settings_file_name', help='The settings file', default=settings_file_name)
-    parser.add_argument('queue_file_name', help='The settings file', default=settings_file_name)
+    parser.add_argument('queue_file_name', help='The queue file', default=queue_file_name)
 
     return parser.parse_args()
 
