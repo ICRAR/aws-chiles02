@@ -29,6 +29,8 @@ import threading
 import time
 from cStringIO import StringIO
 
+from os.path import exists
+
 from casa_code.casa_logging import CasaLogger
 
 LOG = CasaLogger(__name__)
@@ -133,3 +135,15 @@ def run_command(command):
     LOG.info('{0}, output follows.\n{1}'.format(command, output))
 
     return process.returncode
+
+
+def read_queue_file(filename, task_id):
+    if exists(filename):
+        with open(filename, "r") as queue_file:
+            lines = queue_file.readlines()
+
+        if task_id >= 0 or task_id < len(lines):
+            line = lines[task_id]
+            if line.isdigit():
+                return int(line)
+    return None
