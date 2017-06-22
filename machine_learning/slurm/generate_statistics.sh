@@ -21,12 +21,12 @@ SLURM_ARRAY_TASK_ID     = $SLURM_ARRAY_TASK_ID
 SLURM_ARRAY_JOB_ID      = $SLURM_ARRAY_JOB_ID
 
 IP_ADDRESS              = $IP_ADDRESS
-TASK_ID                 = $TASK_ID
+TASK_ID                 = $MODIFIED_TASK_ID
 SLEEP_TIME              = $SLEEP_TIME
 ########################################"
 
 NOW=$(date +"%Y_%m_%d")
-CASA_LOG=/scratch/pawsey0216/kvinsen/casa_logs/${NOW}_${TASK_ID}_${SLURM_ARRAY_TASK_ID}_${ALPS_APP_PE}.log
+CASA_LOG=/scratch/pawsey0216/kvinsen/casa_logs/${NOW}_${MODIFIED_TASK_ID}.log
 cd /group/pawsey0216/kvinsen/aws-chiles02/machine_learning/casa_code
 export PYTHONPATH=/group/pawsey0216/kvinsen/aws-chiles02/machine_learning
 

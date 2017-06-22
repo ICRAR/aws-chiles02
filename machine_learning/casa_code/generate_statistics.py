@@ -51,8 +51,9 @@ class GenerateStatistics(object):
                     'database_password',
                     'database_hostname',
                     'database_name',
-                    'queue_file_name'
-                    'queue_row_id']:
+                    'queue_file_name',
+                    'queue_row_id',
+                    ]:
             if keywords.get(arg) is None:
                 raise RuntimeError('Missing the keyword {0}'.format(arg))
 
