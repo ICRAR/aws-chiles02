@@ -34,7 +34,7 @@ from s3transfer import S3Transfer
 from sqlalchemy import create_engine, select
 
 from casa_code.casa_logging import CasaLogger, echo
-from casa_code.common import ProgressPercentage, read_queue_file, run_command, stopwatch
+from casa_code.common import ProgressPercentage, run_command, stopwatch
 from casa_code.database import SCAN, TASK, TASK_NOT_PROCESSED, TASK_PROCESSED
 from casa_code.get_statistics import GetStatistics
 
@@ -51,8 +51,7 @@ class GenerateStatistics(object):
                     'database_password',
                     'database_hostname',
                     'database_name',
-                    'queue_file_name',
-                    'queue_row_id',
+                    'task_id',
                     ]:
             if keywords.get(arg) is None:
                 raise RuntimeError('Missing the keyword {0}'.format(arg))
@@ -72,7 +71,7 @@ class GenerateStatistics(object):
         self._s3 = None
         self._observation_id = None
         self._s3_key = None
-        self._task_id = read_queue_file(keywords['queue_file_name'], keywords['queue_row_id'])
+        self._task_id = keywords['task_id']
         self._insert_scan = SCAN.insert()
         self._root_dir = '/group/pawsey0216/kvinsen/chiles_data' if self._magnus else '/mnt/ssd01/lscratch/kevin'
 
@@ -95,7 +94,6 @@ class GenerateStatistics(object):
 
         row = self._connection.execute(select([TASK]).where(TASK.c.task_id == self._task_id)).fetchone()
         if row is not None:
-            self._task_id = row[TASK.c.task_id]
             self._observation_id = row[TASK.c.observation_id]
             self._s3_key = row[TASK.c.s3_key]
             return row[TASK.c.status] == TASK_NOT_PROCESSED
@@ -232,7 +230,6 @@ def parse_args():
     """
     path_dirname, _ = split(abspath(__file__))
     settings_file_name = join(path_dirname, 'scan.settings')
-    queue_file_name = join(path_dirname, 'queue.txt')
     parser = argparse.ArgumentParser()
     parser.add_argument('--nologger', action='store_true')
     parser.add_argument('--log2term', action='store_true')
@@ -240,9 +237,8 @@ def parse_args():
     parser.add_argument('--logfile', nargs=1)
     parser.add_argument('--nologfile', action='store_true')
     parser.add_argument('-c', '--call')
-    parser.add_argument('queue_row_id', type=int, help='The row number in the queue file')
+    parser.add_argument('task_id', type=int, help='The task id')
     parser.add_argument('--settings_file_name', help='The settings file', default=settings_file_name)
-    parser.add_argument('--queue_file_name', help='The settings file', default=queue_file_name)
     parser.add_argument('--magnus', action='store_true', default=False)
     parser.add_argument('--bucket_name', nargs=1, help='the bucket name')
     parser.add_argument('--folder_name', nargs=1, help='the folder in the bucket with the data')

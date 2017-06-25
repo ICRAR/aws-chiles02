@@ -3,7 +3,7 @@
 #
 #SBATCH --job-name=generate_statistics
 #SBATCH --account=pawsey0216
-#SBATCH --time=06:00:00
+#SBATCH --time=04:00:00
 #SBATCH --nodes=1
 #SBATCH --array=0-127
 
