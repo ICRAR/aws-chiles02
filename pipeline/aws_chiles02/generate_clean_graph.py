@@ -607,7 +607,7 @@ def parser_arguments(command_line=sys.argv[1:]):
 
 
 if __name__ == '__main__':
-    # json 13b-266 /mnt/dfms/dfms_root 8 -w 8 -s
+    # json 13b-266 /mnt/daliuge/dfms_root 8 -w 8 -s
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()
     arguments.func(arguments)

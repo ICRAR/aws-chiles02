@@ -82,7 +82,7 @@ class WorkToDo(object):
             if self._frequency_range is not None and not self._pair_in_range(frequency_pair):
                 continue
 
-            expected_imageconcat_file = '{0}/imageconcat_{1}_{2}.tar'.format(
+            expected_imageconcat_file = '{0}/image_{1}_{2}.tar'.format(
                 self._s3_imageconcat_directory_name,
                 frequency_pair.bottom_frequency,
                 frequency_pair.top_frequency,
@@ -134,6 +134,15 @@ class WorkToDo(object):
                 counter = 1
 
             counter += 1
+
+        if len(elements) >= 2:
+            frequency_pair = list_frequencies[-1]
+            chunk = ChunkedFrequencyPair(
+                bottom_frequency,
+                frequency_pair.top_frequency,
+                elements,
+            )
+            chunked_up.append(chunk)
 
         return chunked_up
 

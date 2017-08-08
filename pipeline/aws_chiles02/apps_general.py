@@ -123,7 +123,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         return type(self).__name__
 
     def run(self):
-        log_file_dir = '/mnt/dfms/dfms_root' if os.path.exists('/mnt/dfms/dfms_root') else '/tmp'
+        log_file_dir = '/mnt/daliuge/dfms_root' if os.path.exists('/mnt/daliuge/dfms_root') else '/tmp'
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key

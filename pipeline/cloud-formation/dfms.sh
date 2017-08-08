@@ -11,12 +11,12 @@ source ~/virtualenv/aws-chiles02/bin/activate
 pip install -U pip
 pip install boto3 argparse ConfigObj mako
 
-virtualenv ~/virtualenv/dfms
-source ~/virtualenv/dfms/bin/activate
+virtualenv ~/virtualenv/daliuge
+source ~/virtualenv/daliuge/bin/activate
 
 cd dfms
 python setup.py install
-pip install boto3 argparse ConfigObj mako
+pip install boto3 argparse ConfigObj mako numpy
 
 sudo tee -a /etc/security/limits.conf << 'EOF'
 
