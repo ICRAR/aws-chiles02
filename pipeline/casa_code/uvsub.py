@@ -34,7 +34,7 @@ LOG = logging.getLogger('uvsub')
 
 
 @echo
-def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, model):
+def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, model):
     """
     Performs the UVSUB step
      Use imtool to fill MODEL_DATA correctly
@@ -146,4 +146,5 @@ if __name__ == "__main__":
             out_dir=args.arguments[1],
             out_ms=args.arguments[2],
             w_projection_planes=int(args.arguments[3]),
-            model=args.arguments[4:])
+            number_taylor_terms=int(args.arguments[4]),
+            model=args.arguments[5:])
