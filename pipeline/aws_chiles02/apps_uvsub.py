@@ -218,6 +218,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._max_frequency = None
         self._min_frequency = None
         self._w_projection_planes = None
+        self._number_taylor_terms = None
         self._command = None
         super(DockerUvsub, self).__init__(oid, uid, **kwargs)
 
@@ -225,7 +226,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         super(DockerUvsub, self).initialize(**kwargs)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
+        self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
         self._command = 'uvsub.sh'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -236,7 +237,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = 'uvsub.sh /dfms_root{0} /dfms_root{1} {2} {4} ' \
+        self._command = 'uvsub.sh /dfms_root{0} /dfms_root{1} {2} {4} {5}' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model '  \
@@ -250,6 +251,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
             spectral_window,
             self._w_projection_planes,
+            self._number_taylor_terms,
         )
         super(DockerUvsub, self).run()
 

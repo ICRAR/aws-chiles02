@@ -41,6 +41,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._work_to_do = keywords['work_to_do']
         self._parallel_streams = keywords['parallel_streams']
         self._w_projection_planes = keywords['w_projection_planes']
+        self._number_taylor_terms = keywords['number_taylor_terms']
         self._scan_statistics = keywords['scan_statistics']
         self._s3_uvsub_name = keywords['uvsub_directory_name']
         self._s3_split_name = 'split_{0}'.format(keywords['width'])
@@ -129,6 +130,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
             min_frequency=frequencies[0],
             max_frequency=frequencies[1],
             w_projection_planes=self._w_projection_planes,
+            number_taylor_terms=self._number_taylor_terms,
         )
         result = self.create_directory_container(node_id, 'dir_uvsub_output')
         casa_py_uvsub_drop.addInput(measurement_set)

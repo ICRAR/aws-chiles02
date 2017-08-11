@@ -215,6 +215,7 @@ def create_and_generate(**keywords):
                         scan_statistics=keywords['scan_statistics'],
                         width=keywords['frequency_width'],
                         w_projection_planes=keywords['w_projection_planes'],
+                        number_taylor_terms=keywords['number_taylor_terms'],
                         uvsub_directory_name=keywords['uvsub_directory_name'],
                         session_id=session_id,
                         dim_ip=host,
@@ -279,6 +280,7 @@ def use_and_generate(**keywords):
                 scan_statistics=keywords['scan_statistics'],
                 width=frequency_width,
                 w_projection_planes=keywords['w_projection_planes'],
+                number_taylor_terms=keywords['number_taylor_terms'],
                 uvsub_directory_name=uvsub_directory_name,
                 session_id=session_id,
                 dim_ip=host,
@@ -328,6 +330,7 @@ def generate_json(**keywords):
         scan_statistics=keywords['scan_statistics'],
         width=width,
         w_projection_planes=keywords['w_projection_planes'],
+        number_taylor_terms=keywords['number_taylor_terms'],
         uvsub_directory_name=uvsub_directory_name,
         session_id='session_id',
         dim_ip='1.2.3.4',
@@ -344,6 +347,7 @@ def command_json(args):
     generate_json(
         width=args.width,
         w_projection_planes=args.w_projection_planes,
+        number_taylor_terms=args.number_taylor_terms,
         bucket=args.bucket,
         nodes=args.nodes,
         volume=args.volume,
@@ -360,6 +364,7 @@ def command_create(args):
         bucket_name=args.bucket,
         frequency_width=args.width,
         w_projection_planes=args.w_projection_planes,
+        number_taylor_terms=args.number_taylor_terms,
         ami_id=args.ami,
         spot_price=args.spot_price,
         volume=args.volume,
@@ -380,6 +385,7 @@ def command_use(args):
         bucket_name=args.bucket,
         frequency_width=args.width,
         w_projection_planes=args.w_projection_planes,
+        number_taylor_terms=args.number_taylor_terms,
         volume=args.volume,
         add_shutdown=args.shutdown,
         frequency_range=args.frequency_range,
@@ -412,6 +418,7 @@ def command_interactive(args):
         args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
+        args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int, help_text='the number of taylor terms', default=2)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
@@ -438,6 +445,7 @@ def command_interactive(args):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             w_projection_planes=config['w_projection_planes'],
+            number_taylor_terms=config['number_taylor_terms'],
             ami_id=config['ami'],
             spot_price=config['spot_price_i3_2xlarge'],
             volume=config['volume'],
@@ -456,6 +464,7 @@ def command_interactive(args):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             w_projection_planes=config['w_projection_planes'],
+            number_taylor_terms=config['number_taylor_terms'],
             volume=config['volume'],
             add_shutdown=config['shutdown'],
             frequency_range=config['frequency_range'],
@@ -468,6 +477,7 @@ def command_interactive(args):
         generate_json(
             width=config['width'],
             w_projection_planes=config['w_projection_planes'],
+            number_taylor_terms=config['number_taylor_terms'],
             bucket=config['bucket_name'],
             nodes=config['nodes'],
             volume=config['volume'],
@@ -486,6 +496,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('bucket', help='the bucket to access')
     common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
+    common_parser.add_argument('--number_taylor_terms', type=int, help='the number of taylor terms', default=2)
     common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
     common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
     common_parser.add_argument('--scan_statistics', action="store_true", help='generate scan statistics')
