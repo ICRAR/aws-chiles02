@@ -90,9 +90,14 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         ms.close()
         # Special steps for outliers
         ntt=len(model)
-        if (ntt>2):
+        if (ntt<number_taylor_terms):
+            print 'Requested number of taylor terms: '+str(number_taylor_terms)
+            print 'Is less than number of models given: '+str(ntt)
+            print 'Setting former to the latter.'
+            number_taylor_terms=ntt
+        elif (ntt>number_taylor_terms):
           tmp_name=os.path.join(out_dir, out_ms+'.tmp')
-          ntt=2
+          ntt=number_taylor_terms
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
 
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
