@@ -111,7 +111,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         uvsub(vis=in_dir, reverse=False)
         # Do we have outliers??
         if (len(model)>ntt):
-           print 'Using remaing '+str(len(model)+ntt)+' for outlier subtraction'
+           print 'Using remaing '+str(len(model)-ntt)+' for outlier subtraction'
            split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
            im.open(thems=tmp_name, usescratch=True)
            # Select all data in this case
@@ -130,8 +130,8 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
            im.settaylorterms(ntaylorterms=1)
            #
-           print 'Models in this pass: '+str(model[ntt:-1])
-           im.ft(model=model[ntt:-1], incremental=False)
+           print 'Models in this pass: '+str(model[ntt:len(model)])
+           im.ft(model=model[ntt:len(model)], incremental=False)
            im.close()
            uvsub(vis=tmp_name, reverse=False)
            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
