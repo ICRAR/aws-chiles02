@@ -100,8 +100,9 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
           ntt=number_taylor_terms
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
 
-        #im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
-        im.settaylorterms(ntaylorterms=ntt)
+        im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
+        # Using this turned all data to NaNs -- not good!
+        # im.settaylorterms(ntaylorterms=ntt)
 
         #
         print 'Models in this pass: '+str(model[0:ntt])
