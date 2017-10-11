@@ -238,10 +238,10 @@ class DockerUvsub(DockerApp, ErrorHandling):
         )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = 'uvsub.sh /dfms_root{0} /dfms_root{1} {2} {4} {5} ' \
+        # Reset to two Taylor Terms here
+        self._command = 'uvsub_ha.sh /dfms_root{0} /dfms_root{1} {2} {4} {5} ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 '  \
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt2 '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{3}.model '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{3}.model '  \
