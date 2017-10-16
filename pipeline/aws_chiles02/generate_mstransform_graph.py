@@ -39,7 +39,7 @@ from aws_chiles02.common import FrequencyPair, MeasurementSetData, TKINTER, get_
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
 from aws_chiles02.get_argument import GetArguments
-from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, SIZE_1GB
+from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_NODE_MANAGER, WAIT_TIMEOUT_ISLAND_MANAGER
 from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
 from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
@@ -207,7 +207,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             reported_running = get_reported_running(
                 uuid,
                 node_count,
-                wait=900
+                wait=WAIT_TIMEOUT_NODE_MANAGER
             )
             hosts = build_hosts(reported_running)
 
@@ -242,7 +242,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             data_island_manager_running = get_reported_running(
                 uuid,
                 1,
-                wait=900
+                wait=WAIT_TIMEOUT_ISLAND_MANAGER
             )
 
             if len(data_island_manager_running['m4.large']) == 1:

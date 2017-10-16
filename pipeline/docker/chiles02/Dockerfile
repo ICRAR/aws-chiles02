@@ -43,12 +43,6 @@ RUN yum install -y \
 RUN mkdir -p /opt/chiles02
 RUN chmod oug+rw /opt/chiles02
 
-# Copy the scripts
-COPY scripts /opt/chiles02/scripts/
-
-# Make them executable
-RUN chmod oug+x /opt/chiles02/scripts/*.sh
-
 # Create a virtual env just in case we need to trick casa into using it
 RUN pip install --upgrade pip
 RUN pip install virtualenv
@@ -57,7 +51,7 @@ RUN source /opt/chiles02/env/bin/activate ; \
     pip install --upgrade pip
 
 # Update the path
-env PATH /opt/chiles02/scripts:$PATH
+env PATH /opt/chiles02/aws-chiles02/pipeline/casa_docker_scripts:$PATH
 env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline:/opt/chiles02/env/lib64/python2.7/site-packages
 
 VOLUME /dfms_root
@@ -70,3 +64,7 @@ RUN useradd -ms /bin/bash -u500 -g500 ec2-user
 USER ec2-user
 WORKDIR /opt/chiles02
 RUN git clone https://github.com/ICRAR/aws-chiles02.git
+
+# Make them executable
+RUN chmod oug+x /opt/chiles02/aws-chiles02/pipeline/casa_docker_scripts/*.sh
+

@@ -33,6 +33,8 @@ CONTAINER_SV = 'jtmalarecki/sv:latest'
 SIZE_1GB = 1073741824
 QUEUE = 'startup_complete'
 DIM_PORT = 8001
+WAIT_TIMEOUT_NODE_MANAGER = 1800
+WAIT_TIMEOUT_ISLAND_MANAGER = 1000
 
 AWS_KEY = expanduser('~/.ssh/aws-chiles02-oregon.pem')
 USERNAME = 'ec2-user'

@@ -39,7 +39,7 @@ from aws_chiles02.common import FrequencyPair, TKINTER, get_aws_credentials, get
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
 from aws_chiles02.get_argument import GetArguments
-from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT
+from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, WAIT_TIMEOUT_NODE_MANAGER, WAIT_TIMEOUT_ISLAND_MANAGER
 from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
 from dfms.droputils import get_roots
 from dfms.manager.client import DataIslandManagerClient
@@ -158,7 +158,7 @@ def create_and_generate(**keywords):
             reported_running = get_reported_running(
                 uuid,
                 node_count,
-                wait=900
+                wait=WAIT_TIMEOUT_NODE_MANAGER
             )
 
             if len(reported_running) == 0:
@@ -197,7 +197,7 @@ def create_and_generate(**keywords):
                 data_island_manager_running = get_reported_running(
                     uuid,
                     1,
-                    wait=900
+                    wait=WAIT_TIMEOUT_ISLAND_MANAGER
                 )
 
                 if len(data_island_manager_running['m4.large']) == 1:
