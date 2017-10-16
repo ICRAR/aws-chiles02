@@ -1,6 +1,0 @@
-astroplan
-astropy
-boto3
-configobj
-pymysql
-sqlalchemy

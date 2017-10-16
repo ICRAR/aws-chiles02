@@ -19,6 +19,19 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-"""
+# Create a container to pretend to be the containers we need to test the graph
 
-"""
+FROM centos:latest
+
+RUN yum update -y
+
+# Copy the scripts
+COPY scripts /scripts/
+
+# Make them executable
+RUN chmod oug+x /scripts/*.sh
+
+# Update the path
+env PATH /scripts:$PATH
+
+VOLUME /dfms_root
