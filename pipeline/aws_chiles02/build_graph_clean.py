@@ -75,23 +75,42 @@ class BuildGraphClean(AbstractBuildGraph):
             node_id = self._get_next_node(frequency_pair)
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
-            casa_py_clean_drop = self.create_docker_app(
-                node_id,
-                get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
-                'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
-                CONTAINER_CHILES02,
-                'clean' if self._clean_tclean == 'clean' else 'tclean',
-                min_frequency=frequency_pair.bottom_frequency,
-                max_frequency=frequency_pair.top_frequency,
-                iterations=self._iterations,
-                arcsec=self._arcsec,
-                robust=self._robust,
-                image_size=self._image_size,
-                w_projection_planes=self._w_projection_planes,
-                clean_channel_average=self._clean_channel_average,
-                produce_qa=self._produce_qa,
-                measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
-            )
+            if self._use_bash:
+                casa_py_clean_drop = self.create_docker_app(
+                    node_id,
+                    get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
+                    'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
+                    CONTAINER_CHILES02,
+                    'clean' if self._clean_tclean == 'clean' else 'tclean',
+                    min_frequency=frequency_pair.bottom_frequency,
+                    max_frequency=frequency_pair.top_frequency,
+                    iterations=self._iterations,
+                    arcsec=self._arcsec,
+                    robust=self._robust,
+                    image_size=self._image_size,
+                    w_projection_planes=self._w_projection_planes,
+                    clean_channel_average=self._clean_channel_average,
+                    produce_qa=self._produce_qa,
+                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                )
+            else:
+                casa_py_clean_drop = self.create_docker_app(
+                    node_id,
+                    get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
+                    'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
+                    CONTAINER_CHILES02,
+                    'clean' if self._clean_tclean == 'clean' else 'tclean',
+                    min_frequency=frequency_pair.bottom_frequency,
+                    max_frequency=frequency_pair.top_frequency,
+                    iterations=self._iterations,
+                    arcsec=self._arcsec,
+                    robust=self._robust,
+                    image_size=self._image_size,
+                    w_projection_planes=self._w_projection_planes,
+                    clean_channel_average=self._clean_channel_average,
+                    produce_qa=self._produce_qa,
+                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                )
             result = self.create_directory_container(node_id, 'dir_clean_output')
             for drop in s3_drop_outs:
                 casa_py_clean_drop.addInput(drop)

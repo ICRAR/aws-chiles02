@@ -44,6 +44,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._number_taylor_terms = keywords['number_taylor_terms']
         self._scan_statistics = keywords['scan_statistics']
         self._s3_uvsub_name = keywords['uvsub_directory_name']
+        self._use_bash = keywords['use_bash']
         self._s3_split_name = 'split_{0}'.format(keywords['width'])
         self._list_ip = []
         self._node_index = 0
@@ -121,17 +122,29 @@ class BuildGraphUvsub(AbstractBuildGraph):
             copy_from_s3.addInput(carry_over_data.memory_drop_list[count_on_node])
 
         # Do the UV subtraction
-        casa_py_uvsub_drop = self.create_docker_app(
-            node_id,
-            get_module_name(DockerUvsub),
-            'app_uvsub',
-            CONTAINER_CHILES02,
-            'uvsub',
-            min_frequency=frequencies[0],
-            max_frequency=frequencies[1],
-            w_projection_planes=self._w_projection_planes,
-            number_taylor_terms=self._number_taylor_terms,
-        )
+        if self._use_bash:
+            casa_py_uvsub_drop = self.create_casa_app(
+                node_id,
+                get_module_name(CasaUvsub),
+                'app_uvsub',
+                'uvsub',
+                min_frequency=frequencies[0],
+                max_frequency=frequencies[1],
+                w_projection_planes=self._w_projection_planes,
+                number_taylor_terms=self._number_taylor_terms,
+            )
+        else:
+            casa_py_uvsub_drop = self.create_docker_app(
+                node_id,
+                get_module_name(DockerUvsub),
+                'app_uvsub',
+                CONTAINER_CHILES02,
+                'uvsub',
+                min_frequency=frequencies[0],
+                max_frequency=frequencies[1],
+                w_projection_planes=self._w_projection_planes,
+                number_taylor_terms=self._number_taylor_terms,
+            )
         result = self.create_directory_container(node_id, 'dir_uvsub_output')
         casa_py_uvsub_drop.addInput(measurement_set)
         casa_py_uvsub_drop.addOutput(result)
@@ -161,16 +174,19 @@ class BuildGraphUvsub(AbstractBuildGraph):
         if self._scan_statistics:
             observation = split_to_process[1]
             observation = observation[:-4]
-            scan_statistics_app = self.create_docker_app(
-                node_id,
-                get_module_name(DockerStats),
-                'app_stats',
-                CONTAINER_CHILES02,
-                'stats',
-                min_frequency=frequencies[0],
-                max_frequency=frequencies[1],
-                observation=observation,
-            )
+            if self._use_bash:
+                pass # TODO
+            else:
+                scan_statistics_app = self.create_docker_app(
+                    node_id,
+                    get_module_name(DockerStats),
+                    'app_stats',
+                    CONTAINER_CHILES02,
+                    'stats',
+                    min_frequency=frequencies[0],
+                    max_frequency=frequencies[1],
+                    observation=observation,
+                )
 
             memory_drop = self.create_memory_drop(node_id)
             scan_statistics_app.addInput(result)

@@ -163,7 +163,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -260,6 +260,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     width=frequency_width,
                     session_id=session_id,
                     dim_ip=hosts,
+                    use_bash=use_bash,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -276,7 +277,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -310,6 +311,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 width=frequency_width,
                 session_id=session_id,
                 dim_ip=host,
+                use_bash=use_bash,
             )
             graph.build_graph()
 
@@ -324,7 +326,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown):
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash):
     work_to_do = WorkToDo(width, bucket, get_s3_split_name(width))
     work_to_do.calculate_work_to_do()
 
@@ -341,7 +343,8 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown):
         shutdown=add_shutdown,
         width=width,
         session_id='json_test',
-        dim_ip='1.2.3.4'
+        dim_ip='1.2.3.4',
+        use_bash=use_bash,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -360,6 +363,7 @@ def command_create(args):
         volume=args.volume,
         days_per_node=args.days_per_node,
         add_shutdown=args.shutdown,
+        use_bash=args.use_bash,
     )
 
 
@@ -371,6 +375,7 @@ def command_use(args):
         frequency_width=args.width,
         volume=args.volume,
         add_shutdown=args.shutdown,
+        use_bash=args.use_bash,
     )
 
 
@@ -382,6 +387,7 @@ def command_json(args):
         nodes=args.nodes,
         parallel_streams=args.parallel_streams,
         add_shutdown=args.shutdown,
+        use_bash=args.use_bash,
     )
 
 
@@ -407,6 +413,7 @@ def command_interactive(args):
         args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['create_use_json'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
             args.get('spot_price_i3.2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
@@ -420,16 +427,6 @@ def command_interactive(args):
 
     # Run the command
     if config['create_use_json'] == 'create':
-        command_line = 'create {0} {1} {2} {3} {4} {5} {6} {7}'.format(
-            config['bucket_name'],
-            config['volume'],
-            config['ami'],
-            config['spot_price_i3.2xlarge'],
-            config['spot_price_i3_4xlarge'],
-            '--days_per_node ' + config['days_per_node'],
-            '--width ' + config['width'],
-            '--shutdown' if config['shutdown'] else ''
-        )
         create_and_generate(
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
@@ -439,16 +436,9 @@ def command_interactive(args):
             volume=config['volume'],
             days_per_node=config['days_per_node'],
             add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
         )
     elif config['create_use_json'] == 'use':
-        command_line = 'use {0} {1} {2} {3} {4} {5}'.format(
-            config['bucket_name'],
-            config['volume'],
-            config['dim'],
-            '--port ' + DIM_PORT,
-            '--width ' + config['width'],
-            '--shutdown' if config['shutdown'] else ''
-        )
         use_and_generate(
             host=config['dim'],
             port=DIM_PORT,
@@ -456,11 +446,9 @@ def command_interactive(args):
             frequency_width=config['width'],
             volume=config['volume'],
             add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
         )
     else:
-        command_line = 'json'.format(
-
-        )
         build_json(
             bucket=config['bucket_name'],
             width=config['width'],
@@ -468,8 +456,8 @@ def command_interactive(args):
             nodes=config['nodes'],
             parallel_streams=config['parallel_streams'],
             add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
         )
-    return parser_arguments(command_line)
 
 
 def parser_arguments(command_line=sys.argv[1:]):

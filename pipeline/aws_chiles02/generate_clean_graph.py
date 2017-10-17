@@ -231,6 +231,7 @@ def create_and_generate(**keywords):
                         fits_directory_name=keywords['fits_directory_name'],
                         clean_tclean=clean_tclean,
                         run_note=keywords['run_note'],
+                        use_bash=keywords['use_bash'],
                     )
                     graph.build_graph()
 
@@ -300,6 +301,7 @@ def use_and_generate(**keywords):
                 fits_directory_name=keywords['fits_directory_name'],
                 clean_tclean=keywords['clean_tclean'],
                 run_note=keywords['run_note'],
+                use_bash=keywords['use_bash'],
             )
             graph.build_graph()
 
@@ -354,6 +356,7 @@ def generate_json(**keywords):
         produce_qa=keywords['produce_qa'],
         clean_tclean=keywords['clean_tclean'],
         run_note=keywords['run_note'],
+        use_bash=keywords['use_bash'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -474,6 +477,7 @@ def command_interactive(args):
         args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
         args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
+        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
@@ -515,6 +519,7 @@ def command_interactive(args):
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
+            use_bash=config['use_bash'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -538,6 +543,7 @@ def command_interactive(args):
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
+            use_bash=config['use_bash'],
         )
     else:
         generate_json(
@@ -561,6 +567,7 @@ def command_interactive(args):
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
+            use_bash=config['use_bash'],
         )
 
 

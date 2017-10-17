@@ -220,6 +220,7 @@ def create_and_generate(**keywords):
                         session_id=session_id,
                         dim_ip=host,
                         run_note=keywords['run_note'],
+                        use_bash=keywords['use_bash'],
                     )
                     graph.build_graph()
 
@@ -285,6 +286,7 @@ def use_and_generate(**keywords):
                 session_id=session_id,
                 dim_ip=host,
                 run_note=keywords['run_note'],
+                use_bash=keywords['use_bash'],
             )
             graph.build_graph()
 
@@ -335,6 +337,7 @@ def generate_json(**keywords):
         session_id='session_id',
         dim_ip='1.2.3.4',
         run_note=keywords['run_note'],
+        use_bash=keywords['use_bash'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -421,6 +424,7 @@ def command_interactive(args):
         args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int, help_text='the number of taylor terms', default=2)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
+        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
@@ -455,7 +459,8 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
-            run_note=config['run_note_uvsub']
+            run_note=config['run_note_uvsub'],
+            use_bash=config['use_bash'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -471,7 +476,8 @@ def command_interactive(args):
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
             dump_json=config['dump_json'],
-            run_note=config['run_note_uvsub']
+            run_note=config['run_note_uvsub'],
+            use_bash=config['use_bash'],
         )
     else:
         generate_json(
@@ -485,7 +491,8 @@ def command_interactive(args):
             frequency_range=config['frequency_range'],
             scan_statistics=config['scan_statistics'],
             uvsub_directory_name=config['uvsub_directory_name'],
-            run_note=config['run_note_uvsub']
+            run_note=config['run_note_uvsub'],
+            use_bash=config['use_bash'],
         )
 
 

@@ -189,6 +189,7 @@ def generate_json(**keywords):
         session_id='session_id',
         dim_ip='1.2.3.4',
         run_note=keywords['run_note'],
+        use_bash=keywords['use_bash'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -314,6 +315,7 @@ def create_and_generate(**keywords):
                     session_id=session_id,
                     dim_ip=host,
                     run_note=keywords['run_note'],
+                    use_bash=keywords['use_bash'],
                 )
                 graph.build_graph()
 
@@ -377,6 +379,7 @@ def use_and_generate(**keywords):
                 session_id=session_id,
                 dim_ip=host,
                 run_note=keywords['run_note'],
+                use_bash=keywords['use_bash'],
             )
             graph.build_graph()
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -467,6 +470,7 @@ def command_interactive(args):
         args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
         args.get('imageconcat_directory_name', 'The directory name for imageconcat', help_text='the directory name for imageconcat')
         args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_imageconcat', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
@@ -497,7 +501,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat']
+            run_note=config['run_note_imageconcat'],
+            use_bash=config['use_bash'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -512,7 +517,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat']
+            run_note=config['run_note_imageconcat'],
+            use_bash=config['use_bash'],
         )
     else:
         generate_json(
@@ -526,7 +532,8 @@ def command_interactive(args):
             clean_directory_name=config['clean_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat']
+            run_note=config['run_note_imageconcat'],
+            use_bash=config['use_bash'],
         )
 
 

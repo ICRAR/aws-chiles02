@@ -30,6 +30,8 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
+from aws_chiles02.settings_file import CASA_COMMAND_LINE
+from dfms.apps.bash_shell_app import BashShellApp
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
 
@@ -248,14 +250,62 @@ class DockerUvsub(DockerApp, ErrorHandling):
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{3}.model '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{3}.model '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{3}.model '.format(
-            measurement_set_in,
-            self.outputs[0].path,
-            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-            spectral_window,
-            self._w_projection_planes,
-            self._number_taylor_terms,
-        )
+                            measurement_set_in,
+                            self.outputs[0].path,
+                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
+                            spectral_window,
+                            self._w_projection_planes,
+                            self._number_taylor_terms,
+                        )
         super(DockerUvsub, self).run()
 
     def dataURL(self):
         return 'docker container chiles02:latest'
+
+
+class CasaUvsub(BashShellApp, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._w_projection_planes = None
+        self._number_taylor_terms = None
+        self._command = None
+        super(CasaUvsub, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaUvsub, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
+        self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
+        self._command = 'uvsub.sh'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def run(self):
+        measurement_set_in = os.path.join(
+            self.inputs[0].path,
+            'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        )
+
+        spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
+        # Reset to two Taylor Terms here
+        self._command = CASA_COMMAND_LINE + 'uvsub_ha.sh /dfms_root{0} /dfms_root{1} {2} {4} {5} ' \         
+                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
+                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{3}.model ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{3}.model ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{3}.model ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{3}.model ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{3}.model '.format(
+                            measurement_set_in,
+                            self.outputs[0].path,
+                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
+                            spectral_window,
+                            self._w_projection_planes,
+                            self._number_taylor_terms,
+                        )
+        super(CasaUvsub, self).run()
+
+    def dataURL(self):
+        return 'CASA run'
