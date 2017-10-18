@@ -290,7 +290,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = CASA_COMMAND_LINE + SCRIPT_PATH + \
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
                         'uvsub_ha.py {0} {1} {2} {4} {5} ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
