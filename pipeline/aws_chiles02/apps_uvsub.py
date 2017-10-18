@@ -281,6 +281,10 @@ class CasaUvsub(BashShellApp, ErrorHandling):
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
+        # make the output directory
+        os.makedirs(self.outputs[0].path)
+
+        # make the input measurement set
         measurement_set_in = os.path.join(
             self.inputs[0].path,
             'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
