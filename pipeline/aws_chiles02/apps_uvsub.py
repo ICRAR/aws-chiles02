@@ -23,15 +23,14 @@
 My Docker Apps
 """
 import logging
-import os
 
 import boto3
+import os
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
-from dfms.apps.bash_shell_app import BashShellApp
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
 
@@ -262,7 +261,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         return 'docker container chiles02:latest'
 
 
-class CasaUvsub(BashShellApp, ErrorHandling):
+class CasaUvsub(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -308,7 +307,7 @@ class CasaUvsub(BashShellApp, ErrorHandling):
                             self._w_projection_planes,
                             self._number_taylor_terms,
                         )
-        super(CasaUvsub, self).run()
+        run_command(self._command)
 
     def dataURL(self):
         return 'CASA run'
