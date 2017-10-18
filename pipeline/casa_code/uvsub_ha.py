@@ -133,7 +133,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            im.open(thems=tmp_name, usescratch=True)
            ms.open(thems=tmp_name)
            # Select data by HA in this case
-           ret=ms.getdata(['axis_info','ha'],ifraxis=T)
+           ret=ms.getdata(['axis_info','ha'],ifraxis=True)
            ha= ret['axis_info']['time_axis']['HA']/3600.0
            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
            ha_model=model

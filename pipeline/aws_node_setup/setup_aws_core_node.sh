@@ -12,8 +12,7 @@ curl -SL https://casa.nrao.edu/download/distro/linux/release/el6/casa-release-5.
 ln -s casa-release-5.1.0-74.el6/ casa
 
 sudo bash -c 'echo "PATH=\$PATH:/home/ec2-user/casa/bin" >> /etc/profile.d/casa.sh'
-sudo bash -c 'echo "PATH=\$PATH:/home/ec2-user/aws-chiles02/pipeline/casa_scripts" >> /etc/profile.d/casa.sh'
-sudo bash -c 'echo "PYTHONPATH=\$PYTHONPATH:/home/ec2-user/aws-chiles02/pipeline" >> /etc/profile.d/casa.sh'
+sudo bash -c 'echo "PYTHONPATH=/home/ec2-user/aws-chiles02/pipeline" >> /etc/profile.d/casa.sh'
 
 virtualenv ~/virtualenv/aws-chiles02
 source ~/virtualenv/aws-chiles02/bin/activate
