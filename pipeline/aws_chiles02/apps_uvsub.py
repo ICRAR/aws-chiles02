@@ -30,7 +30,7 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from aws_chiles02.settings_file import CASA_COMMAND_LINE
+from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
 from dfms.apps.bash_shell_app import BashShellApp
 from dfms.apps.dockerapp import DockerApp
 from dfms.drop import BarrierAppDROP
@@ -291,7 +291,8 @@ class CasaUvsub(BashShellApp, ErrorHandling):
         )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = CASA_COMMAND_LINE + 'uvsub_ha.sh {0} {1} {2} {4} {5} ' \
+        self._command = CASA_COMMAND_LINE + SCRIPT_PATH + \
+                        'uvsub_ha.sh {0} {1} {2} {4} {5} ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model ' \
