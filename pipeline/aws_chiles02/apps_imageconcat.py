@@ -30,8 +30,8 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -295,8 +295,8 @@ class DockerImageconcat(DockerApp, ErrorHandling):
                 LOG.debug('Looking at: {0}'.format(file_name))
                 if file_name.endswith(".image.centre"):
                     LOG.debug('Adding: {0}'.format(file_name))
-                    dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
-                    measurement_sets.append(dfms_name)
+                    dlg_name = '/dlg_root{0}/{1}'.format(measurement_set, file_name)
+                    measurement_sets.append(dlg_name)
                     break
 
         LOG.debug('measurement_sets: {0}'.format(measurement_sets))

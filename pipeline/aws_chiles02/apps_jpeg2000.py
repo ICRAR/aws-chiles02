@@ -30,7 +30,7 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage
-from dfms.drop import BarrierAppDROP
+from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.INFO)

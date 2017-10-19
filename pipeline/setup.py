@@ -37,7 +37,7 @@ setup(
         'argparse',
         'boto3',
         'ConfigObj',
-        'dfms',
+        'dlg',
         'jsonpickle',
         'mako',
         'pip>=9.0',
@@ -62,6 +62,6 @@ setup(
 
     # I need the daliuge client from github
     dependency_links = [
-        'git+https://github.com/SKA-ScienceDataProcessor/dfms#egg=dfms-0.1'
+        'git+https://github.com/ICRAR/daliuge.git'
     ],
 )

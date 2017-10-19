@@ -132,7 +132,7 @@
         "MinSize" : 1,
         "MaxSize" : {"Ref" : "Instances"},
         "Tags": [
-          {"PropagateAtLaunch": true, "Key" : "Name", "Value" : "DFMS Instance"},
+          {"PropagateAtLaunch": true, "Key" : "Name", "Value" : "DALiuGE Instance"},
           {"PropagateAtLaunch": true, "Key" : "Owner", "Value" : { "Ref" : "Owner" }}
         ]
       }
@@ -177,7 +177,7 @@
                   "Fn::Join": [
                     "",
                     [
-                      "VG=dfms-group\n",
+                      "VG=dlg-group\n",
                       "DATA_SIZE=100GB\n"
                     ]
                   ]
@@ -316,21 +316,21 @@
                 "        mdadm --create --verbose /dev/md0 --level=0 -c256 --raid-devices=$ephemeral_count $drives\n",
                 "        blockdev --setra 65536 /dev/md0\n",
                 "        pvcreate /dev/md0\n",
-                "        vgcreate dfms-group /dev/md0\n",
+                "        vgcreate dlg-group /dev/md0\n",
                 "      else\n",
                 "        pvcreate $drives\n",
-                "        vgcreate dfms-group $drives\n",
+                "        vgcreate dlg-group $drives\n",
                 "      fi\n",
-                "      lvcreate -L 10G --name swap dfms-group\n",
+                "      lvcreate -L 10G --name swap dlg-group\n",
                 "      docker-storage-setup\n",
-                "      lvcreate --extents 100%FREE --name data dfms-group\n",
+                "      lvcreate --extents 100%FREE --name data dlg-group\n",
                 "\n",
-                "      mkfs.xfs -K /dev/dfms-group/data\n",
+                "      mkfs.xfs -K /dev/dlg-group/data\n",
                 "      mkdir -p /mnt/daliuge\n",
-                "      mount /dev/dfms-group/data /mnt/daliuge\n",
+                "      mount /dev/dlg-group/data /mnt/daliuge\n",
                 "\n",
-                "      mkswap /dev/dfms-group/swap\n",
-                "      swapon /dev/dfms-group/swap\n",
+                "      mkswap /dev/dlg-group/swap\n",
+                "      swapon /dev/dlg-group/swap\n",
                 "    else\n",
                 "      mkdir -p /mnt/daliuge\n",
                 "      mkfs.xfs -K /dev/xvdb\n",
@@ -345,8 +345,8 @@
                 "# Print free disk space\n",
                 "df -h\n",
                 "\n",
-                "# Create the DFMS root\n",
-                "mkdir -p /mnt/daliuge/dfms_root\n",
+                "# Create the DALiuGE root\n",
+                "mkdir -p /mnt/daliuge/dlg_root\n",
                 "chmod -R 0777 /mnt/daliuge\n",
                 "\n",
                 "rm -rf /var/lib/docker\n",
@@ -364,15 +364,15 @@
                 "docker pull kevinvinsen/chiles02:latest\n",
                 "\n",
                 "cd /home/ec2-user\n",
-                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && git pull'\n",
-                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && python setup.py install'\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dlg && git pull'\n",
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dlg && source /home/ec2-user/virtualenv/dlg/bin/activate && python setup.py install'\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user && git clone https://github.com/ICRAR/aws-chiles02.git'\n",
                 "\n",
-                "cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys\n",
+                "cat /home/ec2-user/.ssh/id_daliuge.pub >> /home/ec2-user/.ssh/authorized_keys\n",
                 "runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py startup_complete us-west-2'\n",
-                "runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && nohup dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/daliuge/dfms_root/logfile.log 2>&1 &'\n",
-                "#runuser -l ec2-user -c 'cd /home/ec2-user/dfms && source /home/ec2-user/virtualenv/dfms/bin/activate && dfmsNM --rest -v --dfms-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0'\n",
-                "#dfmsDIM --rest -v --id=kv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_dfms --nodes NODES\n"
+                "runuser -l ec2-user -c 'cd /home/ec2-user/dlg && source /home/ec2-user/virtualenv/dlg/bin/activate && nohup dlgNM --rest -v --dlg-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0 > /mnt/daliuge/dlg_root/logfile.log 2>&1 &'\n",
+                "#runuser -l ec2-user -c 'cd /home/ec2-user/dlg && source /home/ec2-user/virtualenv/dlg/bin/activate && dlgNM --rest -v --dlg-path=/home/ec2-user/aws-chiles02/pipeline --id=kv -H 0.0.0.0'\n",
+                "#dlgDIM --rest -v --id=kv -H 0.0.0.0 --ssh-pkey-path ~/.ssh/id_daliuge --nodes NODES\n"
               ]
             ]
           }

@@ -30,8 +30,8 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'

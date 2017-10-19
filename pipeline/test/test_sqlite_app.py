@@ -29,8 +29,8 @@ import unittest
 from configobj import ConfigObj
 
 from aws_chiles02.common import get_uuid
-from dfms import droputils
-from dfms.drop import FileDROP, InMemoryDROP
+from dlg import droputils
+from dlg.drop import FileDROP, InMemoryDROP
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,7 +40,7 @@ class TestSqlite(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config_file_name = os.path.join(os.path.expanduser('~'), '.dfms/dfms.settings')
+        config_file_name = os.path.join(os.path.expanduser('~'), '.dlg/dlg.settings')
         if os.path.exists(config_file_name):
             config = ConfigObj(config_file_name)
             TestSqlite._temp = config.get('OS_X_TEMP')

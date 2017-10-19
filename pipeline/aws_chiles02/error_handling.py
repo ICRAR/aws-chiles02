@@ -47,7 +47,7 @@ class ErrorListener(object):
             session_id,
             oid,
             uid,
-            queue='dfms-messages',
+            queue='dlg-messages',
             region=AWS_REGION,
             profile_name='aws-chiles02'):
         session = boto3.Session(profile_name=profile_name)

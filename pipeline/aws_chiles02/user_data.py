@@ -50,7 +50,7 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
-    template = mako_lookup.get_template('dfms_cloud_init.yaml')
+    template = mako_lookup.get_template('daliuge_cloud_init.yaml')
     cloud_init = template.render(
         profile='aws-chiles02',
         aws_access_key_id=boto_data[0],
@@ -77,7 +77,7 @@ def get_data_island_manager_user_data(boto_data, hosts, uuid, need_node_manager=
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
-    template = mako_lookup.get_template('dfms_cloud_init.yaml')
+    template = mako_lookup.get_template('daliuge_cloud_init.yaml')
     cloud_init = template.render(
         profile='aws-chiles02',
         aws_access_key_id=boto_data[0],

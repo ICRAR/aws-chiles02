@@ -30,8 +30,8 @@ import jsonpickle
 
 from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters
 from aws_chiles02.common import get_module_name
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import BarrierAppDROP, DirectoryContainer, dropdict
+from dlg.apps.bash_shell_app import BashShellApp
+from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 
 
 class AbstractBuildGraph:
@@ -108,7 +108,7 @@ class AbstractBuildGraph:
 
         dim_shutdown_drop = None
         if shutdown_dim and self._shutdown:
-            dim_shutdown_drop = self.create_bash_shell_app(self._dim_ip, 'sudo shutdown -h +5 "DFMS node shutting down" &')
+            dim_shutdown_drop = self.create_bash_shell_app(self._dim_ip, 'sudo shutdown -h +5 "DALiuGE node shutting down" &')
             dim_shutdown_drop.addInput(s3_drop_out)
 
         for list_ips in self._node_details.values():
@@ -121,7 +121,7 @@ class AbstractBuildGraph:
                 dim_copy_log_drop.addInput(memory_drop)
 
                 if self._shutdown:
-                    shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DFMS node shutting down" &')
+                    shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DALiuGE node shutting down" &')
                     shutdown_drop.addInput(s3_drop_out)
 
                     if shutdown_dim:

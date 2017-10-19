@@ -40,8 +40,8 @@ from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_rep
 from aws_chiles02.get_argument import GetArguments
 from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT
 from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
-from dfms.droputils import get_roots
-from dfms.manager.client import DataIslandManagerClient
+from dlg.droputils import get_roots
+from dlg.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
 PARALLEL_STREAMS = 16
@@ -301,7 +301,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     parser_create.set_defaults(func=command_create)
 
     parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
-    parser_use.add_argument('host', help='the host the dfms is running on')
+    parser_use.add_argument('host', help='the host the DALiuGE is running on')
     parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
     parser_use.set_defaults(func=command_use)
 
@@ -313,7 +313,7 @@ def parser_arguments(command_line=sys.argv[1:]):
 
 
 if __name__ == '__main__':
-    # json 13b-266 /mnt/daliuge/dfms_root 8 -w 8 -s
+    # json 13b-266 /mnt/daliuge/dlg_root 8 -w 8 -s
     # interactive
     logging.basicConfig(level=logging.INFO)
     arguments = parser_arguments()

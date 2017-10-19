@@ -33,7 +33,7 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import AWS_REGION
-from dfms.drop import BarrierAppDROP, DirectoryContainer, FileDROP
+from dlg.drop import BarrierAppDROP, DirectoryContainer, FileDROP
 
 LOG = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class ErrorHandling(object):
         self._session_id = None
         self._error_message = None
 
-    def send_error_message(self, message_text, oid, uid, queue='dfms-messages', region=AWS_REGION, profile_name='aws-chiles02'):
+    def send_error_message(self, message_text, oid, uid, queue='dlg-messages', region=AWS_REGION, profile_name='aws-chiles02'):
         self._error_message = message_text
         session = boto3.Session(profile_name=profile_name)
         sqs = session.resource('sqs', region_name=region)
@@ -123,7 +123,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         return type(self).__name__
 
     def run(self):
-        log_file_dir = '/mnt/daliuge/dfms_root' if os.path.exists('/mnt/daliuge/dfms_root') else '/tmp'
+        log_file_dir = '/mnt/daliuge/dlg_root' if os.path.exists('/mnt/daliuge/dlg_root') else '/tmp'
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key
@@ -132,7 +132,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         # Make the tar file
         tar_filename = os.path.join(log_file_dir, 'log.tar')
         os.chdir(log_file_dir)
-        bash = 'tar -cvf {0} {1}'.format(tar_filename, 'dfms*.log')
+        bash = 'tar -cvf {0} {1}'.format(tar_filename, 'daliuge*.log')
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:

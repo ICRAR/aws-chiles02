@@ -2,7 +2,7 @@
 
 sudo yum -y update
 sudo yum -y install git
-git clone https://github.com/SKA-ScienceDataProcessor/dfms
+git clone https://github.com/SKA-ScienceDataProcessor/dlg
 
 sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel
 
@@ -14,7 +14,7 @@ pip install boto3 argparse ConfigObj mako
 virtualenv ~/virtualenv/daliuge
 source ~/virtualenv/daliuge/bin/activate
 
-cd dfms
+cd dlg
 python setup.py install
 pip install boto3 argparse ConfigObj mako numpy
 
@@ -32,5 +32,5 @@ sudo service docker start
 sudo usermod -a -G docker ec2-user
 
 cd ~/.ssh
-ssh-keygen -t rsa -f id_dfms -P ""
-chmod og-r id_dfms.pub
+ssh-keygen -t rsa -f id_daliuge -P ""
+chmod og-r id_daliuge.pub

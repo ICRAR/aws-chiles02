@@ -23,7 +23,7 @@ pip install boto3 argparse ConfigObj mako
 virtualenv ~/virtualenv/daliuge
 source ~/virtualenv/daliuge/bin/activate
 
-cd dfms
+cd daliuge
 python setup.py install
 pip install boto3 argparse ConfigObj mako numpy
 
@@ -41,5 +41,5 @@ sudo service docker start
 sudo usermod -a -G docker ec2-user
 
 cd ~/.ssh
-ssh-keygen -t rsa -f id_dfms -P ""
-chmod og-r id_dfms.pub
+ssh-keygen -t rsa -f id_daliuge -P ""
+chmod og-r id_daliuge.pub

@@ -31,8 +31,8 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from dfms.apps.dockerapp import DockerApp
-from dfms.drop import BarrierAppDROP
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -241,9 +241,9 @@ class CasaConcatenate(BarrierAppDROP, ErrorHandling):
             LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
-                    dfms_name = '{0}/{1}'.format(measurement_set, file_name)
-                    LOG.info('dfms_name: {0}'.format(dfms_name))
-                    measurement_sets.append(dfms_name)
+                    dlg_name = '{0}/{1}'.format(measurement_set, file_name)
+                    LOG.info('dlg_name: {0}'.format(dlg_name))
+                    measurement_sets.append(dlg_name)
                     break
 
         measurement_set_output = self.outputs[0]
@@ -292,9 +292,9 @@ class DockerImageconcat(DockerApp, ErrorHandling):
             LOG.debug('measurement_set: {0}'.format(measurement_set))
             for file_name in os.listdir(measurement_set):
                 if file_name.endswith(".image"):
-                    dfms_name = '/dfms_root{0}/{1}'.format(measurement_set, file_name)
-                    LOG.info('dfms_name: {0}'.format(dfms_name))
-                    measurement_sets.append(dfms_name)
+                    dlg_name = '/dlg_root{0}/{1}'.format(measurement_set, file_name)
+                    LOG.info('dlg_name: {0}'.format(dlg_name))
+                    measurement_sets.append(dlg_name)
                     break
 
         self._command = 'imageconcat.sh %o0 image_{1}_{2}.cube {0}'.format(

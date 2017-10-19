@@ -54,7 +54,7 @@ RUN source /opt/chiles02/env/bin/activate ; \
 env PATH /opt/chiles02/aws-chiles02/pipeline/casa_docker_scripts:$PATH
 env PYTHONPATH $PYTHONPATH:/opt/chiles02/aws-chiles02/pipeline:/opt/chiles02/env/lib64/python2.7/site-packages
 
-VOLUME /dfms_root
+VOLUME /dlg_root
 
 # Add the ec2-user
 RUN groupadd -g500 ec2-user

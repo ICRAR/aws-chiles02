@@ -26,7 +26,7 @@ import logging
 import os
 
 from aws_chiles02.apps_general import ErrorHandling
-from dfms.apps.dockerapp import DockerApp
+from dlg.apps.dockerapp import DockerApp
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -73,7 +73,7 @@ class DockerTclean(DockerApp, ErrorHandling):
         for measurement_set_dir in self._measurement_sets:
             measurement_set_name = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
             if os.path.exists(measurement_set_name):
-                measurement_sets.append('/dfms_root' + measurement_set_name)
+                measurement_sets.append('/dlg_root' + measurement_set_name)
             else:
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 

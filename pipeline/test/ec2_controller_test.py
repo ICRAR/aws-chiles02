@@ -62,7 +62,7 @@ def command_test01(args):
 
 
 def command_test02(args):
-    yaml = get_file_contents('dfms_cloud_init.yaml')
+    yaml = get_file_contents('daliuge_cloud_init.yaml')
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         yaml = yaml.format(
@@ -105,7 +105,7 @@ df -h
 def command_test03(args):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        cloud_init = get_file_contents('dfms_cloud_init.yaml')
+        cloud_init = get_file_contents('daliuge_cloud_init.yaml')
         cloud_init_dynamic = '''#cloud-config
 # Write the boto file
 write_files:

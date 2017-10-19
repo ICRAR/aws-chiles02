@@ -20,17 +20,17 @@
 #    MA 02111-1307  USA
 #
 """
-Test shutting down a server from DFMS
+Test shutting down a server from DALiuGE
 """
 import argparse
 import json
 import logging
 
 from aws_chiles02.common import get_module_name, get_session_id, get_uuid
-from dfms.apps.bash_shell_app import BashShellApp
-from dfms.drop import dropdict
-from dfms.droputils import get_roots
-from dfms.manager.client import NodeManagerClient
+from dlg.apps.bash_shell_app import BashShellApp
+from dlg.drop import dropdict
+from dlg.droputils import get_roots
+from dlg.manager.client import NodeManagerClient
 
 LOG = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class BuildGraph:
             "app": get_module_name(BashShellApp),
             "oid": get_oid('app_bash_shell_app'),
             "uid": get_uuid(),
-            "command": 'sudo shutdown -h +5 "DFMS node shutting down" &',
+            "command": 'sudo shutdown -h +5 "DALiuGE node shutting down" &',
             "user": 'root',
             "input_error_threshold": 100,
         })
@@ -100,7 +100,7 @@ def parser_arguments():
     parser_json.set_defaults(func=command_json)
 
     parser_run = subparsers.add_parser('run', help='run and deploy')
-    parser_run.add_argument('host', help='the host the dfms is running on')
+    parser_run.add_argument('host', help='the host the DALiuGE is running on')
     parser_run.add_argument('-p', '--port', type=int, help='the port to bind to', default=8000)
     parser_run.set_defaults(func=command_run)
 

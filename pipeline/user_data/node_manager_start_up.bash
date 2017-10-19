@@ -138,7 +138,7 @@ df -h
 ulimit -n 20480
 
 # Create the daliuge root
-mkdir -p /mnt/daliuge/dfms_root
+mkdir -p /mnt/daliuge/dlg_root
 chmod -R 0777 /mnt/daliuge
 
 rm -rf /var/lib/docker
@@ -171,7 +171,7 @@ runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtu
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 
-cat /home/ec2-user/.ssh/id_dfms.pub >> /home/ec2-user/.ssh/authorized_keys
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && dlg nm --daemon -${log_level} --dfms-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/daliuge/dfms_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
+cat /home/ec2-user/.ssh/id_daliuge.pub >> /home/ec2-user/.ssh/authorized_keys
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && dlg nm --daemon -${log_level} --dlg-path=/home/ec2-user/aws-chiles02/pipeline -H 0.0.0.0 --log-dir /mnt/daliuge/dlg_root --error-listener=aws_chiles02.error_handling.ErrorListener --max-request-size ${max_request_size}'
 sleep 10
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02/pipeline/aws_chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && python startup_complete.py ${queue} ${region} "${uuid}"'
