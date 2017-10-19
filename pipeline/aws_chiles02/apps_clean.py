@@ -259,9 +259,9 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                '{1}.image.onsource_centre.txt {1}.image.onsource_centre.svg ' \
                '{1}.image.onsource_south.txt {1}.image.onsource_south.svg ' \
                '{1}.image.boresight.txt {1}.image.boresight.svg'.format(
-            tar_filename,
-            stem_name,
-        )
+                    tar_filename,
+                    stem_name,
+                )
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
