@@ -230,7 +230,7 @@ def create_and_generate(**keywords):
                     'spot_price': spot_price
                 }
             ],
-            get_node_manager_user_data(boto_data, uuid, max_request_size=50),
+            get_node_manager_user_data(boto_data, uuid, max_request_size=50, chiles=not keywords['use_bash']),
             AWS_REGION,
             tags=[
                 {

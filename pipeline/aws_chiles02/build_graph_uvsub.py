@@ -175,7 +175,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
             observation = split_to_process[1]
             observation = observation[:-4]
             if self._use_bash:
-                pass # TODO
+                pass   # TODO
             else:
                 scan_statistics_app = self.create_docker_app(
                     node_id,

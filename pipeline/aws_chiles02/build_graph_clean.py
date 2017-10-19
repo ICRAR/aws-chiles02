@@ -24,9 +24,9 @@ Build the physical graph
 """
 import boto3
 
-from aws_chiles02.apps_clean import CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3, DockerClean
+from aws_chiles02.apps_clean import CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3, DockerClean, CasaClean
 from aws_chiles02.apps_general import CleanupDirectories
-from aws_chiles02.apps_tclean import DockerTclean
+from aws_chiles02.apps_tclean import DockerTclean, CasaTclean
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -55,6 +55,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._only_image = keywords['only_image']
         self._produce_qa = keywords['produce_qa']
         self._clean_tclean = keywords['clean_tclean']
+        self._use_bash = keywords['use_bash']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -76,11 +77,10 @@ class BuildGraphClean(AbstractBuildGraph):
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
             if self._use_bash:
-                casa_py_clean_drop = self.create_docker_app(
+                casa_py_clean_drop = self.create_casa_app(
                     node_id,
-                    get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
+                    get_module_name(CasaClean) if self._clean_tclean == 'clean' else get_module_name(CasaTclean),
                     'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
-                    CONTAINER_CHILES02,
                     'clean' if self._clean_tclean == 'clean' else 'tclean',
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,

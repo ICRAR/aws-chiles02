@@ -184,7 +184,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid),
+                get_node_manager_user_data(boto_data, uuid, chiles=use_bash),
                 AWS_REGION,
                 tags=[
                     {

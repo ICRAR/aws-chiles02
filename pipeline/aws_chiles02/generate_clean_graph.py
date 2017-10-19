@@ -139,7 +139,7 @@ def create_and_generate(**keywords):
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, log_level=log_level),
+                get_node_manager_user_data(boto_data, uuid, log_level=log_level, chiles=not keywords['use_bash']),
                 AWS_REGION,
                 tags=[
                     {

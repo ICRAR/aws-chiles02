@@ -354,6 +354,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._produce_qa = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -404,7 +405,7 @@ class DockerClean(DockerApp, ErrorHandling):
         return 'docker container chiles02:latest'
 
 
-class CasaClean(DockerApp, ErrorHandling):
+class CasaClean(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._max_frequency = None
@@ -416,6 +417,7 @@ class CasaClean(DockerApp, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._produce_qa = None
         super(CasaClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -462,6 +464,7 @@ class CasaClean(DockerApp, ErrorHandling):
                                 self._produce_qa,
                                 ' '.join(measurement_sets),
                             )
+            run_command(self._command)
         else:
             LOG.error('No input files')
 
