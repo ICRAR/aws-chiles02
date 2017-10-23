@@ -132,9 +132,6 @@ class CasaTclean(DockerApp, ErrorHandling):
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        # make the output directory
-        os.makedirs(self.outputs[0].path)
-
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         measurement_sets = []
@@ -162,8 +159,6 @@ class CasaTclean(DockerApp, ErrorHandling):
             run_command(self._command)
         else:
             LOG.error('No input files')
-
-        super(CasaTclean, self).run()
 
     def dataURL(self):
         return 'CASA TClean'

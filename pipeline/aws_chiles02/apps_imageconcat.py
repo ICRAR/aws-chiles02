@@ -310,3 +310,45 @@ class DockerImageconcat(DockerApp, ErrorHandling):
 
     def dataURL(self):
         return 'docker container chiles02:latest'
+
+
+class CasaImageconcat(DockerApp, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
+        self._command = None
+        self._max_frequency = None
+        self._min_frequency = None
+        super(CasaImageconcat, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaImageconcat, self).initialize(**kwargs)
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._command = 'imageconcat.py'
+
+    def run(self):
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        measurement_sets = []
+        for measurement_set in self._measurement_sets:
+            LOG.debug('measurement_set: {0}'.format(measurement_set))
+            for file_name in os.listdir(measurement_set):
+                LOG.debug('Looking at: {0}'.format(file_name))
+                if file_name.endswith(".image.centre"):
+                    LOG.debug('Adding: {0}'.format(file_name))
+                    dlg_name = '/dlg_root{0}/{1}'.format(measurement_set, file_name)
+                    measurement_sets.append(dlg_name)
+                    break
+
+        LOG.debug('measurement_sets: {0}'.format(measurement_sets))
+        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2}'.format(
+            self._min_frequency,
+            self._max_frequency,
+            ' '.join(measurement_sets),
+        )
+        run_command(self._command)
+
+    def dataURL(self):
+        return 'Casa ImageConcat'

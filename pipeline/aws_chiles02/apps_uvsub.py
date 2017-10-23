@@ -276,13 +276,10 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
         self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
-        self._command = 'uvsub.sh'
+        self._command = 'uvsub.py'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        # make the output directory
-        os.makedirs(self.outputs[0].path)
-
         # make the input measurement set
         measurement_set_in = os.path.join(
             self.inputs[0].path,

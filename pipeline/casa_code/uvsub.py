@@ -50,6 +50,8 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
      I suggest that SPW in the model strings is deduced from
      spw=int(((freq_min+freq_max)/2-946)/32)
     """
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     LOG.info(
         'uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3}, w_projection_planes={4})'.format(
@@ -101,7 +103,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
 
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
-        # Using default reference freq turned all data to NaNs -- not good! 
+        # Using default reference freq turned all data to NaNs -- not good!
         # im.settaylorterms(ntaylorterms=ntt)
 
         #

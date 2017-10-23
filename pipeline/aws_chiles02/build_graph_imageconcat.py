@@ -23,7 +23,7 @@
 Build the physical graph
 """
 from aws_chiles02.apps_general import CleanupDirectories
-from aws_chiles02.apps_imageconcat import CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, DockerImageconcat
+from aws_chiles02.apps_imageconcat import CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, DockerImageconcat, CasaImageconcat
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -44,6 +44,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
         self._fits_directory_name = keywords['fits_directory_name']
         self._imageconcat_directory_name = keywords['imageconcat_directory_name']
         self._cleaned_objects = keywords['cleaned_objects']
+        self._use_bash = keywords['use_bash']
 
     def new_carry_over_data(self):
         return CarryOverDataImageconcat()
@@ -55,16 +56,28 @@ class BuildGraphImageconcat(AbstractBuildGraph):
             node_id = self._get_next_node(frequency_pair)
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
-            casa_imageconcat_drop = self.create_docker_app(
-                node_id,
-                get_module_name(DockerImageconcat),
-                'app_imageconcat',
-                CONTAINER_CHILES02,
-                'imageconcat',
-                min_frequency=frequency_pair.bottom_frequency,
-                max_frequency=frequency_pair.top_frequency,
-                measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
-            )
+            # Do the image concat
+            if self._use_bash:
+                casa_imageconcat_drop = self.create_casa_app(
+                    node_id,
+                    get_module_name(CasaImageconcat),
+                    'app_imageconcat',
+                    'imageconcat',
+                    min_frequency=frequency_pair.bottom_frequency,
+                    max_frequency=frequency_pair.top_frequency,
+                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                )
+            else:
+                casa_imageconcat_drop = self.create_docker_app(
+                    node_id,
+                    get_module_name(DockerImageconcat),
+                    'app_imageconcat',
+                    CONTAINER_CHILES02,
+                    'imageconcat',
+                    min_frequency=frequency_pair.bottom_frequency,
+                    max_frequency=frequency_pair.top_frequency,
+                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                )
             result = self.create_directory_container(node_id, 'dir_imageconcat_output')
             for drop in s3_drop_outs:
                 casa_imageconcat_drop.addInput(drop)

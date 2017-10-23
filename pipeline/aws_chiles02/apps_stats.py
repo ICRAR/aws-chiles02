@@ -239,3 +239,30 @@ class DockerStats(DockerApp, ErrorHandling):
 
     def dataURL(self):
         return 'docker container chiles02:latest'
+
+class CasaStats(DockerApp, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._observation = None
+        self._command = None
+        super(CasaStats, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaStats, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._observation = self._getArg(kwargs, 'observation', None)
+        self._command = 'stats.sh %i0 %i0 '
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def run(self):
+        self._command = 'stats.sh %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv {2}'.format(
+            self._min_frequency,
+            self._max_frequency,
+            self._observation,
+        )
+        run_command(self._command)
+
+    def dataURL(self):
+        return 'CASA Stats'
