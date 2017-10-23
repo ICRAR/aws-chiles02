@@ -312,7 +312,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         return 'docker container chiles02:latest'
 
 
-class CasaImageconcat(DockerApp, ErrorHandling):
+class CasaImageconcat(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._command = None
