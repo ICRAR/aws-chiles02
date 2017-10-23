@@ -30,6 +30,7 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
+from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
@@ -338,12 +339,12 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
                 LOG.debug('Looking at: {0}'.format(file_name))
                 if file_name.endswith(".image.centre"):
                     LOG.debug('Adding: {0}'.format(file_name))
-                    dlg_name = '/dlg_root{0}/{1}'.format(measurement_set, file_name)
+                    dlg_name = '{0}/{1}'.format(measurement_set, file_name)
                     measurement_sets.append(dlg_name)
                     break
 
         LOG.debug('measurement_sets: {0}'.format(measurement_sets))
-        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2}'.format(
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + 'imageconcat.py %o0 image_{0}_{1}.cube {2}'.format(
             self._min_frequency,
             self._max_frequency,
             ' '.join(measurement_sets),
