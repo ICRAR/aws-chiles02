@@ -344,7 +344,8 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
                     break
 
         LOG.debug('measurement_sets: {0}'.format(measurement_sets))
-        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + 'imageconcat.py %o0 image_{0}_{1}.cube {2}'.format(
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + 'imageconcat.py {} image_{}_{}.cube {}'.format(
+            self.outputs[0].path,
             self._min_frequency,
             self._max_frequency,
             ' '.join(measurement_sets),

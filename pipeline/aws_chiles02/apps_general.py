@@ -132,7 +132,7 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
         # Make the tar file
         tar_filename = os.path.join(log_file_dir, 'log.tar')
         os.chdir(log_file_dir)
-        bash = 'tar -cvf {0} {1}'.format(tar_filename, 'dlg*.log')
+        bash = 'tar -cvf {0} {1}'.format(tar_filename, 'd*.log')
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
