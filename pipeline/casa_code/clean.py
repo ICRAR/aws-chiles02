@@ -103,15 +103,15 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         xpos = 2967.0 / 4096 * smry['shape'][0]
         ypos = 4095.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, 0], [xpos + 2, ypos])
-        ia.moments(moments=[-1], axis=0, region=box, outfile=outfile + 'image.mom.slice_ra',overwrite=True)
-
+        ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra',overwrite=True)
+        #
         # We will get rid of this if the slice above works
         slce = []
         for m in range(0, smry['shape'][3]):
             slce.append(ia.getslice(x=[xpos, xpos], y=[0, ypos], coord=[0, 0, 0, m]))
-
+        #
         # Print out text version
-        fo = open(outfile + '.image.slice.txt', 'w')
+        fo = open(outfile+'.image.slice.txt', 'w')
         for n in range(0, len(slce[0]['ypos'])):
             line = [slce[0]['ypos'][n]]
             for m in range(0, len(slce)):
@@ -123,16 +123,16 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.xlabel('Declination (pixels)')
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice along sidelobe for ' + outfile)
-        pl.savefig(outfile + '.image.slice.svg')
+        pl.savefig(outfile+'.image.slice.svg')
         pl.clf()
-
+        #
         # IA used to make profiles.
         # Source near centre profile
         xpos = 1992.0 / 4096 * smry['shape'][0]
         ypos = 2218.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, ypos - 2], [xpos + 2, ypos + 2])
         slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
-        fo = open(outfile + '.image.onsource_centre.txt', 'w')
+        fo = open(outfile+'.image.onsource_centre.txt', 'w')
         for n in range(0, len(slce['coords'])):
             print>> fo, slce['coords'][n], slce['values'][n]
         fo.close()
@@ -140,14 +140,14 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.xlabel('Frequency (MHz)')
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice central source ' + outfile)
-        pl.savefig(outfile + '.image.onsource_centre.svg')
+        pl.savefig(outfile+'.image.onsource_centre.svg')
         pl.clf()
         # Source near edge profile
         xpos = 2972.0 / 4096 * smry['shape'][0]
         ypos = 155.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, ypos - 2], [xpos + 2, ypos + 2])
         slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
-        fo = open(outfile + '.image.onsource_south.txt', 'w')
+        fo = open(outfile+'.image.onsource_south.txt', 'w')
         for n in range(0, len(slce['coords'])):
             print>> fo, slce['coords'][n], slce['values'][n]
         fo.close()
@@ -155,22 +155,22 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.xlabel('Frequency (MHz)')
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice central source ' + outfile)
-        pl.savefig(outfile + '.image.onsource_south.svg')
+        pl.savefig(outfile+'.image.onsource_south.svg')
         pl.clf()
         # Boresight profile
         box = rg.box([image_size / 2 - 2, image_size / 2 - 2], [image_size / 2 + 2, image_size / 2 + 2])
         slce = ia.getprofile(region=box, unit='MHz', function='mean', axis=3)
-        fo = open(outfile + '.image.boresight.txt', 'w')
+        fo = open(outfile+'.image.boresight.txt', 'w')
         for n in range(0, len(slce['coords'])):
             print>> fo, slce['coords'][n], slce['values'][n]
         fo.close()
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice central source ' + outfile)
-        pl.savefig(outfile + '.image.boresight.svg')
+        pl.savefig(outfile+'.image.boresight.svg')
         pl.clf()
         # RMS Stats
         sts=ia.statistics(axes=[0,1],verbose=F)
-        fo = open(outfile + '.image.rms.txt', 'w')
+        fo = open(outfile+'.image.rms.txt', 'w')
         for n in range(0, len(sts['rms'])):
             print>> fo, slce['coords'][n], sts['rms'][n]
         fo.close()
@@ -178,11 +178,11 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.xlabel('Frequency (MHz)')
         pl.ylabel('RMS (mJy)')
         pl.title('RMS for ' + outfile)
-        pl.savefig(outfile + '.image.rms.svg')
+        pl.savefig(outfile+'.image.rms.svg')
         pl.clf()
         # Histograms
         sts=ia.histograms()
-        fo = open(outfile + '.image.histo.txt', 'w')
+        fo = open(outfile+'.image.histo.txt', 'w')
         for n in range(0, len(sts['values'])):
             print>> fo, sts['values'][n], sts['counts'][n]
         fo.close()
@@ -190,7 +190,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.xlabel('Bin (mJy)')
         pl.ylabel('log10 of No. of Values')
         pl.title('Histogram for ' + outfile)
-        pl.savefig(outfile + '.image.histo.svg')
+        pl.savefig(outfile+'.image.histo.svg')
         pl.clf()
         # Beams --- sometimes this information is missing, so only generate if what is needed is there
         sts=ia.summary()
@@ -199,7 +199,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
             bmj=[]
             bmn=[]
             bmp=[]
-            fo = open(outfile + '.image.beam.txt', 'w')
+            fo = open(outfile+'.image.beam.txt', 'w')
             for n in range(0, sts['nChannels']):
                 print>> fo, slce['coords'][n], sts['beams']['*'+str(n)]['*0']
             fo.close()
@@ -213,7 +213,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
             pl.xlabel('Frequency (MHz)')
             pl.ylabel('Beam Axes (major, minor & PA (rad)')
             pl.title('Beam Parameters for ' + outfile)
-            pl.savefig(outfile + '.image.beam.svg')
+            pl.savefig(outfile+'.image.beam.svg')
             pl.clf()
         ia.close()
 
