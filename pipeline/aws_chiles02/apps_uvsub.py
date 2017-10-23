@@ -289,14 +289,14 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
         self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
                         'uvsub_ha.py {0} {1} {2} {4} {5} ' \
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{3}.model ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{3}.model ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{3}.model ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{3}.model ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{3}.model '.format(
+                        '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
+                        '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{3}.model ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{3}.model ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{3}.model ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{3}.model ' \
+                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{3}.model '.format(
                             measurement_set_in,
                             self.outputs[0].path,
                             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
