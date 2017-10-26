@@ -139,63 +139,67 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            # Select data by HA in this case
            ret=ms.getdata(['axis_info','ha'],ifraxis=True)
            ha= ret['axis_info']['time_axis']['HA']/3600.0
+           print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
            ha_model=model
            for m in range(-16,16):
-            ptr=np.where(ha>(m/2.0))[0]
-            print 'No. samples in this HA range: '+str(len(ptr))
-            if (len(ptr)):
-                print 'Change Model to point to directory: '+'HA_'+str(m)
-                for nha in range(ntt,len(ha_model)):
-                    ha_model[nha]=model[nha].replace('Outliers','Outliers/HA_'+str(m))
-                ptr=ptr[0]
-                #ut_start=ut[ptr]
-                date_start=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                ptr=np.where(ha>((m+1)/2.0))[0]
-                if (len(ptr)==0):
-                    ptr=-1
-                else:
-                    ptr=ptr[0]
-                #ut_end=ut[ptr]
-                date_end=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                #if (ut_end<ut_start):
-                #    ut_end=ut_end+24
-                #timerange=str(ut_start)+'~'+str(ut_end)
-                timerange=date_start+'~'+date_end
-                im.selectvis(time=timerange)
-
-                # These are the parameters for the generation of the model
-                # Not sure how many of them are important here -- all except mode?
-                im.defineimage(
-                    nx=4096,
-                    ny=4096,
-                    cellx='2arcsec',
-                    celly='2arcsec',
-                    mode='mfs',
-                    facets=1
-                )
-                im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
-                im.settaylorterms(ntaylorterms=1)
-                #
-                print 'Models in this pass: '+str(model[ntt:len(model)])
-                print 'Time range in this pass: '+timerange
-                im.ft(model=ha_model[ntt:len(model)], incremental=True)
-                im.close()
-                print 'Change Directory back up to ..'
-                os.chdir('..')
-            #if samples in this HA range
+              ptr=np.where(ha>(0.5*m))[0]
+              print 'No. samples in this HA range: '+str(len(ptr))
+              if (len(ptr)):
+                  print 'Change Model to point to directory: '+'HA_'+str(m)
+                  for nha in range(ntt,len(ha_model)):
+                      ha_model[nha]=model[nha].replace('Outliers','Outliers/HA_'+str(m))
+                  ptr=ptr[0]
+                  print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted models: '+str(ha_model)
+                  #ut_start=ut[ptr]
+                  date_start=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                  print 'to start at '+date_start
+                  ptr=np.where(ha>(0.5*(m+1)))[0]
+                  if (len(ptr)==0):
+                      ptr=-1
+                  else:
+                      ptr=ptr[0]
+                  #ut_end=ut[ptr]
+                  date_end=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                  print 'and to end at '+date_start+' sample no. '+str(ptr)
+                  #if (ut_end<ut_start):
+                  #    ut_end=ut_end+24
+                  #timerange=str(ut_start)+'~'+str(ut_end)
+                  timerange=date_start+'~'+date_end
+                  im.selectvis(time=timerange)
+              
+                  # These are the parameters for the generation of the model
+                  # Not sure how many of them are important here -- all except mode?
+                  im.defineimage(
+                      nx=4096,
+                      ny=4096,
+                      cellx='2arcsec',
+                      celly='2arcsec',
+                      mode='mfs',
+                      facets=1
+                  )
+                  im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
+                  im.settaylorterms(ntaylorterms=1)
+                  #
+                  print 'Models in this pass: '+str(model[ntt:len(model)])
+                  print 'Time range in this pass: '+timerange
+                  im.ft(model=ha_model[ntt:len(model)], incremental=True)
+                  im.close()
+                  print 'Change Directory back up to ..'
+                  os.chdir('..')
+              #if samples in this HA range
            #next HA m
            uvsub(vis=tmp_name, reverse=False)
            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
         else:
            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
-
+ 
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
-
-
+ 
+ 
 if __name__ == "__main__":
-    args = parse_args()
+   args = parse_args()
     LOG.info(args)
 
     do_uvsub(
