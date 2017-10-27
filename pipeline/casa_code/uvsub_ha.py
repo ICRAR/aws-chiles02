@@ -143,22 +143,22 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
            ha_model=model
            for m in range(-16,16):
-              ptr=np.where(ha>(0.5*m))[0]
-              print 'No. samples in this HA range: '+str(len(ptr))
-              if (len(ptr)):
+              ptr1=np.where(ha>(0.5*m))[0]
+              ptr2=np.where(ha>(0.5*(m+1)))[0]
+              print 'No. samples in this HA range: '+str(len(ptr1)-len(ptr2))
+              if ((len(ptr1)!=0)&(len(ptr1)!=len(ptr2))):
                   print 'Change Model to point to directory: '+'HA_'+str(m)
                   for nha in range(ntt,len(ha_model)):
                       ha_model[nha]=model[nha].replace('Outliers','Outliers/HA_'+str(m))
-                  ptr=ptr[0]
+                  ptr=ptr1[0]
                   print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted models: '+str(ha_model)
                   #ut_start=ut[ptr]
                   date_start=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
                   print 'to start at '+date_start
-                  ptr=np.where(ha>(0.5*(m+1)))[0]
-                  if (len(ptr)==0):
+                  if (len(ptr2)==0):
                       ptr=-1
                   else:
-                      ptr=ptr[0]
+                      ptr=ptr2[0]
                   #ut_end=ut[ptr]
                   date_end=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
                   print 'and to end at '+date_start+' sample no. '+str(ptr)
