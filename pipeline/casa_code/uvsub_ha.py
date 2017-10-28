@@ -167,7 +167,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   #timerange=str(ut_start)+'~'+str(ut_end)
                   timerange=date_start+'~'+date_end
                   im.selectvis(time=timerange)
-              
+
                   # These are the parameters for the generation of the model
                   # Not sure how many of them are important here -- all except mode?
                   im.defineimage(
@@ -193,13 +193,13 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
         else:
            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
- 
+
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
- 
- 
+
+
 if __name__ == "__main__":
-   args = parse_args()
+    args = parse_args()
     LOG.info(args)
 
     do_uvsub(
