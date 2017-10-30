@@ -134,7 +134,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            print 'Using remaing '+str(len(model)-ntt)+' for outlier subtraction'
            split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
            im.open(thems=tmp_name, usescratch=True)
-           delmod(otf=True,vis=tmp_name,scr=True)
+           #delmod(otf=True,vis=tmp_name,scr=True)
            ms.open(thems=tmp_name)
            # Select data by HA in this case
            ret=ms.getdata(['axis_info','ha'],ifraxis=True)
@@ -186,7 +186,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   print 'Time range in this pass: '+timerange
                   im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
                   #im.close()
-                  NotFirst=True
+                  #NotFirst=True
                   print 'Change Directory back up to ..'
                   os.chdir('..')
               #if samples in this HA range
