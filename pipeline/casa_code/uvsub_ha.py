@@ -162,13 +162,12 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                       ptr=ptr2[0]
                   #ut_end=ut[ptr]
                   date_end=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                  print 'and to end at '+date_start+' sample no. '+str(ptr)
+                  print 'and to end at '+date_end+' sample no. '+str(ptr)
                   #if (ut_end<ut_start):
                   #    ut_end=ut_end+24
                   #timerange=str(ut_start)+'~'+str(ut_end)
                   timerange=date_start+'~'+date_end
                   im.selectvis(time=timerange)
-
                   # These are the parameters for the generation of the model
                   # Not sure how many of them are important here -- all except mode?
                   im.defineimage(
@@ -187,8 +186,6 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
                   #im.close()
                   #NotFirst=True
-                  print 'Change Directory back up to ..'
-                  os.chdir('..')
               #if samples in this HA range
            #next HA m
            im.close()
