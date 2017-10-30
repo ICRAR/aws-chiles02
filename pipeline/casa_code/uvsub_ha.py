@@ -142,6 +142,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
            ha_model=model
+           NotFirst=False
            for m in range(-16,16):
               ptr1=np.where(ha>(0.5*m))[0]
               ptr2=np.where(ha>(0.5*(m+1)))[0]
@@ -183,12 +184,14 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   #
                   print 'Models in this pass: '+str(model[ntt:len(model)])
                   print 'Time range in this pass: '+timerange
-                  im.ft(model=ha_model[ntt:len(model)], incremental=True)
-                  im.close()
+                  im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
+                  #im.close()
+                  NotFirst=True
                   print 'Change Directory back up to ..'
                   os.chdir('..')
               #if samples in this HA range
            #next HA m
+           im.close()
            uvsub(vis=tmp_name, reverse=False)
            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
         else:
