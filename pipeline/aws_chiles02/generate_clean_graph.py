@@ -232,6 +232,7 @@ def create_and_generate(**keywords):
                         clean_tclean=clean_tclean,
                         run_note=keywords['run_note'],
                         use_bash=keywords['use_bash'],
+                        build_fits=keywords['build_fits'],
                     )
                     graph.build_graph()
 
@@ -302,6 +303,7 @@ def use_and_generate(**keywords):
                 clean_tclean=keywords['clean_tclean'],
                 run_note=keywords['run_note'],
                 use_bash=keywords['use_bash'],
+                build_fits=keywords['build_fits'],
             )
             graph.build_graph()
 
@@ -357,6 +359,7 @@ def generate_json(**keywords):
         clean_tclean=keywords['clean_tclean'],
         run_note=keywords['run_note'],
         use_bash=keywords['use_bash'],
+        build_fits=keywords['build_fits'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -472,9 +475,11 @@ def command_interactive(args):
         args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
         args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+        args.get('build_fits', 'Build the fits files for JPEG2000', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default=False)
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
-        args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+        if config['build_fits'] == 'yes':
+            args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
         args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
@@ -520,6 +525,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            build_fits=config['build_fits'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -544,6 +550,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            build_fits=config['build_fits'],
         )
     else:
         generate_json(
@@ -568,6 +575,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            build_fits=config['build_fits'],
         )
 
 

@@ -56,6 +56,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._produce_qa = keywords['produce_qa']
         self._clean_tclean = keywords['clean_tclean']
         self._use_bash = keywords['use_bash']
+        self._build_fits = keywords['build_fits']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -91,6 +92,7 @@ class BuildGraphClean(AbstractBuildGraph):
                     w_projection_planes=self._w_projection_planes,
                     clean_channel_average=self._clean_channel_average,
                     produce_qa=self._produce_qa,
+                    build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
                 )
             else:
@@ -109,6 +111,7 @@ class BuildGraphClean(AbstractBuildGraph):
                     w_projection_planes=self._w_projection_planes,
                     clean_channel_average=self._clean_channel_average,
                     produce_qa=self._produce_qa,
+                    build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
                 )
             result = self.create_directory_container(node_id, 'dir_clean_output')
@@ -138,33 +141,36 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_clean_to_s3.addInput(result)
             copy_clean_to_s3.addOutput(s3_clean_drop_out)
 
-            copy_fits_to_s3 = self.create_app(
-                node_id,
-                get_module_name(CopyFitsToS3),
-                'app_copy_fits_to_s3',
-                min_frequency=frequency_pair.bottom_frequency,
-                max_frequency=frequency_pair.top_frequency,
-            )
-            s3_fits_drop_out = self.create_s3_drop(
-                node_id,
-                self._bucket_name,
-                '{0}/cleaned_{1}_{2}.fits'.format(
-                    self._s3_fits_name,
-                    frequency_pair.bottom_frequency,
-                    frequency_pair.top_frequency,
-                ),
-                'aws-chiles02',
-                oid='s3_out',
-            )
-            copy_fits_to_s3.addInput(result)
-            copy_fits_to_s3.addOutput(s3_fits_drop_out)
+            s3_fits_drop_out = None
+            if self._build_fits == 'yes':
+                copy_fits_to_s3 = self.create_app(
+                    node_id,
+                    get_module_name(CopyFitsToS3),
+                    'app_copy_fits_to_s3',
+                    min_frequency=frequency_pair.bottom_frequency,
+                    max_frequency=frequency_pair.top_frequency,
+                )
+                s3_fits_drop_out = self.create_s3_drop(
+                    node_id,
+                    self._bucket_name,
+                    '{0}/cleaned_{1}_{2}.fits'.format(
+                        self._s3_fits_name,
+                        frequency_pair.bottom_frequency,
+                        frequency_pair.top_frequency,
+                    ),
+                    'aws-chiles02',
+                    oid='s3_out',
+                )
+                copy_fits_to_s3.addInput(result)
+                copy_fits_to_s3.addOutput(s3_fits_drop_out)
 
             barrier_drop = self.create_barrier_app(node_id)
 
             # Give the memory drop somewhere to go
             memory_drop = self.create_memory_drop(node_id)
             barrier_drop.addInput(s3_clean_drop_out)
-            barrier_drop.addInput(s3_fits_drop_out)
+            if self._build_fits == 'yes':
+                barrier_drop.addInput(s3_fits_drop_out)
             barrier_drop.addOutput(memory_drop)
 
             carry_over_data = self._map_carry_over_data[node_id]

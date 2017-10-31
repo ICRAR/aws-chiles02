@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, produce_qa, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, produce_qa, build_fits, in_dirs):
     """
     Perform the CLEAN step
 
@@ -217,7 +217,9 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
             pl.clf()
         ia.close()
 
-    exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
+    if build_fits == 'yes':
+        exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -234,4 +236,5 @@ if __name__ == "__main__":
         image_size=int(args.arguments[7]),
         clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
         produce_qa=args.arguments[9],
-        in_dirs=args.arguments[10:])
+        build_fits=args.arguments[10],
+        in_dirs=args.arguments[11:])

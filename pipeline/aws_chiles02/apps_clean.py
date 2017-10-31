@@ -355,6 +355,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._image_size = None
         self._clean_channel_average = None
         self._produce_qa = None
+        self._build_fits = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -369,6 +370,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
+        self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -384,7 +386,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
@@ -394,6 +396,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._image_size,
                 self._clean_channel_average,
                 self._produce_qa,
+                self._build_fits,
                 ' '.join(measurement_sets),
             )
         else:
@@ -418,6 +421,8 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._image_size = None
         self._clean_channel_average = None
         self._produce_qa = None
+        self._build_fits = None
+
         super(CasaClean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -432,6 +437,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
+        self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -448,7 +454,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
+                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}'.format(
                                 self.outputs[0].path,
                                 self._min_frequency,
                                 self._max_frequency,
@@ -459,6 +465,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
                                 self._image_size,
                                 self._clean_channel_average,
                                 self._produce_qa,
+                                self._build_fits,
                                 ' '.join(measurement_sets),
                             )
             run_command(self._command)
