@@ -88,6 +88,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
 
     if produce_qa == 'yes':
         import numpy as np
+        import matplotlib.pyplot as pl
         # IA used to report the statistics to the log file
         ia.open(outfile+'.image')
         ia.statistics(verbose=True,axes=[0,1])
@@ -103,7 +104,8 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         xpos = 2967.0 / 4096 * smry['shape'][0]
         ypos = 4095.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, 0], [xpos + 2, ypos])
-        ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra',overwrite=True)
+        c=ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra',overwrite=True)
+        c.done()
         #
         # We will get rid of this if the slice above works
         slce = []

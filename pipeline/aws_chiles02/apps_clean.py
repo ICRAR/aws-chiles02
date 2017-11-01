@@ -251,17 +251,10 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
             )
 
         tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
-        bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.mom.slice_ra ' \
-               '{1}.image.slice.txt {1}.image.slice.svg ' \
-               '{1}.image.rms.txt {1}.image.rms.svg ' \
-               '{1}.image.histo.txt {1}.image.histo.svg ' \
-               '{1}.image.beam.txt {1}.image.beam.svg ' \
-               '{1}.image.onsource_centre.txt {1}.image.onsource_centre.svg ' \
-               '{1}.image.onsource_south.txt {1}.image.onsource_south.svg ' \
-               '{1}.image.boresight.txt {1}.image.boresight.svg'.format(
+        bash = 'tar -cvf {0} {1}.image.mom.mean_freq {1}.image.mom.mean_ra {1}.image.mom.slice_ra {1}.*.txt {1}.*.svg'.format(
                     tar_filename,
-                    stem_name,
-                )
+                    stem_name)
+        LOG.debug('Running: '+bash)
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
