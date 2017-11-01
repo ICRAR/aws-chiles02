@@ -169,7 +169,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         pl.savefig(outfile+'.image.boresight.svg')
         pl.clf()
         # RMS Stats
-        sts=ia.statistics(axes=[0,1],verbose=F)
+        sts=ia.statistics(axes=[0,1],verbose=False)
         fo = open(outfile+'.image.rms.txt', 'w')
         for n in range(0, len(sts['rms'])):
             print>> fo, slce['coords'][n], sts['rms'][n]
@@ -196,20 +196,20 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         sts=ia.summary()
         if 'perplanebeams' in sts.keys():
             sts=sts['perplanebeams']
-            bmj=[]
-            bmn=[]
-            bmp=[]
+            bmj = []
+            bmn = []
+            bmp = []
             fo = open(outfile+'.image.beam.txt', 'w')
             for n in range(0, sts['nChannels']):
                 print>> fo, slce['coords'][n], sts['beams']['*'+str(n)]['*0']
             fo.close()
             for n in range(0, sts['nChannels']):
-                bmj.append(sts['beams']['*'+str(n)]['*0']['major']['value']);
-                bmn.append(sts['beams']['*'+str(n)]['*0']['minor']['value']);
+                bmj.append(sts['beams']['*'+str(n)]['*0']['major']['value'])
+                bmn.append(sts['beams']['*'+str(n)]['*0']['minor']['value'])
                 bmp.append(sts['beams']['*'+str(n)]['*0']['positionangle']['value']/57.3)
-            pl.plot(slce['coords'],bmj)
-            pl.plot(slce['coords'],bmn)
-            pl.plot(slce['coords'],bmp)
+            pl.plot(slce['coords'], bmj)
+            pl.plot(slce['coords'], bmn)
+            pl.plot(slce['coords'], bmp)
             pl.xlabel('Frequency (MHz)')
             pl.ylabel('Beam Axes (major, minor & PA (rad)')
             pl.title('Beam Parameters for ' + outfile)

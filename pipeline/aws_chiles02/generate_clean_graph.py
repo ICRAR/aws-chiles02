@@ -475,7 +475,7 @@ def command_interactive(args):
         args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
         args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        args.get('build_fits', 'Build the fits files for JPEG2000', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default=False)
+        args.get('build_fits', 'Build the fits files for JPEG2000 (yes or no)', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default='no')
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
         if config['build_fits'] == 'yes':
