@@ -219,6 +219,7 @@ def create_and_generate(**keywords):
                         iterations=keywords['iterations'],
                         arcsec=keywords['arcsec'],
                         w_projection_planes=keywords['w_projection_planes'],
+                        clean_weighting_uv=keywords['clean_weighting_uv'],
                         robust=keywords['robust'],
                         image_size=keywords['image_size'],
                         clean_channel_average=keywords['clean_channel_average'],
@@ -290,6 +291,7 @@ def use_and_generate(**keywords):
                 iterations=keywords['iterations'],
                 arcsec=keywords['arcsec'],
                 w_projection_planes=keywords['w_projection_planes'],
+                clean_weighting_uv=keywords['clean_weighting_uv'],
                 robust=keywords['robust'],
                 image_size=keywords['image_size'],
                 clean_channel_average=keywords['clean_channel_average'],
@@ -346,6 +348,7 @@ def generate_json(**keywords):
         iterations=keywords['iterations'],
         arcsec=keywords['arcsec'] + 'arcsec',
         w_projection_planes=keywords['w_projection_planes'],
+        clean_weighting_uv=keywords['clean_weighting_uv'],
         robust=keywords['robust'],
         image_size=keywords['image_size'],
         clean_channel_average=keywords['clean_channel_average'],
@@ -379,6 +382,7 @@ def command_json(args):
         parallel_streams=args.parallel_streams,
         shutdown=args.shutdown,
         w_projection_planes=args.w_projection_planes,
+        clean_weighting_uv=args.clean_weighting_uv,
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
@@ -406,6 +410,7 @@ def command_create(args):
         iterations=args.iterations,
         arcsec=args.arcsec + 'arcsec',
         w_projection_planes=args.w_projection_planes,
+        clean_weighting_uv=args.clean_weighting_uv,
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
@@ -432,6 +437,7 @@ def command_use(args):
         iterations=args.iterations,
         arcsec=args.arcsec + 'arcsec',
         w_projection_planes=args.w_projection_planes,
+        clean_weighting_uv=args.clean_weighting_uv,
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
@@ -470,7 +476,9 @@ def command_interactive(args):
         args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
         args.get('arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
         args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
-        args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
+        args.get('clean_weighting_uv', 'Clean weighting method', allowed=['briggs', 'uniform', 'natural'], help_text='which method for weighting the UV', default='briggs')
+        if config['clean_weighting_uv'] == 'briggs':
+            args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
         args.get('image_size', 'The image size', data_type=int, help_text='the image size for clean', default=4096)
         args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
         args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
@@ -512,6 +520,7 @@ def command_interactive(args):
             iterations=config['iterations'],
             arcsec=config['arcsec'] + 'arcsec',
             w_projection_planes=config['w_projection_planes'],
+            clean_weighting_uv=config['clean_weighting_uv'],
             robust=config['robust'],
             only_image=config['only_image'],
             image_size=config['image_size'],
@@ -538,6 +547,7 @@ def command_interactive(args):
             iterations=config['iterations'],
             arcsec=config['arcsec'] + 'arcsec',
             w_projection_planes=config['w_projection_planes'],
+            clean_weighting_uv=config['clean_weighting_uv'],
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
@@ -563,6 +573,7 @@ def command_interactive(args):
             parallel_streams=PARALLEL_STREAMS,
             shutdown=config['shutdown'],
             w_projection_planes=config['w_projection_planes'],
+            clean_weighting_uv=config['clean_weighting_uv'],
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
@@ -593,6 +604,7 @@ def parser_arguments(command_line=sys.argv[1:]):
     common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
     common_parser.add_argument('-v', '--verbosity', action='count', help='increase output verbosity', default=0)
     common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
+    common_parser.add_argument('--clean_weighting_uv', help='the weighting method for the UV', default='briggs')
     common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
     common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=4096)
 

@@ -344,6 +344,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._iterations = None
         self._arcsec = None
         self._w_projection_planes = None
+        self._clean_weighting_uv = None
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
@@ -359,6 +360,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._arcsec = self._getArg(kwargs, 'arcsec', '1.25arcsec')
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
+        self._clean_weighting_uv=self._getArg(kwargs, 'clean_weighting_uv', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
@@ -379,12 +381,13 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
                 self._arcsec,
                 self._w_projection_planes,
+                self._clean_weighting_uv,
                 self._robust,
                 self._image_size,
                 self._clean_channel_average,
@@ -410,6 +413,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._iterations = None
         self._arcsec = None
         self._w_projection_planes = None
+        self._clean_weighting_uv = None
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
@@ -426,6 +430,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._arcsec = self._getArg(kwargs, 'arcsec', '1.25arcsec')
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
+        self._clean_weighting_uv = self._getArg(kwargs, 'clean_weighting_uv', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
@@ -447,13 +452,14 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}'.format(
+                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}'.format(
                                 self.outputs[0].path,
                                 self._min_frequency,
                                 self._max_frequency,
                                 self._iterations,
                                 self._arcsec,
                                 self._w_projection_planes,
+                                self._clean_weighting_uv,
                                 self._robust,
                                 self._image_size,
                                 self._clean_channel_average,

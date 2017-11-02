@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, produce_qa, build_fits, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, clean_weighting_uv, robust, image_size, clean_channel_average, produce_qa, build_fits, in_dirs):
     """
     Perform the CLEAN step
 
@@ -46,26 +46,48 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
     LOG.info('clean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
     try:
         # dump_all()
-        clean(vis=in_dirs,
-              imagename=outfile,
-              field='deepfield',
-              spw='',
-              mode='frequency' if clean_channel_average == '' else 'channel',
-              restfreq='1420.405752MHz',
-              nchan=-1,
-              start=0,
-              width=clean_channel_average,
-              interpolation='nearest',
-              gridmode='widefield',
-              niter=iterations,
-              gain=0.1,
-              threshold='0.0mJy',
-              imsize=[image_size],
-              cell=[arcsec],
-              wprojplanes=w_projection_planes,
-              weighting='briggs',
-              robust=robust,
-              usescratch=False)  # Don't overwrite the model data col
+        if clean_weighting_uv == 'briggs':
+            clean(vis=in_dirs,
+                  imagename=outfile,
+                  field='deepfield',
+                  spw='',
+                  mode='frequency' if clean_channel_average == '' else 'channel',
+                  restfreq='1420.405752MHz',
+                  nchan=-1,
+                  start=0,
+                  width=clean_channel_average,
+                  interpolation='nearest',
+                  gridmode='widefield',
+                  niter=iterations,
+                  gain=0.1,
+                  threshold='0.0mJy',
+                  imsize=[image_size],
+                  cell=[arcsec],
+                  wprojplanes=w_projection_planes,
+                  weighting='briggs',
+                  robust=robust,
+                  usescratch=False)  # Don't overwrite the model data col
+        else:
+            clean(vis=in_dirs,
+                  imagename=outfile,
+                  field='deepfield',
+                  spw='',
+                  mode='frequency' if clean_channel_average == '' else 'channel',
+                  restfreq='1420.405752MHz',
+                  nchan=-1,
+                  start=0,
+                  width=clean_channel_average,
+                  interpolation='nearest',
+                  gridmode='widefield',
+                  niter=iterations,
+                  gain=0.1,
+                  threshold='0.0mJy',
+                  imsize=[image_size],
+                  cell=[arcsec],
+                  wprojplanes=w_projection_planes,
+                  weighting=clean_weighting_uv,
+                  usescratch=False)  # Don't overwrite the model data col
+
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
@@ -234,9 +256,10 @@ if __name__ == "__main__":
         iterations=int(args.arguments[3]),
         arcsec=args.arguments[4],
         w_projection_planes=int(args.arguments[5]),
-        robust=float(args.arguments[6]),
-        image_size=int(args.arguments[7]),
-        clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
-        produce_qa=args.arguments[9],
-        build_fits=args.arguments[10],
-        in_dirs=args.arguments[11:])
+        clean_weighting_uv=args.arguments[6],
+        robust=float(args.arguments[7]),
+        image_size=int(args.arguments[8]),
+        clean_channel_average=args.arguments[9] if args.arguments[9] == '' else int(args.arguments[9]),
+        produce_qa=args.arguments[10],
+        build_fits=args.arguments[11],
+        in_dirs=args.arguments[12:])
