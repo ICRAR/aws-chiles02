@@ -49,7 +49,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._iterations = keywords['iterations']
         self._arcsec = keywords['arcsec']
         self._w_projection_planes = keywords['w_projection_planes']
-        self._clean_weighting_uv = keywords['clean_weighting_uv'],
+        self._clean_weighting_uv = keywords['clean_weighting_uv']
         self._robust = keywords['robust']
         self._image_size = keywords['image_size']
         self._clean_channel_average = keywords['clean_channel_average']

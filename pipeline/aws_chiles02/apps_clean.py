@@ -360,7 +360,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._arcsec = self._getArg(kwargs, 'arcsec', '1.25arcsec')
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
-        self._clean_weighting_uv=self._getArg(kwargs, 'clean_weighting_uv', None)
+        self._clean_weighting_uv = self._getArg(kwargs, 'clean_weighting_uv', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')

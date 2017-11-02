@@ -200,7 +200,7 @@ def create_and_generate(**keywords):
                 data_island_manager_running = get_reported_running(
                         uuid,
                         1,
-                        wait=WAIT_TIMEOUT_ISLAND_MANAGER
+                        wait=WAIT_TIMEOUT_ISLAND_MANAGER,
                 )
 
                 if len(data_island_manager_running['m4.large']) == 1:
