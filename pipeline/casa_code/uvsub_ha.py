@@ -138,6 +138,7 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
            ms.open(thems=tmp_name)
            # Select data by HA in this case
            ret=ms.getdata(['axis_info','ha'],ifraxis=True)
+           ms.close()
            ha= ret['axis_info']['time_axis']['HA']/3600.0
            print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
@@ -186,7 +187,6 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   print 'Models in this pass: '+str(model[ntt:len(model)])
                   print 'Time range in this pass: '+timerange
                   im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
-                  #im.close()
                   #NotFirst=True
               #if samples in this HA range
            #next HA m
