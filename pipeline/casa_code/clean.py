@@ -126,8 +126,9 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         xpos = 2967.0 / 4096 * smry['shape'][0]
         ypos = 4095.0 / 4096 * smry['shape'][1]
         box = rg.box([xpos - 2, 0], [xpos + 2, ypos])
-        c=ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'image.mom.slice_ra',overwrite=True)
-        c.done()
+        ### If commenting this makes it work we need to work out why
+        #c=ia.moments(moments=[-1], axis=0, region=box, outfile=outfile+'.image.mom.slice_ra',overwrite=True)
+        #c.done()
         #
         # We will get rid of this if the slice above works
         slce = []
@@ -188,6 +189,8 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
         for n in range(0, len(slce['coords'])):
             print>> fo, slce['coords'][n], slce['values'][n]
         fo.close()
+        pl.plot(slce['coords'], slce['values'] * 1e3)
+        pl.xlabel('Frequency (MHz)')
         pl.ylabel('Amplitude (mJy)')
         pl.title('Slice central source ' + outfile)
         pl.savefig(outfile+'.image.boresight.svg')
