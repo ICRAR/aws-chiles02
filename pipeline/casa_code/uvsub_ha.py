@@ -124,6 +124,10 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
 
         #
         print 'Models in this pass: '+str(model[0:ntt])
+        for mn in model[0:ntt]:
+            tb.open(mn)
+            tb.clearlocks()
+        # 
         im.ft(model=model[0:ntt], incremental=False)
         im.close()
 
@@ -186,6 +190,10 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
                   #
                   print 'Models in this pass: '+str(model[ntt:len(model)])
                   print 'Time range in this pass: '+timerange
+                  for mn in model[ntt:len(model)]:
+                    tb.open(mn)
+                    tb.clearlocks()
+                  #
                   im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
                   #NotFirst=True
               #if samples in this HA range
