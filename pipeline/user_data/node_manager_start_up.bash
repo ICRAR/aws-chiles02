@@ -165,6 +165,15 @@ docker run jtmalarecki/sv /bin/echo 'Hello sv container'
 % endif
 
 cd /home/ec2-user
+
+% if casa5:
+ln -s casa-release-5.1.0-74.el6/ casa
+%endif
+
+% if casa4:
+ln -s casa-release-4.7.2-el6/ casa
+%endif
+
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && git pull'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && git pull'
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install'

@@ -190,6 +190,7 @@ def generate_json(**keywords):
         dim_ip='1.2.3.4',
         run_note=keywords['run_note'],
         use_bash=keywords['use_bash'],
+        casa_version=keywords['casa_version'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -230,7 +231,13 @@ def create_and_generate(**keywords):
                     'spot_price': spot_price
                 }
             ],
-            get_node_manager_user_data(boto_data, uuid, max_request_size=50, chiles=not keywords['use_bash']),
+            get_node_manager_user_data(
+                boto_data,
+                uuid,
+                max_request_size=50,
+                chiles=not keywords['use_bash'],
+                casa_version=keywords['casa_version'],
+            ),
             AWS_REGION,
             tags=[
                 {
@@ -471,6 +478,8 @@ def command_interactive(args):
         args.get('imageconcat_directory_name', 'The directory name for imageconcat', help_text='the directory name for imageconcat')
         args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
+        if config['use_bash']:
+            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_imageconcat', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
@@ -503,6 +512,7 @@ def command_interactive(args):
             imageconcat_directory_name=config['imageconcat_directory_name'],
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -519,6 +529,7 @@ def command_interactive(args):
             imageconcat_directory_name=config['imageconcat_directory_name'],
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
     else:
         generate_json(
@@ -534,6 +545,7 @@ def command_interactive(args):
             imageconcat_directory_name=config['imageconcat_directory_name'],
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
 
 

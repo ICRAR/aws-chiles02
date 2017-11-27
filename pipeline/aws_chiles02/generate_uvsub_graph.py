@@ -136,7 +136,13 @@ def create_and_generate(**keywords):
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, max_request_size=50, chiles=not keywords['use_bash']),
+                get_node_manager_user_data(
+                    boto_data,
+                    uuid,
+                    max_request_size=50,
+                    chiles=not keywords['use_bash'],
+                    casa_version=keywords['casa_version'],
+                ),
                 AWS_REGION,
                 tags=[
                     {
@@ -425,6 +431,8 @@ def command_interactive(args):
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
+        if config['use_bash']:
+            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
@@ -461,6 +469,7 @@ def command_interactive(args):
             dump_json=config['dump_json'],
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -478,6 +487,7 @@ def command_interactive(args):
             dump_json=config['dump_json'],
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
     else:
         generate_json(
@@ -493,6 +503,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
 
 

@@ -139,7 +139,13 @@ def create_and_generate(**keywords):
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, log_level=log_level, chiles=not keywords['use_bash']),
+                get_node_manager_user_data(
+                    boto_data,
+                    uuid,
+                    log_level=log_level,
+                    chiles=not keywords['use_bash'],
+                    casa_version=keywords['casa_version'],
+                ),
                 AWS_REGION,
                 tags=[
                     {
@@ -491,6 +497,8 @@ def command_interactive(args):
         args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
+        if config['use_bash']:
+            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
@@ -534,6 +542,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
             build_fits=config['build_fits'],
         )
     elif config['run_type'] == 'use':
@@ -560,6 +569,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
             build_fits=config['build_fits'],
         )
     else:
@@ -586,6 +596,7 @@ def command_interactive(args):
             clean_tclean=config['clean_tclean'],
             run_note=config['run_note_clean'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
             build_fits=config['build_fits'],
         )
 

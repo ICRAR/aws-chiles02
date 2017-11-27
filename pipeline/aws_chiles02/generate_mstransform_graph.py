@@ -163,7 +163,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -184,7 +184,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, chiles=use_bash),
+                get_node_manager_user_data(boto_data, uuid, chiles=use_bash, casa_version=casa_version,),
                 AWS_REGION,
                 tags=[
                     {
@@ -364,6 +364,7 @@ def command_create(args):
         days_per_node=args.days_per_node,
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
+        casa_version=args.casa_version,
     )
 
 
@@ -414,6 +415,8 @@ def command_interactive(args):
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
+        if config['use_bash']:
+            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         if config['create_use_json'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
             args.get('spot_price_i3.2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
@@ -437,6 +440,7 @@ def command_interactive(args):
             days_per_node=config['days_per_node'],
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
         )
     elif config['create_use_json'] == 'use':
         use_and_generate(

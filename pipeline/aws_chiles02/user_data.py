@@ -46,7 +46,7 @@ def get_user_data(cloud_init_data):
     return encoded_data
 
 
-def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True, jpeg2000=False, log_level='vvv'):
+def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True, jpeg2000=False, log_level='vvv', casa_version=None):
     here = dirname(__file__)
     user_data = join(here, '../user_data')
     mako_lookup = TemplateLookup(directories=[user_data])
@@ -67,6 +67,8 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True
         chiles=chiles,
         jpeg2000=jpeg2000,
         log_level=log_level,
+        casa4=True if casa_version == '4.7' else False,
+        casa5=True if casa_version == '5.1' else False,
     )
 
     user_data = get_user_data([cloud_init, user_script])
