@@ -23,6 +23,7 @@
 My Docker Apps
 """
 import logging
+import shutil
 
 import boto3
 import os
@@ -214,6 +215,101 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
         return return_code
 
 
+class CopyPngsToS3(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        super(CopyPngsToS3, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CopyPngsToS3, self).initialize(**kwargs)
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def dataURL(self):
+        return 'CopyPngsToS3'
+
+    def run(self):
+        png_output = self.inputs[0]
+        png_output_dir = png_output.path
+
+        s3_output = self.outputs[0]
+        bucket_name = s3_output.bucket
+        key = s3_output.key
+        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, png_output_dir))
+        # Does the file exists
+        stem_name = 'qa_pngs'.format(self._min_frequency, self._max_frequency)
+        png_directory = os.path.join(png_output_dir, stem_name)
+        LOG.debug('checking {0} exists'.format(png_directory))
+        if not os.path.exists(png_directory) or not os.path.isdir(png_directory):
+            message = 'PNG Directory: {0} does not exist'.format(png_directory)
+            LOG.error(message)
+            self.send_error_message(
+                message,
+                self.oid,
+                self.uid
+            )
+            return 0
+
+        # Make the tar file
+        tar_filename = os.path.join(png_output_dir, 'pngs_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        os.chdir(png_output_dir)
+        bash = 'tar -cvf {0} {1}'.format(
+            tar_filename,
+            stem_name,
+        )
+        return_code = run_command(bash)
+        path_exists = os.path.exists(tar_filename)
+        if return_code != 0 or not path_exists:
+            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
+            LOG.error(message)
+            self.send_error_message(
+                message,
+                self.oid,
+                self.uid,
+            )
+
+        session = boto3.Session(profile_name='aws-chiles02')
+        s3 = session.resource('s3', use_ssl=False)
+
+        s3_client = s3.meta.client
+        transfer = S3Transfer(s3_client)
+        transfer.upload_file(
+            tar_filename,
+            bucket_name,
+            key,
+            callback=ProgressPercentage(
+                key,
+                float(os.path.getsize(tar_filename))
+            ),
+            extra_args={
+                'StorageClass': 'REDUCED_REDUNDANCY',
+            }
+        )
+
+        return return_code
+
+
+class CopyModel(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        super(CopyModel, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CopyModel, self).initialize(**kwargs)
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def dataURL(self):
+        return 'CopyModel'
+
+    def run(self):
+        root_directory = '/home/ec2-user/aws-chiles02/LSM'
+        output_directory = os.path.join(self.outputs[0].path, 'LSM')
+
+        shutil.copytree(root_directory, output_directory, symlinks=True)
+
+
 class DockerUvsub(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
@@ -268,6 +364,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._min_frequency = None
         self._w_projection_planes = None
         self._number_taylor_terms = None
+        self._copy_of_model = None
         self._command = None
         super(CasaUvsub, self).__init__(oid, uid, **kwargs)
 
@@ -286,24 +383,30 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
             self.inputs[0].path,
             'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         )
+        copy_of_model = os.path.join(
+            self.inputs[1].path,
+            'copy_of_model',
+        )
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
         self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                        'uvsub_ha.py {0} {1} {2} {4} {5} ' \
-                        '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt0 ' \
-                        '/home/ec2-user/aws-chiles02/LSM/epoch1gt4k_si_spw_{3}.model.tt1 ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{3}.model ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{3}.model ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{3}.model ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{3}.model ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{3}.model ' \
-                        '/home/ec2-user/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{3}.model '.format(
+                        'uvsub_ha.py {0} {1} {2} {3} {4} {5} ' \
+                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
+                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \
+                        '{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model '.format(
                             measurement_set_in,
                             self.outputs[0].path,
                             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            spectral_window,
+                            'qa_pngs',
                             self._w_projection_planes,
                             self._number_taylor_terms,
+                            copy_of_model,
+                            spectral_window,
                         )
         run_command(self._command)
 

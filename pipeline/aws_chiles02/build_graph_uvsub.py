@@ -24,7 +24,7 @@ Build the physical graph
 """
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.apps_stats import CopyStatsToS3, DockerStats, CasaStats
-from aws_chiles02.apps_uvsub import CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub, CasaUvsub
+from aws_chiles02.apps_uvsub import CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub, CasaUvsub, CopyPngsToS3, CopyModel
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -122,7 +122,21 @@ class BuildGraphUvsub(AbstractBuildGraph):
             copy_from_s3.addInput(carry_over_data.memory_drop_list[count_on_node])
 
         # Do the UV subtraction
+        copy_of_model = None
         if self._use_bash:
+            copy_of_model = self.create_directory_container(
+                node_id,
+                'copy_of_model'
+            )
+
+            copy_model = self.create_app(
+                node_id,
+                get_module_name(CopyModel),
+                'app_copy_model',
+            )
+            copy_model.addInput(s3_drop)
+            copy_model.addOutput(copy_of_model)
+
             casa_py_uvsub_drop = self.create_casa_app(
                 node_id,
                 get_module_name(CasaUvsub),
@@ -147,7 +161,30 @@ class BuildGraphUvsub(AbstractBuildGraph):
             )
         result = self.create_directory_container(node_id, 'dir_uvsub_output')
         casa_py_uvsub_drop.addInput(measurement_set)
+        if self._use_bash:
+            casa_py_uvsub_drop.addInput(copy_of_model)
         casa_py_uvsub_drop.addOutput(result)
+
+        copy_pngs_to_s3 = self.create_app(
+            node_id,
+            get_module_name(CopyPngsToS3),
+            'app_copy_pngs_to_s3',
+            min_frequency=frequencies[0],
+            max_frequency=frequencies[1],
+        )
+        s3_pngs_drop_out = self.create_s3_drop(
+            node_id,
+            self._bucket_name,
+            '{0}/{1}/{2}_pngs'.format(
+                self._s3_uvsub_name,
+                split_to_process[0],
+                split_to_process[1],
+            ),
+            'aws-chiles02',
+            oid='s3_out',
+        )
+        copy_pngs_to_s3.addInput(result)
+        copy_pngs_to_s3.addOutput(s3_pngs_drop_out)
 
         copy_uvsub_to_s3 = self.create_app(
             node_id,
@@ -232,6 +269,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         clean_up.addInput(s3_uvsub_drop_out)
         clean_up.addInput(result)
         clean_up.addInput(measurement_set)
+        clean_up.addInput(copy_of_model)
         if scan_statistics_output_drop is not None:
             clean_up.addInput(scan_statistics_output_drop)
         clean_up.addOutput(memory_drop)
