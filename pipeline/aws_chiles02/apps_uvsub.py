@@ -305,9 +305,10 @@ class CopyModel(BarrierAppDROP, ErrorHandling):
 
     def run(self):
         root_directory = '/home/ec2-user/aws-chiles02/LSM'
+        output_directory = os.path.join(self.outputs[0].path, 'LSM')
 
         LOG.info('Model copy: {}, {}'.format(root_directory, self.outputs[0].path))
-        shutil.copytree(root_directory, self.outputs[0].path, symlinks=True)
+        shutil.copytree(root_directory, output_directory, symlinks=True)
 
 
 class DockerUvsub(DockerApp, ErrorHandling):
