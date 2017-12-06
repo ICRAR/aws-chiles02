@@ -34,19 +34,20 @@ logging.info('Starting logger for...')
 LOG = logging.getLogger('uvsub')
 
 
-@echo
 # Define a proc for time conversion
+@echo
 def time_convert(mytime, myunit='s'):
-    if type(mytime).__name__ <> 'list': mytime=[mytime]
-    myTimestr = []
+    if type(mytime).__name__ != 'list':
+        mytime = [mytime]
+    my_timestr = []
     for time in mytime:
-        q1=qa.quantity(time,myunit)
-        time1=qa.time(q1,form='ymd')
-        myTimestr.append(time1)
-    return myTimestr
+        q1 = qa.quantity(time, myunit)
+        time1 = qa.time(q1, form='ymd')
+        my_timestr.append(time1)
+    return my_timestr
 
 
-def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, model):
+def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_taylor_terms, model):
     """
     Performs the UVSUB step
      Copy of uvsub.py adding in HA dependence of Outliers
@@ -68,6 +69,10 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
     """
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+
+    png_directory = os.path.join(out_dir, out_pngs)
+    if not os.path.exists(png_directory):
+        os.makedirs(png_directory)
 
     LOG.info(
         'uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3}, w_projection_planes={4})'.format(
@@ -106,16 +111,17 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         ms.open(in_dir)
         fq = ms.getspectralwindowinfo()['0']['RefFreq']
         ms.close()
+
         # Special steps for outliers
-        ntt=len(model)
-        if (ntt<number_taylor_terms):
+        ntt = len(model)
+        if ntt < number_taylor_terms:
             print 'Requested number of taylor terms: '+str(number_taylor_terms)
             print 'Is less than number of models given: '+str(ntt)
             print 'Setting former to the latter.'
-            number_taylor_terms=ntt
-        elif (ntt>number_taylor_terms):
-          tmp_name=os.path.join(out_dir, out_ms+'.tmp')
-          ntt=number_taylor_terms
+            number_taylor_terms = ntt
+        elif ntt > number_taylor_terms:
+            tmp_name = os.path.join(out_dir, out_ms+'.tmp')
+            ntt = number_taylor_terms
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
 
         im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
@@ -127,82 +133,82 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         for mn in model[0:ntt]:
             tb.open(mn)
             tb.clearlocks()
-        # 
+        #
         im.ft(model=model[0:ntt], incremental=False)
         im.close()
 
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
         # Do we have outliers??
-        if (len(model)>ntt):
-           print 'Using remaing '+str(len(model)-ntt)+' for outlier subtraction'
-           split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
-           im.open(thems=tmp_name, usescratch=True)
-           #delmod(otf=True,vis=tmp_name,scr=True)
-           ms.open(thems=tmp_name)
-           # Select data by HA in this case
-           ret=ms.getdata(['axis_info','ha'],ifraxis=True)
-           ms.close()
-           ha= ret['axis_info']['time_axis']['HA']/3600.0
-           print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
-           ut = np.mod(ret['axis_info']['time_axis']['MJDseconds']/3600.0/24.0,1)*24.0
-           ha_model=[]
-           for m in range(len(model)):
-               ha_model.append(model[m])
-           NotFirst=False
-           for m in range(-16,16):
-              ptr1=np.where(ha>(0.5*m))[0]
-              ptr2=np.where(ha>(0.5*(m+1)))[0]
-              print 'No. samples in this HA range: '+str(len(ptr1)-len(ptr2))
-              if ((len(ptr1)!=0)&(len(ptr1)!=len(ptr2))):
-                  print 'Change Model to point to directory: '+'HA_'+str(m)
-                  for nha in range(ntt,len(ha_model)):
-                      ha_model[nha]=model[nha].replace('Outliers','Outliers/HA_'+str(m))
-                  ptr=ptr1[0]
-                  print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted models: '+str(ha_model)
-                  #ut_start=ut[ptr]
-                  date_start=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                  print 'to start at '+date_start
-                  if (len(ptr2)==0):
-                      ptr=-1
-                  else:
-                      ptr=ptr2[0]
-                  #ut_end=ut[ptr]
-                  date_end=time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                  print 'and to end at '+date_end+' sample no. '+str(ptr)
-                  #if (ut_end<ut_start):
-                  #    ut_end=ut_end+24
-                  #timerange=str(ut_start)+'~'+str(ut_end)
-                  timerange=date_start+'~'+date_end
-                  im.selectvis(time=timerange)
-                  # These are the parameters for the generation of the model
-                  # Not sure how many of them are important here -- all except mode?
-                  im.defineimage(
-                      nx=4096,
-                      ny=4096,
-                      cellx='2arcsec',
-                      celly='2arcsec',
-                      mode='mfs',
-                      facets=1
-                  )
-                  im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes,freqinterp='linear')
-                  im.settaylorterms(ntaylorterms=1)
-                  #
-                  print 'Models in this pass: '+str(model[ntt:len(model)])
-                  print 'Time range in this pass: '+timerange
-                  for mn in model[ntt:len(model)]:
-                    tb.open(mn)
-                    tb.clearlocks()
-                  #
-                  im.ft(model=ha_model[ntt:len(model)], incremental=NotFirst)
-                  #NotFirst=True
-              #if samples in this HA range
-           #next HA m
-           im.close()
-           uvsub(vis=tmp_name, reverse=False)
-           split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+        if len(model) > ntt:
+            print 'Using remaing '+str(len(model)-ntt)+' for outlier subtraction'
+            split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
+            im.open(thems=tmp_name, usescratch=True)
+            # delmod(otf=True,vis=tmp_name,scr=True)
+            ms.open(thems=tmp_name)
+            # Select data by HA in this case
+            ret = ms.getdata(['axis_info', 'ha'], ifraxis=True)
+            ms.close()
+            ha = ret['axis_info']['time_axis']['HA']/3600.0
+            print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
+            ut = np.mod(ret['axis_info']['time_axis']['MJDseconds'] / 3600.0 / 24.0,1)*24.0
+            ha_model = []
+            for m in range(len(model)):
+                ha_model.append(model[m])
+            not_first = False
+            for m in range(-16, 16):
+                ptr1 = np.where(ha > (0.5*m))[0]
+                ptr2 = np.where(ha > (0.5*(m+1)))[0]
+                print 'No. samples in this HA range: '+str(len(ptr1)-len(ptr2))
+                if (len(ptr1) != 0) & (len(ptr1) != len(ptr2)):
+                    print 'Change Model to point to directory: '+'HA_'+str(m)
+                    for nha in range(ntt, len(ha_model)):
+                        ha_model[nha] = model[nha].replace('Outliers', 'Outliers/HA_'+str(m))
+                    ptr = ptr1[0]
+                    print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted models: '+str(ha_model)
+                    # ut_start=ut[ptr]
+                    date_start = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                    print 'to start at '+date_start
+                    if len(ptr2) == 0:
+                        ptr = -1
+                    else:
+                        ptr = ptr2[0]
+                    # ut_end=ut[ptr]
+                    date_end = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                    print 'and to end at '+date_end+' sample no. '+str(ptr)
+                    # if (ut_end<ut_start):
+                    #    ut_end=ut_end+24
+                    # timerange=str(ut_start)+'~'+str(ut_end)
+                    timerange = date_start + '~' + date_end
+                    im.selectvis(time=timerange)
+                    # These are the parameters for the generation of the model
+                    # Not sure how many of them are important here -- all except mode?
+                    im.defineimage(
+                        nx=4096,
+                        ny=4096,
+                        cellx='2arcsec',
+                        celly='2arcsec',
+                        mode='mfs',
+                        facets=1
+                    )
+                    im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes, freqinterp='linear')
+                    im.settaylorterms(ntaylorterms=1)
+                    #
+                    print 'Models in this pass: ' + str(model[ntt:len(model)])
+                    print 'Time range in this pass: ' + timerange
+                    for mn in model[ntt:len(model)]:
+                        tb.open(mn)
+                        tb.clearlocks()
+                    #
+                    im.ft(model=ha_model[ntt:len(model)], incremental=not_first)
+                    # not_first=True
+                # if samples in this HA range
+            # next HA m
+            im.close()
+            uvsub(vis=tmp_name, reverse=False)
+            split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
         else:
-           split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
 
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
@@ -216,6 +222,7 @@ if __name__ == "__main__":
             in_dir=args.arguments[0],
             out_dir=args.arguments[1],
             out_ms=args.arguments[2],
-            w_projection_planes=int(args.arguments[3]),
-            number_taylor_terms=int(args.arguments[4]),
-            model=args.arguments[5:])
+            out_pngs=args.arguments[3],
+            w_projection_planes=int(args.arguments[4]),
+            number_taylor_terms=int(args.arguments[5]),
+            model=args.arguments[6:])

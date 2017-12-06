@@ -45,7 +45,7 @@ from dlg.droputils import get_roots
 from dlg.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
-PARALLEL_STREAMS = 7
+PARALLEL_STREAMS = 1
 
 
 class WorkToDo:
