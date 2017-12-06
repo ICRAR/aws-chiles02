@@ -307,6 +307,7 @@ class CopyModel(BarrierAppDROP, ErrorHandling):
         root_directory = '/home/ec2-user/aws-chiles02/LSM'
         output_directory = os.path.join(self.outputs[0].path, 'LSM')
 
+        LOG.info('Model copy: {}, {}'.format(root_directory, output_directory))
         shutil.copytree(root_directory, output_directory, symlinks=True)
 
 
