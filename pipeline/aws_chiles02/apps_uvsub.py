@@ -305,10 +305,9 @@ class CopyModel(BarrierAppDROP, ErrorHandling):
 
     def run(self):
         root_directory = '/home/ec2-user/aws-chiles02/LSM'
-        output_directory = os.path.join(self.outputs[0].path, 'LSM')
 
-        LOG.info('Model copy: {}, {}'.format(root_directory, output_directory))
-        shutil.copytree(root_directory, output_directory, symlinks=True)
+        LOG.info('Model copy: {}, {}'.format(root_directory, self.outputs[0].path))
+        shutil.copytree(root_directory, self.outputs[0].path, symlinks=True)
 
 
 class DockerUvsub(DockerApp, ErrorHandling):
@@ -384,10 +383,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
             self.inputs[0].path,
             'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         )
-        copy_of_model = os.path.join(
-            self.inputs[1].path,
-            'copy_of_model',
-        )
+        copy_of_model = self.inputs[1].path
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
         self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
