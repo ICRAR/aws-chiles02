@@ -140,9 +140,9 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
         if (out_pngs):
-            ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
-            ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
-            ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')
+            ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
+            ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
+            ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')
             if ((ret_d&ret_c&ret_m)==False):
                 print 'Reporting PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
 
@@ -214,9 +214,9 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             im.close()
             uvsub(vis=tmp_name, reverse=False)
             if (out_pngs):
-                ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
-                ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
-                ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200s',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
+                ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
+                ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
+                ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
                 if ((ret_d&ret_c&ret_m)==False):
                     print 'Reporting PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
             
