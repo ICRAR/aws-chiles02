@@ -35,7 +35,7 @@ QUEUE = 'startup_complete'
 DIM_PORT = 8001
 WAIT_TIMEOUT_NODE_MANAGER = 1800
 WAIT_TIMEOUT_ISLAND_MANAGER = 1000
-CASA_COMMAND_LINE = 'casa --nologger --log2term -c '
+CASA_COMMAND_LINE = 'xvfb-run casa --nogui --nologger --log2term -c '
 SCRIPT_PATH = '/home/ec2-user/aws-chiles02/pipeline/casa_code/'
 
 AWS_KEY = expanduser('~/.ssh/aws-chiles02-oregon.pem')
