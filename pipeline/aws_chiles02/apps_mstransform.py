@@ -32,6 +32,7 @@ from boto3.s3.transfer import S3Transfer
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.check_measurement_set import CheckMeasurementSet
 from aws_chiles02.common import ProgressPercentage, run_command
+from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
@@ -240,6 +241,54 @@ class DockerMsTransform(DockerApp, ErrorHandling):
             json_drop['Bottom edge'],
         )
         super(DockerMsTransform, self).run()
+
+        check_measurement_set = CheckMeasurementSet(
+            os.path.join(
+                self.outputs[0].path,
+                'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+            )
+        )
+        error_message = check_measurement_set.check_tables_to_24()
+
+        if error_message is not None:
+            LOG.error(error_message)
+            self.send_error_message(
+                error_message,
+                self.oid,
+                self.uid
+            )
+            return 1
+
+    def dataURL(self):
+        return 'docker container chiles02:latest'
+
+
+class CasaMsTransform(DockerApp, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._max_frequency = None
+        self._min_frequency = None
+        self._command = None
+        super(CasaMsTransform, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaMsTransform, self).initialize(**kwargs)
+
+        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
+        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def run(self):
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        json_drop = self.inputs[1]
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+                        'mstransform.py %i0 %o0 {0} {1} {2}'.format(
+            self._min_frequency,
+            self._max_frequency,
+            json_drop['Bottom edge'],
+        )
+        super(CasaMsTransform, self).run()
 
         check_measurement_set = CheckMeasurementSet(
             os.path.join(

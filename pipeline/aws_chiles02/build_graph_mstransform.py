@@ -43,6 +43,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self._work_to_do = keywords['work_to_do']
         self._parallel_streams = keywords['parallel_streams']
         self._s3_split_name = 'split_{0}'.format(keywords['width'])
+        self._use_bash = keywords['use_bash']
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
@@ -100,15 +101,25 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self.copy_logfiles_and_shutdown()
 
     def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
-        casa_py_drop = self.create_docker_app(
-            node_id,
-            get_module_name(DockerMsTransform),
-            'app_ms_transform',
-            CONTAINER_CHILES02,
-            'ms_transform',
-            min_frequency=frequency_pairs.bottom_frequency,
-            max_frequency=frequency_pairs.top_frequency,
-        )
+        if self._use_bash:
+            casa_py_drop = self.create_casa_app(
+                node_id,
+                get_module_name(CasaMsTransform),
+                'app_ms_transform',
+                'ms_transform',
+                min_frequency=frequency_pairs.bottom_frequency,
+                max_frequency=frequency_pairs.top_frequency,
+            )
+        else:
+            casa_py_drop = self.create_docker_app(
+                node_id,
+                get_module_name(DockerMsTransform),
+                'app_ms_transform',
+                CONTAINER_CHILES02,
+                'ms_transform',
+                min_frequency=frequency_pairs.bottom_frequency,
+                max_frequency=frequency_pairs.top_frequency,
+            )
         result = self.create_directory_container(node_id, 'dir_split')
         casa_py_drop.addInput(measurement_set)
         casa_py_drop.addInput(properties)

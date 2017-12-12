@@ -411,12 +411,13 @@ def command_interactive(args):
         args = GetArguments(config=config, mode=mode)
         args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
+        else:
+            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         if config['create_use_json'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
             args.get('spot_price_i3.2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
