@@ -30,7 +30,7 @@ from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
 
-width_frequencies = {
+WIDTH_FREQUENCIES_BY_PHASE = {
     1: 15.625,
     2: 62.5,
 }
@@ -115,7 +115,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 'ms_transform',
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
-                width_freq=width_frequencies[self._observation_phase],
+                width_freq=WIDTH_FREQUENCIES_BY_PHASE[self._observation_phase],
             )
         else:
             casa_py_drop = self.create_docker_app(
@@ -126,7 +126,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 'ms_transform',
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
-                width_freq=width_frequencies[self._observation_phase],
+                width_freq=WIDTH_FREQUENCIES_BY_PHASE[self._observation_phase],
             )
         result = self.create_directory_container(node_id, 'dir_split')
         casa_py_drop.addInput(measurement_set)

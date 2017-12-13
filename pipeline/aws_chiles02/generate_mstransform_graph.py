@@ -427,7 +427,7 @@ def command_interactive(args):
         args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        args.get('observation_phase', 'Observation phase', allowed=[1, 2], data_type=int, help_text='the frequency width', default=1)
+        args.get('observation_phase', 'Observation phase', allowed=['1', '2'], data_type=int, help_text='the frequency width', default=1)
         args.get('split_directory', 'Split Directory', help_text='where to store the split data', default='split_{}'.format(config['width']))
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
