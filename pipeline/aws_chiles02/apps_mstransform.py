@@ -283,11 +283,13 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
         # created so we have to do it later
         json_drop = self.inputs[1]
         self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                        'mstransform.py %i0 %o0 {0} {1} {2}'.format(
-            self._min_frequency,
-            self._max_frequency,
-            json_drop['Bottom edge'],
-        )
+                        'mstransform.py {} {} {} {} {}'.format(
+                            self.inputs[0].path,
+                            self.outputs[0].path,
+                            self._min_frequency,
+                            self._max_frequency,
+                            json_drop['Bottom edge'],
+                        )
         run_command(self._command)
 
         check_measurement_set = CheckMeasurementSet(

@@ -42,7 +42,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         super(BuildGraphMsTransform, self).__init__(**keywords)
         self._work_to_do = keywords['work_to_do']
         self._parallel_streams = keywords['parallel_streams']
-        self._s3_split_name = 'split_phase{}_{}'.format(keywords['observation_phase'], keywords['width'])
+        self._s3_split_name = keywords['split_directory']
         self._use_bash = keywords['use_bash']
 
         # Get a sorted list of the keys
