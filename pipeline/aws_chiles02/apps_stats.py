@@ -240,7 +240,8 @@ class DockerStats(DockerApp, ErrorHandling):
     def dataURL(self):
         return 'docker container chiles02:latest'
 
-class CasaStats(DockerApp, ErrorHandling):
+
+class CasaStats(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None

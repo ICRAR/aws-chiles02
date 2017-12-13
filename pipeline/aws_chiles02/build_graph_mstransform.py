@@ -25,7 +25,7 @@ Build the physical graph
 import operator
 import os
 
-from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform, CasaMsTransform
+from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform, CasaMsTransform, CasaListobs
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
@@ -42,7 +42,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         super(BuildGraphMsTransform, self).__init__(**keywords)
         self._work_to_do = keywords['work_to_do']
         self._parallel_streams = keywords['parallel_streams']
-        self._s3_split_name = 'split_{0}'.format(keywords['width'])
+        self._s3_split_name = 'split_phase{}_{}'.format(keywords['observation_phase'], keywords['width'])
         self._use_bash = keywords['use_bash']
 
         # Get a sorted list of the keys
@@ -160,7 +160,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             'aws-chiles02',
             's3_in')
         if len(add_output_s3) == 0:
-            pass # Do nothing
+            pass    # Do nothing
         else:
             for drop in add_output_s3:
                 drop.addOutput(s3_drop)
@@ -173,7 +173,21 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         copy_from_s3.addInput(s3_drop)
         copy_from_s3.addOutput(measurement_set)
 
-        drop_listobs = self.create_docker_app(node_id, get_module_name(DockerListobs), 'app_listobs', CONTAINER_CHILES02, 'listobs')
+        if self._use_bash:
+            drop_listobs = self.create_casa_app(
+                node_id,
+                get_module_name(CasaListobs),
+                'app_listobs',
+                'listobs'
+            )
+        else:
+            drop_listobs = self.create_docker_app(
+                node_id,
+                get_module_name(DockerListobs),
+                'app_listobs',
+                CONTAINER_CHILES02,
+                'listobs'
+            )
         properties = self.create_json_drop(node_id)
         drop_listobs.addInput(measurement_set)
         drop_listobs.addOutput(properties)
@@ -194,19 +208,19 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         for day_to_process in self._work_to_do.keys():
             if day_to_process.size <= 500 * SIZE_1GB:
-                allocation_dictionary = allocation['i2.2xlarge']
+                allocation_dictionary = allocation['i3.2xlarge']
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
             else:
-                allocation_dictionary = allocation['i2.4xlarge']
+                allocation_dictionary = allocation['i3.4xlarge']
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
 
         # Now balance the nodes a bit if needed
-        if allocation.get('i2.2xlarge') is not None and allocation.get('i2.4xlarge') is not None:
-            max_2xlarge = self._get_max(allocation['i2.2xlarge'])
-            min_4xlarge = self._get_min(allocation['i2.4xlarge'])
+        if allocation.get('i3.2xlarge') is not None and allocation.get('i3.4xlarge') is not None:
+            max_2xlarge = self._get_max(allocation['i3.2xlarge'])
+            min_4xlarge = self._get_min(allocation['i3.4xlarge'])
 
             if max_2xlarge > min_4xlarge + 1:
-                self._move_nodes(allocation['i2.2xlarge'], allocation['i2.4xlarge'])
+                self._move_nodes(allocation['i3.2xlarge'], allocation['i3.4xlarge'])
 
         # Build the map
         self._map_day_to_node = {}
@@ -231,9 +245,9 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         shortest_list.append(day_to_process)
 
     @staticmethod
-    def _get_biggest_list(i2_2xlists):
+    def _get_biggest_list(i3_2xlists):
         biggest_list = None
-        for allocation_list in i2_2xlists.values():
+        for allocation_list in i3_2xlists.values():
             if biggest_list is None:
                 biggest_list = allocation_list
             elif len(allocation_list) > len(biggest_list):
@@ -263,14 +277,14 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         return min_list_size
 
-    def _move_nodes(self, i2_2xlists, i2_4xlists):
+    def _move_nodes(self, i3_2xlists, i3_4xlists):
         max_2xlarge = None
         min_4xlarge = None
 
         while max_2xlarge is None or max_2xlarge > min_4xlarge + 1:
-            biggest_list = self._get_biggest_list(i2_2xlists)
+            biggest_list = self._get_biggest_list(i3_2xlists)
             day_to_process = biggest_list.pop()
-            self._add_to_shortest_list(i2_4xlists, day_to_process)
+            self._add_to_shortest_list(i3_4xlists, day_to_process)
 
-            max_2xlarge = self._get_max(i2_2xlists)
-            min_4xlarge = self._get_min(i2_4xlists)
+            max_2xlarge = self._get_max(i3_2xlists)
+            min_4xlarge = self._get_min(i3_4xlists)

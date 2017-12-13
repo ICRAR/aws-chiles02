@@ -129,8 +129,8 @@ class WorkToDo:
         return self._work_to_do
 
 
-def get_s3_split_name(width):
-    return 'split_{0}'.format(width)
+def get_s3_split_name(width, observation_phase):
+    return 'split_phase{}_{}'.format(observation_phase, width)
 
 
 def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
@@ -163,13 +163,13 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version, observation_phase):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
             width=frequency_width,
             bucket_name=bucket_name,
-            s3_split_name=get_s3_split_name(frequency_width))
+            s3_split_name=get_s3_split_name(frequency_width, observation_phase))
         work_to_do.calculate_work_to_do()
 
         days = work_to_do.work_to_do.keys()
@@ -184,7 +184,12 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
             ec2_data = EC2Controller(
                 ami_id,
                 nodes_required,
-                get_node_manager_user_data(boto_data, uuid, chiles=use_bash, casa_version=casa_version,),
+                get_node_manager_user_data(
+                    boto_data,
+                    uuid,
+                    chiles=not use_bash,
+                    casa_version=casa_version,
+                ),
                 AWS_REGION,
                 tags=[
                     {
@@ -261,6 +266,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     session_id=session_id,
                     dim_ip=hosts,
                     use_bash=use_bash,
+                    observation_phase=observation_phase,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -277,7 +283,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, observation_phase):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -296,7 +302,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do = WorkToDo(
                 width=frequency_width,
                 bucket_name=bucket_name,
-                s3_split_name=get_s3_split_name(frequency_width))
+                s3_split_name=get_s3_split_name(frequency_width, observation_phase))
             work_to_do.calculate_work_to_do()
 
             # Now build the graph
@@ -312,6 +318,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 session_id=session_id,
                 dim_ip=host,
                 use_bash=use_bash,
+                observation_phase=observation_phase,
             )
             graph.build_graph()
 
@@ -326,8 +333,8 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash):
-    work_to_do = WorkToDo(width, bucket, get_s3_split_name(width))
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, observation_phase):
+    work_to_do = WorkToDo(width, bucket, get_s3_split_name(width, observation_phase))
     work_to_do.calculate_work_to_do()
 
     node_details = {
@@ -345,6 +352,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
         session_id='json_test',
         dim_ip='1.2.3.4',
         use_bash=use_bash,
+        observation_phase=observation_phase,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -365,6 +373,7 @@ def command_create(args):
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
         casa_version=args.casa_version,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -377,6 +386,7 @@ def command_use(args):
         volume=args.volume,
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -389,6 +399,7 @@ def command_json(args):
         parallel_streams=args.parallel_streams,
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -412,6 +423,7 @@ def command_interactive(args):
         args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('observation_phase', 'Observation Phase', data_type=int, help_text='the observation phase', default=1)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
@@ -429,6 +441,9 @@ def command_interactive(args):
             args.get('nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
             args.get('parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
 
+    # Write the arguments
+    config.write()
+
     # Run the command
     if config['create_use_json'] == 'create':
         create_and_generate(
@@ -442,6 +457,7 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            observation_phase=config['observation_phase'],
         )
     elif config['create_use_json'] == 'use':
         use_and_generate(
@@ -452,6 +468,7 @@ def command_interactive(args):
             volume=config['volume'],
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
+            observation_phase=config['observation_phase'],
         )
     else:
         build_json(
@@ -462,6 +479,7 @@ def command_interactive(args):
             parallel_streams=config['parallel_streams'],
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
+            observation_phase=config['observation_phase'],
         )
 
 

@@ -263,7 +263,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         return 'docker container chiles02:latest'
 
 
-class CasaMsTransform(DockerApp, ErrorHandling):
+class CasaMsTransform(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
@@ -319,6 +319,21 @@ class DockerListobs(DockerApp, ErrorHandling):
     def initialize(self, **kwargs):
         super(DockerListobs, self).initialize(**kwargs)
         self._command = 'listobs.sh %i0 %o0'
+        self._session_id = self._getArg(kwargs, 'session_id', None)
+
+    def dataURL(self):
+        return 'docker container chiles02:latest'
+
+
+class CasaListobs(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **kwargs):
+        self._command = None
+        super(CasaListobs, self).__init__(oid, uid, **kwargs)
+
+    def initialize(self, **kwargs):
+        super(CasaListobs, self).initialize(**kwargs)
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+                        'listobs.py %i0 %o0'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def dataURL(self):

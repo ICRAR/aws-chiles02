@@ -424,7 +424,6 @@ def command_interactive(args):
         args = GetArguments(config=config, mode=mode)
         args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
         args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int, help_text='the number of taylor terms', default=2)
@@ -433,6 +432,8 @@ def command_interactive(args):
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
+        else:
+            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')

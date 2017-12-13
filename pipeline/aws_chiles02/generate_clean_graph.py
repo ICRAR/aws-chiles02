@@ -477,7 +477,6 @@ def command_interactive(args):
         args = GetArguments(config=config, mode=mode)
         args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
         args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
         args.get('arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
@@ -499,6 +498,8 @@ def command_interactive(args):
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
+        else:
+            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
