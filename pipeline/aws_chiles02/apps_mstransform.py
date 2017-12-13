@@ -288,7 +288,7 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
             self._max_frequency,
             json_drop['Bottom edge'],
         )
-        super(CasaMsTransform, self).run()
+        run_command(self._command)
 
         check_measurement_set = CheckMeasurementSet(
             os.path.join(
@@ -308,7 +308,7 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
             return 1
 
     def dataURL(self):
-        return 'docker container chiles02:latest'
+        return 'CASA MSTransform'
 
 
 class DockerListobs(DockerApp, ErrorHandling):
@@ -332,9 +332,13 @@ class CasaListobs(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CasaListobs, self).initialize(**kwargs)
-        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                        'listobs.py %i0 %o0'
+        self._command = 'listobs.py %i0 %o0'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
+    def run(self):
+        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+                        'listobs.py %i0 %o0'
+        run_command(self._command)
+
     def dataURL(self):
-        return 'docker container chiles02:latest'
+        return 'CASA Listobj'
