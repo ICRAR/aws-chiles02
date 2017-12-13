@@ -337,7 +337,10 @@ class CasaListobs(BarrierAppDROP, ErrorHandling):
 
     def run(self):
         self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
-                        'listobs.py %i0 %o0'
+                        'listobs.py {} {}'.format(
+                            self.inputs[0].path,
+                            self.outputs[0].path,
+                        )
         run_command(self._command)
 
     def dataURL(self):
