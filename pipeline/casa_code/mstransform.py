@@ -34,7 +34,7 @@ logging.info('Starting logger for...')
 LOG = logging.getLogger('mstransform')
 
 
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq=15.625):
+def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq):
     """
     Perform the MS_TRANSFORM step
 

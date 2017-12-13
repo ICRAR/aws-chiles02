@@ -159,7 +159,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version, split_directory):
+def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version, split_directory, observation_phase):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -264,6 +264,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     dim_ip=hosts,
                     use_bash=use_bash,
                     split_directory=split_directory,
+                    observation_phase=observation_phase,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -280,7 +281,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, split_directory):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, split_directory, observation_phase):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -317,6 +318,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 dim_ip=host,
                 use_bash=use_bash,
                 split_directory=split_directory,
+                observation_phase=observation_phase,
             )
             graph.build_graph()
 
@@ -331,7 +333,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory):
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase):
     work_to_do = WorkToDo(width, bucket, split_directory)
     work_to_do.calculate_work_to_do()
 
@@ -351,6 +353,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
         dim_ip='1.2.3.4',
         use_bash=use_bash,
         split_directory=split_directory,
+        observation_phase=observation_phase,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -372,6 +375,7 @@ def command_create(args):
         use_bash=args.use_bash,
         casa_version=args.casa_version,
         split_directory=args.split_directory,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -385,6 +389,7 @@ def command_use(args):
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
         split_directory=args.split_directory,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -398,6 +403,7 @@ def command_json(args):
         add_shutdown=args.shutdown,
         use_bash=args.use_bash,
         split_directory=args.split_directory,
+        observation_phase=args.observation_phase,
     )
 
 
@@ -421,6 +427,7 @@ def command_interactive(args):
         args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('observation_phase', 'Observation phase', allowed=[1, 2], data_type=int, help_text='the frequency width', default=1)
         args.get('split_directory', 'Split Directory', help_text='where to store the split data', default='split_{}'.format(config['width']))
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
@@ -456,6 +463,7 @@ def command_interactive(args):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
         )
     elif config['create_use_json'] == 'use':
         use_and_generate(
@@ -467,6 +475,7 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
             split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
         )
     else:
         build_json(
@@ -478,6 +487,7 @@ def command_interactive(args):
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
             split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
         )
 
 
