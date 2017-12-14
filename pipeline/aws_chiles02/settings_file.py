@@ -38,10 +38,6 @@ WAIT_TIMEOUT_ISLAND_MANAGER = 1000
 CASA_COMMAND_LINE_4_7 = 'xvfb-run casa --nologger --log2term -c '
 CASA_COMMAND_LINE_5_1 = 'xvfb-run casa --nogui --nologger --log2term -c '
 SCRIPT_PATH = '/home/ec2-user/aws-chiles02/pipeline/casa_code/'
-WIDTH_FREQUENCIES_BY_PHASE = {
-    1: 15.625,
-    2: 62.5,
-}
 
 AWS_KEY = expanduser('~/.ssh/aws-chiles02-oregon.pem')
 USERNAME = 'ec2-user'

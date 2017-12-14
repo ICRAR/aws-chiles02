@@ -22,6 +22,7 @@
 """
 Perform the MS Transform
 """
+import json
 import logging
 import os
 import shutil
@@ -34,31 +35,23 @@ logging.info('Starting logger for...')
 LOG = logging.getLogger('mstransform')
 
 
-def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq):
+def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
     """
     Perform the MS_TRANSFORM step
-
-    :param infile:
-    :param outdir:
-    :param min_freq:
-    :param max_freq:
-    :param bottom_edge:
-    :param width_freq:
-    :return:
     """
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    spw_range = freq_map(min_freq, max_freq, bottom_edge)
-    LOG.info('spw_range: {0}'.format(spw_range))
+    with open(list_obs_json, mode='r') as json_file:
+        json_data = json.load(json_file)
+
+    spw_range, no_chan, width_freq = freq_map(min_freq, max_freq, json_data['Spectral Windows']['Spectral Windows'])
+    LOG.info('spw_range: {}, no_chan: {}, width_freq: {}'.format(spw_range, no_chan, width_freq))
     if spw_range.startswith('-1') or spw_range.endswith('-1'):
         LOG.info('The spw_range is {0} which is outside the spectral window '.format(spw_range))
     else:
-        step_freq = max_freq - min_freq
-        no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
-
         outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
-        LOG.info('working on: {0}'.format(outfile))
+        LOG.info('working on: {}'.format(outfile))
         if os.path.exists(outfile):
             shutil.rmtree(outfile)
         try:
@@ -73,8 +66,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, bottom_edge, width_freq):
                 outframe='lsrk',
                 interpolation='linear',
                 veltype='radio',
-                start='{0}MHz'.format(min_freq),
-                width='{0}kHz'.format(width_freq),
+                start='{}MHz'.format(min_freq),
+                width='{}kHz'.format(width_freq),
                 spw=spw_range,
                 combinespws=True,
                 nspw=1,
@@ -95,6 +88,5 @@ if __name__ == "__main__":
         outdir=args.arguments[1],
         min_freq=int(args.arguments[2]),
         max_freq=int(args.arguments[3]),
-        bottom_edge=float(args.arguments[4]),
-        width_freq=float(args.arguments[5]),
+        list_obs_json=args.arguments[4],
     )

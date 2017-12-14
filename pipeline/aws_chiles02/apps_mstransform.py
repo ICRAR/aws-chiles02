@@ -220,7 +220,6 @@ class DockerMsTransform(DockerApp, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
-        self._width_freq = None
         self._command = None
         super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
 
@@ -229,19 +228,16 @@ class DockerMsTransform(DockerApp, ErrorHandling):
 
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._width_freq = self._getArg(kwargs, 'width_freq', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        json_drop = self.inputs[1]
-        self._command = 'mstransform.sh %i0 %o0 {} {} {} {}'.format(
+        self._command = 'mstransform.sh %i0 %o0 {} {} {}'.format(
             self._min_frequency,
             self._max_frequency,
-            json_drop['Bottom edge'],
-            self._width_freq,
+            self.inputs[1].path,
         )
         super(DockerMsTransform, self).run()
 
@@ -270,7 +266,6 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._max_frequency = None
         self._min_frequency = None
-        self._width_freq = None
         self._command = None
         self._casa_version = None
         super(CasaMsTransform, self).__init__(oid, uid, **kwargs)
@@ -280,7 +275,6 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
 
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._width_freq = self._getArg(kwargs, 'width_freq', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._casa_version = self._getArg(kwargs, 'casa_version', None)
@@ -288,15 +282,13 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        json_drop = self.inputs[1]
         self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                        'mstransform.py {} {} {} {} {} {}'.format(
+                        'mstransform.py {} {} {} {} {}'.format(
                             self.inputs[0].path,
                             self.outputs[0].path,
                             self._min_frequency,
                             self._max_frequency,
-                            json_drop['Bottom edge'],
-                            self._width_freq,
+                            self.inputs[1].path,
                         )
         run_command(self._command)
 
