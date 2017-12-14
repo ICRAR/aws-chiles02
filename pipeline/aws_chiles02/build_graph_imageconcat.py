@@ -45,6 +45,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
         self._imageconcat_directory_name = keywords['imageconcat_directory_name']
         self._cleaned_objects = keywords['cleaned_objects']
         self._use_bash = keywords['use_bash']
+        self._casa_version = keywords['casa_version']
 
     def new_carry_over_data(self):
         return CarryOverDataImageconcat()
@@ -63,6 +64,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
                     get_module_name(CasaImageconcat),
                     'app_imageconcat',
                     'imageconcat',
+                    casa_version=self._casa_version,
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],

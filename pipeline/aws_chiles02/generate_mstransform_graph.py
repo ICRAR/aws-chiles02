@@ -265,6 +265,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     use_bash=use_bash,
                     split_directory=split_directory,
                     observation_phase=observation_phase,
+                    casa_version=casa_version,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -281,7 +282,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, split_directory, observation_phase):
+def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, split_directory, observation_phase, casa_version):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = httplib.HTTPConnection(host, port)
@@ -319,6 +320,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 use_bash=use_bash,
                 split_directory=split_directory,
                 observation_phase=observation_phase,
+                casa_version=casa_version,
             )
             graph.build_graph()
 
@@ -333,7 +335,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase):
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase, casa_version):
     work_to_do = WorkToDo(width, bucket, split_directory)
     work_to_do.calculate_work_to_do()
 
@@ -354,6 +356,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
         use_bash=use_bash,
         split_directory=split_directory,
         observation_phase=observation_phase,
+        casa_version=casa_version,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -390,6 +393,7 @@ def command_use(args):
         use_bash=args.use_bash,
         split_directory=args.split_directory,
         observation_phase=args.observation_phase,
+        casa_version=args.casa_version,
     )
 
 
@@ -404,6 +408,7 @@ def command_json(args):
         use_bash=args.use_bash,
         split_directory=args.split_directory,
         observation_phase=args.observation_phase,
+        casa_version=args.casa_version,
     )
 
 
@@ -474,6 +479,7 @@ def command_interactive(args):
             volume=config['volume'],
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             observation_phase=config['observation_phase'],
         )
@@ -486,6 +492,7 @@ def command_interactive(args):
             parallel_streams=config['parallel_streams'],
             add_shutdown=config['shutdown'],
             use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             observation_phase=config['observation_phase'],
         )

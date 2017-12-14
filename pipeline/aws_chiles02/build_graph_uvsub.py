@@ -23,11 +23,10 @@
 Build the physical graph
 """
 from aws_chiles02.apps_general import CleanupDirectories
-from aws_chiles02.apps_stats import CopyStatsToS3, DockerStats, CasaStats
-from aws_chiles02.apps_uvsub import CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub, CasaUvsub, CopyPngsToS3, CopyModel
+from aws_chiles02.apps_stats import CasaStats, CopyStatsToS3, DockerStats
+from aws_chiles02.apps_uvsub import CasaUvsub, CopyModel, CopyPngsToS3, CopyUvsubFromS3, CopyUvsubToS3, DockerUvsub
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name
-from aws_chiles02.copy_original_measurement_set import copy_measurement_set
 from aws_chiles02.settings_file import CONTAINER_CHILES02
 
 
@@ -46,7 +45,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._scan_statistics = keywords['scan_statistics']
         self._s3_uvsub_name = keywords['uvsub_directory_name']
         self._use_bash = keywords['use_bash']
-        self._s3_split_name = 'split_{0}'.format(keywords['width'])
+        self._casa_version = keywords['casa_version']
+        self._s3_split_name = keywords['split_directory']
         self._list_ip = []
         self._node_index = 0
 
@@ -143,6 +143,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 get_module_name(CasaUvsub),
                 'app_uvsub',
                 'uvsub',
+                casa_version=self._casa_version,
                 min_frequency=frequencies[0],
                 max_frequency=frequencies[1],
                 w_projection_planes=self._w_projection_planes,
@@ -218,6 +219,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                     get_module_name(CasaStats),
                     'app_stats',
                     'stats',
+                    casa_version=self._casa_version,
                     min_frequency=frequencies[0],
                     max_frequency=frequencies[1],
                     observation=observation,

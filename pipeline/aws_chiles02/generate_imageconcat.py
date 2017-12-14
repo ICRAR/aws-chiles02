@@ -323,6 +323,7 @@ def create_and_generate(**keywords):
                     dim_ip=host,
                     run_note=keywords['run_note'],
                     use_bash=keywords['use_bash'],
+                    casa_version=keywords['casa_version'],
                 )
                 graph.build_graph()
 
@@ -387,6 +388,7 @@ def use_and_generate(**keywords):
                 dim_ip=host,
                 run_note=keywords['run_note'],
                 use_bash=keywords['use_bash'],
+                casa_version=keywords['casa_version'],
             )
             graph.build_graph()
             LOG.info('Connection to {0}:{1}'.format(host, port))

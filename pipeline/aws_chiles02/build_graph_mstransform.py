@@ -28,12 +28,7 @@ import os
 from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform, CasaMsTransform, CasaListobs
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
-from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
-
-WIDTH_FREQUENCIES_BY_PHASE = {
-    1: 15.625,
-    2: 62.5,
-}
+from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB, WIDTH_FREQUENCIES_BY_PHASE
 
 
 class CarryOverDataMsTransform:
@@ -50,6 +45,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self._s3_split_name = keywords['split_directory']
         self._use_bash = keywords['use_bash']
         self._observation_phase = keywords['observation_phase']
+        self._casa_version = keywords['casa_version']
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
@@ -113,6 +109,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 get_module_name(CasaMsTransform),
                 'app_ms_transform',
                 'ms_transform',
+                casa_version=self._casa_version,
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
                 width_freq=WIDTH_FREQUENCIES_BY_PHASE[self._observation_phase],
@@ -186,7 +183,8 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 node_id,
                 get_module_name(CasaListobs),
                 'app_listobs',
-                'listobs'
+                'listobs',
+                casa_version=self._casa_version,
             )
         else:
             drop_listobs = self.create_docker_app(

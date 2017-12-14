@@ -227,6 +227,8 @@ def create_and_generate(**keywords):
                         dim_ip=host,
                         run_note=keywords['run_note'],
                         use_bash=keywords['use_bash'],
+                        split_directory=keywords['split_directory'],
+                        casa_version=keywords['casa_version'],
                     )
                     graph.build_graph()
 
@@ -293,6 +295,8 @@ def use_and_generate(**keywords):
                 dim_ip=host,
                 run_note=keywords['run_note'],
                 use_bash=keywords['use_bash'],
+                split_directory=keywords['split_directory'],
+                casa_version=keywords['casa_version'],
             )
             graph.build_graph()
 
@@ -344,6 +348,8 @@ def generate_json(**keywords):
         dim_ip='1.2.3.4',
         run_note=keywords['run_note'],
         use_bash=keywords['use_bash'],
+        split_directory=keywords['split_directory'],
+        casa_version=keywords['casa_version'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -425,6 +431,7 @@ def command_interactive(args):
         args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+        args.get('split_directory', 'Split Directory', help_text='where to store the split data', default='split_{}'.format(config['width']))
         args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
         args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int, help_text='the number of taylor terms', default=2)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
@@ -471,6 +478,7 @@ def command_interactive(args):
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -489,6 +497,7 @@ def command_interactive(args):
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
         )
     else:
         generate_json(
@@ -505,6 +514,7 @@ def command_interactive(args):
             run_note=config['run_note_uvsub'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
         )
 
 

@@ -58,6 +58,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._clean_tclean = keywords['clean_tclean']
         self._use_bash = keywords['use_bash']
         self._build_fits = keywords['build_fits']
+        self._casa_version = keywords['casa_version']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -79,11 +80,14 @@ class BuildGraphClean(AbstractBuildGraph):
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
             if self._use_bash:
+                if self._clean_tclean == 'tclean' and self._casa_version != '5.1':
+                    raise ValueError('TClean is only available in V5.1 or above')
                 casa_py_clean_drop = self.create_casa_app(
                     node_id,
                     get_module_name(CasaClean) if self._clean_tclean == 'clean' else get_module_name(CasaTclean),
                     'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
                     'clean' if self._clean_tclean == 'clean' else 'tclean',
+                    casa_version=self._casa_version,
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
                     iterations=self._iterations,

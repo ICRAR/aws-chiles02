@@ -27,7 +27,7 @@ import os
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import run_command
-from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
 
 LOG = logging.getLogger(__name__)
@@ -114,6 +114,7 @@ class CasaTclean(DockerApp, ErrorHandling):
         self._image_size = None
         self._clean_channel_average = None
         self._produce_qa = None
+        self._casa_version = None
         super(CasaTclean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -130,6 +131,7 @@ class CasaTclean(DockerApp, ErrorHandling):
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._command = 'tclean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -143,7 +145,7 @@ class CasaTclean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                             'tclean.py %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(
                                 self._min_frequency,
                                 self._max_frequency,

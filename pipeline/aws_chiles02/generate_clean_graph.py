@@ -239,6 +239,7 @@ def create_and_generate(**keywords):
                         clean_tclean=clean_tclean,
                         run_note=keywords['run_note'],
                         use_bash=keywords['use_bash'],
+                        casa_version=keywords['casa_version'],
                         build_fits=keywords['build_fits'],
                     )
                     graph.build_graph()
@@ -311,6 +312,7 @@ def use_and_generate(**keywords):
                 clean_tclean=keywords['clean_tclean'],
                 run_note=keywords['run_note'],
                 use_bash=keywords['use_bash'],
+                casa_version=keywords['casa_version'],
                 build_fits=keywords['build_fits'],
             )
             graph.build_graph()
@@ -369,6 +371,7 @@ def generate_json(**keywords):
         run_note=keywords['run_note'],
         use_bash=keywords['use_bash'],
         build_fits=keywords['build_fits'],
+        casa_version=keywords['casa_version'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)

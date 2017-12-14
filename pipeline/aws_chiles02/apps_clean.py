@@ -23,14 +23,14 @@
 My Docker Apps
 """
 import logging
-import os
 
 import boto3
+import os
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
@@ -419,6 +419,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._clean_channel_average = None
         self._produce_qa = None
         self._build_fits = None
+        self._casa_version = None
 
         super(CasaClean, self).__init__(oid, uid, **kwargs)
 
@@ -438,6 +439,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'clean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -451,7 +453,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                             'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}'.format(
                                 self.outputs[0].path,
                                 self._min_frequency,

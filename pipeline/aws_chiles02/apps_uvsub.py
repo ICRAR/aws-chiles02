@@ -31,7 +31,7 @@ from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
-from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
@@ -367,6 +367,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._number_taylor_terms = None
         self._copy_of_model = None
         self._command = None
+        self._casa_version = None
         super(CasaUvsub, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -377,6 +378,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
         self._command = 'uvsub.py'
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
 
     def run(self):
         # make the input measurement set
@@ -387,7 +389,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         copy_of_model = self.inputs[1].path
 
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                         'uvsub_ha.py {0} {1} {2} {3} {4} {5} ' \
                         '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
                         '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \

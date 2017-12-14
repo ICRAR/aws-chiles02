@@ -228,7 +228,7 @@ class AbstractBuildGraph:
         self.add_drop(drop)
         return drop
 
-    def create_casa_app(self, node_id, app, oid, command, input_error_threshold=100, **key_word_arguments):
+    def create_casa_app(self, node_id, app, oid, command, casa_version, input_error_threshold=100, **key_word_arguments):
         oid_text = self.get_oid(oid)
         # uid_text = self.get_uuid()
         drop = dropdict({
@@ -239,6 +239,7 @@ class AbstractBuildGraph:
             "command": command,
             "input_error_threshold": input_error_threshold,
             "node": node_id,
+            "casa_version": casa_version,
         })
         drop.update(key_word_arguments)
         self.add_drop(drop)

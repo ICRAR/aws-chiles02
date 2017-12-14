@@ -32,7 +32,7 @@ from boto3.s3.transfer import S3Transfer
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.check_measurement_set import CheckMeasurementSet
 from aws_chiles02.common import ProgressPercentage, run_command
-from aws_chiles02.settings_file import CASA_COMMAND_LINE, SCRIPT_PATH
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
@@ -272,6 +272,7 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
         self._min_frequency = None
         self._width_freq = None
         self._command = None
+        self._casa_version = None
         super(CasaMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -282,12 +283,13 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
         self._width_freq = self._getArg(kwargs, 'width_freq', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
         json_drop = self.inputs[1]
-        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                         'mstransform.py {} {} {} {} {} {}'.format(
                             self.inputs[0].path,
                             self.outputs[0].path,
@@ -336,15 +338,17 @@ class DockerListobs(DockerApp, ErrorHandling):
 class CasaListobs(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._command = None
+        self._casa_version = None
         super(CasaListobs, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
         super(CasaListobs, self).initialize(**kwargs)
         self._command = 'listobs.py %i0 %o0'
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
 
     def run(self):
-        self._command = 'cd ; ' + CASA_COMMAND_LINE + SCRIPT_PATH + \
+        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                         'listobs.py {} {}'.format(
                             self.inputs[0].path,
                             self.outputs[0].path,
