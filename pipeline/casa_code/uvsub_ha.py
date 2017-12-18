@@ -70,9 +70,10 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    png_directory = os.path.join(out_dir, out_pngs)
-    if not os.path.exists(png_directory):
-        os.makedirs(png_directory)
+    if out_pngs == 'yes':
+        png_directory = os.path.join(out_dir, 'qa_pngs')
+        if not os.path.exists(png_directory):
+            os.makedirs(png_directory)
 
     LOG.info(
         'uvsub(vis={0}, model={1}, out_dir={2}, out_ms={3}, w_projection_planes={4})'.format(
@@ -139,7 +140,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
 
         # Now do the subtraction
         uvsub(vis=in_dir, reverse=False)
-        if (out_pngs):
+        if out_pngs == 'yes':
             ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
             ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
             ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')
@@ -213,13 +214,13 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             # next HA m
             im.close()
             uvsub(vis=tmp_name, reverse=False)
-            if (out_pngs):
-                ret_d=plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
-                ret_m=plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
-                ret_c=plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
-                if ((ret_d&ret_c&ret_m)==False):
+            if out_pngs == 'yes':
+                ret_d = plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
+                ret_m = plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
+                ret_c = plotms(vis=tmp_name,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
+                if (ret_d&ret_c&ret_m) == False:
                     print 'Reporting Outlier PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
-            
+
             split(vis=tmp_name, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
         else:
             split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')

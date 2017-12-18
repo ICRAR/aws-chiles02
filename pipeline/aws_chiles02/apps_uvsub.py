@@ -317,6 +317,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._min_frequency = None
         self._w_projection_planes = None
         self._number_taylor_terms = None
+        self._produce_qa = None
         self._command = None
         super(DockerUvsub, self).__init__(oid, uid, **kwargs)
 
@@ -326,6 +327,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
         self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
+        self._produce_qa = self._getArg(kwargs, 'produce_qa', None)
         self._command = 'uvsub.sh'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -348,7 +350,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
                             measurement_set_in,
                             self.outputs[0].path,
                             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            'qa_pngs',
+                            self._produce_qa,
                             self._w_projection_planes,
                             self._number_taylor_terms,
                             spectral_window,
@@ -368,6 +370,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._copy_of_model = None
         self._command = None
         self._casa_version = None
+        self._produce_qa = None
         super(CasaUvsub, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -379,6 +382,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._command = 'uvsub.py'
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._casa_version = self._getArg(kwargs, 'casa_version', None)
+        self._produce_qa = self._getArg(kwargs, 'produce_qa', None)
 
     def run(self):
         # make the input measurement set
@@ -402,7 +406,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                             measurement_set_in,
                             self.outputs[0].path,
                             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            'qa_pngs',
+                            self._produce_qa,
                             self._w_projection_planes,
                             self._number_taylor_terms,
                             copy_of_model,

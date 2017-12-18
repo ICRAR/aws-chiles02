@@ -112,6 +112,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 casa_version=self._casa_version,
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
+                observation_phase=self._observation_phase,
             )
         else:
             casa_py_drop = self.create_docker_app(
@@ -122,6 +123,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 'ms_transform',
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
+                observation_phase=self._observation_phase,
             )
         result = self.create_directory_container(node_id, 'dir_split')
         casa_py_drop.addInput(measurement_set)

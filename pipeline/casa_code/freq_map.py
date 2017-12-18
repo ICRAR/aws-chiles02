@@ -42,14 +42,12 @@ def freq_map(low_frequency, high_frequency, json_data):
     """
     spectral_window_low = 0
     spectral_window_high = 14
-    number_channels = None
     width_frequency = None
     low_frequency_minus_2 = low_frequency - 2
     high_frequency_plus_2 = high_frequency + 2
 
     for window in json_data:
-        if number_channels is None or width_frequency is None:
-            number_channels = int(window[NUMBER_CHANNELS])
+        if width_frequency is None:
             width_frequency = float(window[CHANNEL_WIDTH])
 
         window_width = float(window[WINDOW_WIDTH]) / 1000.0
@@ -64,7 +62,7 @@ def freq_map(low_frequency, high_frequency, json_data):
             break
 
     spw = '{}~{}'.format(spectral_window_low, spectral_window_high)
-    return spw, 64, width_frequency    # TODO:
+    return spw, width_frequency
 
 
 if __name__ == "__main__":

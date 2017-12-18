@@ -229,6 +229,7 @@ def create_and_generate(**keywords):
                         use_bash=keywords['use_bash'],
                         split_directory=keywords['split_directory'],
                         casa_version=keywords['casa_version'],
+                        produce_qa=keywords['produce_qa'],
                     )
                     graph.build_graph()
 
@@ -297,6 +298,7 @@ def use_and_generate(**keywords):
                 use_bash=keywords['use_bash'],
                 split_directory=keywords['split_directory'],
                 casa_version=keywords['casa_version'],
+                produce_qa=keywords['produce_qa'],
             )
             graph.build_graph()
 
@@ -350,6 +352,7 @@ def generate_json(**keywords):
         use_bash=keywords['use_bash'],
         split_directory=keywords['split_directory'],
         casa_version=keywords['casa_version'],
+        produce_qa=keywords['produce_qa'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -437,6 +440,7 @@ def command_interactive(args):
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
+        args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         else:
@@ -479,6 +483,7 @@ def command_interactive(args):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
+            produce_qa=config['produce_qa'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -498,6 +503,7 @@ def command_interactive(args):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
+            produce_qa=config['produce_qa'],
         )
     else:
         generate_json(
@@ -515,6 +521,7 @@ def command_interactive(args):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
+            produce_qa=config['produce_qa'],
         )
 
 

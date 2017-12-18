@@ -47,6 +47,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._casa_version = keywords['casa_version']
         self._s3_split_name = keywords['split_directory']
+        self._produce_qa=keywords['produce_qa'],
+
         self._list_ip = []
         self._node_index = 0
 
@@ -148,6 +150,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 max_frequency=frequencies[1],
                 w_projection_planes=self._w_projection_planes,
                 number_taylor_terms=self._number_taylor_terms,
+                produce_qa=self._produce_qa,
             )
         else:
             casa_py_uvsub_drop = self.create_docker_app(
@@ -160,6 +163,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 max_frequency=frequencies[1],
                 w_projection_planes=self._w_projection_planes,
                 number_taylor_terms=self._number_taylor_terms,
+                produce_qa=self._produce_qa,
             )
         result = self.create_directory_container(node_id, 'dir_uvsub_output')
         casa_py_uvsub_drop.addInput(measurement_set)

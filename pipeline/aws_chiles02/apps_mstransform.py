@@ -221,6 +221,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
         self._max_frequency = None
         self._min_frequency = None
         self._command = None
+        self._observation_phase = None
         super(DockerMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -228,6 +229,7 @@ class DockerMsTransform(DockerApp, ErrorHandling):
 
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._observation_phase = self._getArg(kwargs, 'observation_phase', None)
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2} {3}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
@@ -268,6 +270,7 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
         self._min_frequency = None
         self._command = None
         self._casa_version = None
+        self._observation_phase = None
         super(CasaMsTransform, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -278,6 +281,7 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
         self._command = 'mstransform.sh %i0 %o0 {0} {1} {2}'
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._casa_version = self._getArg(kwargs, 'casa_version', None)
+        self._observation_phase = self._getArg(kwargs, 'observation_phase', None)
 
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
@@ -292,13 +296,15 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
                         )
         run_command(self._command)
 
-        check_measurement_set = CheckMeasurementSet(
-            os.path.join(
-                self.outputs[0].path,
-                'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+        error_message = None
+        if self._observation_phase == '1':
+            check_measurement_set = CheckMeasurementSet(
+                os.path.join(
+                    self.outputs[0].path,
+                    'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+                )
             )
-        )
-        error_message = check_measurement_set.check_tables_to_24()
+            error_message = check_measurement_set.check_tables_to_24()
 
         if error_message is not None:
             LOG.error(error_message)
