@@ -64,7 +64,7 @@ def freq_map(low_frequency, high_frequency, json_data):
             break
 
     spw = '{}~{}'.format(spectral_window_low, spectral_window_high)
-    return spw, number_channels, width_frequency
+    return spw, 64, width_frequency    # TODO:
 
 
 if __name__ == "__main__":
