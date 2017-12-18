@@ -28,7 +28,7 @@ import os
 from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform, CasaMsTransform, CasaListobs
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
-from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB, WIDTH_FREQUENCIES_BY_PHASE
+from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
 
 
 class CarryOverDataMsTransform:
