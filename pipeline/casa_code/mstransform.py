@@ -63,9 +63,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 restfreq='1420.405752MHz',
                 mode='frequency',
                 nchan=no_chan,
-                outframe='topo', # TODO:
+                outframe='lsrk',
                 interpolation='linear',
-                veltype='radio',
+                veltype='optical',
                 start='{}MHz'.format(min_freq),
                 width='{}kHz'.format(width_freq),
                 spw=spw_range,
