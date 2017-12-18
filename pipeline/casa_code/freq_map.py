@@ -61,7 +61,10 @@ def freq_map(low_frequency, high_frequency, json_data):
             spectral_window_high = window[SPECTRAL_WINDOW_ID]
             break
 
-    spw = '{}~{}'.format(spectral_window_low, spectral_window_high)
+    if spectral_window_low == spectral_window_high:
+        spw = spectral_window_low
+    else:
+        spw = '{}~{}'.format(spectral_window_low, spectral_window_high)
     return spw, width_frequency
 
 

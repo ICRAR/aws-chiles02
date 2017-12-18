@@ -68,7 +68,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 nchan=no_chan,
                 outframe='bary',
                 interpolation='linear',
-                veltype='optical',
+                veltype='radio',
                 start='{}MHz'.format(min_freq),
                 width='{}kHz'.format(width_freq),
                 spw=spw_range,
