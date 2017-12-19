@@ -213,7 +213,10 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 allocation_dictionary[value['ip_address']] = []
 
         for day_to_process in self._work_to_do.keys():
-            if day_to_process.size <= 500 * SIZE_1GB:
+            if day_to_process.size <= 50 * SIZE_1GB:
+                allocation_dictionary = allocation['i3.xlarge']
+                self._add_to_shortest_list(allocation_dictionary, day_to_process)
+            elif day_to_process.size <= 500 * SIZE_1GB:
                 allocation_dictionary = allocation['i3.2xlarge']
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
             else:

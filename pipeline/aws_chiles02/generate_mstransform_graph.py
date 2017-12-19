@@ -131,28 +131,38 @@ class WorkToDo:
 
 def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
     nodes = []
-    counts = [0, 0]
+    counts = [0, 0, 0]
     for day in days:
-        if day.size <= 500 * SIZE_1GB:
+        if day.size <= 50 * SIZE_1GB:
             counts[0] += 1
-        else:
+        elif day.size <= 500 * SIZE_1GB:
             counts[1] += 1
+        else:
+            counts[2] += 1
 
     node_count = 0
-    if counts[1] > 0:
-        count = max(counts[1] / days_per_node, 1)
+    if counts[2] > 0:
+        count = max(counts[2] / days_per_node, 1)
         node_count += count
         nodes.append({
             'number_instances': count,
             'instance_type': 'i3.4xlarge',
             'spot_price': spot_price2
         })
+    if counts[1] > 0:
+        count = max(counts[1] / days_per_node, 1)
+        node_count += count
+        nodes.append({
+            'number_instances': count,
+            'instance_type': 'i3.2xlarge',
+            'spot_price': spot_price1
+        })
     if counts[0] > 0:
         count = max(counts[0] / days_per_node, 1)
         node_count += count
         nodes.append({
             'number_instances': count,
-            'instance_type': 'i3.2xlarge',
+            'instance_type': 'i3.xlarge',
             'spot_price': spot_price1
         })
 
@@ -256,7 +266,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     work_to_do=work_to_do.work_to_do,
                     bucket_name=bucket_name,
                     volume=volume,
-                    parallel_streams=7,
+                    parallel_streams=1,
                     node_details=reported_running,
                     shutdown=add_shutdown,
                     width=frequency_width,
