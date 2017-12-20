@@ -271,7 +271,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     shutdown=add_shutdown,
                     width=frequency_width,
                     session_id=session_id,
-                    dim_ip=hosts,
+                    dim_ip=host,
                     use_bash=use_bash,
                     split_directory=split_directory,
                     observation_phase=observation_phase,
@@ -350,6 +350,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
     work_to_do.calculate_work_to_do()
 
     node_details = {
+        'i3.xlarge': [{'ip_address': 'node_i_{0}'.format(i)} for i in range(0, nodes)],
         'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
         'i3.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
     }
