@@ -98,10 +98,6 @@ class WorkToDo:
         return self._work_to_do
 
 
-def get_s3_split_name(width):
-    return 'split_{0}'.format(width)
-
-
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
@@ -120,7 +116,7 @@ def create_and_generate(**keywords):
             width=keywords['frequency_width'],
             bucket_name=bucket_name,
             s3_uvsub_name=keywords['uvsub_directory_name'],
-            s3_split_name=get_s3_split_name(keywords['frequency_width']),
+            s3_split_name=keywords['split_directory'],
             frequency_range=keywords['frequency_range'],
         )
         work_to_do.calculate_work_to_do()
@@ -273,7 +269,7 @@ def use_and_generate(**keywords):
                 width=frequency_width,
                 bucket_name=bucket_name,
                 s3_uvsub_name=uvsub_directory_name,
-                s3_split_name=get_s3_split_name(frequency_width),
+                s3_split_name=keywords['split_directory'],
                 frequency_range=keywords['frequency_range'],
             )
             work_to_do.calculate_work_to_do()
@@ -326,7 +322,7 @@ def generate_json(**keywords):
         width=width,
         bucket_name=bucket,
         s3_uvsub_name=uvsub_directory_name,
-        s3_split_name=get_s3_split_name(width),
+        s3_split_name=keywords['split_directory'],
         frequency_range=keywords['frequency_range'],
     )
     work_to_do.calculate_work_to_do()
