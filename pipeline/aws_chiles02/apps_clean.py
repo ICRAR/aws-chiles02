@@ -348,6 +348,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._region_file = None
         self._produce_qa = None
         self._build_fits = None
         super(DockerClean, self).__init__(oid, uid, **kwargs)
@@ -364,6 +365,7 @@ class DockerClean(DockerApp, ErrorHandling):
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'clean.sh %i0 %o0 %o0 '
@@ -381,7 +383,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}'.format(
+            self._command = 'clean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
@@ -391,6 +393,7 @@ class DockerClean(DockerApp, ErrorHandling):
                 self._robust,
                 self._image_size,
                 self._clean_channel_average,
+                self._region_file,
                 self._produce_qa,
                 self._build_fits,
                 ' '.join(measurement_sets),
@@ -417,6 +420,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._region_file = None
         self._produce_qa = None
         self._build_fits = None
         self._casa_version = None
@@ -435,6 +439,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'clean.sh %i0 %o0 %o0 '
@@ -454,7 +459,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}'.format(
+                            'clean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13}'.format(
                                 self.outputs[0].path,
                                 self._min_frequency,
                                 self._max_frequency,
@@ -465,6 +470,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
                                 self._robust,
                                 self._image_size,
                                 self._clean_channel_average,
+                                self._region_file,
                                 self._produce_qa,
                                 self._build_fits,
                                 ' '.join(measurement_sets),

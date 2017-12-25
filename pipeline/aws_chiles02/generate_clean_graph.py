@@ -229,6 +229,7 @@ def create_and_generate(**keywords):
                         robust=keywords['robust'],
                         image_size=keywords['image_size'],
                         clean_channel_average=keywords['clean_channel_average'],
+                        region_file=keywords['region_file'],
                         clean_directory_name=clean_directory_name,
                         only_image=keywords['only_image'],
                         session_id=session_id,
@@ -302,6 +303,7 @@ def use_and_generate(**keywords):
                 robust=keywords['robust'],
                 image_size=keywords['image_size'],
                 clean_channel_average=keywords['clean_channel_average'],
+                region_file=keywords['region_file'],
                 clean_directory_name=clean_directory_name,
                 only_image=keywords['only_image'],
                 session_id=session_id,
@@ -360,6 +362,7 @@ def generate_json(**keywords):
         robust=keywords['robust'],
         image_size=keywords['image_size'],
         clean_channel_average=keywords['clean_channel_average'],
+        region_file=keywords['region_file'],
         clean_directory_name=clean_directory_name,
         uvsub_directory_name=uvsub_directory_name,
         fits_directory_name=keywords['fits_directory_name'],
@@ -395,6 +398,7 @@ def command_json(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
+        region_file=args.region_file,
         frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
@@ -423,6 +427,7 @@ def command_create(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
+        region_file=args.region_file,
         frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         only_image=args.only_image,
@@ -450,6 +455,7 @@ def command_use(args):
         robust=args.robust,
         image_size=args.image_size,
         clean_channel_average=args.clean_channel_average,
+        region_file=args.region_file,
         frequency_range=args.frequency_range,
         clean_directory_name=args.clean_directory_name,
         produce_qa=args.produce_qa,
@@ -489,6 +495,7 @@ def command_interactive(args):
             args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
         args.get('image_size', 'The image size', data_type=int, help_text='the image size for clean', default=4096)
         args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
+        args.get('region_file', 'Region File for cleaning', help_text='Region File for cleaning in crtf', default='')
         args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('build_fits', 'Build the fits files for JPEG2000 (yes or no)', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default='no')
@@ -537,6 +544,7 @@ def command_interactive(args):
             only_image=config['only_image'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
+            region_file=config['region_file'],
             frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             log_level=config['log_level'],
@@ -564,6 +572,7 @@ def command_interactive(args):
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
+            region_file=config['region_file'],
             frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],
@@ -591,6 +600,7 @@ def command_interactive(args):
             robust=config['robust'],
             image_size=config['image_size'],
             clean_channel_average=config['clean_channel_average'],
+            region_file=config['region_file'],
             frequency_range=config['frequency_range'],
             clean_directory_name=config['clean_directory_name'],
             only_image=config['only_image'],

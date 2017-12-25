@@ -50,6 +50,7 @@ class DockerTclean(DockerApp, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._region_file = None
         self._produce_qa = None
         super(DockerTclean, self).__init__(oid, uid, **kwargs)
 
@@ -64,6 +65,7 @@ class DockerTclean(DockerApp, ErrorHandling):
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._command = 'tclean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
@@ -80,7 +82,7 @@ class DockerTclean(DockerApp, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'tclean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(
+            self._command = 'tclean.sh %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
                 self._min_frequency,
                 self._max_frequency,
                 self._iterations,
@@ -89,6 +91,7 @@ class DockerTclean(DockerApp, ErrorHandling):
                 self._robust,
                 self._image_size,
                 self._clean_channel_average,
+                self._region_file,
                 self._produce_qa,
                 ' '.join(measurement_sets),
             )
@@ -113,6 +116,7 @@ class CasaTclean(DockerApp, ErrorHandling):
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
+        self._region_file = None
         self._produce_qa = None
         self._casa_version = None
         super(CasaTclean, self).__init__(oid, uid, **kwargs)
@@ -128,6 +132,7 @@ class CasaTclean(DockerApp, ErrorHandling):
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._command = 'tclean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
@@ -146,7 +151,7 @@ class CasaTclean(DockerApp, ErrorHandling):
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                            'tclean.py %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(
+                            'tclean.py %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
                                 self._min_frequency,
                                 self._max_frequency,
                                 self._iterations,
@@ -155,6 +160,7 @@ class CasaTclean(DockerApp, ErrorHandling):
                                 self._robust,
                                 self._image_size,
                                 self._clean_channel_average,
+                                self._region_file,
                                 self._produce_qa,
                                 ' '.join(measurement_sets),
                             )

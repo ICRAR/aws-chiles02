@@ -53,6 +53,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._robust = keywords['robust']
         self._image_size = keywords['image_size']
         self._clean_channel_average = keywords['clean_channel_average']
+        self._region_file = keywords['region_file']
         self._only_image = keywords['only_image']
         self._produce_qa = keywords['produce_qa']
         self._clean_tclean = keywords['clean_tclean']
@@ -97,6 +98,7 @@ class BuildGraphClean(AbstractBuildGraph):
                     image_size=self._image_size,
                     w_projection_planes=self._w_projection_planes,
                     clean_channel_average=self._clean_channel_average,
+                    region_file=self._region_file,
                     produce_qa=self._produce_qa,
                     build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
@@ -117,6 +119,7 @@ class BuildGraphClean(AbstractBuildGraph):
                     image_size=self._image_size,
                     w_projection_planes=self._w_projection_planes,
                     clean_channel_average=self._clean_channel_average,
+                    region_file=self._region_file,
                     produce_qa=self._produce_qa,
                     build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],

@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, clean_weighting_uv, robust, image_size, clean_channel_average, produce_qa, build_fits, in_dirs):
+def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, clean_weighting_uv, robust, image_size, clean_channel_average, region_file, produce_qa, build_fits, in_dirs):
     """
     Perform the CLEAN step
 
@@ -56,6 +56,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
                   nchan=-1,
                   start=0,
                   width=clean_channel_average,
+                  mask=region_file,
                   interpolation='nearest',
                   gridmode='widefield',
                   niter=iterations,
@@ -77,6 +78,7 @@ def do_clean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_plan
                   nchan=-1,
                   start=0,
                   width=clean_channel_average,
+                  mask=region_file,
                   interpolation='nearest',
                   gridmode='widefield',
                   niter=iterations,
@@ -263,6 +265,7 @@ if __name__ == "__main__":
         robust=float(args.arguments[7]),
         image_size=int(args.arguments[8]),
         clean_channel_average=args.arguments[9] if args.arguments[9] == '' else int(args.arguments[9]),
-        produce_qa=args.arguments[10],
-        build_fits=args.arguments[11],
-        in_dirs=args.arguments[12:])
+        region_file=args.arguments[10],
+        produce_qa=args.arguments[11],
+        build_fits=args.arguments[12],
+        in_dirs=args.arguments[13:])

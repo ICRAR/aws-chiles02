@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, produce_qa, in_dirs):
+def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, region_file, produce_qa, in_dirs):
     """
     Perform the CLEAN step
 
@@ -57,6 +57,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
                nchan=-1,
                start=0,
                width=clean_channel_average,
+               mask=region_file,
                outframe='LSRK',
                restfreq='1420.405752MHz',
                interpolation='nearest',
@@ -241,5 +242,6 @@ if __name__ == "__main__":
         robust=float(args.arguments[6]),
         image_size=int(args.arguments[7]),
         clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
-        produce_qa=args.arguments[9],
-        in_dirs=args.arguments[10:])
+        region_file=args.arguments[9],
+        produce_qa=args.arguments[10],
+        in_dirs=args.arguments[11:])
