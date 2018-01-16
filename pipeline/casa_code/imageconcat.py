@@ -34,11 +34,9 @@ LOG = logging.getLogger('imageconcat')
 
 
 @echo
-def do_imageconcat(cube_dir, out_filename, input_files):
+def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
     """
     Perform the CONCATENATION step
-    :param input_files:
-    :param out_filename:
     """
     if not os.path.exists(cube_dir):
         os.makedirs(cube_dir)
@@ -75,7 +73,8 @@ def do_imageconcat(cube_dir, out_filename, input_files):
         # ia.statistics(verbose=True,axes=[0,1])
         # ia.close()
         ###  could save outfile+'.cont',outfile+'.line', rather than outfile ###
-        exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
+        if build_fits == 'yes':
+            exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
@@ -86,4 +85,5 @@ if __name__ == "__main__":
     do_imageconcat(
         args.arguments[0],
         args.arguments[1],
-        args.arguments[2:])
+        args.arguments[2],
+        args.arguments[3:])

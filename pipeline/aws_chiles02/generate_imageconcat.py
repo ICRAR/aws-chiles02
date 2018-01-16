@@ -191,6 +191,7 @@ def generate_json(**keywords):
         run_note=keywords['run_note'],
         use_bash=keywords['use_bash'],
         casa_version=keywords['casa_version'],
+        build_fits=keywords['build_fits'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -324,6 +325,7 @@ def create_and_generate(**keywords):
                     run_note=keywords['run_note'],
                     use_bash=keywords['use_bash'],
                     casa_version=keywords['casa_version'],
+                    build_fits=keywords['build_fits'],
                 )
                 graph.build_graph()
 
@@ -389,6 +391,7 @@ def use_and_generate(**keywords):
                 run_note=keywords['run_note'],
                 use_bash=keywords['use_bash'],
                 casa_version=keywords['casa_version'],
+                build_fits=keywords['build_fits'],
             )
             graph.build_graph()
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -478,7 +481,9 @@ def command_interactive(args):
         args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
         args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
         args.get('imageconcat_directory_name', 'The directory name for imageconcat', help_text='the directory name for imageconcat')
-        args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+        args.get('build_fits', 'Build the fits files for JPEG2000 (yes or no)', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default='no')
+        if config['build_fits'] == 'yes':
+            args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
