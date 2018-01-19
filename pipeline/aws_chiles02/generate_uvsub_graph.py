@@ -447,7 +447,7 @@ def command_interactive(args):
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
-        args.get('uv_absorption', 'Run the absorption version of uvsub (yes or no)', allowed=['yes', 'no'])
+        args.get('absorption', 'Run the absorption version of uvsub (yes or no)', allowed=['yes', 'no'], help_text='RUn the absorption version of the UVSUB', default='no')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
