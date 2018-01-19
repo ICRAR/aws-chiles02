@@ -265,7 +265,7 @@ if __name__ == "__main__":
         robust=float(args.arguments[7]),
         image_size=int(args.arguments[8]),
         clean_channel_average=args.arguments[9] if args.arguments[9] == '' else int(args.arguments[9]),
-        region_file=args.arguments[10],
+        region_file=args.arguments[10] if args.arguments[10] != 'None' else '',
         produce_qa=args.arguments[11],
         build_fits=args.arguments[12],
         in_dirs=args.arguments[13:])
