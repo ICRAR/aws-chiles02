@@ -49,10 +49,10 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
     step_freq = max_freq - min_freq
     no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-    # HACK
+    # TODO: HACK
     no_chan = 60
     width_freq = 66.666666667
-    # HACK
+    # TODO: HACK
 
     LOG.info('spw_range: {}, no_chan: {}, width_freq: {}'.format(spw_range, no_chan, width_freq))
     if spw_range.startswith('-1') or spw_range.endswith('-1'):

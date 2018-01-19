@@ -226,6 +226,7 @@ def create_and_generate(**keywords):
                         split_directory=keywords['split_directory'],
                         casa_version=keywords['casa_version'],
                         produce_qa=keywords['produce_qa'],
+                        absorption=keywords['absorption'],
                     )
                     graph.build_graph()
 
@@ -295,6 +296,7 @@ def use_and_generate(**keywords):
                 split_directory=keywords['split_directory'],
                 casa_version=keywords['casa_version'],
                 produce_qa=keywords['produce_qa'],
+                absorption=keywords['absorption'],
             )
             graph.build_graph()
 
@@ -349,6 +351,7 @@ def generate_json(**keywords):
         split_directory=keywords['split_directory'],
         casa_version=keywords['casa_version'],
         produce_qa=keywords['produce_qa'],
+        absorption=keywords['absorption'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -444,6 +447,7 @@ def command_interactive(args):
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
+        args.get('uv_absorption', 'Run the absorption version of uvsub (yes or no)', allowed=['yes', 'no'])
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
@@ -480,6 +484,7 @@ def command_interactive(args):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            absorption=config['absorption'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -500,6 +505,7 @@ def command_interactive(args):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            absorption=config['absorption'],
         )
     else:
         generate_json(
@@ -518,6 +524,7 @@ def command_interactive(args):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            absorption=config['absorption'],
         )
 
 

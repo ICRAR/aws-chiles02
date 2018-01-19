@@ -100,11 +100,11 @@ class AbstractBuildGraph:
         copy_drop.addInput(memory_drop)
         copy_drop.addOutput(s3_drop)
 
-    def copy_logfiles_and_shutdown(self, shutdown_dim=True):
+    def copy_logfiles_and_shutdown(self, s3_keyname, shutdown_dim=True):
         """
         Copy the logfile to S3 and shutdown
         """
-        s3_drop_out, dim_copy_log_drop = self._copy_logs(self._dim_ip)
+        s3_drop_out, dim_copy_log_drop = self._copy_logs(s3_keyname, self._dim_ip)
 
         dim_shutdown_drop = None
         if shutdown_dim and self._shutdown:
@@ -115,7 +115,7 @@ class AbstractBuildGraph:
             for instance_details in list_ips:
                 node_id = instance_details['ip_address']
 
-                s3_drop_out, copy_log_drop = self._copy_logs(node_id)
+                s3_drop_out, copy_log_drop = self._copy_logs(s3_keyname, node_id)
                 memory_drop = self.create_memory_drop(self._dim_ip)
                 copy_log_drop.addOutput(memory_drop)
                 dim_copy_log_drop.addInput(memory_drop)
@@ -130,7 +130,7 @@ class AbstractBuildGraph:
 
                         dim_shutdown_drop.addInput(memory_drop)
 
-    def _copy_logs(self, node_id):
+    def _copy_logs(self, s3_keyname, node_id):
         copy_log_drop = self.create_app(node_id, get_module_name(CopyLogFilesApp), 'copy_log_files_app')
         # After everything is complete
         for drop in self._drop_list:
@@ -139,8 +139,8 @@ class AbstractBuildGraph:
         s3_drop_out = self.create_s3_drop(
             node_id,
             self._bucket_name,
-            '{0}/{1}.tar'.format(
-                self._session_id,
+            '{}/logs/{}.tar'.format(
+                s3_keyname,
                 node_id,
             ),
             'aws-chiles02',
