@@ -280,7 +280,7 @@ class ChilesGUI:
         autosaves = self.save_load.autosave_list(absolute=True)
 
         for index, save in enumerate(autosaves):
-            text = "Autosave {0}".format(index)
+            text = "Autosave {0}".format(save[1])
             if index == 0:
                 text += " (latest)"
             menu.add_command(label=text, command=partial(self.load_filename, save[0]))
