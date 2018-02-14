@@ -480,8 +480,9 @@ def command_interactive(args):
 
     mode = get_input_mode()
     if mode == TKINTER and False:
-        # TODO:
-        pass
+        from gui import run_gui, ChilesAPI
+        run_gui(ChilesAPI())
+        exit(0)
     else:
         args = GetArguments(config=config, mode=mode)
         args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')

@@ -19,35 +19,6 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-from abc import *
 
-
-class BaseChilesAPI:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def create(self, data):
-        pass
-
-    @abstractmethod
-    def use(self, data):
-        pass
-
-    @abstractmethod
-    def generate_json(self, data):
-        pass
-
-
-class NullAPI(BaseChilesAPI):
-
-    def create(self, data):
-        print "create"
-        print data
-
-    def use(self, data):
-        print "use"
-        print data
-
-    def generate_json(self, data):
-        print "generate_json"
-        print data
+from main import run_gui
+from api_impl import ChilesAPI

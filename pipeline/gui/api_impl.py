@@ -19,35 +19,18 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-from abc import *
+
+from api import BaseChilesAPI
+from generate_clean_graph import create_and_generate, use_and_generate, generate_json
 
 
-class BaseChilesAPI:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def create(self, data):
-        pass
-
-    @abstractmethod
-    def use(self, data):
-        pass
-
-    @abstractmethod
-    def generate_json(self, data):
-        pass
-
-
-class NullAPI(BaseChilesAPI):
+class ChilesAPI(BaseChilesAPI):
 
     def create(self, data):
-        print "create"
-        print data
+        return create_and_generate(**data)
 
     def use(self, data):
-        print "use"
-        print data
+        return use_and_generate(**data)
 
     def generate_json(self, data):
-        print "generate_json"
-        print data
+        return generate_json(**data)

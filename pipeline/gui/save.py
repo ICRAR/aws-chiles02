@@ -19,35 +19,56 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
+
+"""
+Each time the program is closed, we want to save whatever was currently configured, and keep up to the last X
+number of saved configs.
+"""
+
 from abc import *
 
 
-class BaseChilesAPI:
+class BaseChilesGUIConfig:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def create(self, data):
+    def save(self, filename, config):
         pass
 
     @abstractmethod
-    def use(self, data):
+    def load(self, filename):
         pass
 
     @abstractmethod
-    def generate_json(self, data):
+    def autoload(self):
+        pass
+
+    @abstractmethod
+    def autosave(self, config):
+        pass
+
+    @abstractmethod
+    def autosave_list(self, **kwargs):
         pass
 
 
-class NullAPI(BaseChilesAPI):
+class NullChilesGUIConfig:
 
-    def create(self, data):
-        print "create"
-        print data
+    def save(self, filename, config):
+        print "Saving config to {0}:".format(filename)
+        print config
 
-    def use(self, data):
-        print "use"
-        print data
+    def load(self, filename):
+        print "Loading from {0}:".format(filename)
+        return {}
 
-    def generate_json(self, data):
-        print "generate_json"
-        print data
+    def autoload(self):
+        print "Autoloading config"
+        return {}
+
+    def autosave(self, config):
+        print "Autosaving config"
+
+    def autosave_list(self, **kwargs):
+        print "Getting autosave list"
+        return []

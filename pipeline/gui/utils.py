@@ -19,35 +19,17 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-from abc import *
 
 
-class BaseChilesAPI:
-    __metaclass__ = ABCMeta
+def pluralise(number, value):
+    """
+    Pluralise 'value' in the form "value is" or "values are"
+    :param number: The number of things we're describing with 'value'
+    :param value: The base word to pluralise
+    :return: Pluralised value.
+    """
+    if number == 1 or number == -1:
+        return "{0} is".format(value)
+    else:
+        return "{0}s are".format(value)
 
-    @abstractmethod
-    def create(self, data):
-        pass
-
-    @abstractmethod
-    def use(self, data):
-        pass
-
-    @abstractmethod
-    def generate_json(self, data):
-        pass
-
-
-class NullAPI(BaseChilesAPI):
-
-    def create(self, data):
-        print "create"
-        print data
-
-    def use(self, data):
-        print "use"
-        print data
-
-    def generate_json(self, data):
-        print "generate_json"
-        print data
