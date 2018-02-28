@@ -194,7 +194,7 @@ def use_and_generate(**kwargs):
             LOG.warning('No nodes are running')
 
 
-def command_json(args):
+def save_json(**kwargs):
     node_details = {
         'number_instances': 1,
         'instance_type': 'm4.large',
@@ -202,11 +202,11 @@ def command_json(args):
     }
 
     graph = BuildGraphJpeg2000(
-        bucket_name=args.bucket,
-        volume=args.volume,
-        parallel_streams=args.parallel_streams,
+        bucket_name=kwargs["bucket"],
+        volume=kwargs["volume"],
+        parallel_streams=PARALLEL_STREAMS,
         node_details=node_details,
-        shutdown=args.shutdown,
+        shutdown=kwargs["shutdown"],
         fits_directory_name='fits_dir',
         jpeg2000_directory_name='jpeg_dir',
         session_id='session_id',
@@ -217,6 +217,12 @@ def command_json(args):
     LOG.info(json_dumps)
     with open("/tmp/json_split.txt", "w") as json_file:
         json_file.write(json_dumps)
+
+
+def command_json(args):
+    save_json(bucket=args.bucket,
+              volume=args.volume,
+              shutdown=args.shutdown)
 
 
 def command_create(args):

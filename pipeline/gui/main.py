@@ -24,147 +24,274 @@
 GUI Main
 """
 import Tkinter as tk
-import ttk
-import tkFileDialog
 from api import NullAPI
 from save_impl import ChilesGUIConfig
 from data import DataAccess
 from functools import partial
-from utils import pluralise
+from utils import pluralise, EventEmitter
+from option_def import get_options, task_options, action_options
 
-from validation import Int, Float, String, SelectList, ValidationException
-from option import Input, Select, Check, ChooseFile
+from validation import ValidationException
+
+"""
+Wizard with 3 pages for configuring options
+Page1: Select Task (clean graph, imageconcat, jpeg2000, mstransform, uvsub)
+       And action (Create, Use, Save JSON)
+Page2: Configure Task (Shows options specific to task)
+Page3: Confirm (runs the task)
+"""
 
 
-class ChilesGUI:
+class Wizard:
     """
-    The main Chiles GUI class.
+    The Wizard class manages a set of wizard pages and provides a back and forward navigation between the pages.
+    Each wizard page contained within a tk.Frame, and the back and forward buttons are placed at the bottom of the screen.
     """
-    weighting_uv_options = [
-        "Briggs",
-        "Uniform",
-        "Natural"
-    ]
-
-    clean_tclean_options = [
-        "clean",
-        "tclean"
-    ]
-
-    casa_version_options = [
-        "4.7",
-        "5.1"
-    ]
-
-    log_level_options = [
-        "v",
-        "vv",
-        "vvv"
-    ]
-
-    option_bucket = Input("bucket", "Bucket Name", String(), default='13b-266')
-    option_frequency = Input("frequency", "Frequency Width", Float(), default=4)
-    option_iterations = Input("iterations", "Iterations", Int(), default=1)
-    option_arc_seconds = Input("arc_seconds", "Arc Seconds", Float(), default=2)
-    option_w_projection_planes = Input("w_projection_planes", "W Projection Planes", Int(), default=24)
-    option_clean_weighting_uv = Select("clean_weighting_uv", "Clean Weighting UV", weighting_uv_options, default='Briggs')
-    option_clean_robust = Input("clean_robust", "Clean Robust Value", Float(), default=0.8)
-    option_image_size = Input("image_size", "Image Size", Int(), default=4096)
-    option_clean_channel_average = Input("clean_channel_average", "Input channels to average", Int(), default=1)
-    option_region_file = Input("region_file", "Region file", String())
-    option_only_image = Check("only_image", "Only copy image to S3")
-    option_shutdown = Check("shutdown", "Add shutdown node", default=True)
-    option_build_fits = Check("build_fits", "Build FITS for JPEG2000")
-    option_fits_directory_name = Input("fits_directory_name", "FITS directory", String())
-    option_uvsub_directory_name = Input("uvsub_directory_name", "UVSUB directory", String())
-    option_clean_directory_name = Input("clean_directory_name", "Clean directory", String())
-    option_produce_qa = Check("produce_qa", "Produce QA products")
-    option_clean_tclean = Select("clean_tclean", "Clean or TClean", clean_tclean_options, default="clean")
-    option_use_bash = Check("use_bash", "Run CASA in Bash")
-    option_casa_version = Select("casa_version", "CASA version", casa_version_options, default='5.1')
-    option_volume = Input("volume", "Host directory for Docker", String())
-    option_frequency_range = Input("frequency_range", "Frequeny Ranges", String())
-    option_run_note_clean = Input("run_note_clean", "Note", String(), default='No note')
-    option_ami = Input("ami", "AMI ID", String())
-    option_spot_price_i3_4xlarge = Input("spot_price_i3_4xlarge", "Spot Price for i3.4xlarge", String())
-    option_frequencies_per_node = Input("frequencies_per_node", "Frequencies per node", Int(), default=1)
-    option_log_level = Select("log_level", "Log level", log_level_options, default='vvv')
-    option_dim = Input("dim", "Data island manager IP", String())
-    option_nodes = Input("nodes", "Node count", Int(), default=1)
-    option_json = ChooseFile("json", "JSON output path", default='/tmp/json_clean.txt')
-
-    common_items = [
-        option_bucket,
-        option_frequency,
-        option_iterations,
-        option_arc_seconds,
-        option_w_projection_planes,
-        option_clean_weighting_uv,
-        option_clean_robust,
-        option_image_size,
-        option_clean_channel_average,
-        option_region_file,
-        option_only_image,
-        option_shutdown,
-        option_build_fits,
-        option_fits_directory_name,
-        option_uvsub_directory_name,
-        option_clean_directory_name,
-        option_produce_qa,
-        option_clean_tclean,
-        option_use_bash,
-        option_casa_version,
-        option_volume,
-        option_frequency_range,
-        option_run_note_clean
-    ]
-
-    use_items = [
-        option_dim
-    ]
-
-    create_items = [
-        option_ami,
-        option_spot_price_i3_4xlarge,
-        option_frequencies_per_node,
-        option_log_level
-    ]
-
-    json_items = [
-        option_nodes,
-        option_json
-    ]
-
-    all_items = common_items + use_items + create_items + json_items
-
-    read_all_items = [item.id for item in all_items]
-    write_all_defaults = {item.id: item.default for item in all_items}
-
-    def __init__(self, root, api):
+    def __init__(self, root):
         """
-        Initialise the GUI and create all of the window elements.
-        :param root: The TKINTER root frame.
-        :param api: The API for interacting with the rest of chiles.
-        :param save_load: The system to handle saving and loading of config files.
+        :param pages: List of pages, in order, that the wizard will sequentially go through
         """
-        self.root = root
-        self.api = api
-        self.save_load = ChilesGUIConfig(".")
+        self.pages = []
+        self.current_page = None
+        self.current_page_index = 0
+        self.on_submit = None
+        self.frame = tk.Frame(root)
+        self.frame.pack()
+
+        navigation = tk.Frame(self.frame)
+        navigation.pack(side=tk.BOTTOM)
+
+        self.previous_button = tk.Button(navigation, text="Previous", command=self.previous_page, width=5)
+        self.previous_button.pack(side=tk.LEFT)
+
+        self.next_button = tk.Button(navigation, text="Next", command=self.next_page, width=5)
+        self.next_button.pack(side=tk.RIGHT)
+
+    def __len__(self):
+        """
+        Number of pages in the wizard
+        :return:
+        """
+        return len(self.pages)
+
+    def set_on_submit(self, callback):
+        """
+        Set the function to be called when the wizard has gone past the last page
+        :param function:
+        :return:
+        """
+        self.on_submit = callback
+
+    def get_page(self, index):
+        """
+        Get a page from the wizard
+        :param index:
+        :return:
+        """
+        return self.pages[index]
+
+    def add_page(self, page):
+        """
+        Add a page to the wizard
+        :return:
+        """
+        page.frame = tk.Frame(self.frame)
+        self.pages.append(page)
+
+        if len(self) == 1:
+            self.goto_page(0)
+        else:
+            self._update_buttons()
+
+    def next_page(self):
+        """
+        Go to the next page in the wizard
+        :return:
+        """
+        self.goto_page(self.current_page_index + 1)
+
+    def previous_page(self):
+        """
+        Go to the previous page in the wizard
+        :return:
+        """
+        self.goto_page(self.current_page_index - 1)
+
+    def goto_page(self, index):
+        """
+        Go to the specified page in the wizard
+        :param index:
+        :return:
+        """
+
+        if index < 0 or index > len(self):
+            return
+
+        if index == len(self):
+            if self.on_submit is not None:
+                self.on_submit(self)
+            return
+
+        new_page = self.pages[index]
+        old_page = self.current_page
+
+        if old_page:
+            old_page.frame.pack_forget()
+            old_page.leave(new_page)
+
+        self.current_page = new_page
+        self.current_page_index = index
+
+        new_page.frame.pack(side=tk.TOP)
+        new_page.enter(old_page)
+
+        self._update_buttons()
+
+    def _update_buttons(self):
+        """
+        Updates the state of the wizard buttons.
+        :return:
+        """
+        self.previous_button.config(state=tk.DISABLED if self.current_page_index == 0 else tk.NORMAL)
+        self.next_button.config(text="Submit" if self.current_page_index == (len(self) - 1) else "Next")
+
+
+class WizardPage(object):
+
+    def __init__(self, wizard):
+        super(WizardPage, self).__init__()
+        self.wizard = wizard
+        self.frame = None
+        wizard.add_page(self)
+
+    def clear_children(self):
+        """
+        Clears all children from this page
+        :return:
+        """
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+
+    def enter(self, from_page):
+        """
+        Called when this page becomes active.
+        :param from_page:
+        :return:
+        """
+        pass
+
+    def leave(self, to_page):
+        """
+        Called when this page becomes inactive
+        :param to_page:
+        :return:
+        """
+        pass
+
+
+class SelectTaskPage(WizardPage):
+
+    def __init__(self, *args):
+        super(SelectTaskPage, self).__init__(*args)
+        self.task_option = tk.StringVar(value=task_options[0])
+        self.action_option = tk.StringVar(value=action_options[0])
+        self.create(self.frame)
+
+    def enter(self, from_page):
+        self.frame.winfo_toplevel().title("Chiles GUI")
+
+    def leave(self, to_page):
+        self.frame.winfo_toplevel().title("{0} > {1}".format(self.task_option.get(), self.action_option.get()))
+
+    def create(self, frame):
+        label = tk.Label(frame, text="Select a task and action")
+        label.pack(side=tk.TOP)
+
+        select_task = tk.OptionMenu(frame, self.task_option, *task_options)
+        select_task.pack(side=tk.TOP)
+        select_task.config(width=15)
+
+        select_action = tk.OptionMenu(frame, self.action_option, *action_options)
+        select_action.pack(side=tk.TOP)
+        select_action.config(width=15)
+
+
+class Configure(WizardPage):
+
+    def __init__(self, select_task_page, *args):
+        super(Configure, self).__init__(*args)
+        self.select_task_page = select_task_page
         self.data_access = DataAccess()
+        self.save_load = ChilesGUIConfig("./autosaves")
+        self.options = []
 
-        self.toolbar_top = None
-        self.toolbar_bottom = None
-        self.main = None
+    def enter(self, from_page):
+        self.clear_children()
+        self.data_access.clear()
+
+        # Look at what we were given and decide what options to show.
+        self.options = get_options(self.select_task_page.task_option.get(), self.select_task_page.action_option.get())
+
+        self.create(self.frame)
+
+    def create(self, frame):
+        label = tk.Label(frame, text="Configure")
+        label.pack(side=tk.TOP)
+
+        # Create config options here
+        config_frame = tk.Frame(self.frame)
+        config_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        autosaves = [self.save_load.load(f[0]) for f in self.save_load.autosave_list(absolute=True)]
+
+        for index, option in enumerate(self.options):
+            option.create(config_frame, index, self.data_access, [s[option.id] for s in autosaves])
+
+
+class Confirm(WizardPage):
+
+    def __init__(self, configure_page, *args):
+        super(Confirm, self).__init__(*args)
+        self.configure_page = configure_page
+        self.final_data = None
+
+    def enter(self, from_page):
+        self.clear_children()
+        self.create(self.frame)
+
+    def create(self, frame):
+        label = tk.Label(frame, text="Confirm")
+        label.pack(side=tk.TOP)
+
+        self.final_data = self.configure_page.data_access.read(*[v.id for v in self.configure_page.options])
+
+        config_frame = tk.Frame(self.frame)
+        config_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        for index, (k, v) in enumerate(self.final_data.items()):
+            label = tk.Label(config_frame, text=k + ":", justify=tk.LEFT)
+            label.grid(row=index, column=1, sticky=tk.W)
+
+            value = tk.Label(config_frame, text=v)
+            value.grid(row=index, column=2)
+
+
+class Action:
+    def __init__(self, root, name, command, config_items):
+        self.root = root
+        self.frame = None
+        self.save_load = ChilesGUIConfig("./{0}".format(name))
+        self.data_access = DataAccess()
+        self.autoload = None
+        self.error_label = tk.StringVar()
         self.history_menu_items = 0
 
-        self.error_label = tk.StringVar()
+        self.defaults = {item.id: item.default for item in config_items}
+        self.read_all_items = [item.id for item in config_items]
 
-        self.build_toolbars()
-        self.build_main()
+        self.build_frame(name, command, config_items)
 
-        self.autoload = None
-
-        root.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.root.protocol("WM_DELETE_WINDOW", self.close_window)
 
         try:
             autoload = self.save_load.autoload()
@@ -179,16 +306,54 @@ class ChilesGUI:
             self.error_label.set("Failed to autoload last configuration correctly.")
             print e
 
-    def close_window(self):
+    def get_all_autosaves(self):
+        return [self.save_load.load(f[0]) for f in self.save_load.autosave_list(absolute=True)]
+
+    def build_frame(self, name, command, items):
+
+        toolbar_bottom = tk.Frame(self.root, borderwidth=1, relief=tk.GROOVE)
+
+        label = tk.Label(toolbar_bottom, textvariable=self.error_label)
+        label.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+
+        toolbar_bottom.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Put the run button at the bottom
+        b = tk.Button(self.root, text=name, width=15, command=partial(self.command, command))
+        b.pack(side=tk.BOTTOM)
+
+        toolbar_top = tk.Menu(self.root)
+        toolbar_top.add_command(label="Default", command=self.new)
+        self.root.config(menu=toolbar_top)
+
+        history_menu = tk.Menu(toolbar_top, tearoff=0)
+        history_menu.config(postcommand=partial(self.build_history_menu, history_menu))
+
+        toolbar_top.add_cascade(label="History", menu=history_menu)
+
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(side=tk.TOP, fill=tk.X, expand=True)
+
+        config_frame = tk.Frame(self.frame)
+        config_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        autosaves = self.get_all_autosaves()
+
+        for index, item in enumerate(items):
+            item.create(config_frame, index, self.data_access, [s[item.id] for s in autosaves])
+
+    def load_filename(self, filename):
         try:
-            data = self.data_access.read(*self.read_all_items)
-            if data != self.autoload:
-                print "Autosaving..."
-                self.save_load.autosave(data)
+            config = self.save_load.load(filename)
+            self.data_access.write(**config)
+            self.error_label.set("")
+
+        except ValidationException as e:
+            self.show_data_error(e)
+
         except Exception as e:
-            print e
-        finally:
-            self.root.destroy()
+            self.error_label.set("Failed to load config file from: {0}".format(filename))
+            print e.message
 
     def show_data_error(self, e):
         # Set the text in the bottom bar to match this
@@ -203,73 +368,10 @@ class ChilesGUI:
         text += " {0} invalid".format(pluralise(len(e.exceptions), "field"))
         self.error_label.set(text)
 
-    def command(self, what, data_items):
-        """
-        Executes a command from the GUI.
-        If there's an issue with the data items provided, the bottom panel of the UI will be
-        set with an error message describing what's wrong with the current input.
-        :param what: The command name to execute
-        :param data_items: The config options from the gui to convert to a dictionary, then send to the command.
-        """
-        try:
-            data = self.data_access.read(*[item.id for item in data_items])
-
-            self.error_label.set("")
-
-            f = getattr(self.api, what, None)
-
-            if f is not None:
-                f(data)
-
-        except ValidationException as e:
-            self.show_data_error(e)
-
     def new(self):
         # Clear everything
-        self.data_access.write(**self.write_all_defaults)
+        self.data_access.write(**self.defaults)
         self.error_label.set("")
-
-    def save(self):
-        """
-        Save the current GUI state to a file.
-        :return:
-        """
-        try:
-            data = self.data_access.read(*self.read_all_items)
-            filename = tkFileDialog.asksaveasfilename(title="Choose a file to save to")
-
-            if len(filename) > 0:
-                self.save_load.save(filename, data)
-
-        except ValidationException as e:
-            self.show_data_error(e)
-
-        except Exception as e:
-            self.error_label.set("Failed to write config file to: {0}".format(filename))
-            print e.message
-
-    def load(self):
-        """
-        Load the current GUI state from a file
-        :return:
-        """
-        filename = tkFileDialog.askopenfilename(title="Choose a file to load from")
-
-        if len(filename) > 0:
-            self.load_filename(filename)
-
-    def load_filename(self, filename):
-        try:
-            config = self.save_load.load(filename)
-            self.data_access.write(**config)
-            self.error_label.set("")
-
-        except ValidationException as e:
-            self.show_data_error(e)
-
-        except Exception as e:
-            self.error_label.set("Failed to load config file from: {0}".format(filename))
-            print e.message
 
     def build_history_menu(self, menu):
         # Clear it first
@@ -290,106 +392,89 @@ class ChilesGUI:
             menu.add_command(label="None")
             self.history_menu_items += 1
 
-    def build_toolbars(self):
+    def close_window(self):
+        try:
+            data = self.data_access.read(*self.read_all_items)
+            if data != self.autoload:
+                print "Autosaving..."
+                self.save_load.autosave(data)
+        except Exception as e:
+            print e
+        finally:
+            self.root.destroy()
+
+    def command(self, command):
         """
-        Builds the two toolbars at the bottom and top of the GUI
+        Executes a command from the GUI.
+        If there's an issue with the data items provided, the bottom panel of the UI will be
+        set with an error message describing what's wrong with the current input.
+        :param what: The command name to execute
+        :param data_items: The config options from the gui to convert to a dictionary, then send to the command.
         """
-        self.toolbar_bottom = tk.Frame(self.root, borderwidth=1, relief=tk.GROOVE)
+        try:
+            data = self.data_access.read(*self.read_all_items)
+            self.error_label.set("")
+            command(data)
 
-        label = tk.Label(self.toolbar_bottom, textvariable=self.error_label)
-        label.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        except ValidationException as e:
+            self.show_data_error(e)
 
-        self.toolbar_bottom.pack(side=tk.BOTTOM, fill=tk.X)
 
-        self.toolbar_top = tk.Menu(self.root)
-        self.toolbar_top.add_command(label="Default", command=self.new)
-        self.toolbar_top.add_command(label="Save", command=self.save)
-        self.toolbar_top.add_command(label="Load", command=self.load)
-        self.root.config(menu=self.toolbar_top)
+class ChilesGUI:
+    """
+    The main Chiles GUI class.
+    """
 
-        history_menu = tk.Menu(self.toolbar_top, tearoff=0)
-        history_menu.config(postcommand=partial(self.build_history_menu, history_menu))
+    def __init__(self, root, api):
+        """
+        Initialise the GUI and create all of the window elements.
+        :param root: The TKINTER root frame.
+        :param api: The API for interacting with the rest of chiles.
+        :param save_load: The system to handle saving and loading of config files.
+        """
+        self.root = root
+        self.api = api
 
-        self.toolbar_top.add_cascade(label="History", menu=history_menu)
+        self.root.title("aws-chiles02")
 
-    def build_main(self):
+        label = tk.Label(self.root, text="Select an Action")
+        label.pack(side=tk.TOP)
+
+        tk.Button(self.root, text="Use", command=self.open_use, width=15).pack(side=tk.TOP)
+        tk.Button(self.root, text="JSON", command=self.open_json, width=15).pack(side=tk.TOP)
+        tk.Button(self.root, text="Create", command=self.open_create, width=15).pack(side=tk.TOP)
+
+    def position(self, window):
+        dx = 0
+        dy = 0
+
+        x = self.root.winfo_x()
+        y = self.root.winfo_y()
+        window.geometry("+%d+%d" % (x + dx, y + dy))
+
+    def open_use(self):
         """
         Builds the main config frame for the GUI
         """
-        self.main = tk.Frame(self.root)
-        self.main.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        use = tk.Toplevel()
+        use.title("aws-chiles02 - Use")
+        use.grab_set()
+        Action(use, "Use", self.api.use, common_items + use_items)
+        self.position(use)
 
-        common_config = tk.Frame(self.main)
-        common_config.pack(side=tk.LEFT, fill=tk.BOTH)
+    def open_json(self):
+        json = tk.Toplevel()
+        json.title("aws-chiles02 - JSON")
+        json.grab_set()
+        Action(json, "JSON", self.api.generate_json, common_items + json_items)
+        self.position(json)
 
-        tabbed_config = tk.Frame(self.main)
-        tabbed_config.pack(side=tk.RIGHT, fill=tk.BOTH)
-
-        label = tk.Label(common_config, text="Common Configuration", borderwidth=1, relief=tk.GROOVE)
-        label.pack(side=tk.TOP, fill=tk.X)
-
-        common_config_frame = tk.Frame(common_config)
-        common_config_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        self.build_common(common_config_frame)
-
-        label = tk.Label(tabbed_config, text="Command Configuration", borderwidth=1, relief=tk.GROOVE)
-        label.pack(side=tk.TOP, fill=tk.X)
-
-        tabbed_config_frame = ttk.Notebook(tabbed_config)
-        tabbed_config_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-
-        use = ttk.Frame(tabbed_config_frame)
-        self.build_use(use)
-        tabbed_config_frame.add(use, text="Use")
-
-        create = ttk.Frame(tabbed_config_frame)
-        self.build_create(create)
-        tabbed_config_frame.add(create, text="Create")
-
-        json = ttk.Frame(tabbed_config_frame)
-        self.build_json(json)
-        tabbed_config_frame.add(json, text="JSON")
-
-    def build_common(self, frame):
-        """
-        Populates the provided frame with all of the fields for the common config.
-        :param frame: The frame to populate
-        """
-        for index, item in enumerate(self.common_items):
-            item.create(frame, index, self.data_access)
-
-    def build_use(self, frame):
-        """
-        Populates the provided frame with all of the fields for the 'use' command.
-        :param frame: The frame to populate
-        """
-        for index, item in enumerate(self.use_items):
-            item.create(frame, index, self.data_access)
-
-        b = tk.Button(frame, text="Use", command=partial(self.command, "use", self.use_items + self.common_items))
-        b.grid(row=len(self.use_items), column=0, sticky=tk.W)
-
-    def build_create(self, frame):
-        """
-        Populates the provided frame with all of the fields for the 'create' command.
-        :param frame: The frame to populate
-        """
-        for index, item in enumerate(self.create_items):
-            item.create(frame, index, self.data_access)
-
-        b = tk.Button(frame, text="Create", command=partial(self.command, "create", self.create_items + self.common_items))
-        b.grid(row=len(self.create_items), column=0, sticky=tk.W)
-
-    def build_json(self, frame):
-        """
-        Populates the provided frame with all of the fields for the 'build_json' command.
-        :param frame: The frame to populate
-        """
-        for index, item in enumerate(self.json_items):
-            item.create(frame, index, self.data_access)
-
-        b = tk.Button(frame, text="Save JSON", command=partial(self.command, "generate_json", self.json_items + self.common_items))
-        b.grid(row=len(self.json_items), column=0, sticky=tk.W)
+    def open_create(self):
+        create = tk.Toplevel()
+        create.title("aws-chiles02 - Create")
+        create.grab_set()
+        Action(create, "Create", self.api.create, common_items + create_items)
+        self.position(create)
 
 
 def run_gui(api):
@@ -401,7 +486,22 @@ def run_gui(api):
     """
     root = tk.Tk()
     root.resizable(0, 0)
-    gui = ChilesGUI(root, api)
+
+    #gui = ChilesGUI(root, api)
+    wizard = Wizard(root)
+    page1 = SelectTaskPage(wizard)
+    page2 = Configure(page1, wizard)
+    page3 = Confirm(page2, wizard)
+
+    def submit(wizard):
+        print page3.final_data
+
+    wizard.set_on_submit(submit)
+
+    ws = root.winfo_screenwidth()  # width of the screen
+    hs = root.winfo_screenheight()  # height of the screen
+
+    root.geometry('+%d+%d' % (ws * 0.5, hs * 0.5))
 
     root.mainloop()
 

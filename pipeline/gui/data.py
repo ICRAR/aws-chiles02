@@ -60,6 +60,14 @@ class DataAccess:
 
         self.write_functions[name] = func
 
+    def clear(self):
+        """
+
+        :return:
+        """
+        self.read_functions.clear()
+        self.write_functions.clear()
+
     def read(self, *args):
         """
 

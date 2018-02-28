@@ -24,6 +24,7 @@ import os
 import re
 from configobj import ConfigObj
 from save import BaseChilesGUIConfig
+from utils import make_path
 
 
 class ChilesGUIConfig(BaseChilesGUIConfig):
@@ -45,6 +46,8 @@ class ChilesGUIConfig(BaseChilesGUIConfig):
         # Copy everything into the config obj
         for k, v in config.iteritems():
             config_obj[k] = v
+
+        make_path(os.path.dirname(filename))
 
         with open(filename, 'w') as f:
             config_obj.write(f)
@@ -102,6 +105,9 @@ class ChilesGUIConfig(BaseChilesGUIConfig):
 
         if 'absolute' in kwargs:
             absolute = kwargs['absolute']
+
+        if not os.path.exists(self.autosave_path):
+            return files
 
         for filename in os.listdir(self.autosave_path):
             number = self.autosave_regex.match(filename)

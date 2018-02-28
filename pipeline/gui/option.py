@@ -59,13 +59,38 @@ class Option:
         text.set(tkFileDialog.asksaveasfilename(title="Choose a file"))
 
     @abstractmethod
-    def create(self, parent, row, access):
+    def create(self, parent, row, access, history):
         pass
+
+    def create_history_menu(self, parent, history, write):
+        var = tk.StringVar(value="History...")
+        empty = False
+        if len(history):
+            history[0] = history[0] + " (latest)"
+        else:
+            history = ["None"]
+            empty = True
+
+        history_menu = tk.OptionMenu(parent, var, *history)
+
+        def write_value(name, index, mode):
+            if not empty:
+                value = var.get()
+                if value == history[0]:
+                    value = value[:-len(" (latest)")]
+                write(value)
+
+            var.set("History...")
+            history_menu.update()
+
+        var.trace("w", write_value)
+
+        return history_menu
 
 
 class Input(Option):
 
-    def create(self, parent, row, access):
+    def create(self, parent, row, access, history):
         """
         Creates a tkinter object from this prototype.
         :param parent: The parent for the object
@@ -94,6 +119,9 @@ class Input(Option):
 
         e.grid(row=row, column=1)
 
+        menu = self.create_history_menu(parent, history, write)
+        menu.grid(row=row, column=2)
+
 
 class Select(Option):
 
@@ -101,7 +129,7 @@ class Select(Option):
         super(Select, self).__init__(id, name, SelectList(options), **kwargs)
         self.options = options
 
-    def create(self, parent, row, access):
+    def create(self, parent, row, access, history):
         """
         Creates a tkinter object from this prototype.
         :param parent: The parent for the object
@@ -124,6 +152,9 @@ class Select(Option):
 
         e.grid(row=row, column=1)
 
+        menu = self.create_history_menu(parent, history, write)
+        menu.grid(row=row, column=2)
+
 
 class Check(Option):
 
@@ -132,7 +163,7 @@ class Check(Option):
             kwargs['default'] = False
         super(Check, self).__init__(id, name, Bool(), **kwargs)
 
-    def create(self, parent, row, access):
+    def create(self, parent, row, access, history):
         """
         Creates a tkinter object from this prototype.
         :param parent: The parent for the object
@@ -155,13 +186,16 @@ class Check(Option):
 
         e.grid(row=row, column=1)
 
+        menu = self.create_history_menu(parent, history, write)
+        menu.grid(row=row, column=2)
+
 
 class ChooseFile(Option):
 
     def __init__(self, id, name, **kwargs):
         super(ChooseFile, self).__init__(id, name, String(), **kwargs)
 
-    def create(self, parent, row, access):
+    def create(self, parent, row, access, history):
         """
         Creates a tkinter object from this prototype.
         :param parent: The parent for the object
@@ -187,3 +221,6 @@ class ChooseFile(Option):
         access.add_write(self.id, write)
 
         e.grid(row=row, column=1)
+
+        menu = self.create_history_menu(parent, history, write)
+        menu.grid(row=row, column=2)
