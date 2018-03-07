@@ -21,104 +21,64 @@
 #
 
 import os
-import re
 from configobj import ConfigObj
 from save import BaseChilesGUIConfig
 from utils import make_path
 
 
 class ChilesGUIConfig(BaseChilesGUIConfig):
-    autosave_format = "{0}_autosave_aws-chiles-02.settings"
-    autosave_regex = re.compile('([0-9]+)(?=_autosave)')  # Get the number from the front of the autosave name, but don't include anything after
     autosave_history = 5
 
-    def __init__(self, autosave_path):
+    def __init__(self, autosave_path="./autosave_aws-chiles-02.settings"):
+        """
+        Create a new config file handler.
+        :param autosave_path: The path to the config file.
+        """
         self.autosave_path = autosave_path
 
-    def save(self, filename, config):
+    def load(self):
         """
-        Saves the provided config to a file
-        :param filename:
-        :param config:
-        :return:
+        Returns the current history of saved config items.
+        Each item is returned as {name: [oldest, ..., newest]}
+        :return: A dictionary containing histories of each config item.
         """
+        # Load the config obj, and send it back as a dict.
+        return {k: v for k, v in ConfigObj(self.autosave_path).iteritems()}
+
+    def save(self, new_values):
+        """
+        Saves a set of new values to the config file.
+        If a value in new_values matches one in the config file, it wont be saved.
+        If the value is different, it will be added to the history array for that config file.
+        The history array will be truncated to the last 'autosave_history' elements
+        :param new_values: A dictionary of new values to save.
+        """
+        # First, load up the current config file state
+        current = self.load()
+
+        # Iterate over all the new values we have
+        for k, v in new_values.iteritems():
+            try:
+                # Append new items to the list, if they're new in comparison to the last value
+                current_list = current[k]
+                if len(current_list) == 0 or current_list[len(current_list) - 1] != str(v):
+                    current_list.append(v)
+
+                # Remove old list items if the list is too long
+                remove = len(current_list) - self.autosave_history
+                if remove > 0:
+                    current[k] = current_list[remove:]
+
+            except KeyError:
+                # Create list if one doesn't already exist
+                current[k] = [v]
+
+        # Build up the configobj from the current values
         config_obj = ConfigObj()
-        # Copy everything into the config obj
-        for k, v in config.iteritems():
+        for k, v in current.iteritems():
             config_obj[k] = v
 
-        make_path(os.path.dirname(filename))
-
-        with open(filename, 'w') as f:
+        # Save the configobj to the autosave path
+        make_path(os.path.dirname(self.autosave_path))
+        with open(self.autosave_path, 'w') as f:
             config_obj.write(f)
-
-    def load(self, filename):
-        """
-        Loads the config from the specified file
-        :param filename:
-        :return:
-        """
-        config_obj = ConfigObj(filename)
-
-        return {k: v for k, v in config_obj.iteritems()}  # Don't send back the ConfigObj, send back a dict instead
-
-    def autoload(self):
-        """
-        Loads the latest saved config
-        :return:
-        """
-        saves = self.autosave_list()
-
-        if len(saves) > 0:
-            return self.load(os.path.join(self.autosave_path, saves[0][0]))
-        else:
-            return None
-
-    def autosave(self, config):
-        """
-        Autosave the provided config, making it the la
-        :param config:
-        :return:
-        """
-        saves = self.autosave_list()
-
-        if len(saves) > 0:
-            # Increment latest save name
-            filename = self.autosave_format.format(saves[0][1] + 1)
-
-            # We've hit the max autosave filename, so delete the oldest saves
-            while len(saves) >= self.autosave_history:
-                os.remove(os.path.join(self.autosave_path, saves.pop()[0]))
-        else:
-            # No saves
-            filename = self.autosave_format.format(1)
-
-        self.save(os.path.join(self.autosave_path, filename), config)
-
-    def autosave_list(self, **kwargs):
-        """
-        List all saved configs
-        :return:
-        """
-        files = []
-        absolute = False
-
-        if 'absolute' in kwargs:
-            absolute = kwargs['absolute']
-
-        if not os.path.exists(self.autosave_path):
-            return files
-
-        for filename in os.listdir(self.autosave_path):
-            number = self.autosave_regex.match(filename)
-
-            if number is not None:
-                if absolute:
-                    filename = os.path.join(self.autosave_path, filename)
-                files.append((filename, int(number.group(0))))
-
-        # Sort so that the latest is first
-        if len(files) > 0:
-            files.sort(key=lambda x: x[1], reverse=True)
-
-        return files

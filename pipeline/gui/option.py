@@ -20,10 +20,10 @@
 #    MA 02111-1307  USA
 #
 import Tkinter as tk
-import tkFileDialog
+
 from abc import *
 from validation import Bool, String, SelectList
-from functools import partial
+from option_inst import InputInstance, SelectInstance, CheckInstance, ChooseFileInstance
 
 
 class Option:
@@ -31,196 +31,92 @@ class Option:
     Represents a prototype of a single configuration option. These are used to
     build tkinter objects.
     """
-
     __metaclass__ = ABCMeta
 
-    def __init__(self, id, name, type, **kwargs):
+    def __init__(self, id, name, datatype, **kwargs):
         """
         Create a new ConfigOption
         :param id: The unique identifier of the option.
         :param name: The shown label name for the option.
-        :param t: The type of the option (input, select, check, file)
+        :param datatype: The datatype for this option (Int, String, Bool)
         :param kwargs: Keyword arguments for the option. default or data_type are valid.
         """
         self.id = id
         self.name = name
-        self.type = type
+        self.datatype = datatype
         self.default = ''
 
         if "default" in kwargs:
-            self.default = self.type.validate_and_convert(self.name, kwargs['default'])
-
-    @staticmethod
-    def file_picker(text):
-        """
-        Opens a file picker dialogue, and sets the selected value in the provided StringVar
-        :param text: A tkinter string var to set the selected path for.
-        """
-        text.set(tkFileDialog.asksaveasfilename(title="Choose a file"))
+            self.default = self.datatype.validate_and_convert(self.name, kwargs['default'])
 
     @abstractmethod
-    def create(self, parent, row, access, history):
+    def create(self, parent):
         pass
 
-    def create_history_menu(self, parent, history, write):
-        var = tk.StringVar(value="History...")
-        empty = False
-        if len(history):
-            history[0] = history[0] + " (latest)"
-        else:
-            history = ["None"]
-            empty = True
+    def get_default(self):
+        """
+        :exception FieldValidationException: If the default value can't be converted to this prototype's type.
+        :return: The default value for this prototype
+        """
+        return self.validate_and_convert(self.default)
 
-        history_menu = tk.OptionMenu(parent, var, *history)
+    def validate_and_convert(self, value):
+        """
+        Converts a value to this prototype's field type, and returns it.
+        If the field fails to validate, then a FieldValidationException is thrown
+        :param value: The value to validate and convert
+        :exception FieldValidationException: If the provided value cannot be converted to this prototype's type.
+        :return: Validated value, converted to the prototype's type
+        """
+        return self.datatype.validate_and_convert(self.name, value)
 
-        def write_value(name, index, mode):
-            if not empty:
-                value = var.get()
-                if value == history[0]:
-                    value = value[:-len(" (latest)")]
-                write(value)
-
-            var.set("History...")
-            history_menu.update()
-
-        var.trace("w", write_value)
-
-        return history_menu
+    def validate_and_show_error(self, value, tk_field):
+        """
+        Converts a value to this prototype's field type, and returns it.
+        If the value could not convert, the 'tk_field' will be highlighted in an error colour
+        to signify to the user that the field failed to write.
+        :param value:
+        :param tk_field:
+        :return:
+        """
+        return self.datatype.validate_and_show_error(self.name, value, tk_field)
 
 
 class Input(Option):
+    option_type = "Input"
 
-    def create(self, parent, row, access, history):
-        """
-        Creates a tkinter object from this prototype.
-        :param parent: The parent for the object
-        :param row: The current row in the parent this object should be placed in
-        :param data_read: The dictionary that contains data access functions.
-        :param data_write: The dictionary that contains data writing functions.
-        """
-        label = tk.Label(parent, text=self.name + ":", justify=tk.LEFT)
-        label.grid(row=row, sticky=tk.W)
-
-        var = tk.StringVar(parent, self.type.validate_and_convert(self.name, self.default))
-        e = tk.Entry(parent, textvariable=var)
-
-        def write(value):
-            var.set(self.type.validate_and_convert(self.name, value))
-
-        def read():
-            return self.type.validate_and_convert(self.name, var.get())
-
-        def trace_write(name, index, mode):
-            return self.type.validate_and_show_error(self.name, var.get(), e)
-
-        access.add_read(self.id, read)
-        access.add_write(self.id, write)
-        var.trace('w', trace_write)
-
-        e.grid(row=row, column=1)
-
-        menu = self.create_history_menu(parent, history, write)
-        menu.grid(row=row, column=2)
+    def create(self, parent):
+        return InputInstance(self, parent)
 
 
 class Select(Option):
+    option_type = "Select"
 
     def __init__(self, id, name, options, **kwargs):
         super(Select, self).__init__(id, name, SelectList(options), **kwargs)
         self.options = options
 
-    def create(self, parent, row, access, history):
-        """
-        Creates a tkinter object from this prototype.
-        :param parent: The parent for the object
-        :param row: The current row in the parent this object should be placed in
-        """
-        label = tk.Label(parent, text=self.name + ":", justify=tk.LEFT)
-        label.grid(row=row, sticky=tk.W)
-
-        var = tk.StringVar(parent, self.type.validate_and_convert(self.name, self.default))
-        e = tk.OptionMenu(parent, var, *self.options)
-
-        def write(value):
-            var.set(self.type.validate_and_convert(self.name, value))
-
-        def read():
-            return self.type.validate_and_convert(self.name, var.get())
-
-        access.add_read(self.id, read)
-        access.add_write(self.id, write)
-
-        e.grid(row=row, column=1)
-
-        menu = self.create_history_menu(parent, history, write)
-        menu.grid(row=row, column=2)
+    def create(self, parent):
+        return SelectInstance(self, parent)
 
 
 class Check(Option):
+    option_type = "Check"
 
     def __init__(self, id, name, **kwargs):
         if 'default' not in kwargs:
             kwargs['default'] = False
         super(Check, self).__init__(id, name, Bool(), **kwargs)
 
-    def create(self, parent, row, access, history):
-        """
-        Creates a tkinter object from this prototype.
-        :param parent: The parent for the object
-        :param row: The current row in the parent this object should be placed in
-        """
-        label = tk.Label(parent, text=self.name + ":", justify=tk.LEFT)
-        label.grid(row=row, sticky=tk.W)
-
-        var = tk.IntVar(parent, bool(self.default))
-        e = tk.Checkbutton(parent, variable=var)
-
-        def read():
-            return var.get() == 1
-
-        def write(value):
-            var.set(self.type.validate_and_convert(self.name, value))
-
-        access.add_read(self.id, read)
-        access.add_write(self.id, write)
-
-        e.grid(row=row, column=1)
-
-        menu = self.create_history_menu(parent, history, write)
-        menu.grid(row=row, column=2)
+    def create(self, parent):
+        return CheckInstance(self, parent)
 
 
 class ChooseFile(Option):
+    option_type = "ChooseFile"
 
     def __init__(self, id, name, **kwargs):
         super(ChooseFile, self).__init__(id, name, String(), **kwargs)
 
-    def create(self, parent, row, access, history):
-        """
-        Creates a tkinter object from this prototype.
-        :param parent: The parent for the object
-        :param row: The current row in the parent this object should be placed in
-        """
-        label = tk.Label(parent, text=self.name + ":", justify=tk.LEFT)
-        label.grid(row=row, sticky=tk.W)
-
-        e = tk.Frame(parent)
-        var = tk.StringVar(parent, str(self.default))
-        child = tk.Entry(e, textvariable=var)
-        child.pack(side=tk.LEFT, padx=2, pady=2, fill=tk.X, expand=True)
-        child = tk.Button(e, text="Browse...", command=partial(self.file_picker, var))
-        child.pack(side=tk.LEFT, padx=2, pady=2, fill=tk.X, expand=True)
-
-        def write(value):
-            var.set(self.type.validate_and_convert(self.name, value))
-
-        def read():
-            return self.type.validate_and_convert(self.name, var.get())
-
-        access.add_read(self.id, read)
-        access.add_write(self.id, write)
-
-        e.grid(row=row, column=1)
-
-        menu = self.create_history_menu(parent, history, write)
-        menu.grid(row=row, column=2)
+    def create(self, parent):
+        return ChooseFileInstance(self, parent)

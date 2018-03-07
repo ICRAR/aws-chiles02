@@ -28,7 +28,8 @@ from api import NullAPI
 from save_impl import ChilesGUIConfig
 from data import DataAccess
 from functools import partial
-from utils import pluralise, EventEmitter
+from utils import pluralise
+from cache import Cache
 from option_def import get_options, task_options, action_options
 
 from validation import ValidationException
@@ -136,8 +137,8 @@ class Wizard:
         old_page = self.current_page
 
         if old_page:
-            old_page.frame.pack_forget()
             old_page.leave(new_page)
+            old_page.frame.pack_forget()
 
         self.current_page = new_page
         self.current_page_index = index
@@ -164,12 +165,13 @@ class WizardPage(object):
         self.frame = None
         wizard.add_page(self)
 
-    def clear_children(self):
+    @staticmethod
+    def clear_children(widget):
         """
         Clears all children from this page
         :return:
         """
-        for widget in self.frame.winfo_children():
+        for widget in widget.winfo_children():
             widget.destroy()
 
     def enter(self, from_page):
@@ -195,7 +197,17 @@ class SelectTaskPage(WizardPage):
         super(SelectTaskPage, self).__init__(*args)
         self.task_option = tk.StringVar(value=task_options[0])
         self.action_option = tk.StringVar(value=action_options[0])
-        self.create(self.frame)
+
+        label = tk.Label(self.frame, text="Select a task and action")
+        label.pack(side=tk.TOP)
+
+        select_task = tk.OptionMenu(self.frame, self.task_option, *task_options)
+        select_task.pack(side=tk.TOP)
+        select_task.config(width=15)
+
+        select_action = tk.OptionMenu(self.frame, self.action_option, *action_options)
+        select_action.pack(side=tk.TOP)
+        select_action.config(width=15)
 
     def enter(self, from_page):
         self.frame.winfo_toplevel().title("Chiles GUI")
@@ -203,77 +215,169 @@ class SelectTaskPage(WizardPage):
     def leave(self, to_page):
         self.frame.winfo_toplevel().title("{0} > {1}".format(self.task_option.get(), self.action_option.get()))
 
-    def create(self, frame):
-        label = tk.Label(frame, text="Select a task and action")
-        label.pack(side=tk.TOP)
-
-        select_task = tk.OptionMenu(frame, self.task_option, *task_options)
-        select_task.pack(side=tk.TOP)
-        select_task.config(width=15)
-
-        select_action = tk.OptionMenu(frame, self.action_option, *action_options)
-        select_action.pack(side=tk.TOP)
-        select_action.config(width=15)
-
 
 class Configure(WizardPage):
 
-    def __init__(self, select_task_page, *args):
+    def __init__(self, select_task_page, data_access, save_load, *args):
         super(Configure, self).__init__(*args)
         self.select_task_page = select_task_page
-        self.data_access = DataAccess()
-        self.save_load = ChilesGUIConfig("./autosaves")
-        self.options = []
+        self.data_access = data_access
+        self.save_load = save_load
 
-    def enter(self, from_page):
-        self.clear_children()
-        self.data_access.clear()
+        self.config_frame = None
 
-        # Look at what we were given and decide what options to show.
-        self.options = get_options(self.select_task_page.task_option.get(), self.select_task_page.action_option.get())
+        self.cache = {
+            "Input": Cache(),
+            "Select": Cache(),
+            "Check": Cache(),
+            "ChooseFile": Cache()
+        }
 
-        self.create(self.frame)
+        self.option_prototypes = []
+        self.option_instances = []
+        self.defaults = {}
+        self.initial = {}
 
-    def create(self, frame):
-        label = tk.Label(frame, text="Configure")
+        self.task = None
+        self.action = None
+
+        # Title text
+        label = tk.Label(self.frame, text="Configure")
         label.pack(side=tk.TOP)
 
-        # Create config options here
-        config_frame = tk.Frame(self.frame)
-        config_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        # Frame to hold menu buttons
+        menu = tk.Frame(self.frame)
+        menu.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        autosaves = [self.save_load.load(f[0]) for f in self.save_load.autosave_list(absolute=True)]
+        # Reset to default values button
+        button = tk.Button(menu, text="Defaults", command=self.restore_defaults)
+        button.pack(side=tk.LEFT, anchor=tk.W, padx=5)
 
-        for index, option in enumerate(self.options):
-            option.create(config_frame, index, self.data_access, [s[option.id] for s in autosaves])
+        # Frame to hold config options
+        self.config_frame = tk.Frame(self.frame)
+        self.config_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5)
+
+    def enter(self, from_page):
+        task = self.select_task_page.task_option.get()
+        action = self.select_task_page.action_option.get()
+
+        if self.task == task and self.action == action:
+            return  # Nothing has changed, so there's nothing to do
+
+        # Store the new task and action
+        self.task = task
+        self.action = action
+
+        # Clear data access, and unposition all instances.
+        self.data_access.clear()
+        for cache in self.cache.itervalues():
+            cache.return_all(lambda oi: oi.unposition())  # Unposition all option instances
+
+        # Get the options we need to show, based on the task and action.
+        self.option_prototypes = get_options(task, action)
+        self.defaults = {option.id: option.default for option in self.option_prototypes}
+
+        # Create the options for this frame from the options prototypes we just obtained
+        autosaves = self.save_load.load()
+        for index, option_prototype in enumerate(self.option_prototypes):
+            # Get the saves list for this option, or an empty list if there are none
+            try:
+                history = list(reversed(autosaves[option_prototype.id])) # Reverse so the newest is at the front, oldest at the back
+            except KeyError:
+                history = []
+
+            # Get either a pre-existing instance matching this prototype, or create a new one
+            option_instance = self.cache[option_prototype.option_type].get(lambda: option_prototype.create(self.config_frame))
+            # Set the parameters for the instance
+            option_instance.set_prototype(option_prototype)
+            option_instance.position(index)
+            option_instance.set_history(history)
+
+            # Add the data read / write functions for this instance
+            self.data_access.add_write(option_prototype.id, option_instance.write)
+            self.data_access.add_read(option_prototype.id, option_instance.read)
+
+            # Store a list of all active instances
+
+        self.initial = self.data_access.read()
+
+    def restore_defaults(self):
+        """
+        Restore all config items to their default values
+        :return:
+        """
+        self.data_access.write(**self.defaults)
 
 
 class Confirm(WizardPage):
 
-    def __init__(self, configure_page, *args):
+    class LabelValue:
+        def __init__(self, frame):
+            self.label_string = tk.StringVar()
+            self.value_string = tk.StringVar()
+
+            self.label = tk.Label(frame, textvariable=self.label_string, justify=tk.LEFT) # Label for field, with data name
+            self.value = tk.Label(frame, textvariable=self.value_string) # Value for field
+
+        def set(self, label, value):
+            """
+            Sets the label and value
+            :param label: New label string
+            :param value: New value string
+            :return:
+            """
+            self.label_string.set(label + ":")
+            self.value_string.set(value)
+
+        def position(self, index):
+            """
+            Positions the label and value at the desired index
+            :param index: The index to position at
+            :return:
+            """
+            self.label.grid(row=index, column=1, sticky=tk.W)
+            self.value.grid(row=index, column=2)
+
+        def unposition(self):
+            """
+            Unpositions the label, hiding it.
+            :return:
+            """
+            self.label.grid_forget()
+            self.value.grid_forget()
+
+    def __init__(self, data_access, *args):
         super(Confirm, self).__init__(*args)
-        self.configure_page = configure_page
-        self.final_data = None
+        self.data_access = data_access
+        self.data = None
+        self.config_frame = None
 
-    def enter(self, from_page):
-        self.clear_children()
-        self.create(self.frame)
+        self.label_cache = Cache()
 
-    def create(self, frame):
-        label = tk.Label(frame, text="Confirm")
+        # Title text
+        label = tk.Label(self.frame, text="Confirm")
         label.pack(side=tk.TOP)
 
-        self.final_data = self.configure_page.data_access.read(*[v.id for v in self.configure_page.options])
+        # Frame to hold all final config options
+        self.config_frame = tk.Frame(self.frame)
+        self.config_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-        config_frame = tk.Frame(self.frame)
-        config_frame.pack(side=tk.BOTTOM, fill=tk.X)
+    def enter(self, from_page):
+        # Clear the entire config frame to make way for the new fields
+        data = self.data_access.read()
 
-        for index, (k, v) in enumerate(self.final_data.items()):
-            label = tk.Label(config_frame, text=k + ":", justify=tk.LEFT)
-            label.grid(row=index, column=1, sticky=tk.W)
+        if data == self.data:
+            return  # Nothing new to display
 
-            value = tk.Label(config_frame, text=v)
-            value.grid(row=index, column=2)
+        # Clear everything and store the new data
+        self.label_cache.return_all(lambda l: l.unposition())  # Unposition all labels
+        self.data = data
+
+        # Read final data, then create fields to display it
+        for index, (k, v) in enumerate(data.iteritems()):
+            label = self.label_cache.get(lambda: self.LabelValue(self.config_frame))
+            label.set(k, v)
+            label.position(index)
 
 
 class Action:
@@ -488,13 +592,18 @@ def run_gui(api):
     root.resizable(0, 0)
 
     #gui = ChilesGUI(root, api)
+    data_access = DataAccess()
+    chiles_gui_config = ChilesGUIConfig()
+
     wizard = Wizard(root)
     page1 = SelectTaskPage(wizard)
-    page2 = Configure(page1, wizard)
-    page3 = Confirm(page2, wizard)
+    page2 = Configure(page1, data_access, chiles_gui_config, wizard)
+    page3 = Confirm(data_access, wizard)
 
     def submit(wizard):
-        print page3.final_data
+        data = data_access.read()
+        chiles_gui_config.save(data)
+        print data
 
     wizard.set_on_submit(submit)
 

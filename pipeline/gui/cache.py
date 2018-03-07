@@ -20,32 +20,37 @@
 #    MA 02111-1307  USA
 #
 
-"""
-Each time the program is closed, we want to save whatever was currently configured, and keep up to the last X
-number of saved configs.
-"""
 
-from abc import *
+class Cache:
+    """
+    Represents a single entry in the cache.
+    """
+    def __init__(self):
+        self.in_use = 0
+        self.cached = []
 
+    def get(self, create):
+        """
+        Get an item from the cache. A new one will be created if the the all the cached items are in use.
+        :param create: A function to create a new object if the cache is empty.
+        :return:
+        """
+        if self.in_use == len(self.cached):
+            # Create a new item if we've used all our cached items
+            self.cached.append(create())
 
-class BaseChilesGUIConfig:
-    __metaclass__ = ABCMeta
+        cached = self.cached[self.in_use]
+        self.in_use += 1
 
-    @abstractmethod
-    def save(self, new_values):
-        pass
+        return cached
 
-    @abstractmethod
-    def load(self):
-        pass
+    def return_all(self, cleanup):
+        """
+        Return all items to the cache
+        :param cleanup: A function to cleanup each object in the cache
+        :return:
+        """
+        for index in range(0, self.in_use):
+            cleanup(self.cached[index])
 
-
-class NullChilesGUIConfig:
-
-    def save(self, new_values):
-        print "Saving new values"
-        print new_values
-
-    def load(self):
-        print "Loading values"
-        return {}
+        self.in_use = 0

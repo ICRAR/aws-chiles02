@@ -47,6 +47,13 @@ def make_path(path):
             raise
 
 
+def delta_dict(dict1, dict2):
+    if set(dict1) != set(dict2):
+        raise Exception("delta_dict: Dicts must have identical keys.")
+
+    return {k: v for k, v in dict2.iteritems() if dict1[k] != v}
+
+
 class EventEmitter(object):
     """
     Add listeners with the 'on' method, remove them with 'off', and fire events with 'emit'
