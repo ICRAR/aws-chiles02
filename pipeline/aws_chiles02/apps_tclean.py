@@ -91,7 +91,7 @@ class DockerTclean(DockerApp, ErrorHandling):
                 self._robust,
                 self._image_size,
                 self._clean_channel_average,
-                self._region_file,
+                self._region_file if self._region_file != '' else 'None',
                 self._produce_qa,
                 ' '.join(measurement_sets),
             )
@@ -160,7 +160,7 @@ class CasaTclean(DockerApp, ErrorHandling):
                                 self._robust,
                                 self._image_size,
                                 self._clean_channel_average,
-                                self._region_file,
+                                self._region_file if self._region_file != '' else 'None',
                                 self._produce_qa,
                                 ' '.join(measurement_sets),
                             )

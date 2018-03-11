@@ -239,9 +239,10 @@ if __name__ == "__main__":
         iterations=int(args.arguments[3]),
         arcsec=args.arguments[4],
         w_projection_planes=int(args.arguments[5]),
+        #clean_weighting_uv=args.arguments[6], # To be added
         robust=float(args.arguments[6]),
         image_size=int(args.arguments[7]),
         clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
-        region_file=args.arguments[9],
+        region_file=args.arguments[9] if args.arguments[9] != 'None' else '',
         produce_qa=args.arguments[10],
         in_dirs=args.arguments[11:])
