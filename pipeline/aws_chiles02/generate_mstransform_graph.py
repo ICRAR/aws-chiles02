@@ -283,7 +283,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                 })
 
                 LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
-                client = DataIslandManagerClient(host, DIM_PORT)
+                client = DataIslandManagerClient(host, DIM_PORT, timeout=30)
 
                 client.create_session(session_id)
                 client.append_graph(session_id, graph.drop_list)
@@ -335,7 +335,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             graph.build_graph()
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
-            client = DataIslandManagerClient(host, port)
+            client = DataIslandManagerClient(host, port, timeout=30)
 
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)

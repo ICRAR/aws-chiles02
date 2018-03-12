@@ -28,7 +28,7 @@ from abc import ABCMeta, abstractmethod
 
 import jsonpickle
 
-from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters
+from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
 from aws_chiles02.common import get_module_name
 from dlg.apps.bash_shell_app import BashShellApp
 from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
@@ -99,6 +99,15 @@ class AbstractBuildGraph:
 
         copy_drop.addInput(memory_drop)
         copy_drop.addOutput(s3_drop)
+
+        build_readme = self.create_app(
+            self._dim_ip,
+            get_module_name(BuildReadme),
+            'app_build_readme',
+            bucket_name=self._bucket_name,
+        )
+
+        build_readme.addInput(s3_drop)
 
     def copy_logfiles_and_shutdown(self, s3_keyname, shutdown_dim=True):
         """

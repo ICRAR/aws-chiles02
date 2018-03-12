@@ -236,7 +236,7 @@ def create_and_generate(**keywords):
                             json_file.write(json_dumps)
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
-                    client = DataIslandManagerClient(host, DIM_PORT)
+                    client = DataIslandManagerClient(host, DIM_PORT, timeout=30)
 
                     client.create_session(session_id)
                     client.append_graph(session_id, graph.drop_list)
@@ -306,7 +306,7 @@ def use_and_generate(**keywords):
                     json_file.write(json_dumps)
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
-            client = DataIslandManagerClient(host, port)
+            client = DataIslandManagerClient(host, port, timeout=30)
 
             client.create_session(session_id)
             client.append_graph(session_id, graph.drop_list)

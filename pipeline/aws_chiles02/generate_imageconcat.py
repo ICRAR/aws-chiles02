@@ -326,6 +326,7 @@ def create_and_generate(**keywords):
                     use_bash=keywords['use_bash'],
                     casa_version=keywords['casa_version'],
                     build_fits=keywords['build_fits'],
+                    imageconcat_width=keywords['imageconcat_width'],
                 )
                 graph.build_graph()
 
@@ -520,6 +521,7 @@ def command_interactive(args):
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            build_fits=config['build_fits'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -537,6 +539,7 @@ def command_interactive(args):
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            build_fits=config['build_fits'],
         )
     else:
         generate_json(
@@ -553,6 +556,7 @@ def command_interactive(args):
             run_note=config['run_note_imageconcat'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
+            build_fits=config['build_fits'],
         )
 
 

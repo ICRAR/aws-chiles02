@@ -31,6 +31,7 @@ import boto3
 import jsonpickle
 from boto3.s3.transfer import S3Transfer
 
+from aws_chiles02.build_readme import build_file
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import AWS_REGION
 from dlg.drop import BarrierAppDROP, DirectoryContainer, FileDROP
@@ -109,6 +110,24 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
                 'StorageClass': 'REDUCED_REDUNDANCY',
             }
         )
+
+
+class BuildReadme(BarrierAppDROP, ErrorHandling):
+    def __init__(self, oid, uid, **keywords):
+        self._bucket_name = None
+        super(BuildReadme, self).__init__(oid, uid, **keywords)
+
+    def initialize(self, **keywords):
+        super(BuildReadme, self).initialize(**keywords)
+        # The data is in a string so we need to load it to write it
+        self._bucket_name = self._getArg(keywords, 'bucket_name', None)
+
+    def dataURL(self):
+        return type(self).__name__
+
+    def run(self):
+        LOG.info('bucket_name: {0}'.format(self._bucket_name))
+        build_file(self._bucket_name)
 
 
 class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):

@@ -47,7 +47,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._casa_version = keywords['casa_version']
         self._s3_split_name = keywords['split_directory']
-        self._produce_qa = keywords['produce_qa'],
+        self._produce_qa = keywords['produce_qa']
         self._absorption = keywords['absorption']
 
         self._list_ip = []

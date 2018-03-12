@@ -49,9 +49,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
     step_freq = max_freq - min_freq
     no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-    # TODO: HACK
-    no_chan = 60
-    width_freq = 66.666666667
+    # TODO: HACK needed if we use outframe='lsrk'
+    # no_chan = 60
+    # width_freq = 66.666666667
     # TODO: HACK
 
     LOG.info('spw_range: {}, no_chan: {}, width_freq: {}'.format(spw_range, no_chan, width_freq))
@@ -71,7 +71,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 restfreq='1420.405752MHz',
                 mode='frequency',
                 nchan=no_chan,
-                outframe='lsrk',
+                outframe='topo',
                 interpolation='linear',
                 veltype='radio',
                 start='{}MHz'.format(min_freq),

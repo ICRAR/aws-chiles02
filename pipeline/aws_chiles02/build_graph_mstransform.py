@@ -100,6 +100,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 if output is not None:
                     barrier_drop.addInput(output)
 
+        self.copy_parameter_data(self._s3_split_name)
         self.copy_logfiles_and_shutdown(self._s3_split_name)
 
     def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):

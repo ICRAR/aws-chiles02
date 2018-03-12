@@ -3,5 +3,6 @@ boto3
 ConfigObj
 jsonpickle
 mako
+markuppy
 pip>=9.0
 requests
