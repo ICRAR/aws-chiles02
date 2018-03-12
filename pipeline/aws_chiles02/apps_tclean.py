@@ -29,6 +29,7 @@ from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -104,7 +105,7 @@ class DockerTclean(DockerApp, ErrorHandling):
         return 'docker container chiles02:latest'
 
 
-class CasaTclean(DockerApp, ErrorHandling):
+class CasaTclean(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
         self._measurement_sets = None
         self._max_frequency = None
