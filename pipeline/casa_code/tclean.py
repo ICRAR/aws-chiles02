@@ -25,8 +25,8 @@ Perform the Clean
 import logging
 import os
 
-from aws_chiles02.casa_common import parse_args
-from aws_chiles02.echo import echo
+from casa_code.casa_common import parse_args
+from casa_code.echo import echo
 
 casalog.filter('DEBUGGING')
 logging.info('Starting logger for...')
