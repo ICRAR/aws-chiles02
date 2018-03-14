@@ -21,16 +21,64 @@
 #
 
 from api import BaseChilesAPI
-from generate_clean_graph import create_and_generate, use_and_generate, generate_json
+from generate_clean_graph import create_and_generate as clean_create, \
+    use_and_generate as clean_use, \
+    generate_json as clean_json
+
+from generate_imageconcat import create_and_generate as imageconcat_create, \
+    use_and_generate as imageconcat_use, \
+    generate_json as imageconcat_json
+
+from generate_jpeg2000_graph import create_and_generate as jpeg2000_create, \
+    use_and_generate as jpeg2000_use, \
+    save_json as jpeg2000_json
+
+from generate_mstransform_graph import create_and_generate as mstransform_create, \
+    use_and_generate as mstransform_use, \
+    build_json as mstransform_json
+
+from generate_uvsub_graph import create_and_generate as uvsub_create, \
+    use_and_generate as uvsub_use, \
+    generate_json as uvsub_json
+
+
+commands = {
+    "Clean Graph": {
+        "Create Graph": clean_create,
+        "Use Graph": clean_use,
+        "Generate JSON": clean_json
+    },
+
+    "Image Concatenate": {
+        "Create Graph": imageconcat_create,
+        "Use Graph": imageconcat_use,
+        "Generate JSON": imageconcat_json
+    },
+
+    "JPEG2000 Graph": {
+        "Create Graph": jpeg2000_create,
+        "Use Graph": jpeg2000_use,
+        "Generate JSON": jpeg2000_json
+    },
+
+    "MSTransform Graph": {
+        "Create Graph": mstransform_create,
+        "Use Graph": mstransform_use,
+        "Generate JSON": mstransform_json
+    },
+
+    "UVSub Graph": {
+        "Create Graph": uvsub_create,
+        "Use Graph": uvsub_use,
+        "Generate JSON": uvsub_json
+    }
+}
 
 
 class ChilesAPI(BaseChilesAPI):
 
-    def create(self, data):
-        return create_and_generate(**data)
-
-    def use(self, data):
-        return use_and_generate(**data)
-
-    def generate_json(self, data):
-        return generate_json(**data)
+    def command(self, task, action, parameters):
+        try:
+            commands[task][action](**parameters)
+        except KeyError:
+            print "Unknown command {0} : {1}".format(task, action)

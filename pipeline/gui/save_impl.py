@@ -52,30 +52,34 @@ class ChilesGUIConfig(BaseChilesGUIConfig):
         If the value is different, it will be added to the history array for that config file.
         The history array will be truncated to the last 'autosave_history' elements
         :param new_values: A dictionary of new values to save.
+        :param default_values: A dictionary of the default values for all values being saved.
         """
         # First, load up the current config file state
-        current = self.load()
+        current_values = self.load()
 
         # Iterate over all the new values we have
         for k, v in new_values.iteritems():
             try:
                 # Append new items to the list, if they're new in comparison to the last value
-                current_list = current[k]
-                if len(current_list) == 0 or current_list[len(current_list) - 1] != str(v):
+                current_list = current_values[k]
+                current_latest = current_list[len(current_list) - 1]
+
+                # Append this new value to the saved config if the config is empty or it doesn't match the last value in the config
+                if len(current_list) == 0 or current_latest != str(v):
                     current_list.append(v)
 
                 # Remove old list items if the list is too long
                 remove = len(current_list) - self.autosave_history
                 if remove > 0:
-                    current[k] = current_list[remove:]
+                    current_values[k] = current_list[remove:]
 
-            except KeyError:
+            except (KeyError, IndexError):
                 # Create list if one doesn't already exist
-                current[k] = [v]
+                current_values[k] = [v]
 
         # Build up the configobj from the current values
         config_obj = ConfigObj()
-        for k, v in current.iteritems():
+        for k, v in current_values.iteritems():
             config_obj[k] = v
 
         # Save the configobj to the autosave path

@@ -19,14 +19,12 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
-import Tkinter as tk
-
 from abc import *
 from validation import Bool, String, SelectList
-from option_inst import InputInstance, SelectInstance, CheckInstance, ChooseFileInstance
+from option_instance import InputInstance, SelectInstance, CheckInstance, ChooseFileInstance
 
 
-class Option:
+class OptionPrototype:
     """
     Represents a prototype of a single configuration option. These are used to
     build tkinter objects.
@@ -82,41 +80,57 @@ class Option:
         return self.datatype.validate_and_show_error(self.name, value, tk_field)
 
 
-class Input(Option):
+class InputPrototype(OptionPrototype):
+    """
+    Represents an input field that the user can type values into.
+    Whenever the input field is updated, its value is validated.
+    If the user's provided valid is invalid, the field is highlighted in red to inform them.
+    """
     option_type = "Input"
 
     def create(self, parent):
         return InputInstance(self, parent)
 
 
-class Select(Option):
+class SelectPrototype(OptionPrototype):
+    """
+    Represents a drop down list with a set of selection options.
+    The user can select any option from the list.
+    """
     option_type = "Select"
 
     def __init__(self, id, name, options, **kwargs):
-        super(Select, self).__init__(id, name, SelectList(options), **kwargs)
+        super(SelectPrototype, self).__init__(id, name, SelectList(options), **kwargs)
         self.options = options
 
     def create(self, parent):
         return SelectInstance(self, parent)
 
 
-class Check(Option):
+class CheckPrototype(OptionPrototype):
+    """
+    Represents a checkbox that the user can either set to checked or unchecked.
+    """
     option_type = "Check"
 
     def __init__(self, id, name, **kwargs):
         if 'default' not in kwargs:
             kwargs['default'] = False
-        super(Check, self).__init__(id, name, Bool(), **kwargs)
+        super(CheckPrototype, self).__init__(id, name, Bool(), **kwargs)
 
     def create(self, parent):
         return CheckInstance(self, parent)
 
 
-class ChooseFile(Option):
+class ChooseFilePrototype(OptionPrototype):
+    """
+    Represents an input field with a Browse... button that the user can use to select
+    a local file on their machine.
+    """
     option_type = "ChooseFile"
 
     def __init__(self, id, name, **kwargs):
-        super(ChooseFile, self).__init__(id, name, String(), **kwargs)
+        super(ChooseFilePrototype, self).__init__(id, name, String(), **kwargs)
 
     def create(self, parent):
         return ChooseFileInstance(self, parent)

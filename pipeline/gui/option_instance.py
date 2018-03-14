@@ -21,6 +21,7 @@
 #
 import Tkinter as tk
 import tkFileDialog
+import os
 from abc import *
 
 
@@ -35,11 +36,12 @@ def menu_get_options(menu):
 
 def menu_clear_options(menu):
     last = menu.index("end")
-    menu.delete(0, last)
+    if last is not None:
+        menu.delete(0, last)
 
 
 def menu_set_options(menu, var, options):
-    if menu_options_count(menu) > 0:
+    if menu_options_count(menu) is not None:
         menu_clear_options(menu)
 
     for item in options:
@@ -63,6 +65,7 @@ class OptionInstance(object):
         self.history_menu_string = tk.StringVar(value="History...")
         self.history_menu_string_trace = None
         self.history_menu = tk.OptionMenu(parent, self.history_menu_string, "None")
+        self.history_menu_skip_set = False  # Used to allow the History dropdown box to revert to saying "History..." after an option is selected
 
     @abstractmethod
     def write(self, value):
@@ -72,9 +75,9 @@ class OptionInstance(object):
     def read(self):
         pass
 
-    def position(self, row):
-        self.label.grid(row=row, sticky=tk.W)
-        self.history_menu.grid(row=row, column=2, sticky=tk.EW)
+    def position(self, row, column):
+        self.label.grid(row=row, column=column, sticky=tk.W)
+        self.history_menu.grid(row=row, column=column + 2, sticky=tk.EW)
 
     def unposition(self):
         self.label.grid_forget()
@@ -89,6 +92,7 @@ class OptionInstance(object):
         empty = False
         if len(history):
             # We have history, and the latest value is the first in the list.
+            self.write(history[0]) # Use the latest value from our history as our value
             history[0] = history[0] + " (latest)"
         else:
             # No history, so just show none
@@ -97,12 +101,20 @@ class OptionInstance(object):
 
         # Create the callback for whenever the history menu is modified.
         # This will do nothing if the menu is empty
+        self.history_menu_skip_set = False
+
         def write_value(name, index, mode):
-            if not empty:
+            if self.history_menu_skip_set:  # Ignore if we've been told to skip this value write
+                self.history_menu_skip_set = False
+                return
+
+            if not empty:  # Write the value into the field if the history dropdown is not empty
                 value = self.history_menu_string.get()
                 if value == history[0]:
                     value = value[:-len(" (latest)")]
                 self.write(value)
+            self.history_menu_skip_set = True
+            self.history_menu.after(0, lambda: self.history_menu_string.set("History..."))
 
         # Remove the old history string trace if one is present
         if self.history_menu_string_trace is not None:
@@ -127,7 +139,7 @@ class InputInstance(OptionInstance):
         super(InputInstance, self).__init__(parent)
 
         self.entry_string = tk.StringVar(parent)
-        self.entry = tk.Entry(parent, textvariable=self.entry_string)
+        self.entry = tk.Entry(parent, textvariable=self.entry_string, width=25)
 
         # If the entry string is given a bad value, highlight the field in red.
         self.entry_string.trace('w', lambda name, index, mode: self.prototype.validate_and_show_error(self.entry_string.get(), self.entry))
@@ -148,14 +160,14 @@ class InputInstance(OptionInstance):
         """
         return self.prototype.validate_and_convert(self.entry_string.get())
 
-    def position(self, row):
+    def position(self, row, column):
         """
         Position this input instance at the specified row.
         :param row: The row to use
         :return:
         """
-        super(InputInstance, self).position(row)
-        self.entry.grid(row=row, column=1)
+        super(InputInstance, self).position(row, column)
+        self.entry.grid(row=row, column=column + 1)
 
     def unposition(self):
         """
@@ -190,9 +202,9 @@ class SelectInstance(OptionInstance):
     def read(self):
         return self.prototype.validate_and_convert(self.menu_string.get())
 
-    def position(self, row):
-        super(SelectInstance, self).position(row)
-        self.menu.grid(row=row, column=1)
+    def position(self, row, column):
+        super(SelectInstance, self).position(row, column)
+        self.menu.grid(row=row, column=column + 1)
 
     def unposition(self):
         super(SelectInstance, self).unposition()
@@ -220,9 +232,9 @@ class CheckInstance(OptionInstance):
     def read(self):
         return self.check_int.get() == 1
 
-    def position(self, row):
-        super(CheckInstance, self).position(row)
-        self.check.grid(row=row, column=1)
+    def position(self, row, column):
+        super(CheckInstance, self).position(row, column)
+        self.check.grid(row=row, column=column + 1)
 
     def unposition(self):
         super(CheckInstance, self).unposition()
@@ -234,17 +246,18 @@ class CheckInstance(OptionInstance):
 
 
 class ChooseFileInstance(OptionInstance):
-
     def __init__(self, prototype, parent):
         super(ChooseFileInstance, self).__init__(parent)
 
+        self.button_image = tk.PhotoImage(file=os.path.join(os.path.dirname(__file__), 'folder_icon.gif'))
+
         self.file_string = tk.StringVar(parent)
         self.frame = tk.Frame(parent)
-        self.file_entry = tk.Entry(self.frame, textvariable=self.file_string)
-        self.file_browse = tk.Button(self.frame, text="Browse...", command=lambda: self.file_string.set(tkFileDialog.asksaveasfilename(title="Choose a file")))
+        self.file_entry = tk.Entry(self.frame, textvariable=self.file_string, width=22)
+        self.file_browse = tk.Button(self.frame, image=self.button_image, command=lambda: self.file_string.set(tkFileDialog.asksaveasfilename(title="Choose a file")))
 
-        self.file_entry.pack(side=tk.LEFT, padx=2, pady=2, fill=tk.X, expand=True)
-        self.file_browse.pack(side=tk.LEFT, padx=2, pady=2, fill=tk.X, expand=True)
+        self.file_entry.pack(side=tk.LEFT, anchor=tk.W)
+        self.file_browse.pack(side=tk.RIGHT, anchor=tk.E)
 
         self.set_prototype(prototype)
 
@@ -254,9 +267,9 @@ class ChooseFileInstance(OptionInstance):
     def read(self):
         return self.prototype.validate_and_convert(self.file_string.get())
 
-    def position(self, row):
-        super(ChooseFileInstance, self).position(row)
-        self.frame.grid(row=row, column=1)
+    def position(self, row, column):
+        super(ChooseFileInstance, self).position(row, column)
+        self.frame.grid(row=row, column=column + 1)
 
     def unposition(self):
         super(ChooseFileInstance, self).unposition()

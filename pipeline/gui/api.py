@@ -26,28 +26,12 @@ class BaseChilesAPI:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def create(self, data):
-        pass
-
-    @abstractmethod
-    def use(self, data):
-        pass
-
-    @abstractmethod
-    def generate_json(self, data):
+    def command(self, task, action, parameters):
         pass
 
 
 class NullAPI(BaseChilesAPI):
 
-    def create(self, data):
-        print "create"
-        print data
-
-    def use(self, data):
-        print "use"
-        print data
-
-    def generate_json(self, data):
-        print "generate_json"
-        print data
+    def command(self, task, action, parameters):
+        print "Task: {0}, Action: {1}".format(task, action)
+        print parameters
