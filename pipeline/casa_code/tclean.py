@@ -34,7 +34,7 @@ LOG = logging.getLogger('clean')
 
 
 @echo
-def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, robust, image_size, clean_channel_average, region_file, produce_qa, in_dirs):
+def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_planes, clean_weighting_uv, robust, image_size, clean_channel_average, region_file, produce_qa, build_fits, in_dirs):
     """
     Perform the CLEAN step
 
@@ -46,31 +46,58 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
     LOG.info('tclean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
     try:
         # dump_all()
-        tclean(vis=in_dirs,
-               field='deepfield',
-               spw='',
-               datacolumn='data',
-               imagename=outfile,
-               imsize=[image_size],
-               cell=[arcsec],
-               specmode='cube',
-               nchan=-1,
-               start=0,
-               width=clean_channel_average,
-               mask=region_file,
-               outframe='LSRK',
-               restfreq='1420.405752MHz',
-               interpolation='nearest',
-               gridder='widefield',
-               wprojplanes=w_projection_planes,
-               pblimit=-0.2,
-               deconvolver='clark',
-               weighting='briggs',
-               robust=robust,
-               niter=iterations,
-               gain=0.1,
-               threshold='0.0mJy',
-               savemodel='virtual')  # Don't overwrite the model data col
+        if clean_weighting_uv == 'briggs':
+            tclean(vis=in_dirs,
+                   field='deepfield',
+                   spw='',
+                   datacolumn='data',
+                   imagename=outfile,
+                   imsize=[image_size],
+                   cell=[arcsec],
+                   specmode='cube',
+                   nchan=-1,
+                   start=0,
+                   width=clean_channel_average,
+                   mask=region_file,
+                   outframe='LSRK',
+                   restfreq='1420.405752MHz',
+                   interpolation='nearest',
+                   gridder='widefield',
+                   wprojplanes=w_projection_planes,
+                   pblimit=-0.2,
+                   deconvolver='clark',
+                   weighting='briggs',
+                   robust=robust,
+                   niter=iterations,
+                   gain=0.1,
+                   threshold='0.0mJy',
+                   savemodel='virtual')  # Don't overwrite the model data col
+        else:
+            tclean(vis=in_dirs,
+                   field='deepfield',
+                   spw='',
+                   datacolumn='data',
+                   imagename=outfile,
+                   imsize=[image_size],
+                   cell=[arcsec],
+                   specmode='cube',
+                   nchan=-1,
+                   start=0,
+                   width=clean_channel_average,
+                   mask=region_file,
+                   outframe='LSRK',
+                   restfreq='1420.405752MHz',
+                   interpolation='nearest',
+                   gridder='widefield',
+                   wprojplanes=w_projection_planes,
+                   pblimit=-0.2,
+                   deconvolver='clark',
+                   weighting=clean_weighting_uv,
+                   robust=robust,
+                   niter=iterations,
+                   gain=0.1,
+                   threshold='0.0mJy',
+                   savemodel='virtual')  # Don't overwrite the model data col
     except Exception:
         LOG.exception('*********\nClean exception: \n***********')
 
@@ -226,7 +253,8 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
             pl.clf()
         ia.close()
 
-    exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
+    if build_fits == 'yes':
+        exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
 
 if __name__ == "__main__":
     args = parse_args()
@@ -239,10 +267,11 @@ if __name__ == "__main__":
         iterations=int(args.arguments[3]),
         arcsec=args.arguments[4],
         w_projection_planes=int(args.arguments[5]),
-        #clean_weighting_uv=args.arguments[6], # To be added
-        robust=float(args.arguments[6]),
-        image_size=int(args.arguments[7]),
-        clean_channel_average=args.arguments[8] if args.arguments[8] == '' else int(args.arguments[8]),
-        region_file=args.arguments[9] if args.arguments[9] != 'None' else '',
-        produce_qa=args.arguments[10],
-        in_dirs=args.arguments[11:])
+        clean_weighting_uv=args.arguments[6],
+        robust=float(args.arguments[7]),
+        image_size=int(args.arguments[8]),
+        clean_channel_average=args.arguments[9] if args.arguments[9] == '' else int(args.arguments[8]),
+        region_file=args.arguments[10] if args.arguments[10] != 'None' else '',
+        produce_qa=args.arguments[11],
+        build_fits=args.arguments[12],
+        in_dirs=args.arguments[13:])

@@ -114,12 +114,15 @@ class CasaTclean(BarrierAppDROP, ErrorHandling):
         self._iterations = None
         self._arcsec = None
         self._w_projection_planes = None
+        self._clean_weighting_uv = None
         self._robust = None
         self._image_size = None
         self._clean_channel_average = None
         self._region_file = None
         self._produce_qa = None
+        self._build_fits = None
         self._casa_version = None
+
         super(CasaTclean, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -130,11 +133,13 @@ class CasaTclean(BarrierAppDROP, ErrorHandling):
         self._iterations = self._getArg(kwargs, 'iterations', 10)
         self._arcsec = self._getArg(kwargs, 'arcsec', '1.25arcsec')
         self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
+        self._clean_weighting_uv = self._getArg(kwargs, 'clean_weighting_uv', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
         self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
         self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
+        self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
         self._command = 'tclean.sh %i0 %o0 %o0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._casa_version = self._getArg(kwargs, 'casa_version', None)
@@ -146,23 +151,26 @@ class CasaTclean(BarrierAppDROP, ErrorHandling):
         for measurement_set_dir in self._measurement_sets:
             measurement_set_name = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
             if os.path.exists(measurement_set_name):
-                measurement_sets.append('/dlg_root' + measurement_set_name)
+                measurement_sets.append(measurement_set_name)
             else:
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                            'tclean.py %o0 {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}'.format(
+                            'tclean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13}'.format(
+                                self.outputs[0].path,
                                 self._min_frequency,
                                 self._max_frequency,
                                 self._iterations,
                                 self._arcsec,
                                 self._w_projection_planes,
+                                self._clean_weighting_uv,
                                 self._robust,
                                 self._image_size,
                                 self._clean_channel_average,
                                 self._region_file if self._region_file != '' else 'None',
                                 self._produce_qa,
+                                self._build_fits,
                                 ' '.join(measurement_sets),
                             )
             run_command(self._command)
