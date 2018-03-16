@@ -438,7 +438,7 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         self._clean_weighting_uv = self._getArg(kwargs, 'clean_weighting_uv', None)
         self._robust = self._getArg(kwargs, 'robust', None)
         self._image_size = self._getArg(kwargs, 'image_size', 2048)
-        self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', '')
+        self._clean_channel_average = self._getArg(kwargs, 'clean_channel_average', 1)
         self._region_file = self._getArg(kwargs, 'region_file', '')
         self._produce_qa = self._getArg(kwargs, 'produce_qa', 'yes')
         self._build_fits = self._getArg(kwargs, 'build_fits', 'no')
