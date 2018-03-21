@@ -215,7 +215,7 @@ def save_json(**kwargs):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_split.txt", "w") as json_file:
+    with open(kwargs['json_path'] if 'json_path' in kwargs else "/tmp/json_jpeg2000.txt", "w") as json_file:
         json_file.write(json_dumps)
 
 

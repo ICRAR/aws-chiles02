@@ -379,7 +379,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_clean.txt", "w") as json_file:
+    with open(keywords['json_path'] if 'json_path' in keywords else "/tmp/json_clean.txt", "w") as json_file:
         json_file.write(json_dumps)
 
 

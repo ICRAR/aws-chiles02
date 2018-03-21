@@ -23,6 +23,7 @@ import Tkinter as tk
 
 navigation_button_text_style = ("Helvetica", 10, "italic")
 
+
 class Wizard:
     """
     The Wizard class manages a set of wizard pages and provides a back and forward navigation between the pages.
@@ -80,6 +81,7 @@ class Wizard:
         :return:
         """
         page.frame = tk.Frame(self.frame)
+        page.create()
         self.pages.append(page)
 
         if len(self) == 1:
@@ -116,7 +118,7 @@ class Wizard:
         old_page = self.current_page
 
         if old_page:
-            # Don't leave the old page yet (possibly due to invalid data being on the page
+            # Don't leave the old page yet (possibly due to invalid data being on the page)
             if not old_page.leave(new_page):
                 return
             old_page.frame.pack_forget()
@@ -130,6 +132,7 @@ class Wizard:
         self.current_page_index = index
 
         new_page.frame.pack(side=tk.TOP, fill=tk.X)
+        self.frame.update()
         new_page.enter(old_page)
 
         self._update_buttons()
@@ -149,11 +152,10 @@ class WizardPage(object):
     A single page in a wizard. All pages should be subclasses of this class.
     """
 
-    def __init__(self, wizard):
+    def __init__(self):
         super(WizardPage, self).__init__()
-        self.wizard = wizard
+        self.wizard = None
         self.frame = None
-        wizard.add_page(self)
 
     @staticmethod
     def clear_children(widget):
@@ -163,6 +165,13 @@ class WizardPage(object):
         """
         for widget in widget.winfo_children():
             widget.destroy()
+
+    def create(self):
+        """
+        Called after the page has been added to the wizard to create the page's widgets
+        :return:
+        """
+        pass
 
     def enter(self, from_page):
         """

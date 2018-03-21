@@ -43,19 +43,43 @@ FRAME_SIZE = 550
 label_font = ("Helvetica", 15, "bold italic")
 
 
+def resize_single_spacer(spacer, parent_frame):
+    """
+    Try and ensure the frame remains a similar height to the others by adding padding to the bottom
+    :param spacer:
+    :param parent_frame:
+    :return:
+    """
+
+    # This code is ridiculous. For some reason, even if I call pack_propagate(False) on the spacer, it resizes
+    # itself and ignores my resize requests. The only way to size it properly is to completely unpack the damn thing,
+    # force a window update, work out the spacer size needed, then re-pack the spacer.
+    spacer.pack_forget()
+    parent_frame.update()
+    spacer.config(height=max(FRAME_SIZE - parent_frame.winfo_height(), 0))
+    spacer.pack(side=tk.TOP)
+
+
 class SelectTaskPage(WizardPage):
     page_name = "SelectTask"
 
-    def __init__(self, *args):
-        super(SelectTaskPage, self).__init__(*args)
+    def __init__(self):
+        super(SelectTaskPage, self).__init__()
         self.task_option = tk.StringVar(value=task_options[0])
         self.action_option = tk.StringVar(value=action_options[0])
+        self.space1 = None
+        self.space2 = None
 
+    def create(self):
         label = tk.Label(self.frame, text="Select a task and action", font=label_font, relief=tk.GROOVE)
         label.pack(side=tk.TOP, fill=tk.X)
 
         self.space1 = tk.Frame(self.frame, width=500)
+        self.space2 = tk.Frame(self.frame, width=500)
+
+        # As this page is static, I've foregone any dynamic spacers in favour of a precalculated spacer height.
         self.space1.pack(side=tk.TOP)
+        self.space1.config(height=214)  # Precalculated to ensure height of 550
 
         select_task_frame = tk.Frame(self.frame)
         select_task_frame.pack(side=tk.TOP, pady=5)
@@ -73,17 +97,10 @@ class SelectTaskPage(WizardPage):
         select_action.pack(side=tk.RIGHT)
         select_action.config(width=15)
 
-        self.space2 = tk.Frame(self.frame, width=500)
-        self.space2.pack(side=tk.TOP, pady=5)
+        self.space2.pack(side=tk.BOTTOM, pady=5)
+        self.space2.config(height=215)  # Precalculated to ensure height of 550
 
-        # This code is a joke btw
-        self.frame.update_idletasks()
         self.frame.update()
-        height = max(FRAME_SIZE - self.frame.winfo_height(), 0)
-
-        # try and ensure the frame remains a similar height to the others by adding padding to the bottom
-        self.space1.config(height=height * 0.5)
-        self.space2.config(height=height * 0.5)
 
     def enter(self, from_page):
         self.frame.winfo_toplevel().title("Chiles GUI")
@@ -93,16 +110,17 @@ class SelectTaskPage(WizardPage):
         return True
 
 
-class Configure(WizardPage):
+class ConfigurePage(WizardPage):
     page_name = "Configure"
 
-    def __init__(self, select_task_page, data_access, save_load, *args):
-        super(Configure, self).__init__(*args)
+    def __init__(self, select_task_page, data_access, save_load):
+        super(ConfigurePage, self).__init__()
         self.select_task_page = select_task_page
         self.data_access = data_access
         self.save_load = save_load
 
         self.config_frame = None
+        self.config_spacer_bottom = None
 
         self.cache = {
             "Input": Cache(),
@@ -118,6 +136,7 @@ class Configure(WizardPage):
         self.task = None
         self.action = None
 
+    def create(self):
         # Title text
         label = tk.Label(self.frame, text="Configure", font=label_font, relief=tk.GROOVE)
         label.pack(side=tk.TOP, fill=tk.X)
@@ -132,11 +151,15 @@ class Configure(WizardPage):
 
         # Spacer below config options
         self.config_spacer_bottom = tk.Frame(self.frame)
-        self.config_spacer_bottom.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.config_spacer_bottom.pack_propagate(False)
+        self.config_spacer_bottom.pack(side=tk.BOTTOM)
 
         # Frame to hold config options
         self.config_frame = tk.Frame(self.frame)
-        self.config_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5)
+        self.config_frame.pack(side=tk.TOP, fill=tk.X, padx=5)
+
+        tk.Frame(self.config_frame).grid()
+        tk.Frame(self.frame).pack()
 
     def enter(self, from_page):
         task = self.select_task_page.task_option.get()
@@ -189,11 +212,8 @@ class Configure(WizardPage):
             option_instance.position(index, column)
             option_instance.set_history(history)
 
-        self.frame.update()
-        height = self.frame.winfo_height()
-
         # try and ensure the frame remains a similar height to the others by adding padding to the bottom
-        self.config_spacer_bottom.config(height=max(FRAME_SIZE - height, 0))
+        resize_single_spacer(self.config_spacer_bottom, self.frame)
 
     def leave(self, to_page):
         if to_page.page_name == "Confirm":
@@ -222,7 +242,7 @@ class Configure(WizardPage):
         self.action = None
 
 
-class Confirm(WizardPage):
+class ConfirmPage(WizardPage):
     page_name = "Confirm"
 
     class LabelValue:
@@ -230,8 +250,8 @@ class Confirm(WizardPage):
             self.label_string = tk.StringVar()
             self.value_string = tk.StringVar()
 
-            self.label = tk.Label(frame, textvariable=self.label_string, justify=tk.LEFT, anchor=tk.W) # Label for field, with data name
-            self.value = tk.Label(frame, textvariable=self.value_string, width=10, justify=tk.LEFT, anchor=tk.W) # Value for field
+            self.label = tk.Label(frame, textvariable=self.label_string, justify=tk.LEFT, anchor=tk.W)  # Label for field, with data name
+            self.value = tk.Label(frame, textvariable=self.value_string, width=10, justify=tk.RIGHT, anchor=tk.E)  # Value for field
 
         def set(self, label, value):
             """
@@ -250,7 +270,7 @@ class Confirm(WizardPage):
             :return:
             """
             self.label.grid(row=index, column=column, sticky=tk.W)
-            self.value.grid(row=index, column=column + 1, sticky=tk.W)
+            self.value.grid(row=index, column=column + 1, sticky=tk.E)
 
         def unposition(self):
             """
@@ -260,14 +280,16 @@ class Confirm(WizardPage):
             self.label.grid_forget()
             self.value.grid_forget()
 
-    def __init__(self, data_access, *args):
-        super(Confirm, self).__init__(*args)
+    def __init__(self, data_access):
+        super(ConfirmPage, self).__init__()
         self.data_access = data_access
         self.data = None
         self.config_frame = None
+        self.config_spacer_bottom = None
 
         self.label_cache = Cache()
 
+    def create(self):
         # Title text
         label = tk.Label(self.frame, text="Confirm", font=label_font, relief=tk.GROOVE)
         label.pack(side=tk.TOP, fill=tk.X, expand=True)
@@ -278,7 +300,7 @@ class Confirm(WizardPage):
 
         # Frame to hold all final config options
         self.config_frame = tk.Frame(self.frame)
-        self.config_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.config_frame.pack(side=tk.TOP, fill=tk.X, expand=True)
 
     def enter(self, from_page):
         # Clear the entire config frame to make way for the new fields
@@ -295,15 +317,11 @@ class Confirm(WizardPage):
         count = 0
         for index, (k, v) in enumerate(data.iteritems()):
             label = self.label_cache.get(lambda: self.LabelValue(self.config_frame))
-            label.set(k, v)
+            label.set(k, str(v))
             label.position(index, 0)
             count += 1
 
-        self.frame.update()
-        height = self.frame.winfo_height()
-
-        # try and ensure the frame remains a similar height to the others by adding padding to the bottom
-        self.config_spacer_bottom.config(height=max(FRAME_SIZE - height, 0))
+        resize_single_spacer(self.config_spacer_bottom, self.frame)
 
 
 class ChilesGUI:
@@ -321,12 +339,17 @@ class ChilesGUI:
         self.gui_config = ChilesGUIConfig()
 
         self.wizard = Wizard(root)
-        self.select_task_page = SelectTaskPage(self.wizard)
-        self.configure_page = Configure(self.select_task_page, self.data_access, self.gui_config, self.wizard)
-        self.confirm_page = Confirm(self.data_access, self.wizard)
+        self.wizard.frame.pack()
+
+        self.select_task_page = SelectTaskPage()
+        self.configure_page = ConfigurePage(self.select_task_page, self.data_access, self.gui_config)
+        self.confirm_page = ConfirmPage(self.data_access)
+
+        self.wizard.add_page(self.select_task_page)
+        self.wizard.add_page(self.configure_page)
+        self.wizard.add_page(self.confirm_page)
 
         self.wizard.set_on_submit(self.wizard_submit)
-        self.wizard.frame.pack()
 
     def save(self):
         data = self.data_access.read()

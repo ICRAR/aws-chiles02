@@ -254,12 +254,17 @@ class ChooseFileInstance(OptionInstance):
         self.file_string = tk.StringVar(parent)
         self.frame = tk.Frame(parent)
         self.file_entry = tk.Entry(self.frame, textvariable=self.file_string, width=22)
-        self.file_browse = tk.Button(self.frame, image=self.button_image, command=lambda: self.file_string.set(tkFileDialog.asksaveasfilename(title="Choose a file")))
+        self.file_browse = tk.Button(self.frame, image=self.button_image, command=self.file_command)
 
         self.file_entry.pack(side=tk.LEFT, anchor=tk.W)
         self.file_browse.pack(side=tk.RIGHT, anchor=tk.E)
 
         self.set_prototype(prototype)
+
+    def file_command(self):
+        filename = tkFileDialog.asksaveasfilename(title="Choose a file")
+        if len(filename):
+            self.file_string.set(filename)
 
     def write(self, value):
         self.file_string.set(self.prototype.validate_and_convert(value))

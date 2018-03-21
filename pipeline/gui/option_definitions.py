@@ -71,7 +71,7 @@ observation_phase_option = [
 ]
 
 option_bucket_name = InputPrototype("bucket_name", "Bucket Name", String(), default='13b-266')
-option_frequency_width = InputPrototype("frequency", "Frequency Width", Float(), default=4)
+option_frequency_width = InputPrototype("frequency_width", "Frequency Width", Float(), default=4)
 option_imageconcat_width = InputPrototype("imageconcat_width", "Image Concat Frequency Width", Int(), default=6)
 option_iterations = InputPrototype("iterations", "Iterations", Int(), default=1)
 option_arc_seconds = InputPrototype("arc_seconds", "Arc Seconds", Float(), default=2)
@@ -82,7 +82,7 @@ option_image_size = InputPrototype("image_size", "Image Size", Int(), default=40
 option_clean_channel_average = InputPrototype("clean_channel_average", "Input channels to average", Int(), default=1)
 option_region_file = InputPrototype("region_file", "Region file", String())
 option_only_image = CheckPrototype("only_image", "Only copy image to S3")
-option_add_shutdown_node = CheckPrototype("add_shutdown_node", "Add shutdown node", default=True)
+option_add_shutdown = CheckPrototype("add_shutdown", "Add shutdown node", default=True)
 option_build_fits = CheckPrototype("build_fits", "Build FITS for JPEG2000")
 option_fits_directory_name = InputPrototype("fits_directory_name", "FITS directory", String())
 option_uvsub_directory_name = InputPrototype("uvsub_directory_name", "UVSUB directory", String())
@@ -123,7 +123,7 @@ options = {
                    option_spot_price_i3_4xlarge,
                    option_volume,
                    option_frequencies_per_node,
-                   option_add_shutdown_node,
+                   option_add_shutdown,
                    option_iterations,
                    option_arc_seconds,
                    option_w_projection_planes,
@@ -150,7 +150,7 @@ options = {
                 option_bucket_name,
                 option_frequency_width,
                 option_volume,
-                option_add_shutdown_node,
+                option_add_shutdown,
                 option_iterations,
                 option_arc_seconds,
                 option_w_projection_planes,
@@ -177,7 +177,7 @@ options = {
                  option_arc_seconds,
                  option_nodes,
                  option_volume,
-                 option_add_shutdown_node,
+                 option_add_shutdown,
                  option_w_projection_planes,
                  option_clean_weighting_uv,
                  option_clean_robust,
@@ -212,7 +212,7 @@ options = {
                    option_use_bash,
                    option_casa_version,
                    option_volume,
-                   option_add_shutdown_node,
+                   option_add_shutdown,
                    option_build_fits,
                    option_run_note],
 
@@ -226,7 +226,7 @@ options = {
                 option_imageconcat_width,
                 option_frequency_range,
                 option_volume,
-                option_add_shutdown_node,
+                option_add_shutdown,
                 option_use_bash,
                 option_casa_version,
                 option_build_fits,
@@ -241,7 +241,7 @@ options = {
                  option_frequency_range,
                  option_nodes,
                  option_volume,
-                 option_add_shutdown_node,
+                 option_add_shutdown,
                  option_use_bash,
                  option_casa_version,
                  option_build_fits,
@@ -254,7 +254,7 @@ options = {
                    option_spot_price_i3_2xlarge,
                    option_bucket_name,
                    option_volume,
-                   option_add_shutdown_node,
+                   option_add_shutdown,
                    option_fits_directory_name,
                    option_jpeg2000_directory_name],
         "use": [
@@ -262,13 +262,16 @@ options = {
             option_dim_port,
             option_bucket_name,
             option_volume,
-            option_add_shutdown_node,
+            option_add_shutdown,
             option_fits_directory_name,
             option_jpeg2000_directory_name
         ],
 
         "json": [
-            # Skip?
+            option_bucket_name,
+            option_volume,
+            option_add_shutdown,
+            option_json_path
         ]
     },
 
@@ -279,7 +282,7 @@ options = {
                    option_spot_price_i3_2xlarge,
                    option_spot_price_i3_4xlarge,
                    option_volume,
-                   option_add_shutdown_node,
+                   option_add_shutdown,
                    option_use_bash,
                    option_casa_version,
                    option_split_directory_name,
@@ -290,7 +293,7 @@ options = {
                 option_bucket_name,
                 option_frequency_width,
                 option_volume,
-                option_add_shutdown_node,
+                option_add_shutdown,
                 option_use_bash,
                 option_casa_version,
                 option_split_directory_name,
@@ -301,7 +304,7 @@ options = {
                  option_volume,
                  option_nodes,
                  option_parallel_streams,
-                 option_add_shutdown_node,
+                 option_add_shutdown,
                  option_use_bash,
                  option_casa_version,
                  option_split_directory_name,
@@ -318,7 +321,7 @@ options = {
                    option_spot_price_i3_2xlarge,
                    option_volume,
                    option_nodes,
-                   option_add_shutdown_node,
+                   option_add_shutdown,
                    option_frequency_range,
                    option_scan_statistics,
                    option_uvsub_directory_name,
@@ -337,7 +340,7 @@ options = {
                 option_w_projection_planes,
                 option_number_taylor_terms,
                 option_volume,
-                option_add_shutdown_node,
+                option_add_shutdown,
                 option_frequency_range,
                 option_scan_statistics,
                 option_uvsub_directory_name,
@@ -355,7 +358,7 @@ options = {
                  option_bucket_name,
                  option_nodes,
                  option_volume,
-                 option_add_shutdown_node,
+                 option_add_shutdown,
                  option_frequency_range,
                  option_scan_statistics,
                  option_uvsub_directory_name,
