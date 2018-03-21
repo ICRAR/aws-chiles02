@@ -156,7 +156,8 @@ class CasaTclean(BarrierAppDROP, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
-            self._command = 'cd {}; '.format(self.outputs[0].path) \
+            self._command = 'mkdir -p {}; '.format(self.outputs[0].path) \
+                            + 'cd {}; '.format(self.outputs[0].path) \
                             + get_casa_command_line(self._casa_version) \
                             + SCRIPT_PATH \
                             + 'tclean.py {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13}'.format(
