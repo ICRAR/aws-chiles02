@@ -38,9 +38,9 @@ task_options = [
 
 # All actions the user can select for each task
 action_options = [
+    "Create",
+    "Use",
     "Generate JSON",
-    "Create Graph",
-    "Use Graph"
 ]
 
 weighting_uv_options = [
@@ -118,32 +118,36 @@ option_json_path = ChooseFilePrototype("json_path", "JSON output path", default=
 options = {
     "clean": {
         "create": [option_bucket_name,
-                   option_frequency_width,
                    option_ami_id,
                    option_spot_price_i3_4xlarge,
                    option_volume,
-                   option_frequencies_per_node,
                    option_add_shutdown,
+                   option_frequencies_per_node,
+                   option_clean_tclean,
+                   option_run_note,
+                   option_use_bash,
+                   option_casa_version,
+                   option_log_level,
+                   option_produce_qa,
+                   option_build_fits,
+
+                   option_frequency_width,
+                   option_frequency_range,
                    option_iterations,
                    option_arc_seconds,
                    option_w_projection_planes,
                    option_clean_weighting_uv,
                    option_clean_robust,
-                   option_only_image,
-                   option_image_size,
                    option_clean_channel_average,
                    option_region_file,
-                   option_frequency_range,
-                   option_clean_directory_name,
-                   option_log_level,
-                   option_produce_qa,
+
+                   option_only_image,
+                   option_image_size,
+
                    option_uvsub_directory_name,
                    option_fits_directory_name,
-                   option_clean_tclean,
-                   option_run_note,
-                   option_use_bash,
-                   option_casa_version,
-                   option_build_fits],
+                   option_clean_directory_name
+        ],
 
         "use": [option_dim_ip,
                 option_dim_port,
@@ -179,6 +183,7 @@ options = {
                  option_volume,
                  option_add_shutdown,
                  option_w_projection_planes,
+                 option_parallel_streams,
                  option_clean_weighting_uv,
                  option_clean_robust,
                  option_image_size,
@@ -282,6 +287,7 @@ options = {
                    option_spot_price_i3_2xlarge,
                    option_spot_price_i3_4xlarge,
                    option_volume,
+                   option_days_per_node,
                    option_add_shutdown,
                    option_use_bash,
                    option_casa_version,
@@ -326,6 +332,7 @@ options = {
                    option_scan_statistics,
                    option_uvsub_directory_name,
                    option_dump_json,
+                   option_json_path,
                    option_run_note,
                    option_use_bash,
                    option_casa_version,
@@ -345,6 +352,7 @@ options = {
                 option_scan_statistics,
                 option_uvsub_directory_name,
                 option_dump_json,
+                option_json_path,
                 option_run_note,
                 option_use_bash,
                 option_casa_version,
@@ -382,8 +390,8 @@ task_map = {
 
 action_map = {
     "Generate JSON": "json",
-    "Create Graph": "create",
-    "Use Graph": "use"
+    "Create": "create",
+    "Use": "use"
 }
 
 

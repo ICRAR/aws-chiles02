@@ -345,7 +345,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase, casa_version):
+def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase, casa_version, json_path="/tmp/json_mstransform.txt"):
     work_to_do = WorkToDo(width, bucket, split_directory)
     work_to_do.calculate_work_to_do()
 
@@ -372,7 +372,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_mstransform.txt", "w") as json_file:
+    with open(json_path, "w") as json_file:
         json_file.write(json_dumps)
 
 

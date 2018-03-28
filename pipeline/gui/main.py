@@ -24,8 +24,8 @@
 GUI Main
 """
 import Tkinter as tk
-from api import NullAPI
-from save_impl import ChilesGUIConfig
+from api import NullAPI, ChilesAPI, api_command
+from save import ChilesGUIConfig
 from data import DataAccess
 from cache import Cache
 from wizard import Wizard, WizardPage
@@ -360,7 +360,7 @@ class ChilesGUI:
     def wizard_submit(self, wizard):
         data = self.save()  # On wizard submit, don't use defaults to save because we want all the values that were just used to be saved.
         self.configure_page.force_update()
-        self.api.command(self.select_task_page.task_option.get(), self.select_task_page.action_option.get(), data)
+        api_command(self.api, self.select_task_page.task_option.get(), self.select_task_page.action_option.get(), data)
         self.root.destroy()
 
 
@@ -397,4 +397,8 @@ def run_gui(api):
 
 
 if __name__ == "__main__":
-    run_gui(NullAPI())
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--null_api", action="store_true", help="Use the Null API for testing")
+    args = vars(parser.parse_args())
+    run_gui(NullAPI() if args.get('null_api', False) else ChilesAPI())

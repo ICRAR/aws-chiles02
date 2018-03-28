@@ -379,7 +379,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open(keywords['json_path'] if 'json_path' in keywords else "/tmp/json_clean.txt", "w") as json_file:
+    with open(keywords.get('json_path', "/tmp/json_clean.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -480,9 +480,7 @@ def command_interactive(args):
 
     mode = get_input_mode()
     if mode == TKINTER and False:
-        from gui import run_gui, ChilesAPI
-        run_gui(ChilesAPI())
-        exit(0)
+        pass
     else:
         args = GetArguments(config=config, mode=mode)
         args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
