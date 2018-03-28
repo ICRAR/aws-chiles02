@@ -21,7 +21,7 @@
 #
 
 """
-GUI Main
+GUI Main - Run this file to run the Chiles GUI.
 """
 import Tkinter as tk
 from api import NullAPI, ChilesAPI, api_command
