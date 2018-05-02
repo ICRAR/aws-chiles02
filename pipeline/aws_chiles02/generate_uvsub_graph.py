@@ -232,7 +232,7 @@ def create_and_generate(**keywords):
 
                     if keywords['dump_json']:
                         json_dumps = json.dumps(graph.drop_list, indent=2)
-                        with open("/tmp/json_uvsub.txt", "w") as json_file:
+                        with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
                             json_file.write(json_dumps)
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -302,7 +302,7 @@ def use_and_generate(**keywords):
 
             if keywords['dump_json']:
                 json_dumps = json.dumps(graph.drop_list, indent=2)
-                with open("/tmp/json_uvsub.txt", "w") as json_file:
+                with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
                     json_file.write(json_dumps)
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -356,7 +356,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_uvsub.txt", "w") as json_file:
+    with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 

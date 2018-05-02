@@ -379,7 +379,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_clean.txt", "w") as json_file:
+    with open(keywords.get('json_path', "/tmp/json_clean.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -480,7 +480,6 @@ def command_interactive(args):
 
     mode = get_input_mode()
     if mode == TKINTER and False:
-        # TODO:
         pass
     else:
         args = GetArguments(config=config, mode=mode)
