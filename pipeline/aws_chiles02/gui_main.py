@@ -25,14 +25,15 @@ GUI Main - Run this file to run the Chiles GUI.
 """
 import Tkinter as tk
 import logging
+import argparse
 
-from api import NullAPI, ChilesAPI, api_command
-from save import ChilesGUIConfig
-from data import DataAccess
-from cache import Cache
-from wizard import Wizard, WizardPage
-from option_definitions import get_options, task_options, action_options
-from validation import ValidationException
+from gui_api import NullAPI, ChilesAPI, api_command
+from gui.save import ChilesGUIConfig
+from gui.data import DataAccess
+from gui.cache import Cache
+from gui.wizard import Wizard, WizardPage
+from gui.option_definitions import get_options, task_options, action_options
+from gui.validation import ValidationException
 """
 Wizard with 3 pages for configuring options
 Page1: Select Task (clean graph, imageconcat, jpeg2000, mstransform, uvsub)
@@ -126,6 +127,7 @@ class ConfigurePage(WizardPage):
 
         self.cache = {
             "Input": Cache(),
+            "Text Field": Cache(),
             "Select": Cache(),
             "Check": Cache(),
             "ChooseFile": Cache()
@@ -362,8 +364,8 @@ class ChilesGUI:
     def wizard_submit(self, wizard):
         data = self.save()  # On wizard submit, don't use defaults to save because we want all the values that were just used to be saved.
         self.configure_page.force_update()
-        api_command(self.api, self.select_task_page.task_option.get(), self.select_task_page.action_option.get(), data)
         self.root.destroy()
+        api_command(self.api, self.select_task_page.task_option.get(), self.select_task_page.action_option.get(), data)
 
 
 def run_gui(api):
@@ -400,7 +402,6 @@ def run_gui(api):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--null_api", action="store_true", help="Use the Null API for testing")
     args = vars(parser.parse_args())
