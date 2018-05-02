@@ -24,6 +24,8 @@
 GUI Main - Run this file to run the Chiles GUI.
 """
 import Tkinter as tk
+import logging
+
 from api import NullAPI, ChilesAPI, api_command
 from save import ChilesGUIConfig
 from data import DataAccess
@@ -397,6 +399,7 @@ def run_gui(api):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--null_api", action="store_true", help="Use the Null API for testing")

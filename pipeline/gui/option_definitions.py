@@ -71,7 +71,7 @@ observation_phase_option = [
 ]
 
 option_bucket_name = InputPrototype("bucket_name", "Bucket Name", String(), default='13b-266')
-option_frequency_width = InputPrototype("frequency_width", "Frequency Width", Float(), default=4)
+option_frequency_width = InputPrototype("frequency_width", "Frequency Width", Int(), default=4)
 option_imageconcat_width = InputPrototype("imageconcat_width", "Image Concat Frequency Width", Int(), default=6)
 option_iterations = InputPrototype("iterations", "Iterations", Int(), default=1)
 option_arc_seconds = InputPrototype("arc_seconds", "Arc Seconds", Float(), default=2)
