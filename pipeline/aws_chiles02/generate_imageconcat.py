@@ -196,7 +196,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_imageconcat.txt", "w") as json_file:
+    with open(keywords.get('json_path', "/tmp/json_imageconcat.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -490,6 +490,7 @@ def command_interactive(args):
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_imageconcat', 'A single line note about this run', help_text='A single line note about this run', default='No note')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps and where file/container drops go', default='/mnt/daliuge/dlg_root')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)

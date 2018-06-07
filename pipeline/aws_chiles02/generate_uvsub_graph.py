@@ -232,7 +232,7 @@ def create_and_generate(**keywords):
 
                     if keywords['dump_json']:
                         json_dumps = json.dumps(graph.drop_list, indent=2)
-                        with open("/tmp/json_uvsub.txt", "w") as json_file:
+                        with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
                             json_file.write(json_dumps)
 
                     LOG.info('Connection to {0}:{1}'.format(host, DIM_PORT))
@@ -302,7 +302,7 @@ def use_and_generate(**keywords):
 
             if keywords['dump_json']:
                 json_dumps = json.dumps(graph.drop_list, indent=2)
-                with open("/tmp/json_uvsub.txt", "w") as json_file:
+                with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
                     json_file.write(json_dumps)
 
             LOG.info('Connection to {0}:{1}'.format(host, port))
@@ -356,7 +356,7 @@ def generate_json(**keywords):
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOG.info(json_dumps)
-    with open("/tmp/json_uvsub.txt", "w") as json_file:
+    with open(keywords.get('json_path', "/tmp/json_uvsub.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 
@@ -442,8 +442,7 @@ def command_interactive(args):
         args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
-        else:
-            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps and where file/container drops go', default='/mnt/daliuge/dlg_root')
         args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
