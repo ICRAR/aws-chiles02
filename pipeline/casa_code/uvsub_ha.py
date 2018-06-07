@@ -202,13 +202,13 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                     im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes, freqinterp='linear')
                     im.settaylorterms(ntaylorterms=1)
                     #
-                    print 'Models in this pass: ' + str(model[ntt:len(model)])
+                    print 'Models in this pass: ' + str(ha_model[ntt:len(ha_model)])
                     print 'Time range in this pass: ' + timerange
-                    for mn in model[ntt:len(model)]:
+                    for mn in ha_model[ntt:len(ha_model)]:
                         tb.open(mn)
                         tb.clearlocks()
                     #
-                    im.ft(model=ha_model[ntt:len(model)], incremental=not_first)
+                    im.ft(model=ha_model[ntt:len(ha_model)], incremental=not_first)
                     # not_first=True
                 # if samples in this HA range
             # next HA m
