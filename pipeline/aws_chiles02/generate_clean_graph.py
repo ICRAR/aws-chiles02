@@ -507,8 +507,7 @@ def command_interactive(args):
         args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
         if config['use_bash']:
             args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
-        else:
-            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
+        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps and where file/container drops go', default='/mnt/daliuge/dlg_root')
         args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
         args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
 
