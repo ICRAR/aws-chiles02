@@ -1,0 +1,2 @@
+#CRTFv0 CASA Region Text Format version 0
+box [[10:03:15.15471, +001.21.19.4731], [10:03:14.56447, +001.21.25.0115]] coord=J2000, linewidth=1, linestyle=-, symsize=1, symthick=1, color=magenta, font="DejaVu Sans", fontsize=11, fontstyle=normal, usetex=false
