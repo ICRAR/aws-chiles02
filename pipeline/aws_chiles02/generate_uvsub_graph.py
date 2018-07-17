@@ -430,23 +430,38 @@ def command_interactive(args):
         pass
     else:
         args = GetArguments(config=config, mode=mode)
-        args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text=' use a network or create a network or just produce the JSON')
+        args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'],
+                 help_text='use a network or create a network or just produce the JSON')
         args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
         args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        args.get('split_directory', 'Split Directory', help_text='where to store the split data', default='split_{}'.format(config['width']))
-        args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
-        args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int, help_text='the number of taylor terms', default=2)
-        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        args.get('scan_statistics', 'Generate scan statistics', data_type=bool, help_text='generate scan statistics', default=True)
-        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
-        args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
+        args.get('split_directory', 'Split Directory',
+                 help_text='where to store the split data', default='split_{}'.format(config['width']))
+        args.get('w_projection_planes', 'W Projection planes', data_type=int,
+                 help_text='the number of w projections planes', default=24)
+        args.get('number_taylor_terms', 'Number of Taylor terms', data_type=int,
+                 help_text='the number of taylor terms', default=2)
+        args.get('shutdown', 'Add the shutdown node', data_type=bool,
+                 help_text='add a shutdown drop', default=True)
+        args.get('scan_statistics', 'Generate scan statistics', data_type=bool,
+                 help_text='generate scan statistics', default=True)
+        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool,
+                 help_text='run casa in bash', default=True)
+        args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'],
+                 help_text='should we produce the QA products')
         if config['use_bash']:
-            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
-        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps and where file/container drops go', default='/mnt/daliuge/dlg_root')
-        args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
-        args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
-        args.get('run_note_uvsub', 'A single line note about this run', help_text='A single line note about this run', default='No note')
-        args.get('absorption', 'Run the absorption version of uvsub (yes or no)', allowed=['yes', 'no'], help_text='RUn the absorption version of the UVSUB', default='no')
+            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'],
+                     help_text='the version of CASA', default='5.1')
+        args.get('volume', 'Volume',
+                 help_text='the directory on the host to bind to the Docker Apps and where file/container drops go',
+                 default='/mnt/daliuge/dlg_root')
+        args.get('uvsub_directory_name', 'The directory name for the uvsub output',
+                 help_text='the directory name for the uvsub output')
+        args.get('frequency_range', 'Do you want to specify a range of frequencies',
+                 help_text='Do you want to specify a range of frequencies comma separated', default='')
+        args.get('run_note_uvsub', 'A single line note about this run',
+                 help_text='A single line note about this run', default='No note')
+        args.get('absorption', 'Run the absorption version of uvsub (yes or no)',
+                 allowed=['yes', 'no'], help_text='Run the absorption version of the UVSUB', default='no')
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
