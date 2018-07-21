@@ -94,12 +94,13 @@ option_produce_qa = CheckPrototype("produce_qa", "Produce QA products")
 option_clean_tclean = SelectPrototype("clean_tclean", "Clean or TClean", clean_tclean_options, default="clean")
 option_use_bash = CheckPrototype("use_bash", "Run CASA in Bash")
 option_casa_version = SelectPrototype("casa_version", "CASA version", casa_version_options, default='5.1')
-option_volume = InputPrototype("volume", "Host directory for Docker", String())
+option_volume = InputPrototype("volume", "Host directory for System and Docker", String())
 option_frequency_range = InputPrototype("frequency_range", "Frequeny Ranges", String())
 option_run_note = TextFieldPrototype("run_note", "Note", String(), default='No note')
 option_ami_id = InputPrototype("ami_id", "AMI ID", String())
 option_spot_price_i3_xlarge = InputPrototype("spot_price_i3.xlarge", "Spot Price for i3.xlarge", String())
 option_spot_price_i3_4xlarge = InputPrototype("spot_price_i3.4xlarge", "Spot Price for i3.4xlarge", String())
+option_spot_price_i3_8xlarge = InputPrototype("spot_price_i3.8xlarge", "Spot Price for i3.8xlarge", String())
 option_spot_price_i3_2xlarge = InputPrototype("spot_price_i3.2xlarge", "Spot Price for i3.2xlarge", String())
 option_frequencies_per_node = InputPrototype("frequencies_per_node", "Frequencies per node", Int(), default=1)
 option_log_level = SelectPrototype("log_level", "Log level", log_level_options, default='vvv')
@@ -119,7 +120,7 @@ options = {
     "clean": {
         "create": [option_bucket_name,
                    option_ami_id,
-                   option_spot_price_i3_4xlarge,
+                   option_spot_price_i3_8xlarge,
                    option_volume,
                    option_add_shutdown,
                    option_frequencies_per_node,

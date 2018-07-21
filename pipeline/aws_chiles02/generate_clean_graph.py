@@ -65,16 +65,18 @@ class WorkToDo:
         cleaned_objects = []
         bucket = s3.Bucket(self._bucket_name)
         for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_clean_name)):
-            cleaned_objects.append(key.key)
-            LOG.info('{0} found'.format(key.key))
+            if key.key.endswith('.tar'):
+                cleaned_objects.append(key.key)
+                LOG.info('{0} found'.format(key.key))
 
         uvsub_frequencies = []
         for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_uvsub_name)):
-            elements = key.key.split('/')
-            if len(elements) == 3:
-                if elements[1] not in uvsub_frequencies:
-                    uvsub_frequencies.append(elements[1])
-                    LOG.info('{0} found'.format(key.key))
+            if key.key.endswith('.tar'):
+                elements = key.key.split('/')
+                if len(elements) == 3:
+                    if elements[1] not in uvsub_frequencies:
+                        uvsub_frequencies.append(elements[1])
+                        LOG.info('{0} found'.format(key.key))
 
         # Get work we've already done
         list_frequencies = get_list_frequency_groups(self._width)
@@ -102,7 +104,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     node_count = max(len(work_to_do) / frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
-        'instance_type': 'i3.4xlarge',
+        'instance_type': 'i3.8xlarge',
         'spot_price': spot_price
     })
 
@@ -345,7 +347,7 @@ def generate_json(**keywords):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.4xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
+        'i3.8xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
@@ -513,7 +515,7 @@ def command_interactive(args):
 
         if config['run_type'] == 'create':
             args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', help_text='the spot price')
+            args.get('spot_price_i3_8xlarge', 'Spot Price for i3.8xlarge', help_text='the spot price')
             args.get('frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
             args.get('log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
         elif config['run_type'] == 'use':
@@ -530,7 +532,7 @@ def command_interactive(args):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i3_4xlarge'],
+            spot_price=config['spot_price_i3_8xlarge'],
             volume=config['volume'],
             frequencies_per_node=config['frequencies_per_node'],
             add_shutdown=config['shutdown'],
