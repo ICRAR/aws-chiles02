@@ -49,9 +49,27 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
     step_freq = max_freq - min_freq
     no_chan = int(step_freq * 1000.0 / width_freq)  # MHz/kHz!!
 
-    # TODO: HACK needed if we use outframe='lsrk'
-    # no_chan = 60
-    # width_freq = 66.666666667
+    # TODO: needed if we use outframe='lsrk' or 'bary'
+    # replaces selections above
+    ms.open(infile)
+    msspecinfo=ms.getspectralwindowinfo()
+    width_chan=int(width_freq*1000/msspecinfo['0']['ChanWidth'])
+    ms.close()
+    im.selectvis(vis=infile)
+    selinfo=im.advisechansel(freqstart=min_freq*1e6, freqend=max_freq*1e6, freqstep=width_freq*1e3, freqframe='BARY')
+    spw_range=''
+    # Use no_chan from above. This is the no channels in not out
+    #no_chan=0
+    for n in range(len(selinfo['ms_0']['spw'])):
+        spw_range=spw_range+str(selinfo['ms_0']['spw'][n])+':'
+        spw_range=spw_range+str(selinfo['ms_0']['start'][n])+'~'
+        spw_range=spw_range+str(selinfo['ms_0']['start'][n]+selinfo['ms_0']['nchan'][n])
+        #no_chan += selinfo['ms_0']['nchan'][n]
+        #spw_range=spw_range+str(selinfo['ms_0']['spw'][n])
+        #no_chan += selinfo['ms_0']['nchan'][n]
+        if ((n+1)<len(selinfo['ms_0']['spw'])):
+            spw_range=spw_range+','
+    im.close()
     # TODO: HACK
 
     LOG.info('spw_range: {}, no_chan: {}, width_freq: {}'.format(spw_range, no_chan, width_freq))
@@ -69,13 +87,14 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 outputvis=outfile,
                 regridms=True,
                 restfreq='1420.405752MHz',
-                mode='frequency',
-                nchan=no_chan,
-                outframe='topo',
+                mode='channel',
+                # nchan=no_chan,## With specific spw_range nchan is all
+                outframe='TOPO',
                 interpolation='linear',
                 veltype='radio',
-                start='{}MHz'.format(min_freq),
-                width='{}kHz'.format(width_freq),
+                #start=selinfo['ms_0']['start'][0], ## With specific spw_range start=0
+                #width='{}kHz'.format(width_freq),
+                width=width_chan, ## different form with channels
                 spw=spw_range,
                 combinespws=True,
                 nspw=1,
