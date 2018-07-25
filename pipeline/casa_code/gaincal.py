@@ -48,8 +48,6 @@ def do_calibration(infile, out_pngs, apply_cal, w_projection_planes, number_tayl
     w_projection_planes is needed for the model calculation (I believe). 
     num_taylor_terms should match the number of models (i.e. not included the HA binning as yet)
     """
-    with open(list_obs_json, mode='r') as json_file:
-        json_data = json.load(json_file)
 
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
