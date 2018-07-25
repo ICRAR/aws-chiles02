@@ -159,7 +159,7 @@ if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    do_gaincal(
+    do_calibration(
         infile=find_file(args.arguments[0]),
         out_pngs=find_file(args.arguments[1]),
         apply_cal=find_file(args.arguments[2]),
