@@ -68,7 +68,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         tb.removecols('MODEL')
                         tb.close()
                     # Create/Flush model_data column
-                    im.open(thems=in_dir, usescratch=True)
+                    im.open(thems=infile, usescratch=True)
                     # Select all data in this case
                     im.selectvis()
                     # These are the parameters for the generation of the model
@@ -82,7 +82,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                             facets=1)
                     im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes)
                     # Find the refernce frequency and set no. taylor terms
-                    ms.open(in_dir)
+                    ms.open(infile)
                     fq = ms.getspectralwindowinfo()['0']['RefFreq']
                     ms.close()
                     im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
