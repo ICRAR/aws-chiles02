@@ -63,9 +63,9 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
 
     try:
             if (len(model)>0):
-                    if ('MODEL' in col_list):
+                    if ('MODEL_DATA' in col_list):
                         tb.open(infile,nomodify=False)
-                        tb.removecols('MODEL')
+                        tb.removecols('MODEL_DATA')
                         tb.close()
                     # Create/Flush model_data column
                     im.open(thems=infile, usescratch=True)
