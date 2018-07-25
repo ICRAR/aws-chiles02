@@ -110,7 +110,7 @@ def do_calibration(infile, out_pngs, apply_cal, w_projection_planes, number_tayl
             )
             if out_pngs:
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.inf.png')
+                        figfile=png_directory+'/'+infile.replace('ms','.phase.inf.png'),
                         caltable=infile.replace('ms','.phase.inf.cal'),
                         showgui=False,
                         yaxis='phase'
@@ -126,7 +126,7 @@ def do_calibration(infile, out_pngs, apply_cal, w_projection_planes, number_tayl
             )
             if out_pngs:
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.30m.png')
+                        figfile=png_directory+'/'+infile.replace('ms','.phase.30m.png'),
                         caltable=infile.replace('ms','.phase.30m.cal'),
                         showgui=False,
                         yaxis='phase')
@@ -141,7 +141,7 @@ def do_calibration(infile, out_pngs, apply_cal, w_projection_planes, number_tayl
             )
             if out_pngs:
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.scan.png')
+                        figfile=png_directory+'/'+infile.replace('ms','.phase.scan.png'),
                         caltable=infile.replace('ms','.phase.scan.cal'),
                         showgui=False,
                         yaxis='phase')
