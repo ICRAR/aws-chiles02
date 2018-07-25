@@ -160,10 +160,10 @@ if __name__ == "__main__":
     LOG.info(args)
 
     do_calibration(
-        infile=find_file(args.arguments[0]),
-        out_pngs=find_file(args.arguments[1]),
-        apply_cal=find_file(args.arguments[2]),
-        w_projection_planes=find_file(args.arguments[3]),
-        number_taylor_terms=find_file(args.arguments[4]),
-        model=find_file(args.arguments[5:])
+        infile=args.arguments[0],
+        out_pngs=args.arguments[1],
+        apply_cal=args.arguments[2],
+        w_projection_planes=int(args.arguments[3]),
+        number_taylor_terms=int(args.arguments[4]),
+        model=args.arguments[5:]
     )
