@@ -91,7 +91,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                     #
                     im.ft(model=model[0:ntt], incremental=False)
                     im.close()
-            if (apply_cal):
+            if (apply_cal == 'yes'):
                     if ('CORRECTED_DATA' in col_list):
                         tb.open(infile,nomodify=False)
                         tb.removecols('CORRECTED_DATA')
@@ -106,7 +106,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 minsnr='3.0',
                 calmode='p'
             )
-            if out_pngs:
+            if out_pngs == 'yes':
                     plotcal(
                         figfile=png_directory+'/'+infile.replace('ms','.phase.inf.png'),
                         caltable=infile.replace('ms','.phase.inf.cal'),
@@ -122,7 +122,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 minsnr='3.0',
                 calmode='p'
             )
-            if out_pngs:
+            if out_pngs== 'yes':
                     plotcal(
                         figfile=png_directory+'/'+infile.replace('ms','.phase.30m.png'),
                         caltable=infile.replace('ms','.phase.30m.cal'),
@@ -137,13 +137,13 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 minsnr='3.0',
                 calmode='p'
             )
-            if out_pngs:
+            if out_pngs == 'yes':
                     plotcal(
                         figfile=png_directory+'/'+infile.replace('ms','.phase.scan.png'),
                         caltable=infile.replace('ms','.phase.scan.cal'),
                         showgui=False,
                         yaxis='phase')
-            if apply_cal:
+            if apply_cal == 'yes':
                     applycal(
                         vis=infile,
                         gaintable=infile.replace('ms','.phase.30m.cal'),
