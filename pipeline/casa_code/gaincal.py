@@ -103,7 +103,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 selectdata=False,
                 solint='inf',
                 combine='scan',
-                minsnr='3.0',
+                minsnr=3.0,
                 calmode='p'
             )
             if out_pngs == 'yes':
@@ -119,7 +119,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 selectdata=False,
                 solint='1800s',
                 combine='scan',
-                minsnr='3.0',
+                minsnr=3.0,
                 calmode='p'
             )
             if out_pngs== 'yes':
@@ -134,7 +134,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                 selectdata=False,
                 solint='inf',
                 combine='',
-                minsnr='3.0',
+                minsnr=3.0,
                 calmode='p'
             )
             if out_pngs == 'yes':
