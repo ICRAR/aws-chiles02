@@ -35,10 +35,10 @@ logging.info('Starting logger for...')
 LOG = logging.getLogger('gaincal')
 
 
-def do_calibration(infile, out_pngs, apply_cal, w_projection_planes, number_taylor_terms, model):
+def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, number_taylor_terms, model):
     """
     Perform the GAINCAL step
-    inputs: infile=visibility, out_pngs=False/True, apply_cal=False/True, w_projection_planes=integer, 
+    inputs: infile=visibility, out_dir=dest, out_pngs=False/True, apply_cal=False/True, w_projection_planes=integer, 
             number_taylor_terms=intege, model=list of strings
 
     Task will run gaincal on whole dataset, on 30min and on scan (~10min)
@@ -159,9 +159,10 @@ if __name__ == "__main__":
 
     do_calibration(
         infile=args.arguments[0],
-        out_pngs=args.arguments[1],
-        apply_cal=args.arguments[2],
-        w_projection_planes=int(args.arguments[3]),
-        number_taylor_terms=int(args.arguments[4]),
-        model=args.arguments[5:]
+        out_dir=args.arguments[1],
+        out_pngs=args.arguments[2],
+        apply_cal=args.arguments[3],
+        w_projection_planes=int(args.arguments[4]),
+        number_taylor_terms=int(args.arguments[5]),
+        model=args.arguments[6:]
     )
