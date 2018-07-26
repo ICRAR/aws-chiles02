@@ -99,7 +99,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
             # gaincal()
             gaincal(
                 vis=infile,
-                caltable=infile.replace('ms','.phase.inf.cal'),
+                caltable=infile.replace('ms','phase.inf.cal'),
                 selectdata=False,
                 solint='inf',
                 combine='scan',
@@ -108,14 +108,14 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
             )
             if out_pngs == 'yes':
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.inf.png'),
-                        caltable=infile.replace('ms','.phase.inf.cal'),
+                        figfile=png_directory+'/'+infile.replace('ms','phase.inf.png'),
+                        caltable=infile.replace('ms','phase.inf.cal'),
                         showgui=False,
                         yaxis='phase'
                 )
             gaincal(
                 vis=infile,
-                caltable=infile.replace('ms','.phase.30m.cal'),
+                caltable=infile.replace('ms','phase.30m.cal'),
                 selectdata=False,
                 solint='1800s',
                 combine='scan',
@@ -124,13 +124,13 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
             )
             if out_pngs== 'yes':
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.30m.png'),
-                        caltable=infile.replace('ms','.phase.30m.cal'),
+                        figfile=png_directory+'/'+infile.replace('ms','phase.30m.png'),
+                        caltable=infile.replace('ms','phase.30m.cal'),
                         showgui=False,
                         yaxis='phase')
             gaincal(
                 vis=infile,
-                caltable=infile.replace('ms','.phase.scan.cal'),
+                caltable=infile.replace('ms','phase.scan.cal'),
                 selectdata=False,
                 solint='inf',
                 combine='',
@@ -139,14 +139,14 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
             )
             if out_pngs == 'yes':
                     plotcal(
-                        figfile=png_directory+'/'+infile.replace('ms','.phase.scan.png'),
-                        caltable=infile.replace('ms','.phase.scan.cal'),
+                        figfile=png_directory+'/'+infile.replace('ms','phase.scan.png'),
+                        caltable=infile.replace('ms','phase.scan.cal'),
                         showgui=False,
                         yaxis='phase')
             if apply_cal == 'yes':
                     applycal(
                         vis=infile,
-                        gaintable=infile.replace('ms','.phase.30m.cal'),
+                        gaintable=infile.replace('ms','phase.30m.cal'),
                         selectdata=False)
 
     except Exception:
