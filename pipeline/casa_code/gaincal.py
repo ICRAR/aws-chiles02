@@ -58,9 +58,9 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
     col_list=tb.colnames()
     tb.close()
     ntt=len(model)
-    cal_files_exists=    (os.path.isfile(infile.replace('ms','phase.inf.cal'))& 
-                         os.path.isfile(infile.replace('ms','phase.30m.cal'))&
-                         os.path.isfile(infile.replace('ms','phase.scan.cal')))
+    cal_files_exists=    (os.path.exists(infile.replace('ms','phase.inf.cal'))& 
+                         os.path.exists(infile.replace('ms','phase.30m.cal'))&
+                         os.path.exists(infile.replace('ms','phase.scan.cal')))
     if (number_taylor_terms!=len(model)):
             print 'Models and requested Taylor terms do not match: '+str(number_taylor_terms)
 
@@ -100,7 +100,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         tb.open(infile,nomodify=False)
                         tb.removecols('CORRECTED_DATA')
                         tb.close()
-        if not os.path.isfile(infile.replace('ms','phase.inf.cal')):
+        if not os.path.exists(infile.replace('ms','phase.inf.cal')):
             # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
@@ -118,7 +118,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         showgui=False,
                         yaxis='phase'
                 )
-        if not os.path.isfile(infile.replace('ms','phase.30m.cal')):
+        if not os.path.exists(infile.replace('ms','phase.30m.cal')):
             # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
@@ -135,7 +135,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         caltable=infile.replace('ms','phase.30m.cal'),
                         showgui=False,
                         yaxis='phase')
-        if not os.path.isfile(infile.replace('ms','phase.scan.cal')):
+        if not os.path.exists(infile.replace('ms','phase.scan.cal')):
             # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
