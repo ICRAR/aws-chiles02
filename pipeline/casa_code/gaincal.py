@@ -58,11 +58,15 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
     col_list=tb.colnames()
     tb.close()
     ntt=len(model)
+    cal_files_exists=    (os.path.exists(infile.replace('ms','phase.inf.cal'))& 
+                         os.path.exists(infile.replace('ms','phase.30m.cal'))&
+                         os.path.exists(infile.replace('ms','phase.scan.cal')))
     if (number_taylor_terms!=len(model)):
             print 'Models and requested Taylor terms do not match: '+str(number_taylor_terms)
 
     try:
-            if (len(model)>0):
+        if not cal_files_exists:
+            if (len(model)>0):    ## Do I need to make MODEL_DATA?
                     if ('MODEL_DATA' in col_list):
                         tb.open(infile,nomodify=False)
                         tb.removecols('MODEL_DATA')
@@ -91,12 +95,13 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                     #
                     im.ft(model=model[0:ntt], incremental=False)
                     im.close()
-            if (apply_cal == 'yes'):
+        if (apply_cal == 'yes'):   # Will I apply the calibration
                     if ('CORRECTED_DATA' in col_list):
                         tb.open(infile,nomodify=False)
                         tb.removecols('CORRECTED_DATA')
                         tb.close()
-            # gaincal()
+        if not os.path.exists(infile.replace('ms','phase.inf.cal')):
+            # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
                 caltable=infile.replace('ms','phase.inf.cal'),
@@ -113,6 +118,8 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         showgui=False,
                         yaxis='phase'
                 )
+        if not os.path.exists(infile.replace('ms','phase.30m.cal')):
+            # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
                 caltable=infile.replace('ms','phase.30m.cal'),
@@ -128,6 +135,8 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         caltable=infile.replace('ms','phase.30m.cal'),
                         showgui=False,
                         yaxis='phase')
+        if not os.path.exists(infile.replace('ms','phase.scan.cal')):
+            # Will I run gaincal() for this time span
             gaincal(
                 vis=infile,
                 caltable=infile.replace('ms','phase.scan.cal'),
@@ -143,7 +152,7 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
                         caltable=infile.replace('ms','phase.scan.cal'),
                         showgui=False,
                         yaxis='phase')
-            if apply_cal == 'yes':
+        if apply_cal == 'yes':
                     applycal(
                         vis=infile,
                         gaintable=infile.replace('ms','phase.30m.cal'),
