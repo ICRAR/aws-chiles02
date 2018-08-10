@@ -49,6 +49,8 @@ def do_calibration(infile, out_dir,  out_pngs, apply_cal, w_projection_planes, n
     num_taylor_terms should match the number of models (i.e. not included the HA binning as yet)
     """
 
+    print 'Running GAINCAL on '+infile
+
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
         if not os.path.exists(png_directory):
