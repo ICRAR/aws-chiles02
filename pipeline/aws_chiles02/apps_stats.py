@@ -33,6 +33,8 @@ from aws_chiles02.common import ProgressPercentage, run_command
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
+from settings_file import SCRIPT_PATH, get_casa_command_line
+
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
 logging.getLogger('boto3').setLevel(logging.INFO)
@@ -63,7 +65,9 @@ class CopyStatsFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(
+            measurement_set_dir,
+            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
@@ -175,7 +179,9 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
             return 1
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'stats_{0}~{1}.tar.gz'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(
+            measurement_set_dir,
+            'stats_{0}~{1}.tar.gz'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         bash = 'tar -cvzf {0} {1}'.format(
             tar_filename,
@@ -247,6 +253,7 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
         self._min_frequency = None
         self._observation = None
         self._command = None
+        self._casa_version = None
         super(CasaStats, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -254,11 +261,13 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._observation = self._getArg(kwargs, 'observation', None)
-        self._command = 'stats.sh %i0 %i0 '
+        self._casa_version = self._getArg(kwargs, 'casa_version', None)
+        self._command = 'stats.py %i0 %i0 '
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        self._command = 'stats.sh %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv {2}'.format(
+        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH +\
+                        'stats.py %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv {2}'.format(
             self._min_frequency,
             self._max_frequency,
             self._observation,
