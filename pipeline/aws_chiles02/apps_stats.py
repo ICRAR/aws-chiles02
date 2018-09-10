@@ -267,7 +267,8 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
 
     def run(self):
         self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH +\
-                        'stats.py %i0/uvsub_{0}~{1} %i0/stats_{0}~{1}.csv {2}'.format(
+                        'stats.py {0}/uvsub_{1}~{2} {0}/stats_{1}~{2}.csv {3}'.format(
+            self.inputs[0].path,
             self._min_frequency,
             self._max_frequency,
             self._observation,
