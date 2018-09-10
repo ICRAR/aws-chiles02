@@ -83,7 +83,8 @@ def do_stats(in_ms, out_csv_file, observation):
                 'median',
                 'min',
                 'npts',
-                'quartile',
+                'firstquartile',
+                'thirdquartile',
                 'rms',
                 'stddev',
                 'sum',
@@ -126,13 +127,15 @@ def write_line(csv_writer, observation, scan_number, begin_time, end_time, spect
         result['median'],
         result['min'],
         result['npts'],
-        result['quartile'],
+        result['firstquartile'],
+        result['thirdquartile'],
         result['rms'],
         result['stddev'],
         result['sum'],
         result['sumsq'],
         result['var'],
     ])
+
 
 if __name__ == "__main__":
     args = parse_args()
