@@ -133,7 +133,7 @@ def write_line(csv_writer, observation, scan_number, begin_time, end_time, spect
         result['stddev'],
         result['sum'],
         result['sumsq'],
-        result['var'],
+        result['variance'],
     ])
 
 
