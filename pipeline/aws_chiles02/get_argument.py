@@ -24,81 +24,22 @@ Get command line arguments
 """
 import readline
 
-from aws_chiles02.common import TTY
-
 
 class GetArguments:
-    def __init__(self, config, mode):
+    def __init__(self, config):
         self._config = config
-        self._mode = mode
 
     @staticmethod
-    def readline_input(prompt, prefill=''):
-        readline.set_startup_hook(lambda: readline.insert_text(prefill))
-        try:
-            return raw_input(prompt)
-        finally:
-            readline.set_startup_hook()
+    def readline_input(prompt, text=''):
+        def hook():
+            readline.insert_text(text)
+            readline.redisplay()
+        readline.set_pre_input_hook(hook)
+        result = input(prompt)
+        readline.set_pre_input_hook()
+        return result
 
     def get(self, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
-        if self._mode == TTY:
-            self._get_tty(key, prompt, help_text=help_text, data_type=data_type, default=default, allowed=allowed, use_stored=use_stored)
-        else:
-            self._get_not_tty(key, prompt, help_text=help_text, data_type=data_type, default=default, allowed=allowed, use_stored=use_stored)
-
-    def _get_not_tty(self, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
-        if key in self._config and use_stored:
-            from_config = self._config[key]
-        else:
-            from_config = None
-
-        if from_config is not None and default is not None:
-            prompt = '{0} [{1}](default: {2}):'.format(prompt, from_config, default)
-        elif from_config is not None:
-            prompt = '{0} [{1}]:'.format(prompt, from_config)
-        elif default is not None:
-            prompt = '{0} [{1}]:'.format(prompt, default)
-        else:
-            prompt = '{0}:'.format(prompt)
-
-        data = None
-
-        while data is None:
-            try:
-                data = raw_input(prompt)
-            except EOFError:
-                if from_config is not None:
-                    data = from_config
-                else:
-                    data = default
-            if data == '?':
-                if help_text is not None:
-                    print '\n' + help_text + '\n'
-                else:
-                    print '\nNo help available\n'
-
-                data = None
-            elif data == '':
-                if from_config is not None:
-                    data = from_config
-                else:
-                    data = default
-
-            if allowed is not None:
-                if data not in allowed:
-                    data = None
-
-        if data_type is not None:
-            if data_type == int:
-                self._config[key] = int(data)
-            elif data_type == float:
-                self._config[key] = float(data)
-            elif data_type == bool:
-                self._config[key] = data in ['True', 'true', 'Yes', 'yes']
-        else:
-            self._config[key] = data
-
-    def _get_tty(self, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
         if key in self._config and use_stored:
             from_config = self._config[key]
         else:
@@ -120,9 +61,9 @@ class GetArguments:
             data = self.readline_input(prompt, prefill)
             if data == '?':
                 if help_text is not None:
-                    print '\n' + help_text + '\n'
+                    print('\n' + help_text + '\n')
                 else:
-                    print '\nNo help available\n'
+                    print('\nNo help available\n')
 
                 data = None
 

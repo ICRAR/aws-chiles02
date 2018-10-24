@@ -27,6 +27,8 @@ import shutil
 
 import boto3
 import os
+
+import six
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
@@ -41,6 +43,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
@@ -65,10 +69,11 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(measurement_set_dir,
+                                       'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -177,7 +182,8 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir,
+                                    'uvsub_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         bash = 'tar -cvf {0} {1}'.format(
             tar_filename,

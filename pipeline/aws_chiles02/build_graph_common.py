@@ -117,7 +117,9 @@ class AbstractBuildGraph:
 
         dim_shutdown_drop = None
         if shutdown_dim and self._shutdown:
-            dim_shutdown_drop = self.create_bash_shell_app(self._dim_ip, 'sudo shutdown -h +5 "DALiuGE node shutting down" &')
+            dim_shutdown_drop = self.create_bash_shell_app(
+                self._dim_ip,
+                'sudo shutdown -h +5 "DALiuGE node shutting down" &')
             dim_shutdown_drop.addInput(s3_drop_out)
 
         for list_ips in self._node_details.values():
@@ -130,7 +132,9 @@ class AbstractBuildGraph:
                 dim_copy_log_drop.addInput(memory_drop)
 
                 if self._shutdown:
-                    shutdown_drop = self.create_bash_shell_app(node_id, 'sudo shutdown -h +5 "DALiuGE node shutting down" &')
+                    shutdown_drop = self.create_bash_shell_app(
+                        node_id,
+                        'sudo shutdown -h +5 "DALiuGE node shutting down" &')
                     shutdown_drop.addInput(s3_drop_out)
 
                     if shutdown_dim:
@@ -219,7 +223,15 @@ class AbstractBuildGraph:
         self.add_drop(drop)
         return drop
 
-    def create_docker_app(self, node_id, app, oid, image, command, user='ec2-user', input_error_threshold=100, **key_word_arguments):
+    def create_docker_app(self,
+                          node_id,
+                          app,
+                          oid,
+                          image,
+                          command,
+                          user='ec2-user',
+                          input_error_threshold=100,
+                          **key_word_arguments):
         oid_text = self.get_oid(oid)
         # uid_text = self.get_uuid()
         drop = dropdict({
@@ -237,7 +249,14 @@ class AbstractBuildGraph:
         self.add_drop(drop)
         return drop
 
-    def create_casa_app(self, node_id, app, oid, command, casa_version, input_error_threshold=100, **key_word_arguments):
+    def create_casa_app(self,
+                        node_id,
+                        app,
+                        oid,
+                        command,
+                        casa_version,
+                        input_error_threshold=100,
+                        **key_word_arguments):
         oid_text = self.get_oid(oid)
         # uid_text = self.get_uuid()
         drop = dropdict({

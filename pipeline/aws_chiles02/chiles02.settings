@@ -35,8 +35,8 @@
 # |__| |__| \__|       |__|  |__| |_______|| _| `._____||_______|(__)
 #
 
-# # OREGON
-ami_id = "ami-ab3d64d3"
+## OREGON
+ami_id = "ami-0f8e8734ae9b0eac5"
 key_name = "aws-chiles02-oregon"
 security_groups = "sg-981c9cfc"
 region = "us-west-2"

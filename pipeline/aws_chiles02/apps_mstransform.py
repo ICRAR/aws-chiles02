@@ -27,14 +27,15 @@ import os
 import shutil
 
 import boto3
+import six
 from boto3.s3.transfer import S3Transfer
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.check_measurement_set import CheckMeasurementSet
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
-from dlg.apps.dockerapp import DockerApp
-from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -42,6 +43,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
@@ -68,7 +71,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         measurement_set = key[:-4]
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -127,7 +130,10 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
-            message = 'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(return_code, path_exists, measurement_set)
+            message = 'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(
+                return_code,
+                path_exists,
+                measurement_set)
             LOG.error(message)
             self.send_error_message(
                 message,

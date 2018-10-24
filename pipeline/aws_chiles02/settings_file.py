@@ -28,6 +28,7 @@ from configobj import ConfigObj
 
 INPUT_MS_SUFFIX = '_calibrated_deepfield.ms'
 INPUT_MS_SUFFIX_TAR = '_calibrated_deepfield.ms.tar'
+INPUT_MS_SUFFIX_TAR_GZ = '_calibrated_deepfield.ms.tar.gz'
 CONTAINER_CHILES02 = 'kevinvinsen/chiles02:latest'
 CONTAINER_SV = 'jtmalarecki/sv:latest'
 SIZE_1GB = 1073741824
@@ -37,6 +38,7 @@ WAIT_TIMEOUT_NODE_MANAGER = 1800
 WAIT_TIMEOUT_ISLAND_MANAGER = 1000
 CASA_COMMAND_LINE_4_7 = 'xvfb-run casa --nologger --log2term -c '
 CASA_COMMAND_LINE_5_1 = 'xvfb-run casa --nogui --nologger --log2term -c '
+CASA_COMMAND_LINE_5_4 = 'xvfb-run casa --nogui --nologger --log2term -c '
 SCRIPT_PATH = '/home/ec2-user/aws-chiles02/pipeline/casa_code/'
 WEB_SITE = '13b-266.s3-website-us-west-2.amazonaws.com'
 
@@ -68,5 +70,7 @@ def get_casa_command_line(casa_version):
         return CASA_COMMAND_LINE_4_7
     elif casa_version == '5.1':
         return CASA_COMMAND_LINE_5_1
+    elif casa_version == '5.4':
+        return CASA_COMMAND_LINE_5_4
     else:
         raise ValueError('Unknown casa version: {}'.format(casa_version))

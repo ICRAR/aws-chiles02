@@ -26,6 +26,7 @@ import logging
 import os
 
 import boto3
+import six
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
@@ -40,6 +41,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class CopyImageconcatFromS3(BarrierAppDROP, ErrorHandling):
@@ -64,10 +67,11 @@ class CopyImageconcatFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'clean_{0}~{1}.image.centre'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(measurement_set_dir,
+                                       'clean_{0}~{1}.image.centre'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -178,7 +182,8 @@ class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'image_{0}_{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir,
+                                    'image_{0}_{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         bash = 'tar -cvf {0} {1}.cube {1}.cube.line {1}.cube.cont {1}.cube.fits'.format(
             tar_filename,
@@ -246,7 +251,7 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         LOG.debug('checking {0}.fits exists'.format(measurement_set))
         fits_file = measurement_set + '.fits'
         if not os.path.exists(fits_file) or not os.path.isfile(fits_file):
-            LOG.warn('Measurement_set: {0}.fits does not exist'.format(measurement_set))
+            LOG.warning('Measurement_set: {0}.fits does not exist'.format(measurement_set))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -351,13 +356,17 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
                     break
 
         LOG.debug('measurement_sets: {0}'.format(measurement_sets))
-        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + 'imageconcat.py {} image_{}_{}.cube {} {}'.format(
-            self.outputs[0].path,
-            self._min_frequency,
-            self._max_frequency,
-            self._build_fits,
-            ' '.join(measurement_sets),
-        )
+        self._command = \
+            'cd ; ' \
+            + get_casa_command_line(self._casa_version) \
+            + SCRIPT_PATH \
+            + 'imageconcat.py {} image_{}_{}.cube {} {}'.format(
+                self.outputs[0].path,
+                self._min_frequency,
+                self._max_frequency,
+                self._build_fits,
+                ' '.join(measurement_sets),
+            )
         run_command(self._command)
 
     def dataURL(self):

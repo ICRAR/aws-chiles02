@@ -27,13 +27,13 @@ import Tkinter as tk
 import logging
 import argparse
 
-from gui_api import NullAPI, ChilesAPI, api_command
-from gui.save import ChilesGUIConfig
-from gui.data import DataAccess
-from gui.cache import Cache
-from gui.wizard import Wizard, WizardPage
-from gui.option_definitions import get_options, task_options, action_options
-from gui.validation import ValidationException
+from old.gui.gui_api import NullAPI, ChilesAPI, api_command
+from old.gui.save import ChilesGUIConfig
+from old.gui.data import DataAccess
+from old.gui.cache import Cache
+from old.gui.wizard import Wizard, WizardPage
+from old.gui.option_definitions import get_options, task_options, action_options
+from old.gui.validation import ValidationException
 """
 Wizard with 3 pages for configuring options
 Page1: Select Task (clean graph, imageconcat, jpeg2000, mstransform, uvsub)
@@ -224,7 +224,7 @@ class ConfigurePage(WizardPage):
             try:
                 self.data_access.read()
             except ValidationException as e:
-                print e.message
+                print(e.message)
                 return False
 
         return True
@@ -388,10 +388,10 @@ def run_gui(api):
 
     def close_window():
         try:
-            print "Autosaving..."
+            print("Autosaving...")
             gui.save()
         except Exception as e:
-            print e
+            print(e)
         finally:
             root.destroy()
 

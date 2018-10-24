@@ -266,7 +266,11 @@ def use_and_generate(**keywords):
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
         if response.status != httplib.OK:
-            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(host, port, response.status, response.read())
+            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(
+                host,
+                port,
+                response.status,
+                response.read())
             raise Exception(msg)
 
         json_data = response.read()
@@ -385,93 +389,7 @@ def generate_json(**keywords):
         json_file.write(json_dumps)
 
 
-def command_json(args):
-    generate_json(
-        width=args.width,
-        bucket=args.bucket,
-        iterations=args.iterations,
-        arcsec=args.arcsec,
-        nodes=args.nodes,
-        volume=args.volume,
-        parallel_streams=args.parallel_streams,
-        shutdown=args.shutdown,
-        w_projection_planes=args.w_projection_planes,
-        clean_weighting_uv=args.clean_weighting_uv,
-        robust=args.robust,
-        image_size=args.image_size,
-        clean_channel_average=args.clean_channel_average,
-        region_file=args.region_file,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        only_image=args.only_image,
-        produce_qa=args.produce_qa,
-        uvsub_directory_name=args.uvsub_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        clean_tclean=args.clean_tclean,
-        run_note=args.run_note_clean,
-    )
-
-
-def command_create(args):
-    log_level = get_log_level(args)
-    create_and_generate(
-        bucket_name=args.bucket,
-        frequency_width=args.width,
-        ami_id=args.ami,
-        spot_price=args.spot_price1,
-        volume=args.volume,
-        frequencies_per_node=args.frequencies_per_node,
-        add_shutdown=args.shutdown,
-        iterations=args.iterations,
-        arcsec=args.arcsec + 'arcsec',
-        w_projection_planes=args.w_projection_planes,
-        clean_weighting_uv=args.clean_weighting_uv,
-        robust=args.robust,
-        image_size=args.image_size,
-        clean_channel_average=args.clean_channel_average,
-        region_file=args.region_file,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        only_image=args.only_image,
-        produce_qa=args.produce_qa,
-        log_level=log_level,
-        uvsub_directory_name=args.uvsub_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        clean_tclean=args.clean_tclean,
-        run_note=args.run_note_clean,
-    )
-
-
-def command_use(args):
-    use_and_generate(
-        host=args.host,
-        port=args.port,
-        bucket_name=args.bucket,
-        frequency_width=args.width,
-        volume=args.volume,
-        add_shutdown=args.shutdown,
-        iterations=args.iterations,
-        arcsec=args.arcsec + 'arcsec',
-        w_projection_planes=args.w_projection_planes,
-        clean_weighting_uv=args.clean_weighting_uv,
-        robust=args.robust,
-        image_size=args.image_size,
-        clean_channel_average=args.clean_channel_average,
-        region_file=args.region_file,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        produce_qa=args.produce_qa,
-        only_image=args.only_image,
-        uvsub_directory_name=args.uvsub_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        clean_tclean=args.clean_tclean,
-        run_note=args.run_note_clean,
-    )
-
-
-def command_interactive(args):
-    LOG.info(args)
-    sleep(0.5)  # Allow the logging time to print
+def command_interactive():
     path_dirname, filename = os.path.split(__file__)
     config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
     if os.path.exists(config_file_name):
@@ -480,48 +398,95 @@ def command_interactive(args):
         config = ConfigObj()
         config.filename = config_file_name
 
-    mode = get_input_mode()
-    if mode == TKINTER and False:
-        pass
-    else:
-        args = GetArguments(config=config, mode=mode)
-        args.get('run_type', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
-        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
-        args.get('arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
-        args.get('w_projection_planes', 'W Projection planes', data_type=int, help_text='the number of w projections planes', default=24)
-        args.get('clean_weighting_uv', 'Clean weighting method', allowed=['briggs', 'uniform', 'natural'], help_text='which method for weighting the UV', default='briggs')
-        if config['clean_weighting_uv'] == 'briggs':
-            args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
-        args.get('image_size', 'The image size', data_type=int, help_text='the image size for clean', default=4096)
-        args.get('clean_channel_average', 'The number of input channels to average', data_type=int, help_text='the number of input channels to average', default=1)
-        args.get('region_file', 'Region File for cleaning', help_text='Region File for cleaning in crtf', default='')
-        args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
-        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        args.get('build_fits', 'Build the fits files for JPEG2000 (yes or no)', allowed=['yes', 'no'], help_text='build the fits files for JPEG2000', default='no')
-        args.get('uvsub_directory_name', 'The directory name for the uvsub output', help_text='the directory name for the uvsub output')
-        args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
-        if config['build_fits'] == 'yes':
-            args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
-        args.get('produce_qa', 'Produce QA products (yes or no)', allowed=['yes', 'no'], help_text='should we produce the QA products')
-        args.get('clean_tclean', 'Clean or Tclean', allowed=['clean', 'tclean'], help_text='use clean or tclean', default='clean')
-        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
-        if config['use_bash']:
-            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
-        args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps and where file/container drops go', default='/mnt/daliuge/dlg_root')
-        args.get('frequency_range', 'Do you want to specify a range of frequencies', help_text='Do you want to specify a range of frequencies comma separated', default='')
-        args.get('run_note_clean', 'A single line note about this run', help_text='A single line note about this run', default='No note')
+    # TODO: Pick the option you want
 
-        if config['run_type'] == 'create':
-            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i3_8xlarge', 'Spot Price for i3.8xlarge', help_text='the spot price')
-            args.get('frequencies_per_node', 'Number of frequencies per node', data_type=int, help_text='the number of frequencies per node', default=1)
-            args.get('log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
-        elif config['run_type'] == 'use':
-            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
-        else:
-            args.get('nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
+    args = GetArguments(config=config)
+    args.get('run_type',
+             'Create, use or json',
+             allowed=['create', 'use', 'json'],
+             help_text='the use a network or create a network')
+    args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+    args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+    args.get('iterations', 'Clean iterations', data_type=int, help_text='the clean iterations', default=1)
+    args.get('arcsec', 'How many arc seconds', help_text='the arc seconds', default='2')
+    args.get('w_projection_planes',
+             'W Projection planes',
+             data_type=int,
+             help_text='the number of w projections planes',
+             default=24)
+    args.get('clean_weighting_uv',
+             'Clean weighting method',
+             allowed=['briggs', 'uniform', 'natural'],
+             help_text='which method for weighting the UV',
+             default='briggs')
+    if config['clean_weighting_uv'] == 'briggs':
+        args.get('robust', 'Clean robust value', data_type=float, help_text='the robust value for clean', default=0.8)
+    args.get('image_size', 'The image size', data_type=int, help_text='the image size for clean', default=4096)
+    args.get('clean_channel_average',
+             'The number of input channels to average',
+             data_type=int,
+             help_text='the number of input channels to average',
+             default=1)
+    args.get('region_file', 'Region File for cleaning', help_text='Region File for cleaning in crtf', default='')
+    args.get('only_image', 'Only the image to S3', data_type=bool, help_text='only copy the image to S3', default=False)
+    args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
+    args.get('build_fits',
+             'Build the fits files for JPEG2000 (yes or no)',
+             allowed=['yes', 'no'],
+             help_text='build the fits files for JPEG2000',
+             default='no')
+    args.get('uvsub_directory_name',
+             'The directory name for the uvsub output',
+             help_text='the directory name for the uvsub output')
+    args.get('clean_directory_name', 'The directory name for clean', help_text='the directory name for clean')
+    if config['build_fits'] == 'yes':
+        args.get('fits_directory_name', 'The directory name for fits files', help_text='the directory name for fits')
+    args.get('produce_qa',
+             'Produce QA products (yes or no)',
+             allowed=['yes', 'no'],
+             help_text='should we produce the QA products')
+    args.get('clean_tclean',
+             'Clean or Tclean',
+             allowed=['clean', 'tclean'],
+             help_text='use clean or tclean',
+             default='clean')
+    args.get('use_bash',
+             'Run CASA in Bash rather than Docker',
+             data_type=bool,
+             help_text='run casa in bash',
+             default=True)
+    if config['use_bash']:
+        args.get('casa_version',
+                 'Which version of CASA',
+                 allowed=['4.7', '5.1'],
+                 help_text='the version of CASA',
+                 default='5.1')
+    args.get('volume',
+             'Volume',
+             help_text='the directory on the host to bind to the Docker Apps and where file/container drops go',
+             default='/mnt/daliuge/dlg_root')
+    args.get('frequency_range',
+             'Do you want to specify a range of frequencies',
+             help_text='Do you want to specify a range of frequencies comma separated',
+             default='')
+    args.get('run_note_clean',
+             'A single line note about this run',
+             help_text='A single line note about this run',
+             default='No note')
+
+    if config['run_type'] == 'create':
+        args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+        args.get('spot_price_i3_8xlarge', 'Spot Price for i3.8xlarge', help_text='the spot price')
+        args.get('frequencies_per_node',
+                 'Number of frequencies per node',
+                 data_type=int,
+                 help_text='the number of frequencies per node',
+                 default=1)
+        args.get('log_level', 'Log level', allowed=['v', 'vv', 'vvv'], help_text='the log level', default='vvv')
+    elif config['run_type'] == 'use':
+        args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+    else:
+        args.get('nodes', 'Number of nodes', data_type=int, help_text='the number of nodes', default=1)
 
     # Write the arguments
     config.write()
@@ -552,7 +517,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
-            run_note=config['run_note_clean'],
+            run_note=config['run_note'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
@@ -580,7 +545,7 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
-            run_note=config['run_note_clean'],
+            run_note=config['run_note'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
@@ -608,58 +573,14 @@ def command_interactive(args):
             uvsub_directory_name=config['uvsub_directory_name'],
             fits_directory_name=config['fits_directory_name'],
             clean_tclean=config['clean_tclean'],
-            run_note=config['run_note_clean'],
+            run_note=config['run_note'],
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
         )
 
 
-def parser_arguments(command_line=sys.argv[1:]):
-    # TODO: Add all the arguments
-    parser = argparse.ArgumentParser('Build the CLEAN physical graph for a day')
-
-    common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument('bucket', help='the bucket to access')
-    common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('arcsec', help='the number of arcsec', default='2')
-    common_parser.add_argument('--only_image', action='store_true', help='store only the image to S3', default=True)
-    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('--shutdown', action='store_true', help='add a shutdown drop', default=True)
-    common_parser.add_argument('--iterations', type=int, help='the number of iterations', default=10)
-    common_parser.add_argument('-v', '--verbosity', action='count', help='increase output verbosity', default=0)
-    common_parser.add_argument('--w_projection_planes', type=int, help='the number of w projections planes', default=24)
-    common_parser.add_argument('--clean_weighting_uv', help='the weighting method for the UV', default='briggs')
-    common_parser.add_argument('--robust', type=float, help='the robust value for clean', default=0.8)
-    common_parser.add_argument('--image_size', type=int, help='the image size for clean', default=4096)
-
-    subparsers = parser.add_subparsers()
-
-    parser_json = subparsers.add_parser('json', parents=[common_parser], help='display the json')
-    parser_json.add_argument('parallel_streams', type=int, help='the of parallel streams')
-    parser_json.add_argument('--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
-    parser_json.set_defaults(func=command_json)
-
-    parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
-    parser_create.add_argument('ami', help='the ami to use')
-    parser_create.add_argument('spot_price', type=float, help='the spot price')
-    parser_create.add_argument('--frequencies_per_node', type=int, help='the number of frequencies per node', default=1)
-    parser_create.set_defaults(func=command_create)
-
-    parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
-    parser_use.add_argument('host', help='the host the DALiuGE is running on')
-    parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
-    parser_use.set_defaults(func=command_use)
-
-    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
-    parser_interactive.set_defaults(func=command_interactive)
-
-    args = parser.parse_args(command_line)
-    return args
-
-
 if __name__ == '__main__':
     # json 13b-266 /mnt/daliuge/dlg_root 8 -w 8 -s
     logging.basicConfig(level=logging.INFO)
-    arguments = parser_arguments()
-    arguments.func(arguments)
+    command_interactive()

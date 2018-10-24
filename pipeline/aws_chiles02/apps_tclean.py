@@ -25,11 +25,13 @@ My Docker Apps
 import logging
 import os
 
+import six
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
+
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
-from dlg.apps.dockerapp import DockerApp
-from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -37,6 +39,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class DockerTclean(DockerApp, ErrorHandling):

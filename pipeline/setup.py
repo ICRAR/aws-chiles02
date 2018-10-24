@@ -40,18 +40,19 @@ setup(
         'dlg',
         'jsonpickle',
         'mako',
-        'pip>=9.0',
+        'pip',
         'requests',
+        'six',
     ],
     packages=[
         'aws_chiles02',
         'casa_code',
         'user_data',
     ],
-    package_data= {
+    package_data={
         'user_data': ['*.bash', '*.yaml'],
     },
-    entry_points= {
+    entry_points={
         'console_scripts': [
             'generate=aws_chiles02.generate:main',
             'check_splits=aws_chiles02.check_splits:main',
@@ -61,7 +62,7 @@ setup(
     },
 
     # I need the daliuge client from github
-    dependency_links = [
+    dependency_links=[
         'git+https://github.com/ICRAR/daliuge.git'
     ],
 )

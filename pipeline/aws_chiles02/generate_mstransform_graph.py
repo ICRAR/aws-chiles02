@@ -22,39 +22,41 @@
 """
 Build a dictionary for the execution graph
 """
-import argparse
 import getpass
-import httplib
 import json
 import logging
 import os
-import sys
-from time import sleep
+from http import HTTPStatus
+from http.client import HTTPConnection
+from datetime import datetime
 
 import boto3
 from configobj import ConfigObj
+from dlg.droputils import get_roots
+from dlg.manager.client import DataIslandManagerClient
 
 from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
-from aws_chiles02.common import FrequencyPair, MeasurementSetData, TKINTER, get_aws_credentials, get_input_mode, get_list_frequency_groups, get_session_id, get_uuid
+from aws_chiles02.common import FrequencyPair, MeasurementSetData, get_aws_credentials, \
+    get_list_frequency_groups, get_session_id, get_uuid
 from aws_chiles02.ec2_controller import EC2Controller
 from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
 from aws_chiles02.get_argument import GetArguments
-from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_NODE_MANAGER, WAIT_TIMEOUT_ISLAND_MANAGER
+from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_ISLAND_MANAGER, \
+    WAIT_TIMEOUT_NODE_MANAGER
 from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
-from dlg.droputils import get_roots
-from dlg.manager.client import DataIslandManagerClient
 
 LOG = logging.getLogger(__name__)
 
 
-class WorkToDo:
-    def __init__(self, width, bucket_name, s3_split_name):
+class WorkToDo(object):
+    def __init__(self, width, bucket_name, s3_split_name, observation_phase):
         self._width = width
         self._bucket_name = bucket_name
         self._s3_split_name = s3_split_name
         self._work_already_done = None
         self._bucket = None
         self._list_frequencies = None
+        self._observation_phase = observation_phase
         self._work_to_do = {}
 
     def calculate_work_to_do(self):
@@ -63,12 +65,15 @@ class WorkToDo:
 
         list_measurement_sets = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(Prefix='observation_data'):
-            if key.key.endswith('_calibrated_deepfield.ms.tar'):
+        for key in self._bucket.objects.filter(Prefix='observation_data/phase_{}'.format(self._observation_phase)):
+            if key.key.endswith('_calibrated_deepfield.ms.tar') or key.key.endswith('_calibrated_deepfield.ms.tar.gz'):
                 LOG.info('Found {0}'.format(key.key))
 
                 elements = key.key.split('/')
-                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
+                list_measurement_sets.append(
+                    MeasurementSetData(elements[1],
+                                       key.size,
+                                       key.key.endswith('gz')))
 
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
@@ -129,16 +134,24 @@ class WorkToDo:
         return self._work_to_do
 
 
-def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
+def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlarge):
     nodes = []
     counts = [0, 0, 0]
     for day in days:
-        if day.size <= 50 * SIZE_1GB:
-            counts[0] += 1
-        elif day.size <= 500 * SIZE_1GB:
-            counts[1] += 1
+        if day.gzipped:
+            if day.size <= 25 * SIZE_1GB:
+                counts[0] += 1
+            elif day.size <= 250 * SIZE_1GB:
+                counts[1] += 1
+            else:
+                counts[2] += 1
         else:
-            counts[2] += 1
+            if day.size <= 50 * SIZE_1GB:
+                counts[0] += 1
+            elif day.size <= 500 * SIZE_1GB:
+                counts[1] += 1
+            else:
+                counts[2] += 1
 
     node_count = 0
     if counts[2] > 0:
@@ -147,7 +160,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         nodes.append({
             'number_instances': count,
             'instance_type': 'i3.4xlarge',
-            'spot_price': spot_price2
+            'spot_price': spot_price_4xlarge
         })
     if counts[1] > 0:
         count = max(counts[1] / days_per_node, 1)
@@ -155,7 +168,7 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         nodes.append({
             'number_instances': count,
             'instance_type': 'i3.2xlarge',
-            'spot_price': spot_price1
+            'spot_price': spot_price_2xlarge
         })
     if counts[0] > 0:
         count = max(counts[0] / days_per_node, 1)
@@ -163,19 +176,32 @@ def get_nodes_required(days, days_per_node, spot_price1, spot_price2):
         nodes.append({
             'number_instances': count,
             'instance_type': 'i3.xlarge',
-            'spot_price': spot_price1
+            'spot_price': spot_price_2xlarge
         })
 
     return nodes, node_count
 
 
-def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_price2, volume, days_per_node, add_shutdown, use_bash, casa_version, split_directory, observation_phase):
+def create_and_generate(bucket_name,
+                        frequency_width,
+                        ami_id,
+                        spot_price1,
+                        spot_price2,
+                        volume,
+                        days_per_node,
+                        add_shutdown,
+                        use_bash,
+                        casa_version,
+                        split_directory,
+                        observation_phase,
+                        run_note):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
             width=frequency_width,
             bucket_name=bucket_name,
-            s3_split_name=split_directory
+            s3_split_name=split_directory,
+            observation_phase=observation_phase,
         )
         work_to_do.calculate_work_to_do()
 
@@ -183,8 +209,8 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         nodes_required, node_count = get_nodes_required(
             days=days,
             days_per_node=days_per_node,
-            spot_price1=spot_price1,
-            spot_price2=spot_price2)
+            spot_price_2xlarge=spot_price1,
+            spot_price_4xlarge=spot_price2)
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
@@ -276,6 +302,7 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
                     split_directory=split_directory,
                     observation_phase=observation_phase,
                     casa_version=casa_version,
+                    run_note=run_note,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -292,14 +319,29 @@ def create_and_generate(bucket_name, frequency_width, ami_id, spot_price1, spot_
         LOG.error('Unable to find the AWS credentials')
 
 
-def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutdown, use_bash, split_directory, observation_phase, casa_version):
+def use_and_generate(host,
+                     port,
+                     bucket_name,
+                     frequency_width,
+                     volume,
+                     add_shutdown,
+                     use_bash,
+                     split_directory,
+                     observation_phase,
+                     casa_version,
+                     run_note):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
-        connection = httplib.HTTPConnection(host, port)
+        connection = HTTPConnection(host, port)
         connection.request('GET', '/api', None, {})
         response = connection.getresponse()
-        if response.status != httplib.OK:
-            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(host, port, response.status, response.read())
+        if response.status != HTTPStatus.OK:
+            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(
+                host,
+                port,
+                response.status,
+                response.read()
+            )
             raise Exception(msg)
 
         json_data = response.read()
@@ -311,7 +353,8 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             work_to_do = WorkToDo(
                 width=frequency_width,
                 bucket_name=bucket_name,
-                s3_split_name=split_directory
+                s3_split_name=split_directory,
+                observation_phase=observation_phase,
             )
             work_to_do.calculate_work_to_do()
 
@@ -331,6 +374,7 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
                 split_directory=split_directory,
                 observation_phase=observation_phase,
                 casa_version=casa_version,
+                run_note=run_note,
             )
             graph.build_graph()
 
@@ -345,12 +389,22 @@ def use_and_generate(host, port, bucket_name, frequency_width, volume, add_shutd
             LOG.warning('No nodes are running')
 
 
-def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use_bash, split_directory, observation_phase, casa_version, json_path="/tmp/json_mstransform.txt"):
-    work_to_do = WorkToDo(width, bucket, split_directory)
+def build_json(bucket,
+               width,
+               volume,
+               nodes,
+               parallel_streams,
+               add_shutdown,
+               use_bash,
+               split_directory,
+               observation_phase,
+               casa_version,
+               run_note,
+               json_path="/tmp/json_mstransform.txt"):
+    work_to_do = WorkToDo(width, bucket, split_directory, observation_phase)
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.xlarge': [{'ip_address': 'node_i_{0}'.format(i)} for i in range(0, nodes)],
         'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
         'i3.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
     }
@@ -368,6 +422,7 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
         split_directory=split_directory,
         observation_phase=observation_phase,
         casa_version=casa_version,
+        run_note=run_note,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -376,176 +431,143 @@ def build_json(bucket, width, volume, nodes, parallel_streams, add_shutdown, use
         json_file.write(json_dumps)
 
 
-def command_create(args):
-    create_and_generate(
-        bucket_name=args.bucket,
-        frequency_width=args.width,
-        ami_id=args.ami,
-        spot_price1=args.spot_price1,
-        spot_price2=args.spot_price2,
-        volume=args.volume,
-        days_per_node=args.days_per_node,
-        add_shutdown=args.shutdown,
-        use_bash=args.use_bash,
-        casa_version=args.casa_version,
-        split_directory=args.split_directory,
-        observation_phase=args.observation_phase,
-    )
-
-
-def command_use(args):
-    use_and_generate(
-        host=args.host,
-        port=args.port,
-        bucket_name=args.bucket,
-        frequency_width=args.width,
-        volume=args.volume,
-        add_shutdown=args.shutdown,
-        use_bash=args.use_bash,
-        split_directory=args.split_directory,
-        observation_phase=args.observation_phase,
-        casa_version=args.casa_version,
-    )
-
-
-def command_json(args):
-    build_json(
-        bucket=args.bucket,
-        width=args.width,
-        volume=args.volume,
-        nodes=args.nodes,
-        parallel_streams=args.parallel_streams,
-        add_shutdown=args.shutdown,
-        use_bash=args.use_bash,
-        split_directory=args.split_directory,
-        observation_phase=args.observation_phase,
-        casa_version=args.casa_version,
-    )
-
-
-def command_interactive(args):
-    LOG.info(args)
-    sleep(0.5)  # Allow the logging time to print
+def command_interactive():
     path_dirname, filename = os.path.split(__file__)
     config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
+    section = {}
     if os.path.exists(config_file_name):
-        config = ConfigObj(config_file_name)
+        full_config = ConfigObj(config_file_name, indent_type='    ')
+        for key in sorted(full_config.keys(), reverse=True):
+            if key.startswith('split'):
+                section = full_config[key]
+                break
     else:
-        config = ConfigObj()
-        config.filename = config_file_name
+        full_config = ConfigObj(indent_type='    ')
+        full_config.filename = config_file_name
 
-    mode = get_input_mode()
-    if mode == TKINTER and False:
-        # TODO:
-        pass
+    args = GetArguments(config=section)
+    args.get('create_use_json',
+             'Create, use or json',
+             allowed=['create', 'use', 'json'],
+             help_text='the use a network or create a network')
+    args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
+    args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
+    args.get('observation_phase',
+             'Observation phase',
+             allowed=['1', '2'],
+             data_type=int,
+             help_text='the observational phase', default=1)
+    args.get('split_directory',
+             'Split Directory',
+             help_text='where to store the split data',
+             default='split_{}_{}'.format(section['width'], section['observation_phase']))
+    args.get('shutdown',
+             'Add the shutdown node',
+             data_type=bool,
+             help_text='add a shutdown drop',
+             default=True)
+    args.get('use_bash',
+             'Run CASA in Bash rather than Docker',
+             data_type=bool,
+             help_text='run casa in bash',
+             default=True)
+    args.get('volume',
+             'Volume',
+             help_text='the directory on the host put the data and '
+                       'to bind to the Docker Apps (if Docker is to be used)')
+    args.get('run_note', 'A single line note about this run',
+             help_text='A single line note about this run', default='No note')
+    if section['use_bash']:
+        args.get('casa_version',
+                 'Which version of CASA',
+                 allowed=['4.7', '5.1', '5.4'],
+                 help_text='the version of CASA',
+                 default='5.4')
+    if section['create_use_json'] == 'create':
+        args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
+        args.get('spot_price_i3_2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
+        args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', help_text='the spot price')
+        args.get('days_per_node',
+                 'Number of days per node',
+                 data_type=int,
+                 help_text='the number of days per node',
+                 default=1)
+    elif section['create_use_json'] == 'use':
+        args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
     else:
-        args = GetArguments(config=config, mode=mode)
-        args.get('create_use_json', 'Create, use or json', allowed=['create', 'use', 'json'], help_text='the use a network or create a network')
-        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        args.get('observation_phase', 'Observation phase', allowed=['1', '2'], data_type=int, help_text='the frequency width', default=1)
-        args.get('split_directory', 'Split Directory', help_text='where to store the split data', default='split_{}'.format(config['width']))
-        args.get('shutdown', 'Add the shutdown node', data_type=bool, help_text='add a shutdown drop', default=True)
-        args.get('use_bash', 'Run CASA in Bash rather than Docker', data_type=bool, help_text='run casa in bash', default=True)
-        if config['use_bash']:
-            args.get('casa_version', 'Which version of CASA', allowed=['4.7', '5.1'], help_text='the version of CASA', default='5.1')
-        else:
-            args.get('volume', 'Volume', help_text='the directory on the host to bind to the Docker Apps')
-        if config['create_use_json'] == 'create':
-            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i3.2xlarge', 'Spot Price for i3.2xlarge', help_text='the spot price')
-            args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', help_text='the spot price')
-            args.get('days_per_node', 'Number of days per node', data_type=int, help_text='the number of days per node', default=1)
-        elif config['create_use_json'] == 'use':
-            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
-        else:
-            args.get('nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
-            args.get('parallel_streams', 'Parallel streams', data_type=int, help_text='the number of parallel streams', default=4)
+        args.get('nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
+        args.get('parallel_streams',
+                 'Parallel streams',
+                 data_type=int,
+                 help_text='the number of parallel streams',
+                 default=4)
 
     # Write the arguments
-    config.write()
+    today = datetime.now()
+    section_name = 'split_{:%Y_%m_%d_%H_%M_%S}'.format(today)
+    full_config[section_name] = section
+
+    split_keys = []
+    for key in sorted(full_config.keys(), reverse=True):
+        if key.startswith('split'):
+            value = full_config[key]
+            if isinstance(value, dict):
+                split_keys.append(key)
+
+    if len(split_keys) > 10:
+        for old_key in split_keys[10:]:
+            del full_config[old_key]
+
+    full_config.write()
 
     # Run the command
-    if config['create_use_json'] == 'create':
+    if section['create_use_json'] == 'create':
         create_and_generate(
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            ami_id=config['ami'],
-            spot_price1=config['spot_price_i3.2xlarge'],
-            spot_price2=config['spot_price_i3_4xlarge'],
-            volume=config['volume'],
-            days_per_node=config['days_per_node'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
+            bucket_name=section['bucket_name'],
+            frequency_width=section['width'],
+            ami_id=section['ami'],
+            spot_price1=section['spot_price_i3_2xlarge'],
+            spot_price2=section['spot_price_i3_4xlarge'],
+            volume=section['volume'],
+            days_per_node=section['days_per_node'],
+            add_shutdown=section['shutdown'],
+            use_bash=section['use_bash'],
+            casa_version=section['casa_version'],
+            split_directory=section['split_directory'],
+            observation_phase=section['observation_phase'],
+            run_note=section['run_note'],
         )
-    elif config['create_use_json'] == 'use':
+    elif section['create_use_json'] == 'use':
         use_and_generate(
-            host=config['dim'],
+            host=section['dim'],
             port=DIM_PORT,
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            volume=config['volume'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
+            bucket_name=section['bucket_name'],
+            frequency_width=section['width'],
+            volume=section['volume'],
+            add_shutdown=section['shutdown'],
+            use_bash=section['use_bash'],
+            casa_version=section['casa_version'],
+            split_directory=section['split_directory'],
+            observation_phase=section['observation_phase'],
+            run_note=section['run_note'],
         )
     else:
         build_json(
-            bucket=config['bucket_name'],
-            width=config['width'],
-            volume=config['volume'],
-            nodes=config['nodes'],
-            parallel_streams=config['parallel_streams'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
+            bucket=section['bucket_name'],
+            width=section['width'],
+            volume=section['volume'],
+            nodes=section['nodes'],
+            parallel_streams=section['parallel_streams'],
+            add_shutdown=section['shutdown'],
+            use_bash=section['use_bash'],
+            casa_version=section['casa_version'],
+            split_directory=section['split_directory'],
+            observation_phase=section['observation_phase'],
+            run_note=section['run_note'],
         )
-
-
-def parser_arguments(command_line=sys.argv[1:]):
-    parser = argparse.ArgumentParser('Build the MSTRANSFORM physical graph for a day')
-
-    common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument('bucket', help='the bucket to access')
-    common_parser.add_argument('volume', help='the directory on the host to bind to the Docker Apps')
-    common_parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
-    common_parser.add_argument('--width', type=int, help='the frequency width', default=4)
-    common_parser.add_argument('--shutdown', action="store_true", help='add a shutdown drop')
-    common_parser.add_argument('--output', help='the output name', default=None)
-
-    subparsers = parser.add_subparsers()
-
-    parser_create = subparsers.add_parser('create', parents=[common_parser], help='run and deploy')
-    parser_create.add_argument('ami', help='the ami to use')
-    parser_create.add_argument('spot_price1', type=float, help='the spot price for the i3.2xlarge instances')
-    parser_create.add_argument('spot_price2', type=float, help='the spot price for the i3.4xlarge instances')
-    parser_create.add_argument('--days_per_node', type=int, help='the number of days per node', default=1)
-    parser_create.set_defaults(func=command_create)
-
-    parser_use = subparsers.add_parser('use', parents=[common_parser], help='use what is running and deploy')
-    parser_use.add_argument('host', help='the host the DALiuGE is running on')
-    parser_use.add_argument('--port', type=int, help='the port to bind to', default=DIM_PORT)
-    parser_use.set_defaults(func=command_use)
-
-    parser_json = subparsers.add_parser('json', parents=[common_parser], help='use what is running and deploy')
-    parser_json.set_defaults(func=command_json)
-
-    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
-    parser_interactive.set_defaults(func=command_interactive)
-
-    args = parser.parse_args(command_line)
-    return args
 
 
 if __name__ == '__main__':
     # interactive
     logging.basicConfig(level=logging.INFO)
-    arguments = parser_arguments()
-    arguments.func(arguments)
+    command_interactive()

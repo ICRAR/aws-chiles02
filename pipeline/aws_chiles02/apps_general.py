@@ -29,6 +29,7 @@ import sqlite3
 
 import boto3
 import jsonpickle
+import six
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.build_readme import build_file
@@ -37,6 +38,7 @@ from aws_chiles02.settings_file import AWS_REGION
 from dlg.drop import BarrierAppDROP, DirectoryContainer, FileDROP
 
 LOG = logging.getLogger(__name__)
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class ErrorHandling(object):
@@ -44,7 +46,13 @@ class ErrorHandling(object):
         self._session_id = None
         self._error_message = None
 
-    def send_error_message(self, message_text, oid, uid, queue='dlg-messages', region=AWS_REGION, profile_name='aws-chiles02'):
+    def send_error_message(self,
+                           message_text,
+                           oid,
+                           uid,
+                           queue='dlg-messages',
+                           region=AWS_REGION,
+                           profile_name='aws-chiles02'):
         self._error_message = message_text
         session = boto3.Session(profile_name=profile_name)
         sqs = session.resource('sqs', region_name=region)

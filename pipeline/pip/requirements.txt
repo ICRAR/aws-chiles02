@@ -3,7 +3,9 @@ boto3
 ConfigObj
 daliuge
 jsonpickle
+jupyter
 mako
 markuppy
-pip>=9.0
+pip
 requests
+six

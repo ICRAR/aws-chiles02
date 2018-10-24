@@ -23,16 +23,17 @@
 My Docker Apps
 """
 import logging
+import os
 
 import boto3
-import os
+import six
 from boto3.s3.transfer import S3Transfer
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 from aws_chiles02.apps_general import ErrorHandling
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
-from dlg.apps.dockerapp import DockerApp
-from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -40,6 +41,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
@@ -64,10 +67,11 @@ class CopyCleanFromS3(BarrierAppDROP, ErrorHandling):
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
 
-        measurement_set = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+        measurement_set = os.path.join(measurement_set_dir,
+                                       'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.warn('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
             return 0
 
         # Make the directory
@@ -179,7 +183,8 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir,
+                                    'clean_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
         os.chdir(measurement_set_dir)
         if self._only_image:
             bash = 'tar -cvf {0} {1}.image {1}.psf.centre'.format(
@@ -222,7 +227,8 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
 
         # Centred images
         if os.path.exists(measurement_set + '.image.centre'):
-            tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.centre.tar'.format(self._min_frequency, self._max_frequency))
+            tar_filename = os.path.join(measurement_set_dir,
+                                        'clean_{0}~{1}.centre.tar'.format(self._min_frequency, self._max_frequency))
             bash = 'tar -cvf {0} {1}.image.centre {1}.psf.centre'.format(
                 tar_filename,
                 stem_name,
@@ -250,7 +256,8 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                 }
             )
 
-        tar_filename = os.path.join(measurement_set_dir, 'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
+        tar_filename = os.path.join(measurement_set_dir,
+                                    'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
         bash = 'tar -cvf {0} {1}.image.mom.* {1}.*.txt {1}.*.svg'.format(
                     tar_filename,
                     stem_name)
@@ -311,7 +318,7 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
         LOG.debug('checking {0}.fits exists'.format(measurement_set))
         fits_file = measurement_set + '.fits'
         if not os.path.exists(fits_file) or not os.path.isfile(fits_file):
-            LOG.warn('Measurement_set: {0}.fits does not exist'.format(measurement_set))
+            LOG.warning('Measurement_set: {0}.fits does not exist'.format(measurement_set))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -376,7 +383,8 @@ class DockerClean(DockerApp, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set_dir in self._measurement_sets:
-            measurement_set_name = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+            measurement_set_name = os.path.join(measurement_set_dir,
+                                                'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
             if os.path.exists(measurement_set_name):
                 measurement_sets.append('/dlg_root' + measurement_set_name)
             else:
@@ -451,7 +459,8 @@ class CasaClean(BarrierAppDROP, ErrorHandling):
         # created so we have to do it later
         measurement_sets = []
         for measurement_set_dir in self._measurement_sets:
-            measurement_set_name = os.path.join(measurement_set_dir, 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+            measurement_set_name = os.path.join(measurement_set_dir,
+                                                'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
             if os.path.exists(measurement_set_name):
                 measurement_sets.append(measurement_set_name)
             else:

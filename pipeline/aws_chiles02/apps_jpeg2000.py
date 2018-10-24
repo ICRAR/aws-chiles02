@@ -26,6 +26,7 @@ import logging
 import os
 
 import boto3
+import six
 from boto3.s3.transfer import S3Transfer
 
 from aws_chiles02.apps_general import ErrorHandling
@@ -37,6 +38,8 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
 
 class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
@@ -61,7 +64,7 @@ class CopyFitsFromS3(BarrierAppDROP, ErrorHandling):
 
         # Does the directory exist
         if os.path.exists(fits_file_name):
-            LOG.warn('fits_file: {0} exists'.format(fits_file_name))
+            LOG.warning('fits_file: {0} exists'.format(fits_file_name))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
