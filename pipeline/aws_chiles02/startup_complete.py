@@ -51,9 +51,9 @@ def build_file(args):
     ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
     instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
     message = {
-        'ip_address': ip_address,
-        'uuid': args.uuid,
-        'instance_type': instance_type,
+        'ip_address': str(ip_address),
+        'uuid': str(args.uuid),
+        'instance_type': str(instance_type),
     }
     json_message = json.dumps(message, indent=2)
     queue.send_message(
