@@ -43,18 +43,13 @@ def parser_arguments():
 
 
 def build_file(args):
-    def read_url(url):
-        resource = urlopen(url)
-        content = resource.read().decode(resource.headers.get_content_charset())
-        return content
-
     session = boto3.Session(profile_name='aws-chiles02')
     sqs = session.resource('sqs', region_name=args.region)
     queue = sqs.get_queue_by_name(QueueName=args.queue)
 
     # Load the public IP address
-    ip_address = read_url('http://169.254.169.254/latest/meta-data/public-ipv4')
-    instance_type = read_url('http://169.254.169.254/latest/meta-data/instance-type')
+    ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read().decode('utf-8')
+    instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read().decode('utf-8')
     message = {
         'ip_address': ip_address.decode('utf-8'),
         'uuid': args.uuid,
