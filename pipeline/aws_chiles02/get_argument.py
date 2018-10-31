@@ -22,22 +22,11 @@
 """
 Get command line arguments
 """
-import readline
 
 
 class GetArguments:
     def __init__(self, config):
         self._config = config
-
-    @staticmethod
-    def readline_input(prompt, text=''):
-        def hook():
-            readline.insert_text(text)
-            readline.redisplay()
-        readline.set_pre_input_hook(hook)
-        result = input(prompt)
-        readline.set_pre_input_hook()
-        return result
 
     def get(self, key, prompt, help_text=None, data_type=None, default=None, allowed=None, use_stored=True):
         if key in self._config and use_stored:
@@ -46,19 +35,29 @@ class GetArguments:
             from_config = None
 
         if from_config is None:
-            prefill = ''
+            default_answer = None
         else:
-            prefill = from_config
+            if data_type == int:
+                default_answer = int(from_config)
+            elif data_type == float:
+                default_answer = float(from_config)
+            elif data_type == bool:
+                default_answer = from_config in ['True', 'true', 'Yes', 'yes', True]
+            else:
+                default_answer = from_config
 
-        if default is not None:
-            prompt = '{0} (default: {1}):'.format(prompt, default)
+        if default is not None and default_answer is None:
+            default_answer = default
+
+        if default_answer is None:
+            prompt = '{0}: '.format(prompt)
         else:
-            prompt = '{0}:'.format(prompt)
+            prompt = '{0} (default [{1}]): '.format(prompt, default_answer)
 
         data = None
 
         while data is None:
-            data = self.readline_input(prompt, prefill)
+            data = input(prompt)
             if data == '?':
                 if help_text is not None:
                     print('\n' + help_text + '\n')
@@ -66,6 +65,12 @@ class GetArguments:
                     print('\nNo help available\n')
 
                 data = None
+            elif data == '' and default_answer is not None:
+                data = default_answer
+
+            # Convert it to a string as that is what we expect
+            if data_type is None:
+                data = str(data)
 
             if allowed is not None:
                 if data not in allowed:
@@ -77,6 +82,6 @@ class GetArguments:
             elif data_type == float:
                 self._config[key] = float(data)
             elif data_type == bool:
-                self._config[key] = data in ['True', 'true', 'Yes', 'yes']
+                self._config[key] = data in ['True', 'true', 'Yes', 'yes', True]
         else:
             self._config[key] = data

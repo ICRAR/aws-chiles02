@@ -83,7 +83,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
     def _build_node_map(self):
         self._list_ip = []
-        for key, values in self._node_details.iteritems():
+        for key, values in self._node_details.items():
             for value in values:
                 self._list_ip.append(value['ip_address'])
 

@@ -50,7 +50,12 @@ def get_reported_running(uuid, count, wait=600):
                     ip_addresses = []
                     nodes_running[message_details['instance_type']] = ip_addresses
                 ip_addresses.append(message_details)
-                LOG.info('{0} - {1} has started successfully'.format(message_details['ip_address'], message_details['instance_type']))
+                LOG.info(
+                    '{0} - {1} has started successfully'.format(
+                        message_details['ip_address'],
+                        message_details['instance_type']
+                    )
+                )
                 messages_received += 1
                 message.delete()
                 LOG.info('{0} of {1} started'.format(messages_received, count))
@@ -86,3 +91,13 @@ def build_hosts(reported_running):
             hosts.append(value['ip_address'])
 
     return ','.join(hosts)
+
+
+def get_sections_starting_with(full_config, starting_with):
+    split_keys = []
+    for key in sorted(full_config.keys(), reverse=True):
+        if key.startswith(starting_with):
+            value = full_config[key]
+            if isinstance(value, dict):
+                split_keys.append(key)
+    return split_keys

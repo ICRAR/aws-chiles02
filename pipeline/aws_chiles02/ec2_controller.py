@@ -60,7 +60,10 @@ class EC2Controller(object):
 
     def start_instances(self):
         for instance_required in self._instances_required:
-            self._start_instances(instance_required['instance_type'], instance_required['number_instances'], instance_required['spot_price'])
+            self._start_instances(
+                instance_required['instance_type'],
+                instance_required['number_instances'],
+                instance_required['spot_price'])
 
     def _start_instances(self, instance_type, total_number_instances, spot_price, start_spots_step=10):
         for node_id in range(0, total_number_instances, start_spots_step):
@@ -87,7 +90,9 @@ class EC2Controller(object):
             spot_instance_request_ids = [i['SpotInstanceRequestId'] for i in spot_request['SpotInstanceRequests']]
             error_count = 0
 
-            while len(filter(lambda x: x is None, instance_ids)) > 0 and error_count < 3:
+            while len(tuple(filter(lambda x: x is None, instance_ids))) > 0 and error_count < 3:
+                requests = None
+                # noinspection PyBroadException
                 try:
                     requests = self._ec2_client.describe_spot_instance_requests(
                             SpotInstanceRequestIds=spot_instance_request_ids
@@ -102,7 +107,13 @@ class EC2Controller(object):
                     count = 0
                     for request_status in requests['SpotInstanceRequests']:
                         if request_status['State'] == 'active' and request_status['Status']['Code'] == 'fulfilled':
-                            LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
+                            LOG.info(
+                                '{0}, state: {1}, status:{2}'.format(
+                                    request_status['SpotInstanceRequestId'],
+                                    request_status['State'],
+                                    request_status['Status']['Code']
+                                )
+                            )
                             instance_ids[count] = request_status['InstanceId']
                         elif request_status['State'] == 'cancelled':
                             LOG.warning('Request {0} cancelled. Status: {1}'.format(
@@ -120,29 +131,41 @@ class EC2Controller(object):
                             )
                             instance_ids[count] = 'failed'
                         elif request_status['State'] == 'open':
-                            LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
+                            LOG.info(
+                                '{0}, state: {1}, status:{2}'.format(
+                                    request_status['SpotInstanceRequestId'],
+                                    request_status['State'],
+                                    request_status['Status']['Code']
+                                )
+                            )
                             if request_status['Status']['Code'] == 'capacity-oversubscribed':
                                 instance_ids[count] = 'failed'
                             else:
                                 instance_ids[count] = None
                         else:
-                            LOG.info('{0}, state: {1}, status:{2}'.format(request_status['SpotInstanceRequestId'], request_status['State'], request_status['Status']['Code']))
+                            LOG.info(
+                                '{0}, state: {1}, status:{2}'.format(
+                                    request_status['SpotInstanceRequestId'],
+                                    request_status['State'],
+                                    request_status['Status']['Code']
+                                )
+                            )
                             instance_ids[count] = None
                         count += 1
                     time.sleep(20)
 
             if self._tags is not None:
-                valid_instance_ids = filter(lambda x: x != 'failed' and x != 'cancelled', instance_ids)
+                valid_instance_ids = tuple(filter(lambda x: x != 'failed' and x != 'cancelled', instance_ids))
                 if len(valid_instance_ids) > 0:
                     self._ec2_client.create_tags(
                             Resources=valid_instance_ids,
                             Tags=self._tags
                     )
 
-    def _get_cheapest_availability_zone(self, instance_type, spot_price):
+    def _get_cheapest_availability_zone(self, instance_type, bid_spot_price):
         # Get the zones we have subnets in
         availability_zones = []
-        for key, value in AWS_SUBNETS.iteritems():
+        for key, value in AWS_SUBNETS.items():
             availability_zones.append(key)
 
         prices = self._ec2_client.describe_spot_price_history(
@@ -156,7 +179,8 @@ class EC2Controller(object):
             LOG.info('Spot Price {0} - {1}'.format(spot_price['SpotPrice'], spot_price['AvailabilityZone']))
             if spot_price['AvailabilityZone'] not in availability_zones:
                 # Ignore this one
-                LOG.info('Ignoring spot price {0} - {1}'.format(spot_price['SpotPrice'], spot_price['AvailabilityZone']))
+                LOG.info(
+                    'Ignoring spot price {0} - {1}'.format(spot_price['SpotPrice'], spot_price['AvailabilityZone']))
             elif spot_price['SpotPrice'] != 0.0 and best_price is None:
                 best_price = spot_price
             elif spot_price['SpotPrice'] != 0.0 and spot_price['SpotPrice'] < best_price['SpotPrice']:
@@ -164,11 +188,15 @@ class EC2Controller(object):
         if best_price is None:
             LOG.info('No Spot Price')
             return None
-        elif float(best_price['SpotPrice']) > spot_price:
+        elif float(best_price['SpotPrice']) > bid_spot_price:
             LOG.info('Spot Price higher than bid price')
             return None
 
-        LOG.info('bid_price: {0}, spot_price: {1}, zone: {2}'.format(spot_price, best_price['SpotPrice'], best_price['AvailabilityZone']))
+        LOG.info('bid_price: {0}, spot_price: {1}, zone: {2}'.format(
+            bid_spot_price,
+            best_price['SpotPrice'],
+            best_price['AvailabilityZone'])
+        )
         return best_price['AvailabilityZone']
 
     def _build_launch_specification(self, zone, instance_type):

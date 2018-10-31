@@ -34,6 +34,7 @@ setup(
 
     # Keep alpha-sorted PLEASE!
     install_requires=[
+        'asciimatics',
         'argparse',
         'boto3',
         'ConfigObj',

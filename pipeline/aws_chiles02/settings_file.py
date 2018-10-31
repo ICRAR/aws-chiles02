@@ -42,6 +42,8 @@ CASA_COMMAND_LINE_5_4 = 'xvfb-run casa --nogui --nologger --log2term -c '
 SCRIPT_PATH = '/home/ec2-user/aws-chiles02/pipeline/casa_code/'
 WEB_SITE = '13b-266.s3-website-us-west-2.amazonaws.com'
 
+BEGIN_AT = 20
+
 AWS_KEY = expanduser('~/.ssh/aws-chiles02-oregon.pem')
 USERNAME = 'ec2-user'
 

@@ -1,11 +1,14 @@
 argparse
 boto3
 ConfigObj
+cython
 daliuge
 jsonpickle
 jupyter
+kivy
 mako
 markuppy
 pip
+pygames
 requests
 six

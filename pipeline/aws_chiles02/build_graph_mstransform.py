@@ -25,7 +25,8 @@ Build the physical graph
 import operator
 import os
 
-from aws_chiles02.apps_mstransform import CopyMsTransformFromS3, CopyMsTransformToS3, DockerListobs, DockerMsTransform, CasaMsTransform, CasaListobs
+from aws_chiles02.apps_mstransform import CasaListobs, CasaMsTransform, CopyMsTransformFromS3, CopyMsTransformToS3, \
+    DockerListobs, DockerMsTransform
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
@@ -207,17 +208,17 @@ class BuildGraphMsTransform(AbstractBuildGraph):
     def _build_node_map(self):
         # Set up the allocation directory
         allocation = {}
-        for key, values in self._node_details.iteritems():
+        for key, values in self._node_details.items():
             allocation_dictionary = {}
             allocation[key] = allocation_dictionary
             for value in values:
                 allocation_dictionary[value['ip_address']] = []
 
         for day_to_process in self._work_to_do.keys():
-            if day_to_process.size <= 50 * SIZE_1GB:
+            if day_to_process.size <= 50 * SIZE_1GB and 'i3.xlarge' in allocation:
                 allocation_dictionary = allocation['i3.xlarge']
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
-            elif day_to_process.size <= 500 * SIZE_1GB:
+            elif day_to_process.size <= 500 * SIZE_1GB and 'i3.2xlarge' in allocation:
                 allocation_dictionary = allocation['i3.2xlarge']
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
             else:
@@ -235,7 +236,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         # Build the map
         self._map_day_to_node = {}
         for values in allocation.values():
-            for key, days in values.iteritems():
+            for key, days in values.items():
                 for day in days:
                     self._map_day_to_node[day] = key
 

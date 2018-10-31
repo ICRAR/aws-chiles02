@@ -205,7 +205,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
     def _build_node_map(self):
         self._list_ip = []
-        for key, values in self._node_details.iteritems():
+        for key, values in self._node_details.items():
             for value in values:
                 self._list_ip.append(value['ip_address'])
 
@@ -220,7 +220,11 @@ class BuildGraphClean(AbstractBuildGraph):
 
     def _build_s3_download(self, node_id, frequency_pair):
         s3_objects = []
-        prefix = '{0}/{1}_{2}'.format(self._s3_uvsub_name, frequency_pair.bottom_frequency, frequency_pair.top_frequency)
+        prefix = '{0}/{1}_{2}'.format(
+            self._s3_uvsub_name,
+            frequency_pair.bottom_frequency,
+            frequency_pair.top_frequency
+        )
         for key in self._bucket.objects.filter(Prefix=prefix):
             if not key.key.startswith('stats') and key.key.endswith('.tar'):
                 s3_objects.append(key.key)

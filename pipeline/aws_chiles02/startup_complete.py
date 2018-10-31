@@ -25,7 +25,7 @@ Startup is complete so put a message on the queue
 import argparse
 import json
 import logging
-import urllib2
+from urllib.request import urlopen
 
 import boto3
 
@@ -48,8 +48,8 @@ def build_file(args):
     queue = sqs.get_queue_by_name(QueueName=args.queue)
 
     # Load the public IP address
-    ip_address = urllib2.urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
-    instance_type = urllib2.urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
+    ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
+    instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
     message = {
         'ip_address': ip_address,
         'uuid': args.uuid,
@@ -59,6 +59,7 @@ def build_file(args):
     queue.send_message(
         MessageBody=json_message,
     )
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

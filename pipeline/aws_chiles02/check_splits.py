@@ -84,7 +84,7 @@ def analyse_data(measurement_sets, split_entries, width):
     ordered_dictionary = collections.OrderedDict(sorted(expected_combinations.items()))
     output1 = '\n'
     output2 = '\n'
-    for key, value in ordered_dictionary.iteritems():
+    for key, value in ordered_dictionary.items():
         if len(value) == number_entries:
             output1 += '{0} = "All"\n'.format(key)
             output2 += '{0} '.format(key)

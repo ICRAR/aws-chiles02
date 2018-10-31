@@ -53,7 +53,7 @@ class AbstractBuildGraph:
         self._counters = {}
         self._parameter_data = jsonpickle.encode(keywords)
 
-        for key, list_ips in self._node_details.iteritems():
+        for key, list_ips in self._node_details.items():
             for instance_details in list_ips:
                 self._map_carry_over_data[instance_details['ip_address']] = self.new_carry_over_data()
 

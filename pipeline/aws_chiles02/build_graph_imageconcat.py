@@ -23,7 +23,8 @@
 Build the physical graph
 """
 from aws_chiles02.apps_general import CleanupDirectories
-from aws_chiles02.apps_imageconcat import CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, DockerImageconcat, CasaImageconcat
+from aws_chiles02.apps_imageconcat import CasaImageconcat, CopyFitsToS3, CopyImageconcatFromS3, CopyImageconcatToS3, \
+    DockerImageconcat
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name
 from aws_chiles02.settings_file import CONTAINER_CHILES02
@@ -160,7 +161,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
 
     def _build_node_map(self):
         self._list_ip = []
-        for key, values in self._node_details.iteritems():
+        for key, values in self._node_details.items():
             for value in values:
                 self._list_ip.append(value['ip_address'])
 
