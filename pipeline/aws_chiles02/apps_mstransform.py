@@ -67,13 +67,12 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         measurement_set_dir = measurement_set_output.path
 
         LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
+        measurement_set = os.path.basename(key)
+        if measurement_set.endswith('.tar'):
+            measurement_set = measurement_set[:-4]
+        elif measurement_set.endswith('.tar.gz'):
+            measurement_set = measurement_set[:-7]
 
-        if key.endswith('.tar'):
-            measurement_set = key[:-4]
-        elif key.endswith('.tar.gz'):
-            measurement_set = key[:-7]
-        else:
-            measurement_set = key
         LOG.debug('Checking {0} exists'.format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
             LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
@@ -133,12 +132,13 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, measurement_set_dir)
         return_code = run_command(bash)
 
-        path_exists = os.path.exists(measurement_set)
+        path_to_measurement_set = os.path.join(measurement_set_dir, measurement_set)
+        path_exists = os.path.exists(path_to_measurement_set)
         if return_code != 0 or not path_exists:
             message = 'tar return_code: {0}, exists: {1}, measurement_set: {2}'.format(
                 return_code,
                 path_exists,
-                measurement_set)
+                path_to_measurement_set)
             LOG.error(message)
             self.send_error_message(
                 message,
