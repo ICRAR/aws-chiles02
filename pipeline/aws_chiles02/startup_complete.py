@@ -29,7 +29,7 @@ from urllib.request import urlopen
 
 import boto3
 
-LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def parser_arguments():
@@ -48,8 +48,16 @@ def build_file(args):
     queue = sqs.get_queue_by_name(QueueName=args.queue)
 
     # Load the public IP address
-    ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read().decode('utf-8')
-    instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read().decode('utf-8')
+    ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
+    instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
+
+    LOGGER.info('IP: {}/{}, type: {}/{}'.format(
+        type(ip_address),
+        ip_address,
+        type(instance_type),
+        instance_type,
+    ))
+
     message = {
         'ip_address': ip_address.decode('utf-8'),
         'uuid': args.uuid,
@@ -59,6 +67,8 @@ def build_file(args):
     queue.send_message(
         MessageBody=json_message,
     )
+
+    LOGGER.info(json_message)
 
 
 if __name__ == '__main__':
