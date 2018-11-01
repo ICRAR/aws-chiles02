@@ -71,9 +71,8 @@ class WorkToDo(object):
             if key.key.endswith('_calibrated_deepfield.ms.tar') or key.key.endswith('_calibrated_deepfield.ms.tar.gz'):
                 LOGGER.info('Found {0}'.format(key.key))
 
-                elements = key.key.split('/')
                 list_measurement_sets.append(
-                    MeasurementSetData(elements[1],
+                    MeasurementSetData(key.key,
                                        key.size,
                                        key.key.endswith('gz')))
 
@@ -86,7 +85,7 @@ class WorkToDo(object):
             list_frequency_groups = self._get_details_for_measurement_set(day_work_already_done)
 
             if self._ignore_day(list_frequency_groups):
-                LOGGER.info('{0} has already been process.'.format(day_to_process.full_tar_name))
+                LOGGER.info('{0} has already been process.'.format(day_to_process.input_s3_key_name))
             else:
                 self._work_to_do[day_to_process] = list_frequency_groups
 

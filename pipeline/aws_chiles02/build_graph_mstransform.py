@@ -23,12 +23,11 @@
 Build the physical graph
 """
 import operator
-import os
 
 from aws_chiles02.apps_mstransform import CasaListobs, CasaMsTransform, CopyMsTransformFromS3, CopyMsTransformToS3, \
     DockerListobs, DockerMsTransform
 from aws_chiles02.build_graph_common import AbstractBuildGraph
-from aws_chiles02.common import get_module_name, get_observation, make_groups_of_frequencies
+from aws_chiles02.common import get_module_name, make_groups_of_frequencies
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
 
 
@@ -87,7 +86,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                         frequency_pairs,
                         measurement_set,
                         properties,
-                        get_observation(day_to_process.full_tar_name),
+                        day_to_process.short_name,
                         node_id
                     )
 
@@ -163,7 +162,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         s3_drop = self.create_s3_drop(
             node_id,
             self._bucket_name,
-            os.path.join('observation_data', day_to_process.full_tar_name),
+            day_to_process.input_s3_key_name,
             'aws-chiles02',
             's3_in')
         if len(add_output_s3) == 0:

@@ -47,7 +47,7 @@ def build_file(args):
     sqs = session.resource('sqs', region_name=args.region)
     queue = sqs.get_queue_by_name(QueueName=args.queue)
 
-    # Load the public IP address
+    # Load the public IP address and instance type
     ip_address = urlopen('http://169.254.169.254/latest/meta-data/public-ipv4').read()
     instance_type = urlopen('http://169.254.169.254/latest/meta-data/instance-type').read()
 

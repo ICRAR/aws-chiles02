@@ -79,15 +79,16 @@ class ChunkedFrequencyPair(FrequencyPair):
 
 
 class MeasurementSetData:
-    def __init__(self, full_tar_name, size, gzipped):
-        self.full_tar_name = full_tar_name
+    def __init__(self, input_s3_key_name, size, gzipped):
+        self.input_s3_key_name = input_s3_key_name
         self.size = size
         self.gzipped = gzipped
         # Get rid of the '_calibrated_deepfield.ms.tar'
-        if full_tar_name.endswith('.gz'):
-            self.short_name = full_tar_name[:-len(INPUT_MS_SUFFIX_TAR_GZ)]
+        elements = input_s3_key_name.split('/')
+        if input_s3_key_name.endswith('.gz'):
+            self.short_name = elements[-1][:-len(INPUT_MS_SUFFIX_TAR_GZ)]
         else:
-            self.short_name = full_tar_name[:-len(INPUT_MS_SUFFIX_TAR)]
+            self.short_name = elements[-1][:-len(INPUT_MS_SUFFIX_TAR)]
 
     def __str__(self):
         return 'MeasurementSetData(\'{0}\', {1})'.format(self.short_name, self.size)
@@ -96,10 +97,10 @@ class MeasurementSetData:
         return self.__str__()
 
     def __hash__(self):
-        return hash((self.full_tar_name, self.size))
+        return hash((self.input_s3_key_name, self.size))
 
     def __eq__(self, other):
-        return (self.full_tar_name, self.size) == (other.full_tar_name, other.size)
+        return (self.input_s3_key_name, self.size) == (other.full_tar_name, other.size)
 
 
 def get_list_frequency_groups(frequency_width):
@@ -248,13 +249,6 @@ def split_s3_url(s3_url):
     body = s3_url[5:]
     index = body.find('/')
     return body[:index], body[index+1:]
-
-
-def get_observation(s3_path):
-    if s3_path.endswith('.tar'):
-        s3_path = s3_path[:-4]
-    elements = s3_path[:-len(INPUT_MS_SUFFIX)]
-    return elements
 
 
 class OutputStream(threading.Thread):
