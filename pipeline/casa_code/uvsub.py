@@ -64,9 +64,13 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         # dump_all()
         #
         #  Here for reference; not needed as no CD column
-        # tb.open(vis_in_dir,nomodify=False)
-        # tb.removecols('CORRECTED_DATA')
-        # tb.close()
+        tb.open(in_dir,nomodify=False)
+        col_list=tb.colnames()
+        if 'CORRECTED_DATA' in col_list:
+            tb.removecols('CORRECTED_DATA')
+        if 'MODEL_DATA' in col_list:
+            tb.removecols('MODEL_DATA')
+        tb.close()
         #
         # Create/Flush model_data column
         im.open(thems=in_dir, usescratch=True)

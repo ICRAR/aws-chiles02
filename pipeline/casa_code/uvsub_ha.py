@@ -125,27 +125,31 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             ntt = number_taylor_terms
         print str(len(model))+' models provided. Using '+str(ntt)+' for spectral index subtraction'
 
-        im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
-        # Using this turned all data to NaNs -- not good!
-        # im.settaylorterms(ntaylorterms=ntt)
+        if ntt>0:
+            im.settaylorterms(ntaylorterms=ntt, reffreq=fq)
+            # Using this turned all data to NaNs -- not good!
+            # im.settaylorterms(ntaylorterms=ntt)
 
-        #
-        print 'Models in this pass: '+str(model[0:ntt])
-        for mn in model[0:ntt]:
-            tb.open(mn)
-            tb.clearlocks()
-        #
-        im.ft(model=model[0:ntt], incremental=False)
-        im.close()
+            #
+            print 'Models in this pass: '+str(model[0:ntt])
+            for mn in model[0:ntt]:
+              tb.open(mn)
+              tb.clearlocks()
+            #
+           im.ft(model=model[0:ntt], incremental=False)
+           im.close()
 
-        # Now do the subtraction
-        uvsub(vis=in_dir, reverse=False)
-        if out_pngs == 'yes':
-            ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
-            ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
-            ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')
-            if ((ret_d&ret_c&ret_m)==False):
-                print 'Reporting In-field PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
+           # Now do the subtraction
+           uvsub(vis=in_dir, reverse=False)
+           if out_pngs == 'yes':
+              ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
+              ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
+              ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')
+              if ((ret_d&ret_c&ret_m)==False):
+                  print 'Reporting In-field PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
+        else:
+            tmp_name = os.path.join(out_dir, out_ms)
+        # End ntt>0
 
         # Do we have outliers??
         if len(model) > ntt:
