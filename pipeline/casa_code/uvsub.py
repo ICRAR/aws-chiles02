@@ -67,9 +67,12 @@ def do_uvsub(in_dir, out_dir, out_ms, w_projection_planes, number_taylor_terms, 
         tb.open(in_dir,nomodify=False)
         col_list=tb.colnames()
         if 'CORRECTED_DATA' in col_list:
+            print 'Removing old CORRECTED column'
             tb.removecols('CORRECTED_DATA')
         if 'MODEL_DATA' in col_list:
-            tb.removecols('MODEL_DATA')
+            print 'NOT Removing old MODEL column' 
+            # as it is overwritten by usescratch=T
+            #tb.removecols('MODEL_DATA')
         tb.close()
         #
         # Create/Flush model_data column
