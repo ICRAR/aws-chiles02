@@ -119,41 +119,43 @@ def pair_in_set(frequency_pair, frequencies_required):
     return False
 
 
-def get_required_frequencies(frequency_string, width):
+def get_required_frequencies(frequencies, width):
     """
     Get a range of frequency pairs
-    :param frequency_string:
+    :param frequencies:
     :param width:
     :return:
 
-    >>> get_required_frequencies('', 4)
+    >>> get_required_frequencies(None, 4)
 
-    >>> get_required_frequencies('1321', 4)
+    >>> get_required_frequencies(['1321'], 4)
     [FrequencyPair(1320, 1324)]
-    >>> get_required_frequencies('1321, 999', 4)
+    >>> get_required_frequencies('1321'], ['999'], 4)
     [FrequencyPair(996, 1000), FrequencyPair(1320, 1324)]
-    >>> get_required_frequencies('999-1005', 4)
+    >>> get_required_frequencies(['999-1005'], 4)
     [FrequencyPair(996, 1000), FrequencyPair(1000, 1004), FrequencyPair(1004, 1008)]
     """
-    if frequency_string.strip() == '' or frequency_string.strip() == 'None':
+    if frequencies is None:
         return None
 
-    frequencies_in = frequency_string.split(',')
-    frequencies_required = set()
-    for frequency in frequencies_in:
-        elements = frequency.split('-')
-        if len(elements) == 2:
-            for inner_frequency in range(int(elements[0]), int(elements[1]) + 1):
-                frequencies_required.add(inner_frequency)
-        else:
-            frequencies_required.add(int(frequency))
+    if isinstance(frequencies, list):
+        frequencies_required = set()
+        for frequency in frequencies:
+            elements = frequency.split('-')
+            if len(elements) == 2:
+                for inner_frequency in range(int(elements[0]), int(elements[1]) + 1):
+                    frequencies_required.add(inner_frequency)
+            else:
+                frequencies_required.add(int(frequency))
 
-    list_frequency_pair = []
-    for frequency_pair in get_list_frequency_groups(width):
-        if pair_in_set(frequency_pair, frequencies_required):
-            list_frequency_pair.append(frequency_pair)
+        list_frequency_pair = []
+        for frequency_pair in get_list_frequency_groups(width):
+            if pair_in_set(frequency_pair, frequencies_required):
+                list_frequency_pair.append(frequency_pair)
 
-    return list_frequency_pair
+        return list_frequency_pair
+
+    return None
 
 
 def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):

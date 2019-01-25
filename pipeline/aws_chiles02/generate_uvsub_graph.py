@@ -73,6 +73,11 @@ class WorkToDo:
         for key in self._bucket.objects.filter(Prefix='{0}'.format(self._s3_split_name)):
             LOGGER.info('split {0} found'.format(key.key))
             elements = key.key.split('/')
+
+            if len(elements) >= 2:
+                if elements[1].startswith('logs') or elements[1].startswith('aa_parameter_data.json'):
+                    continue
+
             if len(elements) == 3:
                 expected_uvsub_name = '{0}/{1}/{2}'.format(
                     self._s3_uvsub_name,

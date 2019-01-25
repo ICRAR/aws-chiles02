@@ -4,8 +4,6 @@ ConfigObj
 cython
 daliuge
 jsonpickle
-jupyter
-kivy
 mako
 markuppy
 pip
