@@ -34,9 +34,9 @@ from io import StringIO
 from os.path import expanduser, join, exists
 
 from configobj import ConfigObj
-from ruamel_yaml import YAML
+from ruamel.yaml import YAML
 
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR, INPUT_MS_SUFFIX_TAR_GZ
+from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, INPUT_MS_SUFFIX_TAR_GZ
 
 LOG = logging.getLogger(__name__)
 

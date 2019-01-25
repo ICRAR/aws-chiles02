@@ -7,7 +7,6 @@ jsonpickle
 mako
 markuppy
 pip
-pygames
 requests
 ruamel_yaml
 six
