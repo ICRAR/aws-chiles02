@@ -26,12 +26,12 @@ import os
 import uuid
 from abc import ABCMeta, abstractmethod
 
-import jsonpickle
+from dlg.apps.bash_shell_app import BashShellApp
+from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
+from ruamel_yaml import YAML, StringIO
 
 from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
 from aws_chiles02.common import get_module_name
-from dlg.apps.bash_shell_app import BashShellApp
-from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 
 
 class AbstractBuildGraph:
@@ -51,7 +51,11 @@ class AbstractBuildGraph:
         self._session_id = keywords['session_id']
         self._dim_ip = keywords['dim_ip']
         self._counters = {}
-        self._parameter_data = jsonpickle.encode(keywords)
+
+        stream = StringIO()
+        yaml = YAML()
+        yaml.dump(keywords, stream)
+        self._parameter_data = stream.getvalue()
 
         for key, list_ips in self._node_details.items():
             for instance_details in list_ips:
@@ -86,7 +90,7 @@ class AbstractBuildGraph:
         s3_drop = self.create_s3_drop(
             self._dim_ip,
             self._bucket_name,
-            '{0}/aa_parameter_data.json'.format(folder_name),
+            '{0}/aa_parameter_data.yaml'.format(folder_name),
             'aws-chiles02',
             oid='s3_out',
         )

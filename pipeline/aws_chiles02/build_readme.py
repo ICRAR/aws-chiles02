@@ -55,35 +55,35 @@ def build_file(bucket_name):
                 prefix_text = prefix_text[:-1]
             top_levels.append(prefix_text)
 
-    json_files = []
+    yaml_files = []
     s3 = session.resource('s3', use_ssl=False)
     bucket = s3.Bucket(bucket_name)
     for top_level in top_levels:
-        for key in bucket.objects.filter(Prefix='{0}/aa_parameter_data.json'.format(top_level)):
-            json_files.append(key.key)
+        for key in bucket.objects.filter(Prefix='{0}/aa_parameter_data.yaml'.format(top_level)):
+            yaml_files.append(key.key)
 
     json_strings = {}
-    for json_file in json_files:
-        LOG.info('Getting {}'.format(json_file))
+    for yaml_file in yaml_files:
+        LOG.info('Getting {}'.format(yaml_file))
 
-        temporary_filename = '/tmp/parameter_data.json'
-        s3_object = s3.Object(bucket_name, json_file)
+        temporary_filename = '/tmp/parameter_data.yaml'
+        s3_object = s3.Object(bucket_name, yaml_file)
         s3_size = s3_object.content_length
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
         transfer.download_file(
             bucket_name,
-            json_file,
+            yaml_file,
             temporary_filename,
             callback=ProgressPercentage(
-                json_file,
+                yaml_file,
                 s3_size
             )
         )
 
-        with open(temporary_filename, 'r') as json_fp:
-            json_string = json.load(json_fp)
-            elements = json_file.split('/')
+        with open(temporary_filename, 'r') as yaml_fp:
+            yaml_string = json.load(yaml_fp)
+            elements = yaml_file.split('/')
             run_type = elements[0].split('_')[0].lower()
 
             if run_type in json_strings.keys():
@@ -91,7 +91,7 @@ def build_file(bucket_name):
             else:
                 run_type_dictionary = {}
                 json_strings[run_type] = run_type_dictionary
-            run_type_dictionary[elements[0]] = json_string
+            run_type_dictionary[elements[0]] = yaml_string
 
     # Now write the HTML
     html_page = page()
@@ -279,4 +279,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     set_logging_level(1)
+    raise RuntimeError('New to cope with YAML and JSON')
     build_file(args.bucket_name)

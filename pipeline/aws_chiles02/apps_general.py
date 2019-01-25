@@ -85,16 +85,16 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
     def initialize(self, **keywords):
         super(CopyParameters, self).initialize(**keywords)
         # The data is in a string so we need to load it to write it
-        self._parameter_data = jsonpickle.decode(self._getArg(keywords, 'parameter_data', None))
+        self._parameter_data = self._getArg(keywords, 'parameter_data', None)
 
     def dataURL(self):
         return type(self).__name__
 
     def run(self):
         LOG.info('parameter_data: {0}'.format(self._parameter_data))
-        parameter_file = '/tmp/parameter_data.json'
-        with open(parameter_file, 'w') as json_file:
-            json_file.write(jsonpickle.encode(self._parameter_data))
+        parameter_file = '/tmp/parameter_data.yaml'
+        with open(parameter_file, 'w') as yaml_file:
+            yaml_file.write(self._parameter_data)
 
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
