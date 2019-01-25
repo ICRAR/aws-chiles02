@@ -256,6 +256,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
     if build_fits == 'yes':
         exportfits(imagename='{0}.image'.format(outfile), fitsimage='{0}.fits'.format(outfile))
 
+
 if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)

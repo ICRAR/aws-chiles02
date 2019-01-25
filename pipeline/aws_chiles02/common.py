@@ -31,9 +31,10 @@ import threading
 import time
 import uuid
 from io import StringIO
-from os.path import expanduser, join
+from os.path import expanduser, join, exists
 
 from configobj import ConfigObj
+from ruamel_yaml import YAML
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX, INPUT_MS_SUFFIX_TAR, INPUT_MS_SUFFIX_TAR_GZ
 
@@ -493,3 +494,21 @@ def stopwatch(message):
     finally:
         t1 = time.time()
         print('Total elapsed time for {0}: {1:.3f}'.format(message, t1 - t0))
+
+
+def get_config(yaml_filename, task):
+    if exists(yaml_filename):
+        with open(yaml_filename, 'r') as yaml_file:
+            yaml = YAML()
+            yaml_config = yaml.load(yaml_file)
+
+            return_config = dict()
+            for key, value in yaml_config['common'].items():
+                return_config[key] = value
+
+            for key, value in yaml_config[task].items():
+                return_config[key] = value
+            return return_config
+
+    return None
+

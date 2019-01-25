@@ -156,7 +156,7 @@ def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlar
 
     node_count = 0
     if counts[2] > 0:
-        count = max(counts[2] / days_per_node, 1)
+        count = max(counts[2] // days_per_node, 1)
         node_count += count
         nodes.append({
             'number_instances': count,
@@ -164,7 +164,7 @@ def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlar
             'spot_price': spot_price_4xlarge
         })
     if counts[1] > 0:
-        count = max(counts[1] / days_per_node, 1)
+        count = max(counts[1] // days_per_node, 1)
         node_count += count
         nodes.append({
             'number_instances': count,
@@ -172,7 +172,7 @@ def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlar
             'spot_price': spot_price_2xlarge
         })
     if counts[0] > 0:
-        count = max(counts[0] / days_per_node, 1)
+        count = max(counts[0] // days_per_node, 1)
         node_count += count
         nodes.append({
             'number_instances': count,
@@ -211,7 +211,8 @@ def create_and_generate(bucket_name,
             days=days,
             days_per_node=days_per_node,
             spot_price_2xlarge=spot_price1,
-            spot_price_4xlarge=spot_price2)
+            spot_price_4xlarge=spot_price2
+        )
 
         if len(nodes_required) > 0:
             uuid = get_uuid()
@@ -441,6 +442,7 @@ def command_section(command_line_args):
 
 
 def process_command_line(command_line_args, interactive=True):
+    raise RuntimeError('Switch to YAML loader')
     path_dirname, filename = os.path.split(__file__)
     config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
     section = {}
@@ -468,7 +470,7 @@ def process_command_line(command_line_args, interactive=True):
 
     if interactive:
         args = GetArguments(config=section)
-        args.get('create_use_json',
+        args.get('run_type',
                  'Create, use or json',
                  allowed=['create', 'use', 'json'],
                  help_text='the use a network or create a network')

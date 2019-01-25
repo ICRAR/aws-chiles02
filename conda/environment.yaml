@@ -1,0 +1,16 @@
+name: aws-chiles02
+dependencies:
+  - python=3.7
+  - boto3
+  - ConfigObj
+  - cython
+  - jupyter
+  - mako
+  - pip
+  - requests
+  - ruamel_yaml
+  - six
+  - pip:
+    - daliuge
+    - jsonpickle
+    - markuppy

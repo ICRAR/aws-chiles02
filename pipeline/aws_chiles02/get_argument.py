@@ -23,7 +23,7 @@
 Get command line arguments
 """
 
-
+# TODO: Delete me
 class GetArguments:
     def __init__(self, config):
         self._config = config
