@@ -136,12 +136,12 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
               tb.open(mn)
               tb.clearlocks()
             #
-           im.ft(model=model[0:ntt], incremental=False)
-           im.close()
+            im.ft(model=model[0:ntt], incremental=False)
+            im.close()
 
-           # Now do the subtraction
-           uvsub(vis=in_dir, reverse=False)
-           if out_pngs == 'yes':
+            # Now do the subtraction
+            uvsub(vis=in_dir, reverse=False)
+            if out_pngs == 'yes':
               ret_d=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_data.png')
               ret_m=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_model.png')
               ret_c=plotms(vis=in_dir,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_infield_subtraction_corrected.png')

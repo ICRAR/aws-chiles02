@@ -54,7 +54,20 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
         # ia doesn't need an import - it is just available in casa
         final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
-        imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=1)
+        ia.open(outfile)
+        # find the good (<4 sigma) channels
+        sts=ia.statistics(axes=[0,1],verbose=False)
+        ia.close()
+        mdn_rms=np.median(sts['rms'])   
+        I=np.where((sts['rms']<4.0*mdn_rms)&(sts['rms']>0))[0] ## Add a filter for blanked channels? where(rms<4*mdn and rms>0)
+        Is=[]
+        for n in range(len(I)):
+            Is.append(str(I[n]))
+        if (len(Is)):
+                chan=','.join(Is)
+        else:
+                chan=''
+        imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=1,chans=chan)
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
