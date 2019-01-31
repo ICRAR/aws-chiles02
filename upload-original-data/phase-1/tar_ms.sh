@@ -3,7 +3,7 @@
 tar_ms() {
     date
     cd $1
-    tar -cvf - $2 | pigz --best --blocksize 65536 --processes 8 > /mnt/scratch/kvinsen/$2.tar.gz
+    tar -cvf - $2 | pigz --best --blocksize 65536 --processes 8 > /mnt/scratch/kvinsen/chiles/$2.tar.gz
     date
 }
 
