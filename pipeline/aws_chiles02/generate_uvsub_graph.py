@@ -231,7 +231,6 @@ def create_and_generate(**keywords):
                         split_directory=keywords['split_directory'],
                         casa_version=keywords['casa_version'],
                         produce_qa=keywords['produce_qa'],
-                        absorption=keywords['absorption'],
                     )
                     graph.build_graph()
 
@@ -305,7 +304,6 @@ def use_and_generate(**keywords):
                 split_directory=keywords['split_directory'],
                 casa_version=keywords['casa_version'],
                 produce_qa=keywords['produce_qa'],
-                absorption=keywords['absorption'],
             )
             graph.build_graph()
 
@@ -360,7 +358,6 @@ def generate_json(**keywords):
         split_directory=keywords['split_directory'],
         casa_version=keywords['casa_version'],
         produce_qa=keywords['produce_qa'],
-        absorption=keywords['absorption'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -404,7 +401,6 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
-            absorption=config['absorption'],
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -425,7 +421,6 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
-            absorption=config['absorption'],
         )
     else:
         generate_json(
@@ -444,7 +439,6 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
-            absorption=config['absorption'],
         )
 
 

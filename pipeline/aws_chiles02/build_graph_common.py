@@ -28,7 +28,7 @@ from abc import ABCMeta, abstractmethod
 
 from dlg.apps.bash_shell_app import BashShellApp
 from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
-from ruamel_yaml import YAML, StringIO
+from ruamel.yaml import YAML, StringIO
 
 from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
 from aws_chiles02.common import get_module_name
