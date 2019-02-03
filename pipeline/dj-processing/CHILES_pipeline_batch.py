@@ -13,7 +13,7 @@
 # but can be run on any system. This module is used instead of CHILES_pipeline.py
 #
 # This script should be run from the command line in the following way:
-# casa --nogui --nologger --agg -c "var=[sessionnumber];pipepath='/Users/rdodson/IdeaProjects/aws-chiles02/pipeline/dj-processing';datapath='/scratch/rdodson/dj-proccessing/';execfile('path/CHILES_pipeline_batch.py')"
+# casa --nogui --nologger --agg -c "var=[sessionnumber];pipepath='/Users/rdodson/IdeaProjects/aws-chiles02/pipeline/dj-processing';datapath='/scratch/rdodson/Chiles/final_products_phase_2/';execfile('path/CHILES_pipeline_batch.py')"
 #
 # 8/29/18 DJP
 
