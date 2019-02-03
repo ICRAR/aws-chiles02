@@ -148,13 +148,15 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
               if ((ret_d&ret_c&ret_m)==False):
                   print 'Reporting In-field PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
         else:
-            tmp_name = os.path.join(out_dir, out_ms)
+            tmp_name = in_dir 
+            #os.path.join(out_dir, out_ms)
         # End ntt>0
 
         # Do we have outliers??
         if len(model) > ntt:
             print 'Using remaing '+str(len(model)-ntt)+' for outlier subtraction'
-            split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
+            if (ntt>0):
+                split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
             im.open(thems=tmp_name, usescratch=True)
             # delmod(otf=True,vis=tmp_name,scr=True)
             ms.open(thems=tmp_name)
