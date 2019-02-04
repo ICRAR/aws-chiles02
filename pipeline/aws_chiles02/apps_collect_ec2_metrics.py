@@ -40,6 +40,7 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 METRICS = [
     'CPUUtilization',
