@@ -55,6 +55,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
                    imsize=[image_size],
                    cell=[arcsec],
                    specmode='cube',
+                   chanchunks=-1,
                    nchan=-1,
                    start=0,
                    width=clean_channel_average,
