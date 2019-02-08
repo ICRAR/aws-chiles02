@@ -38,6 +38,7 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 

@@ -31,7 +31,7 @@ from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 from ruamel.yaml import YAML, StringIO
 
 from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
-from aws_chiles02.common import get_module_name
+from aws_chiles02.common import get_module_name, FrequencyPair, MeasurementSetData, ChunkedFrequencyPair
 
 
 class AbstractBuildGraph:
@@ -54,6 +54,9 @@ class AbstractBuildGraph:
 
         stream = StringIO()
         yaml = YAML()
+        yaml.register_class(FrequencyPair)
+        yaml.register_class(MeasurementSetData)
+        yaml.register_class(ChunkedFrequencyPair)
         yaml.dump(keywords, stream)
         self._parameter_data = stream.getvalue()
 

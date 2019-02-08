@@ -366,7 +366,7 @@ def generate_json(**keywords):
         json_file.write(json_dumps)
 
 
-def command_interactive(command_line_):
+def run(command_line_):
     if command_line_.config_file is not None:
         if exists(command_line_.config_file):
             yaml_filename = command_line_
@@ -451,4 +451,4 @@ if __name__ == '__main__':
     )
     command_line = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    command_interactive(command_line)
+    run(command_line)
