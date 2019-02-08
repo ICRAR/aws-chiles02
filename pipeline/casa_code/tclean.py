@@ -49,7 +49,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         if clean_weighting_uv == 'briggs':
             tclean(vis=in_dirs,
                    field='deepfield',
-                   spw='',
+                   spw='*',
                    datacolumn='data',
                    imagename=outfile,
                    imsize=[image_size],
@@ -75,7 +75,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         else:
             tclean(vis=in_dirs,
                    field='deepfield',
-                   spw='',
+                   spw='*',
                    datacolumn='data',
                    imagename=outfile,
                    imsize=[image_size],

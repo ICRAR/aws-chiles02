@@ -96,8 +96,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 #width='{}kHz'.format(width_freq),
                 width=width_chan, ## different form with channels
                 spw=spw_range,
-                combinespws=True,
-                nspw=1,
+                combinespws=False,
+                nspw=0,
                 createmms=False,
                 datacolumn="data"
             )
