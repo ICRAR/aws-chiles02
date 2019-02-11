@@ -100,10 +100,10 @@ class WorkToDo:
 
 def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     nodes = []
-    node_count = max(len(work_to_do) / frequencies_per_node, 1)
+    node_count = max(len(work_to_do) // frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
-        'instance_type': 'i3.8xlarge',
+        'instance_type': 'i3.16xlarge',
         'spot_price': spot_price
     })
 
@@ -350,7 +350,7 @@ def generate_json(**keywords):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.8xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
+        'i3.16xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
@@ -408,7 +408,7 @@ def run(command_line_):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i3_8xlarge'],
+            spot_price=config['spot_price_i3_16xlarge'],
             volume=config['volume'],
             frequencies_per_node=config['frequencies_per_node'],
             add_shutdown=config['shutdown'],
@@ -499,5 +499,9 @@ if __name__ == '__main__':
         help='the config file for this run'
     )
     command_line = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
     run(command_line)

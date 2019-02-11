@@ -3,7 +3,7 @@
 sudo yum -y update
 sudo yum -y install git
 
-sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel
+sudo yum -y install gcc gcc-c++ boost-python boost-system boost-devel lsb
 
 sudo yum install -y fontconfig freetype libpng12 libSM libXcursor libXi libXinerama libXrandr libXfixes libXrender libxslt libXft which xauth xorg-x11-server-Xvfb
 
