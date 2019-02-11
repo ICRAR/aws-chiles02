@@ -292,7 +292,7 @@ class SystemMonitorApp(BarrierAppDROP, ErrorHandling):
         LOG.info(text)
 
     def _get_cpu(self):
-        text = 'CPU\n'
+        text = '\nCPU\n'
         cpus_percent = psutil.cpu_percent(percpu=True)
         for i in range(self._cpu_count):
             text += "CPU %-6i" % i
@@ -313,15 +313,15 @@ class SystemMonitorApp(BarrierAppDROP, ErrorHandling):
                 text1 += '%-10s : %7s\n' % (name.capitalize(), value)
             return text1
 
-        text = 'MEMORY\n------'
+        text = '\nMEMORY\n------\n'
         text += pprint_ntuple(psutil.virtual_memory())
-        text += '\nSWAP\n----'
+        text += '\nSWAP\n----\n'
         text += pprint_ntuple(psutil.swap_memory())
         text += '\n'
         return text
 
     def _get_disk(self):
-        text = 'DISK\n'
+        text = '\nDISK\n'
         templ = "%-17s %8s %8s %8s %5s%% %9s  %s\n"
         text += templ % ("Device", "Total", "Used", "Free", "Use ", "Type", "Mount")
         for part in psutil.disk_partitions(all=False):
@@ -345,7 +345,7 @@ class SystemMonitorApp(BarrierAppDROP, ErrorHandling):
         return text
 
     def _get_network(self):
-        text = 'NETWORK\n'
+        text = '\nNETWORK\n'
         tot_after = psutil.net_io_counters()
 
         text += "total bytes:           sent: %-10s   received: %s\n" % (
