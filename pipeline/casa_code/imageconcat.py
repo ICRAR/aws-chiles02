@@ -20,7 +20,7 @@
 #    MA 02111-1307  USA
 #
 """
-Perform the MS Transform
+Perform the Image Concatination and Image Subtraction
 """
 import logging
 import os
