@@ -1,0 +1,118 @@
+common: &common
+  run_type: create        # create, use, json
+  bucket_name: 13b-266
+  width: 4
+  shutdown: True
+  use_bash: True
+  volume: /mnt/daliuge/dlg_root
+  split_directory: split_4_phase_1
+  uvsub_directory_name: uvsub_ha_2019_02_03
+  clean_directory_name: tclean_ha_2019_02_13
+  casa_version: '5.4'     # allowed=['4.7', '5.1', '5.4'],
+  ami: ami-02818bebdb3f498d1
+  spot_price_i3_2xlarge: 0.4
+  spot_price_i3_4xlarge: 0.8
+  spot_price_i3_8xlarge: 1.2
+  spot_price_i3_16xlarge: 1.9
+  dump_json: False
+  nodes: 1    # Fail-safe in case nodes is not specified
+  dim: 128.0.0.1
+  log_level: vvv
+  w_projection_planes: 24
+
+split:
+  <<: *common
+  observation_phase: 1
+  run_note: |
+    First run of the new split.
+    Maintaining native frequency frame (TOPO)
+  days_per_node: 3
+  parallel_streams: 4
+
+uvsub_node1:
+  <<: *common
+  number_taylor_terms: 2
+  scan_statistics: False
+  produce_qa: True
+  frequency_range:      # This should be a list
+  nodes: 1
+  run_note_uvsub: |
+    Using new model (CI) - following new workflow plan as per MM & AP
+    aka channalised outlier models now stand alone (for absorption)
+    and matching (smaller) in beam models
+
+uvsub:
+  <<: *common
+  number_taylor_terms: 2
+  scan_statistics: False
+  produce_qa: True
+  frequency_range:      # This should be a list
+  nodes: 5
+  run_note_uvsub: |
+    Using new model (CI) - following new workflow plan as per MM & AP
+    aka channalised outlier models now stand alone (for absorption)
+    and matching (smaller) in beam models
+
+clean:
+  <<: *common
+  frequencies_per_node: 8
+  iterations: 1000
+  arcsec: '2'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 4
+  region_file: ''               # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+  casa_version: '5.1'           # Clean works better with this version
+  run_note_clean: |
+    Using new model (CI) - following new workflow plan as per MM & AP
+    aka channalised outlier models now stand alone (for absorption)
+    and matching (smaller) in beam models
+
+clean_julie:
+  <<: *common
+  uvsub_directory_name: uvsub_ha_2019_02_03
+  clean_directory_name: clean_ha_2019_02_18_Julie
+  frequencies_per_node: 1
+  iterations: 100
+  arcsec: '2'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 4
+  region_file: ''               # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+    - '1145-1185'
+  casa_version: '5.1'           # Clean works better with this version
+  run_note_clean: |
+    Using new model (CI) - following new workflow plan as per MM & AP
+    aka channalised outlier models now stand alone (for absorption)
+    and matching (smaller) in beam models
+
+imageconcat:
+  <<: *common
+  imageconcat_width: 100         # the number of frequency blocks to add together
+  imageconcat_directory_name: imageconcat_ha_2019_02_19_Julie
+  clean_directory_name: clean_ha_2019_02_18_Julie
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  frequency_range:              # This should be a list
+    - '1145-1185'
+  fits_directory_name: ''       # Where to put the fits images
+  run_note_imageconcat: |
+    Image Concat of Julie
+
+check_uvsub:
+  frequency_range:
