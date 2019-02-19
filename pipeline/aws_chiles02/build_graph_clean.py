@@ -197,6 +197,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
         self.copy_parameter_data(self._s3_clean_name)
         self.copy_logfiles_and_shutdown(self._s3_clean_name)
+        self.create_system_monitor()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

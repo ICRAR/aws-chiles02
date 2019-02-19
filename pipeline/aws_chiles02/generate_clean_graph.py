@@ -103,7 +103,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     node_count = max(len(work_to_do) // frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
-        'instance_type': 'i3.16xlarge',
+        'instance_type': 'i3.8xlarge',
         'spot_price': spot_price
     })
 
@@ -408,7 +408,7 @@ def run(command_line_):
             bucket_name=config['bucket_name'],
             frequency_width=config['width'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i3_16xlarge'],
+            spot_price=config['spot_price_i3_8xlarge'],
             volume=config['volume'],
             frequencies_per_node=config['frequencies_per_node'],
             add_shutdown=config['shutdown'],
