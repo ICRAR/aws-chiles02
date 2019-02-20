@@ -445,7 +445,10 @@ def run(command_line_):
         yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
     LOGGER.info('Reading YAML file {}'.format(yaml_filename))
-    config = get_config(yaml_filename, 'split')
+    config = get_config(yaml_filename, command_line_.tag_name)
+    if config['action'] != 'split':
+        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+        return
 
     # Run the command
     if config['run_type'] == 'create':
@@ -500,6 +503,12 @@ if __name__ == '__main__':
         '--config_file',
         default=None,
         help='the config file for this run'
+    )
+    parser.add_argument(
+        'tag_name',
+        nargs='?',
+        default='split',
+        help='the tag name to execute'
     )
     command_line = parser.parse_args()
     logging.basicConfig(

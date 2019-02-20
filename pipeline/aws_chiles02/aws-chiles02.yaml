@@ -9,7 +9,7 @@ common: &common
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.4'     # allowed=['4.7', '5.1', '5.4'],
-  ami: ami-02818bebdb3f498d1
+  ami: ami-02d11a363a70d8ce8
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
   spot_price_i3_8xlarge: 1.2
@@ -22,6 +22,7 @@ common: &common
 
 split:
   <<: *common
+  action: split
   observation_phase: 1
   run_note: |
     First run of the new split.
@@ -31,6 +32,7 @@ split:
 
 uvsub_node1:
   <<: *common
+  action: uvsub
   number_taylor_terms: 2
   scan_statistics: False
   produce_qa: True
@@ -43,6 +45,7 @@ uvsub_node1:
 
 uvsub:
   <<: *common
+  action: uvsub
   number_taylor_terms: 2
   scan_statistics: False
   produce_qa: True
@@ -55,6 +58,7 @@ uvsub:
 
 clean:
   <<: *common
+  action: clean
   frequencies_per_node: 8
   iterations: 1000
   arcsec: '2'                   # Needs to be a string
@@ -78,6 +82,7 @@ clean:
 
 clean_julie:
   <<: *common
+  action: clean
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: clean_ha_2019_02_18_Julie
   frequencies_per_node: 1
@@ -104,6 +109,7 @@ clean_julie:
 
 imageconcat:
   <<: *common
+  action: imageconcat
   imageconcat_width: 100         # the number of frequency blocks to add together
   imageconcat_directory_name: imageconcat_ha_2019_02_19_Julie
   clean_directory_name: clean_ha_2019_02_18_Julie
