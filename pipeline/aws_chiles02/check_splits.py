@@ -2,7 +2,7 @@
 #    ICRAR - International Centre for Radio Astronomy Research
 #    (c) UWA - The University of Western Australia
 #    Copyright by UWA (in the framework of the ICRAR)
-#    All rights reserved
+#    All rights reserved (c) 2019
 #
 #    This library is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU Lesser General Public
@@ -25,46 +25,41 @@ Check the splits
 import argparse
 import collections
 import logging
+from os.path import exists, split
 
 import boto3
 
-from aws_chiles02.common import FrequencyPair, get_list_frequency_groups, set_logging_level
+from aws_chiles02.common import FrequencyPair, get_list_frequency_groups, get_config
 from aws_chiles02.generate_mstransform_graph import MeasurementSetData
 
-LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def get_measurement_sets(bucket):
     list_measurement_sets = []
-    for key in bucket.objects.filter(Prefix='observation_data'):
-        if key.key.endswith('_calibrated_deepfield.ms.tar'):
+    for key in bucket.objects.filter(Prefix='observation_data/phase_1'):
+        if key.key.endswith('_calibrated_deepfield.ms.tar.gz'):
             elements = key.key.split('/')
             if len(elements) >= 2:
-                list_measurement_sets.append(MeasurementSetData(elements[1], key.size))
+                list_measurement_sets.append(MeasurementSetData(elements[-1], key.size, True))
     return list_measurement_sets
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser('Check what data has been split')
-    parser.add_argument('bucket', help='the bucket to access')
-    parser.add_argument('-w', '--width', type=int, help='the frequency width', default=4)
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
-    return parser.parse_args()
-
-
-def get_split(bucket, width):
+def get_split(bucket, **kwargs):
     split_data = []
-    for key in bucket.objects.filter(Prefix='split_{0}'.format(width)):
+    for key in bucket.objects.filter(Prefix=kwargs['split_directory']):
         elements = key.key.split('/')
-        if len(elements) > 2:
+        if elements[1] == 'logs' or elements[1].endswith('yaml'):
+            pass
+        elif len(elements) > 2:
             split_data.append([elements[2][:-4], elements[1]])
 
     return split_data
 
 
-def analyse_data(measurement_sets, split_entries, width):
+def analyse_data(measurement_sets, split_entries, **kwargs):
     # Build the expected list
-    list_frequencies = get_list_frequency_groups(width)
+    list_frequencies = get_list_frequency_groups(kwargs['width'])
 
     expected_combinations = {}
     for key in measurement_sets:
@@ -87,31 +82,50 @@ def analyse_data(measurement_sets, split_entries, width):
     for key, value in ordered_dictionary.items():
         if len(value) == number_entries:
             output1 += '{0} = "All"\n'.format(key)
-            output2 += '{0} '.format(key)
+            output2 += '{0}\n'.format(key)
         else:
             output1 += '{0} = "{1}"\n'.format(key, value)
             if len(value) >= 1:
-                output2 += '{0} '.format(key)
+                output2 += '{0}\n'.format(key)
 
-    LOG.info(output1)
-    LOG.info(output2)
+    LOGGER.info(output1)
+    LOGGER.info(output2)
 
     return ordered_dictionary
 
 
-def main():
-    arguments = parse_arguments()
-    set_logging_level(arguments.verbosity)
+def main(command_line_):
+    if command_line_.config_file is not None:
+        if exists(command_line_.config_file):
+            yaml_filename = command_line_
+        else:
+            LOGGER.error('Invalid configuration filename: {}'.format(command_line_.config_file))
+            return
+    else:
+        path_dirname, filename = split(__file__)
+        yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
+
+    LOGGER.info('Reading YAML file {}'.format(yaml_filename))
+    config = get_config(yaml_filename, 'split')
+
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
-    bucket = s3.Bucket(arguments.bucket)
+    bucket = s3.Bucket(config['bucket_name'])
 
     # Get the data we need
     measurement_sets = get_measurement_sets(bucket)
-    split_entries = get_split(bucket, arguments.width)
+    split_entries = get_split(bucket, **config)
 
-    analyse_data(measurement_sets, split_entries, arguments.width)
+    analyse_data(measurement_sets, split_entries, **config)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Check Splits')
+    parser.add_argument(
+        '--config_file',
+        default=None,
+        help='the config file for this run'
+    )
+    command_line = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
+    main(command_line)

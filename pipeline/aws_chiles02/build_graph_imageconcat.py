@@ -155,6 +155,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
 
         self.copy_parameter_data(self._imageconcat_directory_name)
         self.copy_logfiles_and_shutdown(self._imageconcat_directory_name)
+        self.create_system_monitor()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

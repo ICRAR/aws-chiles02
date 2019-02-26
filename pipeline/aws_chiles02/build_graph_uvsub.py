@@ -71,6 +71,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         self.copy_parameter_data(self._s3_uvsub_name)
         self.copy_logfiles_and_shutdown(self._s3_uvsub_name)
+        self.create_system_monitor()
 
     def _get_next_node(self):
         next_node = self._list_ip[self._node_index]

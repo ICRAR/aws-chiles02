@@ -505,9 +505,6 @@ def get_config(yaml_filename, task):
             yaml_config = yaml.load(yaml_file)
 
             return_config = dict()
-            for key, value in yaml_config['common'].items():
-                return_config[key] = value
-
             for key, value in yaml_config[task].items():
                 return_config[key] = value
             return return_config

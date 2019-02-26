@@ -102,6 +102,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         self.copy_parameter_data(self._s3_split_name)
         self.copy_logfiles_and_shutdown(self._s3_split_name)
+        self.create_system_monitor()
 
     def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
         if self._use_bash:

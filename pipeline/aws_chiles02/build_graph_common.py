@@ -30,7 +30,7 @@ from dlg.apps.bash_shell_app import BashShellApp
 from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 from ruamel.yaml import YAML, StringIO
 
-from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
+from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme, SystemMonitorApp
 from aws_chiles02.common import get_module_name, FrequencyPair, MeasurementSetData, ChunkedFrequencyPair
 
 
@@ -200,6 +200,27 @@ class AbstractBuildGraph:
         })
         self.add_drop(drop)
         return drop
+
+    def create_system_monitor(self):
+        for list_ips in self._node_details.values():
+            for instance_details in list_ips:
+                node_id = instance_details['ip_address']
+                memory_drop = self.create_memory_drop(
+                    node_id,
+                    oid='system_monitoring'
+                )
+
+                oid_text = self.get_oid('system_monitoring')
+                # uid_text = self.get_uuid()
+                drop = dropdict({
+                    "type": 'app',
+                    "app": get_module_name(SystemMonitorApp),
+                    "oid": oid_text,
+                    # "uid": uid_text,
+                    "node": node_id,
+                })
+                drop.addInput(memory_drop)
+                self.add_drop(drop)
 
     def create_barrier_app(self, node_id, oid='barrier_app', input_error_threshold=100):
         oid_text = self.get_oid(oid)

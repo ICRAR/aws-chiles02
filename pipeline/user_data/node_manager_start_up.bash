@@ -167,7 +167,7 @@ docker run jtmalarecki/sv /bin/echo 'Hello sv container'
 cd /home/ec2-user
 
 % if casa5_4:
-ln -s casa-release-5.4.0-68.el6/ casa
+ln -s casa-release-5.4.1-32.el6/ casa
 %endif
 
 % if casa5_1:

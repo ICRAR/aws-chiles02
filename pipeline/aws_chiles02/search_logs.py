@@ -2,7 +2,7 @@
 #    ICRAR - International Centre for Radio Astronomy Research
 #    (c) UWA - The University of Western Australia
 #    Copyright by UWA (in the framework of the ICRAR)
-#    All rights reserved
+#    All rights reserved (c) 2019
 #
 #    This library is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU Lesser General Public
@@ -19,15 +19,17 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #    MA 02111-1307  USA
 #
+
 """
-Check the uvsubs
+Search the logs for a string
 """
 import argparse
+import glob
 import logging
+import tarfile
 from os.path import exists, split
 
-from aws_chiles02.common import get_config
-from aws_chiles02.generate_uvsub_graph import WorkToDo
+from common import get_config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,34 +46,27 @@ def main(command_line_):
         yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
     LOGGER.info('Reading YAML file {}'.format(yaml_filename))
-    config = get_config(yaml_filename, 'check_uvsub')
+    config = get_config(yaml_filename, 'search_logs')
 
-    work_to_do = WorkToDo(
-        width=config['width'],
-        bucket_name=config['bucket_name'],
-        s3_uvsub_name=config['uvsub_directory_name'],
-        s3_split_name=config['split_directory'],
-        frequency_range=config['frequency_range'],
-    )
-    work_to_do.calculate_work_to_do()
+    for tar_file in glob.glob(config['glob_pattern']):
+        LOGGER.info('Checking: {}'.format(tar_file))
+        tar = tarfile.open(tar_file)
+        for member in tar.getmembers():
+            if member.name == 'dlgNM.log':
+                file_ = tar.extractfile(member)
+                content = file_.read().decode()
 
-    LOGGER.info("These {} items still needing to be processed.".format(len(work_to_do.work_to_do)))
-    for work_item in work_to_do.work_to_do:
-        LOGGER.info(work_item)
-    LOGGER.info("There are {} items still needing to be processed.".format(len(work_to_do.work_to_do)))
+                if config['search_pattern'] in content:
+                    LOGGER.info('{}'.format(tar_file))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Check Splits')
+    parser = argparse.ArgumentParser(description='Search logs')
     parser.add_argument(
         '--config_file',
         default=None,
         help='the config file for this run'
     )
     command_line = parser.parse_args()
-    logging.basicConfig(
-        level=logging.INFO,
-        format='{asctime}:{levelname}:{name}:{message}',
-        style='{',
-    )
+    logging.basicConfig(level=logging.INFO)
     main(command_line)

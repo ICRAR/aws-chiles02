@@ -106,7 +106,7 @@ class WorkToDo:
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
-        'instance_type': 'i3.2xlarge',
+        'instance_type': 'i3.4xlarge',
         'spot_price': spot_price
     }]
 
@@ -378,7 +378,10 @@ def run(command_line_):
         yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
     LOGGER.info('Reading YAML file {}'.format(yaml_filename))
-    config = get_config(yaml_filename, 'uvsub')
+    config = get_config(yaml_filename, command_line_.tag_name)
+    if config['action'] != 'uvsub':
+        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+        return
 
     # Run the command
     if config['run_type'] == 'create':
@@ -388,7 +391,7 @@ def run(command_line_):
             w_projection_planes=config['w_projection_planes'],
             number_taylor_terms=config['number_taylor_terms'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i3_2xlarge'],
+            spot_price=config['spot_price_i3_4xlarge'],
             volume=config['volume'],
             nodes=config['nodes'],
             add_shutdown=config['shutdown'],
@@ -449,6 +452,16 @@ if __name__ == '__main__':
         default=None,
         help='the config file for this run'
     )
+    parser.add_argument(
+        'tag_name',
+        nargs='?',
+        default='uvsub',
+        help='the tag name to execute'
+    )
     command_line = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
     run(command_line)

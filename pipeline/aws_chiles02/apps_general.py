@@ -25,17 +25,18 @@ My Docker Apps
 import logging
 import os
 import shutil
-import sqlite3
+from time import sleep
 
 import boto3
 import jsonpickle
+import psutil
 import six
 from boto3.s3.transfer import S3Transfer
+from dlg.drop import BarrierAppDROP, DirectoryContainer, FileDROP
 
 from aws_chiles02.build_readme import build_file
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import AWS_REGION
-from dlg.drop import BarrierAppDROP, DirectoryContainer, FileDROP
 
 LOG = logging.getLogger(__name__)
 LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
@@ -243,29 +244,116 @@ class CleanupDirectories(BarrierAppDROP, ErrorHandling):
                         )
 
 
-class InitializeSqliteApp(BarrierAppDROP, ErrorHandling):
+class SystemMonitorApp(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **keywords):
-        self._connection = None
-        super(InitializeSqliteApp, self).__init__(oid, uid, **keywords)
+        super(SystemMonitorApp, self).__init__(oid, uid, **keywords)
+        self._sleep_time = 60
+        self._cpu_count = None
 
     def initialize(self, **keywords):
-        super(InitializeSqliteApp, self).initialize(**keywords)
+        super(SystemMonitorApp, self).initialize(**keywords)
         self._session_id = self._getArg(keywords, 'session_id', None)
+        self._sleep_time = self._getArg(keywords, 'sleep_time', 60)
 
     def dataURL(self):
         return type(self).__name__
 
     def run(self):
-        self._connection = sqlite3.connect(self.inputs[0].path)
-        self._create_tables()
-        self._connection.close()
+        self._cpu_count = psutil.cpu_count()
 
-    def _create_tables(self):
-        self._connection.execute('''CREATE TABLE `mstransform_times` (
-`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-`bottom_frequency`	INTEGER NOT NULL,
-`top_frequency`	INTEGER NOT NULL,
-`measurement_set`	TEXT NOT NULL,
-`time`	REAL NOT NULL
-)
-''')
+        while True:
+            self._print_status()
+            sleep(self._sleep_time)
+
+    @staticmethod
+    def _bytes2human(number):
+        # http://code.activestate.com/recipes/578019
+        # >>> bytes2human(10000)
+        # '9.8K'
+        # >>> bytes2human(100001221)
+        # '95.4M'
+        symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+        prefix = {}
+        for i, s in enumerate(symbols):
+            prefix[s] = 1 << (i + 1) * 10
+        for s in reversed(symbols):
+            if number >= prefix[s]:
+                value = float(number) / prefix[s]
+                return '%.1f%s' % (value, s)
+        return "%sB" % number
+
+    def _print_status(self):
+        text = '\n'
+        text += self._get_cpu()
+        text += self._get_memory()
+        text += self._get_disk()
+        text += self._get_network()
+
+        LOG.info(text)
+
+    def _get_cpu(self):
+        text = '\nCPU\n'
+        cpus_percent = psutil.cpu_percent(percpu=True)
+        for i in range(self._cpu_count):
+            text += "CPU %-6i" % i
+        text += '\n'
+        for percent in cpus_percent:
+            text += "%-10s" % percent
+        text += '\n'
+
+        return text
+
+    def _get_memory(self):
+        def pprint_ntuple(nt):
+            text1 = ''
+            for name in nt._fields:
+                value = getattr(nt, name)
+                if name != 'percent':
+                    value = self._bytes2human(value)
+                text1 += '%-10s : %7s\n' % (name.capitalize(), value)
+            return text1
+
+        text = '\nMEMORY\n------\n'
+        text += pprint_ntuple(psutil.virtual_memory())
+        text += '\nSWAP\n----\n'
+        text += pprint_ntuple(psutil.swap_memory())
+        text += '\n'
+        return text
+
+    def _get_disk(self):
+        text = '\nDISK\n'
+        templ = "%-17s %8s %8s %8s %5s%% %9s  %s\n"
+        text += templ % ("Device", "Total", "Used", "Free", "Use ", "Type", "Mount")
+        for part in psutil.disk_partitions(all=False):
+            if os.name == 'nt':
+                if 'cdrom' in part.opts or part.fstype == '':
+                    # skip cd-rom drives with no disk in it; they may raise
+                    # ENOENT, pop-up a Windows GUI error for a non-ready
+                    # partition or just hang.
+                    continue
+            usage = psutil.disk_usage(part.mountpoint)
+            text += templ % (
+                part.device,
+                self._bytes2human(usage.total),
+                self._bytes2human(usage.used),
+                self._bytes2human(usage.free),
+                int(usage.percent),
+                part.fstype,
+                part.mountpoint
+            )
+
+        return text
+
+    def _get_network(self):
+        text = '\nNETWORK\n'
+        tot_after = psutil.net_io_counters()
+
+        text += "total bytes:           sent: %-10s   received: %s\n" % (
+            self._bytes2human(tot_after.bytes_sent),
+            self._bytes2human(tot_after.bytes_recv))
+
+        text += "total packets:         sent: %-10s   received: %s\n" % (
+            tot_after.packets_sent,
+            tot_after.packets_recv)
+
+        return text

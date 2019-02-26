@@ -100,7 +100,7 @@ class WorkToDo:
 
 def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     nodes = []
-    node_count = max(len(work_to_do) / frequencies_per_node, 1)
+    node_count = max(len(work_to_do) // frequencies_per_node, 1)
     nodes.append({
         'number_instances': node_count,
         'instance_type': 'i3.8xlarge',
@@ -350,7 +350,7 @@ def generate_json(**keywords):
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.8xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
+        'i3.16xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
     }
     graph = BuildGraphClean(
         work_to_do=work_to_do.work_to_do,
@@ -400,7 +400,10 @@ def run(command_line_):
         yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
     LOGGER.info('Reading YAML file {}'.format(yaml_filename))
-    config = get_config(yaml_filename, 'clean')
+    config = get_config(yaml_filename, command_line_.tag_name)
+    if config['action'] != 'clean':
+        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+        return
 
     # Run the command
     if config['run_type'] == 'create':
@@ -498,6 +501,16 @@ if __name__ == '__main__':
         default=None,
         help='the config file for this run'
     )
+    parser.add_argument(
+        'tag_name',
+        nargs='?',
+        default='clean',
+        help='the tag name to execute'
+    )
     command_line = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
     run(command_line)
