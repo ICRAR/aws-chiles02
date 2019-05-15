@@ -19,6 +19,8 @@ common: &common
   dim: 128.0.0.1
   log_level: vvv
   w_projection_planes: 24
+  s3_storage: INTELLIGENT_TIERING
+  # 'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|'GLACIER'|'DEEP_ARCHIVE'
 
 split:
   <<: *common
@@ -29,6 +31,7 @@ split:
     Maintaining native frequency frame (TOPO)
   days_per_node: 3
   parallel_streams: 4
+  s3_storage: INTELLIGENT_TIERING
 
 uvsub_node1:
   <<: *common
@@ -38,6 +41,7 @@ uvsub_node1:
   produce_qa: True
   frequency_range:      # This should be a list
   nodes: 1
+  s3_storage: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
@@ -51,6 +55,7 @@ uvsub:
   produce_qa: True
   frequency_range:      # This should be a list
   nodes: 5
+  s3_storage: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
@@ -75,33 +80,9 @@ clean:
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
   casa_version: '5.1'           # Clean works better with this version
-  run_note_clean: |
-    Using new model (CI) - following new workflow plan as per MM & AP
-    aka channalised outlier models now stand alone (for absorption)
-    and matching (smaller) in beam models
-
-clean_julie:
-  <<: *common
-  action: clean
-  uvsub_directory_name: uvsub_ha_2019_02_03
-  clean_directory_name: clean_ha_2019_02_18_Julie
-  frequencies_per_node: 1
-  iterations: 100
-  arcsec: '2'                   # Needs to be a string
-  w_projection_planes: 24
-  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
-  robust: 0.8                   # Robustness of the Briggs
-  image_size: 4096
-  clean_channel_average: 4
-  region_file: ''               # The region file for cleaning in crtf
-  only_image: False             # Only copy the image to S3
-  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
-  fits_directory_name: ''       # Where to put the fits images
-  produce_qa: yes               # allowed=[yes, no]
-  clean_tclean: tclean          # allowed=[tclean, clean]
-  frequency_range:              # A list of frequency ranges
-    - '1145-1185'
-  casa_version: '5.1'           # Clean works better with this version
+  storage: STANDARD
+  s3_tags:
+    - move_to_glacier: True
   run_note_clean: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
@@ -117,6 +98,9 @@ imageconcat:
   frequency_range:              # This should be a list
     - '1145-1185'
   fits_directory_name: ''       # Where to put the fits images
+  s3_tags:
+    - move_to_glacier: True
+  storage: STANDARD
   run_note_imageconcat: |
     Image Concat of Julie
 
