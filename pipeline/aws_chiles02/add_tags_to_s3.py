@@ -35,9 +35,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser('S3 objects to move')
+    parser = argparse.ArgumentParser('S3 objects to tag')
     parser.add_argument('bucket', help='the bucket to access')
-    parser.add_argument('prefixes_to_copy', nargs=argparse.ONE_OR_MORE)
+    parser.add_argument('prefixes_to_tag')
+    parser.add_argument('tag')
+    parser.add_argument('value')
     parser.add_argument('-d', '--dry_run', action='store_true', help='a dry run')
     return parser.parse_args()
 
@@ -50,32 +52,17 @@ def main():
     s3 = session.resource('s3', use_ssl=False)
     bucket = s3.Bucket(arguments.bucket)
 
-    keys = []
-    for prefix in arguments.prefixes_to_copy:
-        for key in bucket.objects.filter(Prefix=prefix):
-            if not key.key.endswith('/'):
-                keys.append(key.key)
-
-    for key in keys:
-        if arguments.dry_run:
-            LOGGER.info('Dry run: {}'.format(key))
-        else:
-            LOGGER.info('Staring copy: {}'.format(key))
-            copy_source = {
-                'Bucket': arguments.bucket,
-                'Key': key
-            }
-
-            s3.copy(
-                copy_source,
-                arguments.bucket,
-                key,
-                ExtraArgs={
-                    'StorageClass': 'ONE_ZONE_IA',
-                    'MetadataDirective': 'COPY'
-                }
-            )
-            LOGGER.info('Copy complete: {}'.format(key))
+    for prefix in arguments.prefixes_to_tag:
+        for object_ in bucket.objects.filter(Prefix=prefix):
+            if not object_.key.endswith('/'):
+                if arguments.dry_run:
+                    LOGGER.info('Dry run tagging: {} with {}:{}'.format(object_, arguments.tag, arguments.value))
+                else:
+                    LOGGER.info('Tagging: {} with {}:{}'.format(object_, arguments.tag, arguments.value))
+                    object_.put(
+                        Tagging='{}={}'.format(arguments.tag, arguments.value)
+                    )
+                    LOGGER.info('Tagging complete: {}'.format(object_))
 
 
 if __name__ == "__main__":

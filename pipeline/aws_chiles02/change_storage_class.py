@@ -52,30 +52,24 @@ def main():
 
     keys = []
     for prefix in arguments.prefixes_to_copy:
-        for key in bucket.objects.filter(Prefix=prefix):
-            if not key.key.endswith('/'):
-                keys.append(key.key)
+        for object_ in bucket.objects.filter(Prefix=prefix):
+            if not object_.key.endswith('/'):
+                keys.append(object_.key)
 
     for key in keys:
         if arguments.dry_run:
             LOGGER.info('Dry run: {}'.format(key))
         else:
             LOGGER.info('Staring copy: {}'.format(key))
-            copy_source = {
-                'Bucket': arguments.bucket,
-                'Key': key
-            }
 
-            s3.copy(
-                copy_source,
-                arguments.bucket,
-                key,
-                ExtraArgs={
-                    'StorageClass': 'ONE_ZONE_IA',
-                    'MetadataDirective': 'COPY'
-                }
-            )
-            LOGGER.info('Copy complete: {}'.format(key))
+            object_ = s3.Object(arguments.bucket, key)
+            if object_.storage_class != 'INTELLIGENT_TIERING':
+                object_.copy_from(
+                    CopySource={'Bucket': arguments.bucket, 'Key': key},
+                    StorageClass='INTELLIGENT_TIERING'
+                )
+
+                LOGGER.info('Copy complete: {}'.format(object_))
 
 
 if __name__ == "__main__":
