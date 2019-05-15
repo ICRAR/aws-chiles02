@@ -56,6 +56,18 @@ uvsub:
     aka channalised outlier models now stand alone (for absorption)
     and matching (smaller) in beam models
 
+uvsub_ska:
+  <<: *common
+  action: uvsub
+  number_taylor_terms: 2
+  scan_statistics: False
+  produce_qa: True
+  frequency_range:      # This should be a list
+  nodes: 5
+  run_note_uvsub: |
+    Demo in SKA meeting.
+    New models provided
+
 clean:
   <<: *common
   action: clean
@@ -85,7 +97,8 @@ clean_julie:
   action: clean
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: clean_ha_2019_02_18_Julie
-  frequencies_per_node: 1
+  frequencies_per_node: 4
+  nodes: 3
   iterations: 100
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
@@ -100,25 +113,80 @@ clean_julie:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1145-1185'
+    - '960-1144'
   casa_version: '5.1'           # Clean works better with this version
   run_note_clean: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
     and matching (smaller) in beam models
 
+clean_wide:
+  <<: *common
+  action: clean
+  uvsub_directory_name: uvsub_ha_2019_02_03
+  clean_directory_name: clean_ha_2019_03_04_Wide
+  frequencies_per_node: 4
+  nodes: 3
+  iterations: 100
+  arcsec: '2'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 16
+  region_file: 'CleanRegions.crtf'               # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+    - '950-999'
+  casa_version: '5.1'           # Clean works better with this version
+  run_note_clean: |
+    Testing whether changing clean_ch_av works when we go to 16
+    Otherwise identical to the Julie run.
+
 imageconcat:
   <<: *common
   action: imageconcat
-  imageconcat_width: 100         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_ha_2019_02_19_Julie
-  clean_directory_name: clean_ha_2019_02_18_Julie
+  imageconcat_width: 6         # the number of frequency blocks to add together
+  imageconcat_directory_name: imageconcat_ha_2019_04_12_Wide
+  clean_directory_name: clean_ha_2019_04_12_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   frequency_range:              # This should be a list
-    - '1145-1185'
+    - '950-1420'
   fits_directory_name: ''       # Where to put the fits images
   run_note_imageconcat: |
-    Image Concat of Julie
+    Image Concat of 16 Channel Averages
 
 check_uvsub:
   frequency_range:
+
+split_rgd:
+  <<: *common
+  action: split
+  observation_phase: 1
+  run_note: |
+    RGD test space
+    for messing abut
+  days_per_node: 3
+  parallel_streams: 1
+  split_directory: split_4_rgd
+
+uvsub_node1_rgb:
+  <<: *common
+  action: uvsub
+  number_taylor_terms: 2
+  scan_statistics: False
+  produce_qa: True
+  frequency_range:
+    - '1145-1146'
+  uvsub_directory_name: uvsub_test_2019_02_27
+  nodes: 1
+  log_level: v
+  run_note_uvsub: |
+    Using new model (CI) - following new workflow plan as per MM & AP
+    aka channalised outlier models now stand alone (for absorption)
+    and matching (smaller) in beam models
+
