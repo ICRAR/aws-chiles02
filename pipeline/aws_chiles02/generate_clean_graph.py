@@ -243,6 +243,8 @@ def create_and_generate(**keywords):
                         use_bash=keywords['use_bash'],
                         casa_version=keywords['casa_version'],
                         build_fits=keywords['build_fits'],
+                        s3_storage_class=keywords['s3_storage_class'],
+                        s3_tags=keywords['s3_tags'],
                     )
                     graph.build_graph()
 
@@ -321,6 +323,8 @@ def use_and_generate(**keywords):
                 use_bash=keywords['use_bash'],
                 casa_version=keywords['casa_version'],
                 build_fits=keywords['build_fits'],
+                s3_storage_class=keywords['s3_storage_class'],
+                s3_tags=keywords['s3_tags'],
             )
             graph.build_graph()
 
@@ -380,6 +384,8 @@ def generate_json(**keywords):
         use_bash=keywords['use_bash'],
         build_fits=keywords['build_fits'],
         casa_version=keywords['casa_version'],
+        s3_storage_class=keywords['s3_storage_class'],
+        s3_tags=keywords['s3_tags'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -435,6 +441,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -463,6 +471,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         generate_json(
@@ -491,6 +501,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 

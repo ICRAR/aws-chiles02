@@ -341,6 +341,7 @@ def parser_arguments(command_line=sys.argv[1:]):
 if __name__ == '__main__':
     # json 13b-266 /mnt/daliuge/dlg_root 8 -w 8 -s
     # interactive
+    raise EnvironmentError('THis needs to be converted to use the YAML')
     logging.basicConfig(
         level=logging.INFO,
         format='{asctime}:{levelname}:{name}:{message}',

@@ -28,12 +28,12 @@ import os
 import boto3
 import six
 from boto3.s3.transfer import S3Transfer
-
-from aws_chiles02.apps_general import ErrorHandling
-from aws_chiles02.common import ProgressPercentage, run_command
-from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
+
+from aws_chiles02.apps_general import ErrorHandling, tag_s3_object
+from aws_chiles02.common import ProgressPercentage, run_command
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
@@ -215,9 +215,12 @@ class CopyImageconcatToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(tar_filename))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
-            }
+                'StorageClass': s3_output.storage_class
+            },
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
+
+        # Now tag it
 
         return return_code
 
@@ -269,9 +272,10 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(fits_file))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         return 0
 

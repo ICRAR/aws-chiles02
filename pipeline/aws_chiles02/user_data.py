@@ -68,8 +68,7 @@ def get_node_manager_user_data(boto_data, uuid, max_request_size=10, chiles=True
         jpeg2000=jpeg2000,
         log_level=log_level,
         casa4_7=True if casa_version == '4.7' else False,
-        casa5_1=True if casa_version == '5.1' else False,
-        casa5_4=True if casa_version == '5.4' else False,
+        casa5_5=True if casa_version == '5.5' else False,
     )
 
     user_data = get_user_data([cloud_init, user_script])

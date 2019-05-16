@@ -37,8 +37,7 @@ DIM_PORT = 8001
 WAIT_TIMEOUT_NODE_MANAGER = 1800
 WAIT_TIMEOUT_ISLAND_MANAGER = 1000
 CASA_COMMAND_LINE_4_7 = 'xvfb-run casa --nologger --log2term -c '
-CASA_COMMAND_LINE_5_1 = 'xvfb-run casa --nogui --nologger --log2term -c '
-CASA_COMMAND_LINE_5_4 = 'xvfb-run casa --nogui --nologger --log2term -c '
+CASA_COMMAND_LINE_5_5 = 'xvfb-run casa --nogui --nologger --log2term -c '
 SCRIPT_PATH = '/home/ec2-user/aws-chiles02/pipeline/casa_code/'
 WEB_SITE = '13b-266.s3-website-us-west-2.amazonaws.com'
 
@@ -70,9 +69,7 @@ if exists(config_file_name):
 def get_casa_command_line(casa_version):
     if casa_version == '4.7':
         return CASA_COMMAND_LINE_4_7
-    elif casa_version == '5.1':
-        return CASA_COMMAND_LINE_5_1
-    elif casa_version == '5.4':
-        return CASA_COMMAND_LINE_5_4
+    elif casa_version == '5.5':
+        return CASA_COMMAND_LINE_5_5
     else:
         raise ValueError('Unknown casa version: {}'.format(casa_version))

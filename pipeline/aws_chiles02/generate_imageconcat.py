@@ -191,6 +191,8 @@ def generate_json(**keywords):
         use_bash=keywords['use_bash'],
         casa_version=keywords['casa_version'],
         build_fits=keywords['build_fits'],
+        s3_storage_class=keywords['s3_storage_class'],
+        s3_tags=keywords['s3_tags'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -326,6 +328,8 @@ def create_and_generate(**keywords):
                     casa_version=keywords['casa_version'],
                     build_fits=keywords['build_fits'],
                     imageconcat_width=keywords['imageconcat_width'],
+                    s3_storage_class=keywords['s3_storage_class'],
+                    s3_tags=keywords['s3_tags'],
                 )
                 graph.build_graph()
 
@@ -397,6 +401,8 @@ def use_and_generate(**keywords):
                 use_bash=keywords['use_bash'],
                 casa_version=keywords['casa_version'],
                 build_fits=keywords['build_fits'],
+                s3_storage_class=keywords['s3_storage_class'],
+                s3_tags=keywords['s3_tags'],
             )
             graph.build_graph()
             LOGGER.info('Connection to {0}:{1}'.format(host, port))
@@ -408,57 +414,6 @@ def use_and_generate(**keywords):
 
         else:
             LOGGER.warning('No nodes are running')
-
-
-def command_create(args):
-    create_and_generate(
-        ami_id=args.ami_id,
-        spot_price=args.spot_price,
-        nodes=args.nodes,
-        bucket_name=args.bucket_name,
-        frequency_width=args.frequency_width,
-        imageconcat_width=args.imageconcat_width,
-        volume=args.volume,
-        add_shutdown=args.add_shutdown,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        imageconcat_directory_name=args.imageconcat_directory_name,
-        run_note=args.run_note_imageconcat,
-    )
-
-
-def command_use(args):
-    use_and_generate(
-        host=args.host,
-        port=args.port,
-        bucket_name=args.bucket_name,
-        frequency_width=args.frequency_width,
-        imageconcat_width=args.imageconcat_width,
-        volume=args.volume,
-        add_shutdown=args.add_shutdown,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        imageconcat_directory_name=args.imageconcat_directory_name,
-        run_note=args.run_note_imageconcat,
-    )
-
-
-def command_json(args):
-    generate_json(
-        nodes=args.nodes,
-        bucket_name=args.bucket_name,
-        frequency_width=args.frequency_width,
-        imageconcat_width=args.imageconcat_width,
-        volume=args.volume,
-        add_shutdown=args.add_shutdown,
-        frequency_range=args.frequency_range,
-        clean_directory_name=args.clean_directory_name,
-        fits_directory_name=args.fits_directory_name,
-        imageconcat_directory_name=args.imageconcat_directory_name,
-        run_note=args.run_note_imageconcat,
-    )
 
 
 def run(command_line_):
@@ -497,6 +452,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -515,6 +472,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         generate_json(
@@ -532,6 +491,8 @@ def run(command_line_):
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             build_fits=config['build_fits'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 

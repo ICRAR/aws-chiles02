@@ -29,7 +29,6 @@ import logging
 
 import boto3
 
-from aws_chiles02.common import set_logging_level
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ def parse_arguments():
 
 
 def main():
-    set_logging_level(0)
+    logging.basicConfig(level=logging.INFO)
     arguments = parse_arguments()
 
     session = boto3.Session(profile_name='aws-chiles02')

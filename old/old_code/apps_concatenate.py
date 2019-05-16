@@ -29,7 +29,7 @@ import shutil
 import boto3
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.apps_general import ErrorHandling
+from aws_chiles02.apps_general import ErrorHandling, S3StorageAndTagging, DEFAULT_STORAGE
 from aws_chiles02.common import ProgressPercentage, run_command
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
@@ -68,7 +68,7 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
             for filename in os.listdir(measurement_set_dir):
                 LOG.debug('filename: {0}'.format(filename))
                 if filename.endswith('.image'):
-                    LOG.warn('Measurement Set: {0} exists'.format(filename))
+                    LOG.warning('Measurement Set: {0} exists'.format(filename))
                     return 0
 
         else:
@@ -143,7 +143,7 @@ class CopyConcatenateFromS3(BarrierAppDROP, ErrorHandling):
         return 0
 
 
-class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
+class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling, S3StorageAndTagging):
     def __init__(self, oid, uid, **kwargs):
         self._width = None
         self._iterations = None
@@ -154,6 +154,8 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
         self._width = self._getArg(kwargs, 'width ', None)
         self._iterations = self._getArg(kwargs, 'iterations', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
+        self.s3_storage_class = self._getArg(kwargs, 's3_storage_class', DEFAULT_STORAGE)
+        self.s3_tags = self._getArg(kwargs, 's3_tags', None)
 
     def dataURL(self):
         return 'CopyConcatenateToS3'
@@ -209,9 +211,10 @@ class CopyConcatenateToS3(BarrierAppDROP, ErrorHandling):
                     float(os.path.getsize(tar_filename))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': self.s3_storage_class
             }
         )
+        self.tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key))
 
         # Clean up
         shutil.rmtree(measurement_set_dir, ignore_errors=True)
@@ -255,12 +258,14 @@ class CasaConcatenate(BarrierAppDROP, ErrorHandling):
             # Make the directory
             os.makedirs(measurement_set_dir)
 
-        command = 'cd {0} && casa --nologger --log2term -c /home/ec2-user/aws-chiles02/pipeline/casa_code/concatenate.py /tmp image_{1}_{2}.cube {3}'.format(
-            measurement_set_dir,
-            self._width,
-            self._iterations,
-            ' '.join(measurement_sets),
-        )
+        command = 'cd {0} && casa --nologger --log2term ' \
+                  '-c /home/ec2-user/aws-chiles02/pipeline/casa_code/concatenate.py ' \
+                  '/tmp image_{1}_{2}.cube {3}'.format(
+                    measurement_set_dir,
+                    self._width,
+                    self._iterations,
+                    ' '.join(measurement_sets),
+                  )
         return_code = run_command(command)
         return return_code
 

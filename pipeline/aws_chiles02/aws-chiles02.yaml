@@ -8,7 +8,7 @@ common: &common
   split_directory: split_4_phase_1
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
-  casa_version: '5.4'     # allowed=['4.7', '5.1', '5.4'],
+  casa_version: '5.5'     # allowed=['4.7', ''5.5'],
   ami: ami-02d11a363a70d8ce8
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
@@ -19,7 +19,7 @@ common: &common
   dim: 128.0.0.1
   log_level: vvv
   w_projection_planes: 24
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
   # 'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|'GLACIER'|'DEEP_ARCHIVE'
 
 split:
@@ -31,7 +31,7 @@ split:
     Maintaining native frequency frame (TOPO)
   days_per_node: 3
   parallel_streams: 4
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
 
 uvsub_node1:
   <<: *common
@@ -41,7 +41,7 @@ uvsub_node1:
   produce_qa: True
   frequency_range:      # This should be a list
   nodes: 1
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
@@ -55,7 +55,7 @@ uvsub:
   produce_qa: True
   frequency_range:      # This should be a list
   nodes: 5
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
@@ -69,7 +69,7 @@ uvsub_ska:
   produce_qa: True
   frequency_range:      # This should be a list
   nodes: 5
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Demo in SKA meeting.
     New models provided
@@ -92,8 +92,8 @@ clean:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-  casa_version: '5.1'           # Clean works better with this version
-  storage: STANDARD
+  casa_version: '5.5'           # Clean works better with this version
+  s3_storage_class: INTELLIGENT_TIERING
   s3_tags:
     - move_to_glacier: True
   run_note_clean: |
@@ -123,8 +123,8 @@ clean_wide:
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
     - '950-999'
-  casa_version: '5.1'           # Clean works better with this version
-  storage: STANDARD
+  casa_version: '5.5'           # Clean works better with this version
+  s3_storage_class: INTELLIGENT_TIERING
   s3_tags:
     - move_to_glacier: True
   run_note_clean: |
@@ -143,7 +143,7 @@ imageconcat:
   fits_directory_name: ''       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
-  storage: STANDARD
+  s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
     Image Concat of 16 Channel Averages
 
@@ -160,7 +160,7 @@ split_rgd:
   days_per_node: 3
   parallel_streams: 1
   split_directory: split_4_rgd
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
 
 uvsub_node1_rgb:
   <<: *common
@@ -173,7 +173,7 @@ uvsub_node1_rgb:
   uvsub_directory_name: uvsub_test_2019_02_27
   nodes: 1
   log_level: v
-  s3_storage: INTELLIGENT_TIERING
+  s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)

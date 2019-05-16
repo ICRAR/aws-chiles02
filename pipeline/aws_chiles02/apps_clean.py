@@ -31,7 +31,7 @@ from boto3.s3.transfer import S3Transfer
 from dlg.apps.dockerapp import DockerApp
 from dlg.drop import BarrierAppDROP
 
-from aws_chiles02.apps_general import ErrorHandling
+from aws_chiles02.apps_general import ErrorHandling, tag_s3_object
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 
@@ -222,9 +222,10 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(tar_filename))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         # Centred images
         if os.path.exists(measurement_set + '.image.centre'):
@@ -253,9 +254,10 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                     float(os.path.getsize(tar_filename))
                 ),
                 extra_args={
-                    'StorageClass': 'REDUCED_REDUNDANCY',
+                    'StorageClass': s3_output.storage_class
                 }
             )
+            tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         tar_filename = os.path.join(measurement_set_dir,
                                     'clean_{0}~{1}.qa.tar'.format(self._min_frequency, self._max_frequency))
@@ -282,9 +284,10 @@ class CopyCleanToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(tar_filename))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         return return_code
 
@@ -336,9 +339,10 @@ class CopyFitsToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(fits_file))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         return 0
 

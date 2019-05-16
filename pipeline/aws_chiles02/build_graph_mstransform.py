@@ -46,6 +46,8 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._observation_phase = keywords['observation_phase']
         self._casa_version = keywords['casa_version']
+        self._s3_storage_class = keywords['s3_storage_class']
+        self._s3_tags = keywords['s3_tags']
 
         # Get a sorted list of the keys
         self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
@@ -152,7 +154,9 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                 self._s3_split_name
             ),
             'aws-chiles02',
-            oid='s3_out'
+            oid='s3_out',
+            storage_class=self._s3_storage_class,
+            tags=self._s3_tags,
         )
         copy_to_s3.addInput(result)
         copy_to_s3.addOutput(s3_drop_out)

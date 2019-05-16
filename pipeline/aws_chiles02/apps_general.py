@@ -40,6 +40,18 @@ from aws_chiles02.settings_file import AWS_REGION
 
 LOG = logging.getLogger(__name__)
 LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
+DEFAULT_STORAGE = 'INTELLIGENT_TIERING'
+COPY_TO_GLACIER = {
+    'move_to_glacier': True
+}
+
+
+def tag_s3_object(s3_object, s3_tags):
+    if s3_tags is not None:
+        for key, value in s3_tags.items():
+            s3_object.put(
+                Tagging='{}={}'.format(key, value)
+            )
 
 
 class ErrorHandling(object):
@@ -116,9 +128,11 @@ class CopyParameters(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(parameter_file)),
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class,
             }
         )
+
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
 
 class BuildReadme(BarrierAppDROP, ErrorHandling):
@@ -187,9 +201,10 @@ class CopyLogFilesApp(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(tar_filename))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
 
 class CleanupDirectories(BarrierAppDROP, ErrorHandling):

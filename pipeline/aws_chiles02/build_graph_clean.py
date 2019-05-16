@@ -60,6 +60,8 @@ class BuildGraphClean(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._build_fits = keywords['build_fits']
         self._casa_version = keywords['casa_version']
+        self._s3_storage_class = keywords['s3_storage_class']
+        self._s3_tags = keywords['s3_tags']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -145,6 +147,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 ),
                 'aws-chiles02',
                 oid='s3_out',
+                storage_class=self._s3_storage_class,
+                tags=self._s3_tags,
             )
             copy_clean_to_s3.addInput(result)
             copy_clean_to_s3.addOutput(s3_clean_drop_out)
@@ -168,6 +172,8 @@ class BuildGraphClean(AbstractBuildGraph):
                     ),
                     'aws-chiles02',
                     oid='s3_out',
+                    storage_class=self._s3_storage_class,
+                    tags=self._s3_tags,
                 )
                 copy_fits_to_s3.addInput(result)
                 copy_fits_to_s3.addOutput(s3_fits_drop_out)

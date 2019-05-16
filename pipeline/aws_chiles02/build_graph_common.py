@@ -30,7 +30,8 @@ from dlg.apps.bash_shell_app import BashShellApp
 from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 from ruamel.yaml import YAML, StringIO
 
-from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme, SystemMonitorApp
+from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme, SystemMonitorApp, DEFAULT_STORAGE, \
+    COPY_TO_GLACIER
 from aws_chiles02.common import get_module_name, FrequencyPair, MeasurementSetData, ChunkedFrequencyPair
 
 
@@ -96,6 +97,8 @@ class AbstractBuildGraph:
             '{0}/aa_parameter_data.yaml'.format(folder_name),
             'aws-chiles02',
             oid='s3_out',
+            storage_class=DEFAULT_STORAGE,
+            tags=None
         )
         copy_drop = self.create_app(
             self._dim_ip,
@@ -164,7 +167,9 @@ class AbstractBuildGraph:
                 node_id,
             ),
             'aws-chiles02',
-            oid='s3_out'
+            oid='s3_out',
+            storage_class=DEFAULT_STORAGE,
+            tags=COPY_TO_GLACIER,
         )
         copy_log_drop.addOutput(s3_drop_out)
         return s3_drop_out, copy_log_drop
@@ -332,7 +337,14 @@ class AbstractBuildGraph:
         self.add_drop(drop)
         return drop
 
-    def create_s3_drop(self, node_id, bucket_name, key, profile_name, oid='s3'):
+    def create_s3_drop(self,
+                       node_id,
+                       bucket_name,
+                       key,
+                       profile_name,
+                       storage_class=DEFAULT_STORAGE,
+                       tags=None,
+                       oid='s3'):
         oid_text = self.get_oid(oid)
         # uid_text = self.get_uuid()
         drop = dropdict({
@@ -346,6 +358,8 @@ class AbstractBuildGraph:
             "key": key,
             "profile_name": profile_name,
             "node": node_id,
+            "storage_class": storage_class,
+            "tags": tags,
         })
         self.add_drop(drop)
         return drop

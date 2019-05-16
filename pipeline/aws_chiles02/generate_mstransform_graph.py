@@ -195,7 +195,9 @@ def create_and_generate(bucket_name,
                         casa_version,
                         split_directory,
                         observation_phase,
-                        run_note):
+                        run_note,
+                        s3_storage_class,
+                        s3_tags):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -305,6 +307,8 @@ def create_and_generate(bucket_name,
                     observation_phase=observation_phase,
                     casa_version=casa_version,
                     run_note=run_note,
+                    s3_storage_class=s3_storage_class,
+                    s3_tags=s3_tags,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -331,7 +335,9 @@ def use_and_generate(host,
                      split_directory,
                      observation_phase,
                      casa_version,
-                     run_note):
+                     run_note,
+                     s3_storage_class,
+                     s3_tags):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = HTTPConnection(host, port)
@@ -377,6 +383,8 @@ def use_and_generate(host,
                 observation_phase=observation_phase,
                 casa_version=casa_version,
                 run_note=run_note,
+                s3_storage_class=s3_storage_class,
+                s3_tags=s3_tags,
             )
             graph.build_graph()
 
@@ -402,7 +410,9 @@ def build_json(bucket,
                observation_phase,
                casa_version,
                run_note,
-               json_path="/tmp/json_mstransform.txt"):
+               json_path,
+               s3_storage_class,
+               s3_tags):
     work_to_do = WorkToDo(width, bucket, split_directory, observation_phase)
     work_to_do.calculate_work_to_do()
 
@@ -425,6 +435,8 @@ def build_json(bucket,
         observation_phase=observation_phase,
         casa_version=casa_version,
         run_note=run_note,
+        s3_storage_class=s3_storage_class,
+        s3_tags=s3_tags,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -466,6 +478,8 @@ def run(command_line_):
             split_directory=config['split_directory'],
             observation_phase=config['observation_phase'],
             run_note=config['run_note'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -480,6 +494,8 @@ def run(command_line_):
             split_directory=config['split_directory'],
             observation_phase=config['observation_phase'],
             run_note=config['run_note'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         build_json(
@@ -494,6 +510,9 @@ def run(command_line_):
             split_directory=config['split_directory'],
             observation_phase=config['observation_phase'],
             run_note=config['run_note'],
+            json_path="/tmp/json_file.json",
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 
