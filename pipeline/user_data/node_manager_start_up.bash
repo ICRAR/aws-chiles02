@@ -176,7 +176,7 @@ ln -s casa-release-4.7.2-el6/ casa
 
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && git pull'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && git pull'
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install --force'
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 

@@ -27,6 +27,7 @@ import getpass
 import json
 import logging
 import os
+import sys
 from http import HTTPStatus
 from http.client import HTTPConnection
 from os.path import exists
@@ -517,6 +518,10 @@ def run(command_line_):
 
 
 if __name__ == '__main__':
+    print('Before you run this - have you figured out why days without '
+          'the 944-948 band copy the whole observation over?')
+    sys.exit()
+
     parser = argparse.ArgumentParser(description='Split')
     parser.add_argument(
         '--config_file',
