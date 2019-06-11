@@ -166,12 +166,8 @@ docker run jtmalarecki/sv /bin/echo 'Hello sv container'
 
 cd /home/ec2-user
 
-% if casa5_4:
-ln -s casa-release-5.4.0-68.el6/ casa
-%endif
-
-% if casa5_1:
-ln -s casa-release-5.1.0-74.el6/ casa
+% if casa5_5:
+ln -s casa-release-5.5.0-149.el6/ casa
 %endif
 
 % if casa4_7:
@@ -180,7 +176,7 @@ ln -s casa-release-4.7.2-el6/ casa
 
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && git pull'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && git pull'
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install'
+runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install --force'
 runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 

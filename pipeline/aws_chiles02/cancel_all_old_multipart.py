@@ -32,7 +32,7 @@ import logging
 
 import boto3
 
-from aws_chiles02.common import set_logging_level
+from aws_chiles02.common import set_logging_level, set_boto_logging_level
 from constants import utc
 
 LOG = logging.getLogger(__name__)
@@ -41,12 +41,12 @@ LOG = logging.getLogger(__name__)
 def main():
     parser = argparse.ArgumentParser('Check the multipart upload status')
     parser.add_argument('-c', '--cancel', action="store_true", help='cancel all the outstanding ')
-    parser.add_argument('-f', '--force', action="store_true", help='force all the outstanding ')
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')
+    parser.add_argument('-f', '--force', action="store_true", help='force cancel all the outstanding ')
     parser.add_argument('bucket', help='the bucket to check')
     args = parser.parse_args()
 
-    set_logging_level(args.verbosity)
+    set_boto_logging_level(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
     session = boto3.Session(profile_name='aws-chiles02')
     s3 = session.resource('s3', use_ssl=False)
 

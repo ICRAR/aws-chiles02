@@ -45,6 +45,8 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
         self._parallel_streams = kwargs['parallel_streams']
         self._s3_fits_name = kwargs['fits_directory_name']
         self._s3_jpeg2000_name = kwargs['jpeg2000_directory_name']
+        self._s3_storage_class = kwargs['s3_storage_class']
+        self._s3_tags = kwargs['s3_tags']
         values = kwargs['node_details'].values()
         self._node_id = values[0][0]['ip_address']
         self._s3_client = None
@@ -113,7 +115,8 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                 get_module_name(DockerApp),
                 'app_convert_jpeg2000',
                 CONTAINER_SV,
-                'sv_convert --input %i0 --input-options normalisation-dist LOG normalisation-domain CHANNEL --output %o0 --output-options Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes '
+                'sv_convert --input %i0 --input-options normalisation-dist LOG normalisation-domain CHANNEL '
+                '--output %o0 --output-options Clayers=15 Clevels=6 Cycc=no Corder=CPRL ORGgen_plt=yes '
                 'Cprecincts="{128,128},{64,64}" Cblk="{32,32}" Qstep=0.0001 --stats',
                 user='root',
             )
@@ -142,7 +145,9 @@ class BuildGraphJpeg2000(AbstractBuildGraph):
                     maximum_frequency,
                 ),
                 'aws-chiles02',
-                's3_out',
+                oid='s3_out',
+                storage_class=self._s3_storage_class,
+                tags=self._s3_tags,
             )
             copy_jpg2000_to_s3.addInput(jpeg2000_file)
             copy_jpg2000_to_s3.addOutput(s3_jpeg2000_drop_out)

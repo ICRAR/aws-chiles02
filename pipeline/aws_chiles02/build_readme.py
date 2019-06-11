@@ -267,7 +267,7 @@ def build_file(bucket_name):
             float(getsize('/tmp/2018_readme.html')),
         ),
         extra_args={
-            'StorageClass': 'REDUCED_REDUNDANCY',
+            'StorageClass': 'INTELLIGENT_TIERING',
             'ContentType': 'text/html'
         }
     )

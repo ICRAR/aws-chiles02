@@ -30,8 +30,9 @@ from dlg.apps.bash_shell_app import BashShellApp
 from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
 from ruamel.yaml import YAML, StringIO
 
-from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme
-from aws_chiles02.common import get_module_name
+from aws_chiles02.apps_general import CopyLogFilesApp, CopyParameters, BuildReadme, SystemMonitorApp, DEFAULT_STORAGE, \
+    COPY_TO_GLACIER
+from aws_chiles02.common import get_module_name, FrequencyPair, MeasurementSetData, ChunkedFrequencyPair
 
 
 class AbstractBuildGraph:
@@ -54,6 +55,9 @@ class AbstractBuildGraph:
 
         stream = StringIO()
         yaml = YAML()
+        yaml.register_class(FrequencyPair)
+        yaml.register_class(MeasurementSetData)
+        yaml.register_class(ChunkedFrequencyPair)
         yaml.dump(keywords, stream)
         self._parameter_data = stream.getvalue()
 
@@ -93,6 +97,8 @@ class AbstractBuildGraph:
             '{0}/aa_parameter_data.yaml'.format(folder_name),
             'aws-chiles02',
             oid='s3_out',
+            storage_class=DEFAULT_STORAGE,
+            tags=None
         )
         copy_drop = self.create_app(
             self._dim_ip,
@@ -161,7 +167,9 @@ class AbstractBuildGraph:
                 node_id,
             ),
             'aws-chiles02',
-            oid='s3_out'
+            oid='s3_out',
+            storage_class=DEFAULT_STORAGE,
+            tags=COPY_TO_GLACIER,
         )
         copy_log_drop.addOutput(s3_drop_out)
         return s3_drop_out, copy_log_drop
@@ -197,6 +205,27 @@ class AbstractBuildGraph:
         })
         self.add_drop(drop)
         return drop
+
+    def create_system_monitor(self):
+        for list_ips in self._node_details.values():
+            for instance_details in list_ips:
+                node_id = instance_details['ip_address']
+                memory_drop = self.create_memory_drop(
+                    node_id,
+                    oid='system_monitoring'
+                )
+
+                oid_text = self.get_oid('system_monitoring')
+                # uid_text = self.get_uuid()
+                drop = dropdict({
+                    "type": 'app',
+                    "app": get_module_name(SystemMonitorApp),
+                    "oid": oid_text,
+                    # "uid": uid_text,
+                    "node": node_id,
+                })
+                drop.addInput(memory_drop)
+                self.add_drop(drop)
 
     def create_barrier_app(self, node_id, oid='barrier_app', input_error_threshold=100):
         oid_text = self.get_oid(oid)
@@ -308,7 +337,14 @@ class AbstractBuildGraph:
         self.add_drop(drop)
         return drop
 
-    def create_s3_drop(self, node_id, bucket_name, key, profile_name, oid='s3'):
+    def create_s3_drop(self,
+                       node_id,
+                       bucket_name,
+                       key,
+                       profile_name,
+                       storage_class=DEFAULT_STORAGE,
+                       tags=None,
+                       oid='s3'):
         oid_text = self.get_oid(oid)
         # uid_text = self.get_uuid()
         drop = dropdict({
@@ -322,6 +358,8 @@ class AbstractBuildGraph:
             "key": key,
             "profile_name": profile_name,
             "node": node_id,
+            "storage_class": storage_class,
+            "tags": tags,
         })
         self.add_drop(drop)
         return drop

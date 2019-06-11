@@ -106,7 +106,7 @@ class WorkToDo:
 def get_nodes_required(node_count, spot_price):
     nodes = [{
         'number_instances': node_count,
-        'instance_type': 'i3.2xlarge',
+        'instance_type': 'i3.4xlarge',
         'spot_price': spot_price
     }]
 
@@ -231,6 +231,8 @@ def create_and_generate(**keywords):
                         split_directory=keywords['split_directory'],
                         casa_version=keywords['casa_version'],
                         produce_qa=keywords['produce_qa'],
+                        s3_storage_class=keywords['s3_storage_class'],
+                        s3_tags=keywords['s3_tags'],
                     )
                     graph.build_graph()
 
@@ -304,6 +306,8 @@ def use_and_generate(**keywords):
                 split_directory=keywords['split_directory'],
                 casa_version=keywords['casa_version'],
                 produce_qa=keywords['produce_qa'],
+                s3_storage_class=keywords['s3_storage_class'],
+                s3_tags=keywords['s3_tags'],
             )
             graph.build_graph()
 
@@ -358,6 +362,8 @@ def generate_json(**keywords):
         split_directory=keywords['split_directory'],
         casa_version=keywords['casa_version'],
         produce_qa=keywords['produce_qa'],
+        s3_storage_class=keywords['s3_storage_class'],
+        s3_tags=keywords['s3_tags'],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -366,7 +372,7 @@ def generate_json(**keywords):
         json_file.write(json_dumps)
 
 
-def command_interactive(command_line_):
+def run(command_line_):
     if command_line_.config_file is not None:
         if exists(command_line_.config_file):
             yaml_filename = command_line_
@@ -378,7 +384,10 @@ def command_interactive(command_line_):
         yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
     LOGGER.info('Reading YAML file {}'.format(yaml_filename))
-    config = get_config(yaml_filename, 'uvsub')
+    config = get_config(yaml_filename, command_line_.tag_name)
+    if config['action'] != 'uvsub':
+        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+        return
 
     # Run the command
     if config['run_type'] == 'create':
@@ -388,7 +397,7 @@ def command_interactive(command_line_):
             w_projection_planes=config['w_projection_planes'],
             number_taylor_terms=config['number_taylor_terms'],
             ami_id=config['ami'],
-            spot_price=config['spot_price_i3_2xlarge'],
+            spot_price=config['spot_price_i3_4xlarge'],
             volume=config['volume'],
             nodes=config['nodes'],
             add_shutdown=config['shutdown'],
@@ -401,6 +410,8 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     elif config['run_type'] == 'use':
         use_and_generate(
@@ -421,6 +432,8 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         generate_json(
@@ -439,6 +452,8 @@ def command_interactive(command_line_):
             casa_version=config['casa_version'],
             split_directory=config['split_directory'],
             produce_qa=config['produce_qa'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 
@@ -449,6 +464,16 @@ if __name__ == '__main__':
         default=None,
         help='the config file for this run'
     )
+    parser.add_argument(
+        'tag_name',
+        nargs='?',
+        default='uvsub',
+        help='the tag name to execute'
+    )
     command_line = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
-    command_interactive(command_line)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
+    run(command_line)

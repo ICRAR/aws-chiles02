@@ -29,7 +29,7 @@ import boto3
 import six
 from boto3.s3.transfer import S3Transfer
 
-from aws_chiles02.apps_general import ErrorHandling
+from aws_chiles02.apps_general import ErrorHandling, tag_s3_object
 from aws_chiles02.common import ProgressPercentage
 from dlg.drop import BarrierAppDROP
 
@@ -38,6 +38,7 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
 
@@ -143,8 +144,9 @@ class CopyJpeg2000ToS3(BarrierAppDROP, ErrorHandling):
                     float(os.path.getsize(jpeg_file_name))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': s3_output.storage_class
             }
         )
+        tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
         return 0

@@ -27,23 +27,21 @@ import getpass
 import json
 import logging
 import os
+import sys
 from http import HTTPStatus
 from http.client import HTTPConnection
-from datetime import datetime
+from os.path import exists
 
 import boto3
-from configobj import ConfigObj
 from dlg.droputils import get_roots
 from dlg.manager.client import DataIslandManagerClient
 
 from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
 from aws_chiles02.common import FrequencyPair, MeasurementSetData, get_aws_credentials, \
-    get_list_frequency_groups, get_session_id, get_uuid
+    get_list_frequency_groups, get_session_id, get_uuid, get_config
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running, \
-    get_sections_starting_with
-from aws_chiles02.get_argument import GetArguments
-from aws_chiles02.settings_file import AWS_AMI_ID, AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_ISLAND_MANAGER, \
+from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
+from aws_chiles02.settings_file import AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_ISLAND_MANAGER, \
     WAIT_TIMEOUT_NODE_MANAGER
 from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
 
@@ -72,9 +70,12 @@ class WorkToDo(object):
                 LOGGER.info('Found {0}'.format(key.key))
 
                 list_measurement_sets.append(
-                    MeasurementSetData(key.key,
-                                       key.size,
-                                       key.key.endswith('gz')))
+                    MeasurementSetData(
+                        key.key,
+                        key.size,
+                        key.key.endswith('gz')
+                    )
+                )
 
         # Get work we've already done
         self._list_frequencies = get_list_frequency_groups(self._width)
@@ -195,7 +196,9 @@ def create_and_generate(bucket_name,
                         casa_version,
                         split_directory,
                         observation_phase,
-                        run_note):
+                        run_note,
+                        s3_storage_class,
+                        s3_tags):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         work_to_do = WorkToDo(
@@ -305,6 +308,8 @@ def create_and_generate(bucket_name,
                     observation_phase=observation_phase,
                     casa_version=casa_version,
                     run_note=run_note,
+                    s3_storage_class=s3_storage_class,
+                    s3_tags=s3_tags,
                 )
                 graph.build_graph()
                 graph.tag_all_app_drops({
@@ -331,7 +336,9 @@ def use_and_generate(host,
                      split_directory,
                      observation_phase,
                      casa_version,
-                     run_note):
+                     run_note,
+                     s3_storage_class,
+                     s3_tags):
     boto_data = get_aws_credentials('aws-chiles02')
     if boto_data is not None:
         connection = HTTPConnection(host, port)
@@ -377,6 +384,8 @@ def use_and_generate(host,
                 observation_phase=observation_phase,
                 casa_version=casa_version,
                 run_note=run_note,
+                s3_storage_class=s3_storage_class,
+                s3_tags=s3_tags,
             )
             graph.build_graph()
 
@@ -402,7 +411,9 @@ def build_json(bucket,
                observation_phase,
                casa_version,
                run_note,
-               json_path="/tmp/json_mstransform.txt"):
+               json_path,
+               s3_storage_class,
+               s3_tags):
     work_to_do = WorkToDo(width, bucket, split_directory, observation_phase)
     work_to_do.calculate_work_to_do()
 
@@ -425,6 +436,8 @@ def build_json(bucket,
         observation_phase=observation_phase,
         casa_version=casa_version,
         run_note=run_note,
+        s3_storage_class=s3_storage_class,
+        s3_tags=s3_tags,
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -433,178 +446,98 @@ def build_json(bucket,
         json_file.write(json_dumps)
 
 
-def command_interactive(command_line_args):
-    process_command_line(command_line_args)
-
-
-def command_section(command_line_args):
-    process_command_line(command_line_args, False)
-
-
-def process_command_line(command_line_args, interactive=True):
-    raise RuntimeError('Switch to YAML loader')
-    path_dirname, filename = os.path.split(__file__)
-    config_file_name = '{0}/aws-chiles02.settings'.format(path_dirname)
-    section = {}
-    if os.path.exists(config_file_name):
-        full_config = ConfigObj(config_file_name, indent_type='    ')
-
-        if len(command_line_args.section_name) == 1:
-            section_name_ = command_line_args.section_name[0]
-            if section_name_ == 'latest':
-                split_keys = get_sections_starting_with(full_config, 'split')
-                if len(split_keys) > 0:
-                    section = full_config[split_keys[0]]
-
-            elif section_name_ in full_config.keys():
-                section = full_config[section_name_]
-            else:
-                LOGGER.error('Could not find section [{}]'.format(section_name_))
-                return
-    elif interactive is False:
-        LOGGER.error('Could not find the config file [{}]'.format(config_file_name))
-        return
-    else:
-        full_config = ConfigObj(indent_type='    ')
-        full_config.filename = config_file_name
-
-    if interactive:
-        args = GetArguments(config=section)
-        args.get('run_type',
-                 'Create, use or json',
-                 allowed=['create', 'use', 'json'],
-                 help_text='the use a network or create a network')
-        args.get('bucket_name', 'Bucket name', help_text='the bucket to access', default='13b-266')
-        args.get('width', 'Frequency width', data_type=int, help_text='the frequency width', default=4)
-        args.get('observation_phase',
-                 'Observation phase',
-                 allowed=[1, 2],
-                 data_type=int,
-                 help_text='the observational phase', default=1)
-        args.get('split_directory',
-                 'Split Directory',
-                 help_text='where to store the split data',
-                 default='split_{}_phase_{}'.format(section['width'], section['observation_phase']))
-        args.get('shutdown',
-                 'Add the shutdown node',
-                 data_type=bool,
-                 help_text='add a shutdown drop',
-                 default=True)
-        args.get('use_bash',
-                 'Run CASA in Bash rather than Docker',
-                 data_type=bool,
-                 help_text='run casa in bash',
-                 default=True)
-        args.get('volume',
-                 'Volume',
-                 help_text='the directory on the host put the data and '
-                           'to bind to the Docker Apps (if Docker is to be used)',
-                 default='/mnt/daliuge/dlg_root')
-        args.get('run_note', 'A single line note about this run',
-                 help_text='A single line note about this run', default='No note')
-        if section['use_bash']:
-            args.get('casa_version',
-                     'Which version of CASA',
-                     allowed=['4.7', '5.1', '5.4'],
-                     help_text='the version of CASA',
-                     default='5.4')
-        if section['create_use_json'] == 'create':
-            args.get('ami', 'AMI Id', help_text='the AMI to use', default=AWS_AMI_ID)
-            args.get('spot_price_i3_2xlarge', 'Spot Price for i3.2xlarge', data_type=float, help_text='the spot price')
-            args.get('spot_price_i3_4xlarge', 'Spot Price for i3.4xlarge', data_type=float, help_text='the spot price')
-            args.get('days_per_node',
-                     'Number of days per node',
-                     data_type=int,
-                     help_text='the number of days per node',
-                     default=1)
-        elif section['create_use_json'] == 'use':
-            args.get('dim', 'Data Island Manager', help_text='the IP to the DataIsland Manager')
+def run(command_line_):
+    if command_line_.config_file is not None:
+        if exists(command_line_.config_file):
+            yaml_filename = command_line_
         else:
-            args.get('nodes', 'Number nodes', data_type=int, help_text='the number of nodes', default=8)
-            args.get('parallel_streams',
-                     'Parallel streams',
-                     data_type=int,
-                     help_text='the number of parallel streams',
-                     default=4)
+            LOGGER.error('Invalid configuration filename: {}'.format(command_line_.config_file))
+            return
+    else:
+        path_dirname, filename = os.path.split(__file__)
+        yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
 
-        # Write the arguments
-        today = datetime.now()
-        section_name = 'split_{:%Y_%m_%d_%H_%M_%S}'.format(today)
-        full_config[section_name] = section
-
-        split_keys = get_sections_starting_with(full_config, 'split')
-
-        if len(split_keys) > 10:
-            for old_key in split_keys[10:]:
-                del full_config[old_key]
-
-        full_config.write()
+    LOGGER.info('Reading YAML file {}'.format(yaml_filename))
+    config = get_config(yaml_filename, command_line_.tag_name)
+    if config['action'] != 'split':
+        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+        return
 
     # Run the command
-    if section['create_use_json'] == 'create':
+    if config['run_type'] == 'create':
         create_and_generate(
-            bucket_name=section['bucket_name'],
-            frequency_width=section['width'],
-            ami_id=section['ami'],
-            spot_price1=section['spot_price_i3_2xlarge'],
-            spot_price2=section['spot_price_i3_4xlarge'],
-            volume=section['volume'],
-            days_per_node=section['days_per_node'],
-            add_shutdown=section['shutdown'],
-            use_bash=section['use_bash'],
-            casa_version=section['casa_version'],
-            split_directory=section['split_directory'],
-            observation_phase=section['observation_phase'],
-            run_note=section['run_note'],
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            ami_id=config['ami'],
+            spot_price1=config['spot_price_i3_2xlarge'],
+            spot_price2=config['spot_price_i3_4xlarge'],
+            volume=config['volume'],
+            days_per_node=config['days_per_node'],
+            add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
+            run_note=config['run_note'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
-    elif section['create_use_json'] == 'use':
+    elif config['run_type'] == 'use':
         use_and_generate(
-            host=section['dim'],
+            host=config['dim'],
             port=DIM_PORT,
-            bucket_name=section['bucket_name'],
-            frequency_width=section['width'],
-            volume=section['volume'],
-            add_shutdown=section['shutdown'],
-            use_bash=section['use_bash'],
-            casa_version=section['casa_version'],
-            split_directory=section['split_directory'],
-            observation_phase=section['observation_phase'],
-            run_note=section['run_note'],
+            bucket_name=config['bucket_name'],
+            frequency_width=config['width'],
+            volume=config['volume'],
+            add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
+            run_note=config['run_note'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         build_json(
-            bucket=section['bucket_name'],
-            width=section['width'],
-            volume=section['volume'],
-            nodes=section['nodes'],
-            parallel_streams=section['parallel_streams'],
-            add_shutdown=section['shutdown'],
-            use_bash=section['use_bash'],
-            casa_version=section['casa_version'],
-            split_directory=section['split_directory'],
-            observation_phase=section['observation_phase'],
-            run_note=section['run_note'],
+            bucket=config['bucket_name'],
+            width=config['width'],
+            volume=config['volume'],
+            nodes=config['nodes'],
+            parallel_streams=config['parallel_streams'],
+            add_shutdown=config['shutdown'],
+            use_bash=config['use_bash'],
+            casa_version=config['casa_version'],
+            split_directory=config['split_directory'],
+            observation_phase=config['observation_phase'],
+            run_note=config['run_note'],
+            json_path="/tmp/json_file.json",
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 
 if __name__ == '__main__':
-    # interactive
-    logging.basicConfig(level=logging.INFO)
-    parser = argparse.ArgumentParser('Build the SPLIT physical graph for a day')
-    subparsers = parser.add_subparsers()
+    print('Before you run this - have you figured out why days without '
+          'the 944-948 band copy the whole observation over?')
+    sys.exit()
 
-    parser_section = subparsers.add_parser('section', help='What section of the config file do you want to use')
-    parser_section.add_argument(
-        'section_name',
-        help='the name of a section in the settings file')
-    parser_section.set_defaults(func=command_section)
-
-    parser_interactive = subparsers.add_parser('interactive', help='prompt the user for parameters and then run')
-    parser_interactive.add_argument(
-        'section_name',
-        nargs='*',
-        help='the name of a section in the settings file to use as defaults')
-    parser_interactive.set_defaults(func=command_interactive)
-
-    arguments = parser.parse_args()
-    arguments.func(arguments)
+    parser = argparse.ArgumentParser(description='Split')
+    parser.add_argument(
+        '--config_file',
+        default=None,
+        help='the config file for this run'
+    )
+    parser.add_argument(
+        'tag_name',
+        nargs='?',
+        default='split',
+        help='the tag name to execute'
+    )
+    command_line = parser.parse_args()
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
+    run(command_line)

@@ -48,6 +48,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._casa_version = keywords['casa_version']
         self._s3_split_name = keywords['split_directory']
         self._produce_qa = keywords['produce_qa']
+        self._s3_storage_class = keywords['s3_storage_class']
+        self._s3_tags = keywords['s3_tags']
 
         self._list_ip = []
         self._node_index = 0
@@ -71,6 +73,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
 
         self.copy_parameter_data(self._s3_uvsub_name)
         self.copy_logfiles_and_shutdown(self._s3_uvsub_name)
+        self.create_system_monitor()
 
     def _get_next_node(self):
         next_node = self._list_ip[self._node_index]
@@ -188,6 +191,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
             ),
             'aws-chiles02',
             oid='s3_out',
+            storage_class=self._s3_storage_class,
+            tags=self._s3_tags,
         )
         copy_pngs_to_s3.addInput(result)
         copy_pngs_to_s3.addOutput(s3_pngs_drop_out)
@@ -209,6 +214,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
             ),
             'aws-chiles02',
             oid='s3_out',
+            storage_class=self._s3_storage_class,
+            tags=self._s3_tags,
         )
         copy_uvsub_to_s3.addInput(result)
         copy_uvsub_to_s3.addOutput(s3_uvsub_drop_out)
@@ -262,6 +269,8 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 ),
                 'aws-chiles02',
                 oid='s3_out',
+                storage_class=self._s3_storage_class,
+                tags=self._s3_tags,
             )
             copy_stats_to_s3.addInput(result)
             copy_stats_to_s3.addInput(memory_drop)

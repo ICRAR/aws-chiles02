@@ -248,6 +248,8 @@ def command_interactive():
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             test_directory_name=config['test_directory_name'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
     else:
         generate_json(
@@ -261,9 +263,15 @@ def command_interactive():
             use_bash=config['use_bash'],
             casa_version=config['casa_version'],
             test_directory_name=config['test_directory_name'],
+            s3_storage_class=config['s3_storage_class'],
+            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
         )
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{asctime}:{levelname}:{name}:{message}',
+        style='{',
+    )
     command_interactive()

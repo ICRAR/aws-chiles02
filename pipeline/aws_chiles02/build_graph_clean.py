@@ -60,6 +60,8 @@ class BuildGraphClean(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._build_fits = keywords['build_fits']
         self._casa_version = keywords['casa_version']
+        self._s3_storage_class = keywords['s3_storage_class']
+        self._s3_tags = keywords['s3_tags']
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -81,8 +83,6 @@ class BuildGraphClean(AbstractBuildGraph):
             s3_drop_outs = self._build_s3_download(node_id, frequency_pair)
 
             if self._use_bash:
-                if self._clean_tclean == 'tclean' and self._casa_version != '5.1':
-                    raise ValueError('TClean is only available in V5.1 or above')
                 casa_py_clean_drop = self.create_casa_app(
                     node_id,
                     get_module_name(CasaClean) if self._clean_tclean == 'clean' else get_module_name(CasaTclean),
@@ -147,6 +147,8 @@ class BuildGraphClean(AbstractBuildGraph):
                 ),
                 'aws-chiles02',
                 oid='s3_out',
+                storage_class=self._s3_storage_class,
+                tags=self._s3_tags,
             )
             copy_clean_to_s3.addInput(result)
             copy_clean_to_s3.addOutput(s3_clean_drop_out)
@@ -170,6 +172,8 @@ class BuildGraphClean(AbstractBuildGraph):
                     ),
                     'aws-chiles02',
                     oid='s3_out',
+                    storage_class=self._s3_storage_class,
+                    tags=self._s3_tags,
                 )
                 copy_fits_to_s3.addInput(result)
                 copy_fits_to_s3.addOutput(s3_fits_drop_out)
@@ -199,6 +203,7 @@ class BuildGraphClean(AbstractBuildGraph):
 
         self.copy_parameter_data(self._s3_clean_name)
         self.copy_logfiles_and_shutdown(self._s3_clean_name)
+        self.create_system_monitor()
 
     def _get_next_node(self, frequency_to_process):
         return self._map_frequency_to_node[frequency_to_process]

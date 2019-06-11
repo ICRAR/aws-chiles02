@@ -40,6 +40,7 @@ logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('nose').setLevel(logging.INFO)
 logging.getLogger('s3transfer').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 METRICS = [
     'CPUUtilization',
@@ -133,7 +134,7 @@ class CopyMetricsToS3(BarrierAppDROP, ErrorHandling):
         # Does the file exists
         LOG.debug('checking {0} exists'.format(input_file))
         if not os.path.exists(input_file) or not os.path.isfile(input_file):
-            LOG.warn('Metrics file: {0} does not exist'.format(input_file))
+            LOG.warning('Metrics file: {0} does not exist'.format(input_file))
             return 0
 
         session = boto3.Session(profile_name='aws-chiles02')
@@ -150,7 +151,7 @@ class CopyMetricsToS3(BarrierAppDROP, ErrorHandling):
                 float(os.path.getsize(input_file))
             ),
             extra_args={
-                'StorageClass': 'REDUCED_REDUNDANCY',
+                'StorageClass': 'INTELLIGENT_TIERING',
             }
         )
 

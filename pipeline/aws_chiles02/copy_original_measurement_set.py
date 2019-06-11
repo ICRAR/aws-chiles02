@@ -86,9 +86,11 @@ def copy_measurement_set(measurement_set, directory_out, bucket_name):
                     tar_size
                 ),
                 extra_args={
-                    'StorageClass': 'REDUCED_REDUNDANCY',
+                    'StorageClass': 'INTELLIGENT_TIERING',
                 }
             )
+            s3_object = s3_client.get_object(Bucket=bucket_name, Key=key)
+            s3_object.put(Tagging='move_to_glacier=True')
 
         # Clean up
         if path_exists:
