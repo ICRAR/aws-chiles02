@@ -101,6 +101,9 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 createmms=False,
                 datacolumn="data"
             )
+            ms.open(outfile)
+            LOG.info('Created File: %s %s %s'%(infile,str(ms.getspectralwindowinfo()),str(ms.getscansummary())))
+            ms.close()
 
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')
