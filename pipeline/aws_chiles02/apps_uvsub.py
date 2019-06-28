@@ -349,12 +349,10 @@ class DockerUvsub(DockerApp, ErrorHandling):
             'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         )
 
-        if self._absorption == 'no':
-            uvsub_command = 'uvsub_ha.py '
-        else:
-            uvsub_command = 'uvsub_abs.py '
+        uvsub_command = 'uvsub_ha.py '
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
+        if self._absorption == 'no': ## Using this key word for Major Cycle 2 now
+            self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 ' \
                         '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 '  \
                         '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model '  \
@@ -369,6 +367,23 @@ class DockerUvsub(DockerApp, ErrorHandling):
                             self._produce_qa,
                             self._w_projection_planes,
                             self._number_taylor_terms,
+                            spectral_window,
+                            uvsub_command,
+                        )
+        else:
+            self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{6}.model '  \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{6}.model '  \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{6}.model '  \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{6}.model '  \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{6}.model '  \
+                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{6}.model '.format(
+                            measurement_set_in,
+                            self.outputs[0].path,
+                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
+                            self._produce_qa,
+                            self._w_projection_planes,
+                            0,
                             spectral_window,
                             uvsub_command,
                         )
@@ -410,12 +425,10 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
             'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
         )
         copy_of_model = self.inputs[1].path
-        if self._absorption == 'no':
-            uvsub_command = 'uvsub_ha.py '
-        else:
-            uvsub_command = 'uvsub_abs.py '
+        uvsub_command = 'uvsub_ha.py '  # Now we can use n taylor terms =0 for absorption
         spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
+        if self._absorption == 'no':
+            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                         '{8} {0} {1} {2} {3} {4} {5} ' \
                         '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
                         '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \
@@ -431,6 +444,25 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                             self._produce_qa,
                             self._w_projection_planes,
                             self._number_taylor_terms,
+                            copy_of_model,
+                            spectral_window,
+                            uvsub_command,
+                        )
+        else:
+            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
+                        '{8} {0} {1} {2} {3} {4} {5} ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{7}.model '.format(
+                            measurement_set_in,
+                            self.outputs[0].path,
+                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
+                            self._produce_qa,
+                            self._w_projection_planes,
+                            0,
                             copy_of_model,
                             spectral_window,
                             uvsub_command,
