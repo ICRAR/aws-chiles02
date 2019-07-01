@@ -317,6 +317,7 @@ class CopyModel(BarrierAppDROP, ErrorHandling):
 
         LOG.info('Model copy: {}, {}'.format(root_directory, self.outputs[0].path))
         shutil.copytree(root_directory, output_directory, symlinks=True)
+        LOG.info('Model copy complete: {}, {}'.format(root_directory, self.outputs[0].path))
 
 
 class DockerUvsub(DockerApp, ErrorHandling):
