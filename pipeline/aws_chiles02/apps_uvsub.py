@@ -23,19 +23,18 @@
 My Docker Apps
 """
 import logging
+import os
 import shutil
 
 import boto3
-import os
-
 import six
 from boto3.s3.transfer import S3Transfer
+from dlg.apps.dockerapp import DockerApp
+from dlg.drop import BarrierAppDROP
 
 from aws_chiles02.apps_general import ErrorHandling, tag_s3_object
 from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
-from dlg.apps.dockerapp import DockerApp
-from dlg.drop import BarrierAppDROP
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
