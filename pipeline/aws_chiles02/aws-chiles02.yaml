@@ -67,13 +67,11 @@ uvsub_major2:
   action: uvsub
   number_taylor_terms: 0
   absorption: 'major2'
-  split_directory: split_4_phase_1
   uvsub_directory_name: uvsub_maj2_2019_06_27
   scan_statistics: False
+  frequency_range:      # This should be a list
   produce_qa: True
-  frequency_range:              # A list of frequency ranges
-    - '1200-1224'
-  nodes: 5
+  nodes: 10
   s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model of the outliers
