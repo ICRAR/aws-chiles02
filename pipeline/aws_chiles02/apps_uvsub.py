@@ -370,22 +370,30 @@ class DockerUvsub(DockerApp, ErrorHandling):
                             spectral_window,
                             uvsub_command,
                         )
-        else:
+        else:  ## This should read else if 'major-2'
             self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{6}.model '.format(
-                            measurement_set_in,
-                            self.outputs[0].path,
-                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            self._produce_qa,
-                            self._w_projection_planes,
-                            0,
-                            spectral_window,
-                            uvsub_command,
+                            '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 ' \
+                            '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{6}.model ' \
+                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{6}.model '.format(
+                                measurement_set_in,
+                                self.outputs[0].path,
+                                'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
+                                self._produce_qa,
+                                self._w_projection_planes,
+                                self._number_taylor_terms,
+                                spectral_window,
+                                uvsub_command,
                         )
         super(DockerUvsub, self).run()
 
@@ -448,10 +456,17 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                             spectral_window,
                             uvsub_command,
                         )
-        else:
+        else: ## This should read else if 'major-2'
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                         '{8} {0} {1} {2} {3} {4} {5} ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{7}.model ' \
+                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
+                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \
+                        '{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model ' \
+                        '{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model ' \
                         '{6}/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{7}.model ' \
                         '{6}/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{7}.model ' \
                         '{6}/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{7}.model ' \
@@ -462,7 +477,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                             'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
                             self._produce_qa,
                             self._w_projection_planes,
-                            0,
+                            self._number_taylor_terms,
                             copy_of_model,
                             spectral_window,
                             uvsub_command,
