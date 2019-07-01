@@ -66,7 +66,7 @@ uvsub_major2:
   <<: *common
   action: uvsub
   number_taylor_terms: 0
-  absorption: 'yes'
+  absorption: 'major2'
   split_directory: uvsub_ha_2019_02_03
   uvsub_directory_name: uvsub_maj2_2019_06_27
   scan_statistics: False
