@@ -9,7 +9,7 @@ common: &common
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.5'     # allowed=['4.7', ''5.5'],
-  ami: ami-07e552bce311f2cf9
+  ami: ami-06483c6d747e3b74a
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
   spot_price_i3_8xlarge: 1.2
@@ -61,6 +61,23 @@ uvsub:
     Using new model (CI) - following new workflow plan as per MM & AP
     aka channalised outlier models now stand alone (for absorption)
     and matching (smaller) in beam models
+
+uvsub_major2:
+  <<: *common
+  action: uvsub
+  number_taylor_terms: 0
+  absorption: 'major2'
+  split_directory: uvsub_ha_2019_02_03
+  uvsub_directory_name: uvsub_maj2_2019_06_27
+  scan_statistics: False
+  produce_qa: True
+  frequency_range:              # A list of frequency ranges
+    - '980-1024'
+  nodes: 5
+  s3_storage_class: INTELLIGENT_TIERING
+  run_note_uvsub: |
+    Using new model of the outliers
+    try a second cycle of uvsubtraction
 
 uvsub_ska:
   <<: *common
