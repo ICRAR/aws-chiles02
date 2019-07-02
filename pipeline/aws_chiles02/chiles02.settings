@@ -45,7 +45,7 @@ database_server = "i-bccc7b61"
 # The subnets
 [subnets]
 us-west-2a = "subnet-bde9a3d8"
-us-west-2b = "subnet-04e68e73"
+#us-west-2b = "subnet-04e68e73"
 us-west-2c = "subnet-628b063b"
 
 ## SYDNEY
