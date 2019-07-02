@@ -16,11 +16,9 @@ yum -y update
 df -h
 
 cd /home/ec2-user
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && git pull'
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && python setup.py install'
 runuser -l ec2-user -c 'cd /home/ec2-user/aws-chiles02 && git pull'
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
-runuser -l ec2-user -c 'cd /home/ec2-user/daliuge && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
+runuser -l ec2-user -c 'cd /home/ec2-user && source /home/ec2-user/virtualenv/daliuge/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
+runuser -l ec2-user -c 'cd /home/ec2-user && source /home/ec2-user/virtualenv/aws-chiles02/bin/activate && pip install --upgrade -r /home/ec2-user/aws-chiles02/pipeline/pip/requirements.txt'
 
 cat /home/ec2-user/.ssh/id_daliuge.pub >> /home/ec2-user/.ssh/authorized_keys
 
