@@ -70,9 +70,8 @@ uvsub_major2:
   uvsub_directory_name: uvsub_maj2_2019_06_27
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1201-1203'
   produce_qa: True
-  nodes: 1
+  nodes: 5
   s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model of the outliers
