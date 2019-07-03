@@ -70,9 +70,9 @@ uvsub_major2:
   uvsub_directory_name: uvsub_maj2_2019_06_27
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1201-1203'
+    - '987-1223'
   produce_qa: True
-  nodes: 1
+  nodes: 25
   s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
     Using new model of the outliers
@@ -121,11 +121,11 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_ha_2019_02_03
-  clean_directory_name: clean_ha_2019_03_04_Wide
+  uvsub_directory_name: uvsub_maj2_2019_06_27
+  clean_directory_name: clean_ha_2019_07_03_Wide
   frequencies_per_node: 4
   nodes: 3
-  iterations: 100
+  iterations: 1000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -139,7 +139,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '950-999'
+    - '1013-1063'
   casa_version: '5.5'           # Clean works better with this version
   s3_storage_class: INTELLIGENT_TIERING
   s3_tags:
