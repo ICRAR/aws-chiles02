@@ -72,7 +72,7 @@ uvsub_major2:
   frequency_range:      # This should be a list
     - '987-1023'
   produce_qa: True
-  nodes: 5
+  nodes: 1
   run_note_uvsub: |
     Using new model of the outliers
     try a second cycle of uvsubtraction
