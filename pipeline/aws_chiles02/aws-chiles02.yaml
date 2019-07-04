@@ -66,14 +66,13 @@ uvsub_major2:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
-  absorption: 'major2'
-  uvsub_directory_name: uvsub_maj1_2019_06_27
+  absorption: 'major-2'
+  uvsub_directory_name: uvsub_maj2_2019_07_04
   scan_statistics: False
   frequency_range:      # This should be a list
     - '987-1023'
   produce_qa: True
-  nodes: 25
-  s3_storage_class: INTELLIGENT_TIERING
+  nodes: 5
   run_note_uvsub: |
     Using new model of the outliers
     try a second cycle of uvsubtraction
