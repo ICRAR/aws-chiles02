@@ -65,12 +65,12 @@ uvsub:
 uvsub_major2:
   <<: *common
   action: uvsub
-  number_taylor_terms: 0
+  number_taylor_terms: 2
   absorption: 'major2'
   uvsub_directory_name: uvsub_maj1_2019_06_27
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '987-1223'
+    - '987-1023'
   produce_qa: True
   nodes: 25
   s3_storage_class: INTELLIGENT_TIERING
