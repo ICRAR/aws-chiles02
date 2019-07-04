@@ -37,14 +37,14 @@ from aws_chiles02.common import ProgressPercentage, run_command
 from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 
 LOG = logging.getLogger(__name__)
-TAR_FILE = 'ms.tar'
-logging.getLogger('boto3').setLevel(logging.INFO)
-logging.getLogger('botocore').setLevel(logging.INFO)
-logging.getLogger('nose').setLevel(logging.INFO)
-logging.getLogger('s3transfer').setLevel(logging.INFO)
-logging.getLogger('urllib3').setLevel(logging.INFO)
+TAR_FILE = "ms.tar"
+logging.getLogger("boto3").setLevel(logging.INFO)
+logging.getLogger("botocore").setLevel(logging.INFO)
+logging.getLogger("nose").setLevel(logging.INFO)
+logging.getLogger("s3transfer").setLevel(logging.INFO)
+logging.getLogger("urllib3").setLevel(logging.INFO)
 
-LOG.info('Python 2: {}, Python 3: {}'.format(six.PY2, six.PY3))
+LOG.info("Python 2: {}, Python 3: {}".format(six.PY2, six.PY3))
 
 
 class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
@@ -55,9 +55,9 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyUvsubFromS3, self).initialize(**kwargs)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._max_frequency = self._getArg(kwargs, "max_frequency", None)
+        self._min_frequency = self._getArg(kwargs, "min_frequency", None)
+        self._session_id = self._getArg(kwargs, "session_id", None)
 
     def run(self):
         s3_input = self.inputs[0]
@@ -67,13 +67,19 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
         measurement_set_output = self.outputs[0]
         measurement_set_dir = measurement_set_output.path
 
-        LOG.info('bucket: {0}, key: {1}, dir: {2}'.format(bucket_name, key, measurement_set_dir))
+        LOG.info(
+            "bucket: {0}, key: {1}, dir: {2}".format(
+                bucket_name, key, measurement_set_dir
+            )
+        )
 
-        measurement_set = os.path.join(measurement_set_dir,
-                                       'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency))
-        LOG.debug('Checking {0} exists'.format(measurement_set))
+        measurement_set = os.path.join(
+            measurement_set_dir,
+            "vis_{0}~{1}".format(self._min_frequency, self._max_frequency),
+        )
+        LOG.debug("Checking {0} exists".format(measurement_set))
         if os.path.exists(measurement_set) and os.path.isdir(measurement_set):
-            LOG.warning('Measurement Set: {0} exists'.format(measurement_set))
+            LOG.warning("Measurement Set: {0} exists".format(measurement_set))
             return 0
 
         # Make the directory
@@ -81,10 +87,10 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
             os.makedirs(measurement_set_dir)
 
         full_path_tar_file = os.path.join(measurement_set_dir, TAR_FILE)
-        LOG.info('Tar: {0}'.format(full_path_tar_file))
+        LOG.info("Tar: {0}".format(full_path_tar_file))
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
         s3_object = s3.Object(bucket_name, key)
         s3_size = s3_object.content_length
         s3_client = s3.meta.client
@@ -93,46 +99,35 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
             bucket_name,
             key,
             full_path_tar_file,
-            callback=ProgressPercentage(
-                key,
-                s3_size
-            )
+            callback=ProgressPercentage(key, s3_size),
         )
         if not os.path.exists(full_path_tar_file):
-            message = 'The tar file {0} does not exist'.format(full_path_tar_file)
+            message = "The tar file {0} does not exist".format(full_path_tar_file)
             LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid
-            )
+            self.send_error_message(message, self.oid, self.uid)
             return 1
 
         # Check the sizes match
         tar_size = os.path.getsize(full_path_tar_file)
         if s3_size != tar_size:
-            message = 'The sizes for {0} differ S3: {1}, local FS: {2}'.format(full_path_tar_file, s3_size, tar_size)
-            LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid
+            message = "The sizes for {0} differ S3: {1}, local FS: {2}".format(
+                full_path_tar_file, s3_size, tar_size
             )
+            LOG.error(message)
+            self.send_error_message(message, self.oid, self.uid)
             return 1
 
         # The tar file exists and is the same size
-        bash = 'tar -xvf {0} -C {1}'.format(full_path_tar_file, measurement_set_dir)
+        bash = "tar -xvf {0} -C {1}".format(full_path_tar_file, measurement_set_dir)
         return_code = run_command(bash)
 
         path_exists = os.path.exists(measurement_set)
         if return_code != 0 or not path_exists:
-            message = 'tar return_code: {0}, exists: {1}-{2}'.format(return_code, measurement_set, path_exists)
-            LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid
+            message = "tar return_code: {0}, exists: {1}-{2}".format(
+                return_code, measurement_set, path_exists
             )
+            LOG.error(message)
+            self.send_error_message(message, self.oid, self.uid)
             return 1
 
         os.remove(full_path_tar_file)
@@ -140,7 +135,7 @@ class CopyUvsubFromS3(BarrierAppDROP, ErrorHandling):
         return 0
 
     def dataURL(self):
-        return 'CopyUvsubFromS3'
+        return "CopyUvsubFromS3"
 
 
 class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
@@ -152,12 +147,12 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyUvsubToS3, self).initialize(**kwargs)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._max_frequency = self._getArg(kwargs, "max_frequency", None)
+        self._min_frequency = self._getArg(kwargs, "min_frequency", None)
+        self._session_id = self._getArg(kwargs, "session_id", None)
 
     def dataURL(self):
-        return 'CopyUvSubToS3'
+        return "CopyUvSubToS3"
 
     def run(self):
         measurement_set_output = self.inputs[0]
@@ -166,42 +161,39 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key
-        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
-        # Does the file exists
-        stem_name = 'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency)
-        measurement_set = os.path.join(measurement_set_dir, stem_name)
-        LOG.debug('checking {0} exists'.format(measurement_set))
-        if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
-            message = 'Measurement_set: {0} does not exist'.format(measurement_set)
-            LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid
+        LOG.info(
+            "dir: {2}, bucket: {0}, key: {1}".format(
+                bucket_name, key, measurement_set_dir
             )
+        )
+        # Does the file exists
+        stem_name = "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency)
+        measurement_set = os.path.join(measurement_set_dir, stem_name)
+        LOG.debug("checking {0} exists".format(measurement_set))
+        if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):
+            message = "Measurement_set: {0} does not exist".format(measurement_set)
+            LOG.error(message)
+            self.send_error_message(message, self.oid, self.uid)
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(measurement_set_dir,
-                                    'uvsub_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
-        os.chdir(measurement_set_dir)
-        bash = 'tar -cvf {0} {1}'.format(
-            tar_filename,
-            stem_name,
+        tar_filename = os.path.join(
+            measurement_set_dir,
+            "uvsub_{0}~{1}.tar".format(self._min_frequency, self._max_frequency),
         )
+        os.chdir(measurement_set_dir)
+        bash = "tar -cvf {0} {1}".format(tar_filename, stem_name)
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
-            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
-            LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid,
+            message = "tar return_code: {0}, exists: {1}".format(
+                return_code, path_exists
             )
+            LOG.error(message)
+            self.send_error_message(message, self.oid, self.uid)
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
 
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
@@ -209,13 +201,8 @@ class CopyUvsubToS3(BarrierAppDROP, ErrorHandling):
             tar_filename,
             bucket_name,
             key,
-            callback=ProgressPercentage(
-                key,
-                float(os.path.getsize(tar_filename))
-            ),
-            extra_args={
-                'StorageClass': s3_output.storage_class
-            }
+            callback=ProgressPercentage(key, float(os.path.getsize(tar_filename))),
+            extra_args={"StorageClass": s3_output.storage_class},
         )
         tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
@@ -231,12 +218,12 @@ class CopyPngsToS3(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyPngsToS3, self).initialize(**kwargs)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._max_frequency = self._getArg(kwargs, "max_frequency", None)
+        self._min_frequency = self._getArg(kwargs, "min_frequency", None)
+        self._session_id = self._getArg(kwargs, "session_id", None)
 
     def dataURL(self):
-        return 'CopyPngsToS3'
+        return "CopyPngsToS3"
 
     def run(self):
         png_output = self.inputs[0]
@@ -245,41 +232,37 @@ class CopyPngsToS3(BarrierAppDROP, ErrorHandling):
         s3_output = self.outputs[0]
         bucket_name = s3_output.bucket
         key = s3_output.key
-        LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, png_output_dir))
+        LOG.info(
+            "dir: {2}, bucket: {0}, key: {1}".format(bucket_name, key, png_output_dir)
+        )
         # Does the file exists
-        stem_name = 'qa_pngs'.format(self._min_frequency, self._max_frequency)
+        stem_name = "qa_pngs".format(self._min_frequency, self._max_frequency)
         png_directory = os.path.join(png_output_dir, stem_name)
-        LOG.debug('checking {0} exists'.format(png_directory))
+        LOG.debug("checking {0} exists".format(png_directory))
         if not os.path.exists(png_directory) or not os.path.isdir(png_directory):
-            message = 'PNG Directory: {0} does not exist'.format(png_directory)
+            message = "PNG Directory: {0} does not exist".format(png_directory)
             LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid
-            )
+            self.send_error_message(message, self.oid, self.uid)
             return 0
 
         # Make the tar file
-        tar_filename = os.path.join(png_output_dir, 'pngs_{0}~{1}.tar'.format(self._min_frequency, self._max_frequency))
-        os.chdir(png_output_dir)
-        bash = 'tar -cvf {0} {1}'.format(
-            tar_filename,
-            stem_name,
+        tar_filename = os.path.join(
+            png_output_dir,
+            "pngs_{0}~{1}.tar".format(self._min_frequency, self._max_frequency),
         )
+        os.chdir(png_output_dir)
+        bash = "tar -cvf {0} {1}".format(tar_filename, stem_name)
         return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
-            message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
-            LOG.error(message)
-            self.send_error_message(
-                message,
-                self.oid,
-                self.uid,
+            message = "tar return_code: {0}, exists: {1}".format(
+                return_code, path_exists
             )
+            LOG.error(message)
+            self.send_error_message(message, self.oid, self.uid)
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
 
         s3_client = s3.meta.client
         transfer = S3Transfer(s3_client)
@@ -287,13 +270,8 @@ class CopyPngsToS3(BarrierAppDROP, ErrorHandling):
             tar_filename,
             bucket_name,
             key,
-            callback=ProgressPercentage(
-                key,
-                float(os.path.getsize(tar_filename))
-            ),
-            extra_args={
-                'StorageClass': s3_output.storage_class
-            }
+            callback=ProgressPercentage(key, float(os.path.getsize(tar_filename))),
+            extra_args={"StorageClass": s3_output.storage_class},
         )
         tag_s3_object(s3_client.get_object(Bucket=bucket_name, Key=key), s3_output.tags)
 
@@ -306,18 +284,20 @@ class CopyModel(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CopyModel, self).initialize(**kwargs)
-        self._session_id = self._getArg(kwargs, 'session_id', None)
+        self._session_id = self._getArg(kwargs, "session_id", None)
 
     def dataURL(self):
-        return 'CopyModel'
+        return "CopyModel"
 
     def run(self):
-        root_directory = '/home/ec2-user/aws-chiles02/LSM'
-        output_directory = os.path.join(self.outputs[0].path, 'LSM')
+        root_directory = "/home/ec2-user/aws-chiles02/LSM"
+        output_directory = os.path.join(self.outputs[0].path, "LSM")
 
-        LOG.info('Model copy: {}, {}'.format(root_directory, self.outputs[0].path))
+        LOG.info("Model copy: {}, {}".format(root_directory, self.outputs[0].path))
         shutil.copytree(root_directory, output_directory, symlinks=True)
-        LOG.info('Model copy complete: {}, {}'.format(root_directory, self.outputs[0].path))
+        LOG.info(
+            "Model copy complete: {}, {}".format(root_directory, self.outputs[0].path)
+        )
 
 
 class DockerUvsub(DockerApp, ErrorHandling):
@@ -330,75 +310,81 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._command = None
         self._absorption = None
         super(DockerUvsub, self).__init__(oid, uid, **kwargs)
-        raise NotImplementedError('The docker version is not maintained at the moment')
+        raise NotImplementedError("The docker version is not maintained at the moment")
 
     def initialize(self, **kwargs):
         super(DockerUvsub, self).initialize(**kwargs)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
-        self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
-        self._produce_qa = self._getArg(kwargs, 'produce_qa', None)
-        self._command = 'uvsub.sh'
-        self._session_id = self._getArg(kwargs, 'session_id', None)
-        self._absorption = self._getArg(kwargs, 'absorption', 'no')
+        self._max_frequency = self._getArg(kwargs, "max_frequency", None)
+        self._min_frequency = self._getArg(kwargs, "min_frequency", None)
+        self._w_projection_planes = self._getArg(kwargs, "w_projection_planes", None)
+        self._number_taylor_terms = self._getArg(kwargs, "number_taylor_terms", None)
+        self._produce_qa = self._getArg(kwargs, "produce_qa", None)
+        self._command = "uvsub.sh"
+        self._session_id = self._getArg(kwargs, "session_id", None)
+        self._absorption = self._getArg(kwargs, "absorption", "no")
 
     def run(self):
         measurement_set_in = os.path.join(
             self.inputs[0].path,
-            'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+            "vis_{0}~{1}".format(self._min_frequency, self._max_frequency),
         )
 
-        uvsub_command = 'uvsub_ha.py '
-        spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        if self._absorption == 'no': ## Using this key word for Major Cycle 2 now
-            self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 ' \
-                        '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model '  \
-                        '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model '.format(
-                            measurement_set_in,
-                            self.outputs[0].path,
-                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            self._produce_qa,
-                            self._w_projection_planes,
-                            self._number_taylor_terms,
-                            spectral_window,
-                            uvsub_command,
-                        )
-        else:  ## This should read else if 'major-2'
-            self._command = '{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} ' \
-                            '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 ' \
-                            '/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{6}.model ' \
-                            '/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{6}.model '.format(
-                                measurement_set_in,
-                                self.outputs[0].path,
-                                'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                                self._produce_qa,
-                                self._w_projection_planes,
-                                self._number_taylor_terms,
-                                spectral_window,
-                                uvsub_command,
-                        )
+        uvsub_command = "uvsub_ha.py "
+        spectral_window = int(
+            ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
+        )
+        if self._absorption == "no":  # Using this key word for Major Cycle 2 now
+            self._command = (
+                "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
+                "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 "
+                "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    self._number_taylor_terms,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
+        else:  # This should read else if 'major-2'
+            self._command = (
+                "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
+                "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 "
+                "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt1 "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_1.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{6}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    self._number_taylor_terms,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
         super(DockerUvsub, self).run()
 
     def dataURL(self):
-        return 'docker container chiles02:latest'
+        return "docker container chiles02:latest"
 
 
 class CasaUvsub(BarrierAppDROP, ErrorHandling):
@@ -416,73 +402,85 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CasaUvsub, self).initialize(**kwargs)
-        self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
-        self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
-        self._w_projection_planes = self._getArg(kwargs, 'w_projection_planes', None)
-        self._number_taylor_terms = self._getArg(kwargs, 'number_taylor_terms', None)
-        self._command = 'uvsub.py'
-        self._session_id = self._getArg(kwargs, 'session_id', None)
-        self._casa_version = self._getArg(kwargs, 'casa_version', None)
-        self._produce_qa = self._getArg(kwargs, 'produce_qa', None)
-        self._absorption = self._getArg(kwargs, 'absorption', 'no')
+        self._max_frequency = self._getArg(kwargs, "max_frequency", None)
+        self._min_frequency = self._getArg(kwargs, "min_frequency", None)
+        self._w_projection_planes = self._getArg(kwargs, "w_projection_planes", None)
+        self._number_taylor_terms = self._getArg(kwargs, "number_taylor_terms", None)
+        self._command = "uvsub.py"
+        self._session_id = self._getArg(kwargs, "session_id", None)
+        self._casa_version = self._getArg(kwargs, "casa_version", None)
+        self._produce_qa = self._getArg(kwargs, "produce_qa", None)
+        self._absorption = self._getArg(kwargs, "absorption", "no")
 
     def run(self):
         # make the input measurement set
         measurement_set_in = os.path.join(
             self.inputs[0].path,
-            'vis_{0}~{1}'.format(self._min_frequency, self._max_frequency)
+            "vis_{0}~{1}".format(self._min_frequency, self._max_frequency),
         )
         copy_of_model = self.inputs[1].path
-        uvsub_command = 'uvsub_ha.py '  # Now we can use n taylor terms =0 for absorption
-        spectral_window = int(((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32)
-        if self._absorption == 'no':
-            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                        '{8} {0} {1} {2} {3} {4} {5} ' \
-                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
-                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \
-                        '{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model '.format(
-                            measurement_set_in,
-                            self.outputs[0].path,
-                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            self._produce_qa,
-                            self._w_projection_planes,
-                            self._number_taylor_terms,
-                            copy_of_model,
-                            spectral_window,
-                            uvsub_command,
-                        )
-        else: ## This should read else if 'major-2'
-            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                        '{8} {0} {1} {2} {3} {4} {5} ' \
-                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 ' \
-                        '{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 ' \
-                        '{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{7}.model ' \
-                        '{6}/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{7}.model '.format(
-                            measurement_set_in,
-                            self.outputs[0].path,
-                            'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency),
-                            self._produce_qa,
-                            self._w_projection_planes,
-                            self._number_taylor_terms,
-                            copy_of_model,
-                            spectral_window,
-                            uvsub_command,
-                        )
+        uvsub_command = (
+            "uvsub_ha.py "
+        )  # Now we can use n taylor terms =0 for absorption
+        spectral_window = int(
+            ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
+        )
+        if self._absorption == "no":
+            self._command = (
+                "cd ; "
+                + get_casa_command_line(self._casa_version)
+                + SCRIPT_PATH
+                + "{8} {0} {1} {2} {3} {4} {5} "
+                "{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 "
+                "{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 "
+                "{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    self._number_taylor_terms,
+                    copy_of_model,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
+        else:  ## This should read else if 'major-2'
+            self._command = (
+                "cd ; "
+                + get_casa_command_line(self._casa_version)
+                + SCRIPT_PATH
+                + "{8} {0} {1} {2} {3} {4} {5} "
+                "{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt0 "
+                "{6}/LSM/epoch1gt4k_si_spw_{7}.model.tt1 "
+                "{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
+                "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model "
+                "{6}/LSM/Major-2/Outliers/Outlier_2.0,8.spw_{7}.model "
+                "{6}/LSM/Major-2/Outliers/Outlier_3.0,8.spw_{7}.model "
+                "{6}/LSM/Major-2/Outliers/Outlier_4.0,8.spw_{7}.model "
+                "{6}/LSM/Major-2/Outliers/Outlier_5.0,8.spw_{7}.model "
+                "{6}/LSM/Major-2/Outliers/Outlier_6.0,8.spw_{7}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    self._number_taylor_terms,
+                    copy_of_model,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
         run_command(self._command)
 
     def dataURL(self):
-        return 'CASA UvSub'
+        return "CASA UvSub"

@@ -534,8 +534,9 @@ def convert_yaml_list(yaml_list):
     for item in yaml_list:
         if isinstance(item, CommentedMap):
             new_dict = dict()
-            for key, value in item.values():
+            for key, value in item.items():
                 new_dict[key] = value
+            new_list.append(new_dict)
         else:
             new_list.append(item)
     return new_list
