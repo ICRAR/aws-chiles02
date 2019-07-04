@@ -24,7 +24,13 @@ Build the physical graph
 """
 import boto3
 
-from aws_chiles02.apps_clean import CopyCleanFromS3, CopyCleanToS3, CopyFitsToS3, DockerClean, CasaClean
+from aws_chiles02.apps_clean import (
+    CopyCleanFromS3,
+    CopyCleanToS3,
+    CopyFitsToS3,
+    DockerClean,
+    CasaClean,
+)
 from aws_chiles02.apps_general import CleanupDirectories
 from aws_chiles02.apps_tclean import DockerTclean, CasaTclean
 from aws_chiles02.build_graph_common import AbstractBuildGraph
@@ -41,27 +47,27 @@ class CarryOverDataClean:
 class BuildGraphClean(AbstractBuildGraph):
     def __init__(self, **keywords):
         super(BuildGraphClean, self).__init__(**keywords)
-        self._work_to_do = keywords['work_to_do']
-        self._parallel_streams = keywords['parallel_streams']
-        self._s3_clean_name = keywords['clean_directory_name']
-        self._s3_fits_name = keywords['fits_directory_name']
-        self._s3_uvsub_name = keywords['uvsub_directory_name']
-        self._iterations = keywords['iterations']
-        self._arcsec = keywords['arcsec']
-        self._w_projection_planes = keywords['w_projection_planes']
-        self._clean_weighting_uv = keywords['clean_weighting_uv']
-        self._robust = keywords['robust']
-        self._image_size = keywords['image_size']
-        self._clean_channel_average = keywords['clean_channel_average']
-        self._region_file = keywords['region_file']
-        self._only_image = keywords['only_image']
-        self._produce_qa = keywords['produce_qa']
-        self._clean_tclean = keywords['clean_tclean']
-        self._use_bash = keywords['use_bash']
-        self._build_fits = keywords['build_fits']
-        self._casa_version = keywords['casa_version']
-        self._s3_storage_class = keywords['s3_storage_class']
-        self._s3_tags = keywords['s3_tags']
+        self._work_to_do = keywords["work_to_do"]
+        self._parallel_streams = keywords["parallel_streams"]
+        self._s3_clean_name = keywords["clean_directory_name"]
+        self._s3_fits_name = keywords["fits_directory_name"]
+        self._s3_uvsub_name = keywords["uvsub_directory_name"]
+        self._iterations = keywords["iterations"]
+        self._arcsec = keywords["arcsec"]
+        self._w_projection_planes = keywords["w_projection_planes"]
+        self._clean_weighting_uv = keywords["clean_weighting_uv"]
+        self._robust = keywords["robust"]
+        self._image_size = keywords["image_size"]
+        self._clean_channel_average = keywords["clean_channel_average"]
+        self._region_file = keywords["region_file"]
+        self._only_image = keywords["only_image"]
+        self._produce_qa = keywords["produce_qa"]
+        self._clean_tclean = keywords["clean_tclean"]
+        self._use_bash = keywords["use_bash"]
+        self._build_fits = keywords["build_fits"]
+        self._casa_version = keywords["casa_version"]
+        self._s3_storage_class = keywords["s3_storage_class"]
+        self._s3_tags = keywords["s3_tags"]
         self._map_frequency_to_node = None
         self._list_ip = []
         self._s3_client = None
@@ -72,8 +78,8 @@ class BuildGraphClean(AbstractBuildGraph):
     def build_graph(self):
         self._build_node_map()
 
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
         self._s3_client = s3.meta.client
         self._bucket = s3.Bucket(self._bucket_name)
 
@@ -85,9 +91,11 @@ class BuildGraphClean(AbstractBuildGraph):
             if self._use_bash:
                 casa_py_clean_drop = self.create_casa_app(
                     node_id,
-                    get_module_name(CasaClean) if self._clean_tclean == 'clean' else get_module_name(CasaTclean),
-                    'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
-                    'clean' if self._clean_tclean == 'clean' else 'tclean',
+                    get_module_name(CasaClean)
+                    if self._clean_tclean == "clean"
+                    else get_module_name(CasaTclean),
+                    "app_clean" if self._clean_tclean == "clean" else "app_tclean",
+                    "clean" if self._clean_tclean == "clean" else "tclean",
                     casa_version=self._casa_version,
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
@@ -101,15 +109,17 @@ class BuildGraphClean(AbstractBuildGraph):
                     region_file=self._region_file,
                     produce_qa=self._produce_qa,
                     build_fits=self._build_fits,
-                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                    measurement_sets=[drop["dirname"] for drop in s3_drop_outs],
                 )
             else:
                 casa_py_clean_drop = self.create_docker_app(
                     node_id,
-                    get_module_name(DockerClean) if self._clean_tclean == 'clean' else get_module_name(DockerTclean),
-                    'app_clean' if self._clean_tclean == 'clean' else 'app_tclean',
+                    get_module_name(DockerClean)
+                    if self._clean_tclean == "clean"
+                    else get_module_name(DockerTclean),
+                    "app_clean" if self._clean_tclean == "clean" else "app_tclean",
                     CONTAINER_CHILES02,
-                    'clean' if self._clean_tclean == 'clean' else 'tclean',
+                    "clean" if self._clean_tclean == "clean" else "tclean",
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
                     iterations=self._iterations,
@@ -122,9 +132,9 @@ class BuildGraphClean(AbstractBuildGraph):
                     region_file=self._region_file,
                     produce_qa=self._produce_qa,
                     build_fits=self._build_fits,
-                    measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
+                    measurement_sets=[drop["dirname"] for drop in s3_drop_outs],
                 )
-            result = self.create_directory_container(node_id, 'dir_clean_output')
+            result = self.create_directory_container(node_id, "dir_clean_output")
             for drop in s3_drop_outs:
                 casa_py_clean_drop.addInput(drop)
             casa_py_clean_drop.addOutput(result)
@@ -132,7 +142,7 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_clean_to_s3 = self.create_app(
                 node_id,
                 get_module_name(CopyCleanToS3),
-                'app_copy_clean_to_s3',
+                "app_copy_clean_to_s3",
                 min_frequency=frequency_pair.bottom_frequency,
                 max_frequency=frequency_pair.top_frequency,
                 only_image=self._only_image,
@@ -140,13 +150,13 @@ class BuildGraphClean(AbstractBuildGraph):
             s3_clean_drop_out = self.create_s3_drop(
                 node_id,
                 self._bucket_name,
-                '{0}/cleaned_{1}_{2}.tar'.format(
+                "{0}/cleaned_{1}_{2}.tar".format(
                     self._s3_clean_name,
                     frequency_pair.bottom_frequency,
                     frequency_pair.top_frequency,
                 ),
-                'aws-chiles02',
-                oid='s3_out',
+                "aws-chiles02",
+                oid="s3_out",
                 storage_class=self._s3_storage_class,
                 tags=self._s3_tags,
             )
@@ -154,24 +164,24 @@ class BuildGraphClean(AbstractBuildGraph):
             copy_clean_to_s3.addOutput(s3_clean_drop_out)
 
             s3_fits_drop_out = None
-            if self._build_fits == 'yes':
+            if self._build_fits == "yes":
                 copy_fits_to_s3 = self.create_app(
                     node_id,
                     get_module_name(CopyFitsToS3),
-                    'app_copy_fits_to_s3',
+                    "app_copy_fits_to_s3",
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
                 )
                 s3_fits_drop_out = self.create_s3_drop(
                     node_id,
                     self._bucket_name,
-                    '{0}/cleaned_{1}_{2}.fits'.format(
+                    "{0}/cleaned_{1}_{2}.fits".format(
                         self._s3_fits_name,
                         frequency_pair.bottom_frequency,
                         frequency_pair.top_frequency,
                     ),
-                    'aws-chiles02',
-                    oid='s3_out',
+                    "aws-chiles02",
+                    oid="s3_out",
                     storage_class=self._s3_storage_class,
                     tags=self._s3_tags,
                 )
@@ -183,7 +193,7 @@ class BuildGraphClean(AbstractBuildGraph):
             # Give the memory drop somewhere to go
             memory_drop = self.create_memory_drop(node_id)
             barrier_drop.addInput(s3_clean_drop_out)
-            if self._build_fits == 'yes':
+            if self._build_fits == "yes":
                 barrier_drop.addInput(s3_fits_drop_out)
             barrier_drop.addOutput(memory_drop)
 
@@ -191,9 +201,7 @@ class BuildGraphClean(AbstractBuildGraph):
             carry_over_data.s3_out = memory_drop
 
             clean_up = self.create_app(
-                node_id,
-                get_module_name(CleanupDirectories),
-                'app_cleanup_directories',
+                node_id, get_module_name(CleanupDirectories), "app_cleanup_directories"
             )
             for drop in s3_drop_outs:
                 clean_up.addInput(drop)
@@ -212,7 +220,7 @@ class BuildGraphClean(AbstractBuildGraph):
         self._list_ip = []
         for key, values in self._node_details.items():
             for value in values:
-                self._list_ip.append(value['ip_address'])
+                self._list_ip.append(value["ip_address"])
 
         self._map_frequency_to_node = {}
         count = 0
@@ -225,13 +233,13 @@ class BuildGraphClean(AbstractBuildGraph):
 
     def _build_s3_download(self, node_id, frequency_pair):
         s3_objects = []
-        prefix = '{0}/{1}_{2}'.format(
+        prefix = "{0}/{1}_{2}".format(
             self._s3_uvsub_name,
             frequency_pair.bottom_frequency,
-            frequency_pair.top_frequency
+            frequency_pair.top_frequency,
         )
         for key in self._bucket.objects.filter(Prefix=prefix):
-            if not key.key.startswith('stats') and key.key.endswith('.tar'):
+            if not key.key.startswith("stats") and key.key.endswith(".tar"):
                 s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams
@@ -239,24 +247,16 @@ class BuildGraphClean(AbstractBuildGraph):
         counter = 0
         for s3_object in s3_objects:
             s3_drop = self.create_s3_drop(
-                node_id,
-                self._bucket_name,
-                s3_object,
-                'aws-chiles02',
-                oid='s3_in',
+                node_id, self._bucket_name, s3_object, "aws-chiles02", oid="s3_in"
             )
             copy_from_s3 = self.create_app(
                 node_id,
                 get_module_name(CopyCleanFromS3),
-                'app_copy_from_s3',
+                "app_copy_from_s3",
                 min_frequency=frequency_pair.bottom_frequency,
                 max_frequency=frequency_pair.top_frequency,
-
             )
-            measurement_set = self.create_directory_container(
-                node_id,
-                'dir_in_ms'
-            )
+            measurement_set = self.create_directory_container(node_id, "dir_in_ms")
 
             # The order of arguments is important so don't put anything in front of these
             copy_from_s3.addInput(s3_drop)
