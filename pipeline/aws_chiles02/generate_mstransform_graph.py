@@ -37,13 +37,33 @@ from dlg.droputils import get_roots
 from dlg.manager.client import DataIslandManagerClient
 
 from aws_chiles02.build_graph_mstransform import BuildGraphMsTransform
-from aws_chiles02.common import FrequencyPair, MeasurementSetData, get_aws_credentials, \
-    get_list_frequency_groups, get_session_id, get_uuid, get_config
+from aws_chiles02.common import (
+    FrequencyPair,
+    MeasurementSetData,
+    get_aws_credentials,
+    get_list_frequency_groups,
+    get_session_id,
+    get_uuid,
+    get_config,
+    convert_yaml_list,
+)
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
-from aws_chiles02.settings_file import AWS_REGION, DIM_PORT, SIZE_1GB, WAIT_TIMEOUT_ISLAND_MANAGER, \
-    WAIT_TIMEOUT_NODE_MANAGER
-from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
+from aws_chiles02.generate_common import (
+    build_hosts,
+    get_nodes_running,
+    get_reported_running,
+)
+from aws_chiles02.settings_file import (
+    AWS_REGION,
+    DIM_PORT,
+    SIZE_1GB,
+    WAIT_TIMEOUT_ISLAND_MANAGER,
+    WAIT_TIMEOUT_NODE_MANAGER,
+)
+from aws_chiles02.user_data import (
+    get_data_island_manager_user_data,
+    get_node_manager_user_data,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,21 +80,21 @@ class WorkToDo(object):
         self._work_to_do = {}
 
     def calculate_work_to_do(self):
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
 
         list_measurement_sets = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(Prefix='observation_data/phase_{}'.format(self._observation_phase)):
-            if key.key.endswith('_calibrated_deepfield.ms.tar') or key.key.endswith('_calibrated_deepfield.ms.tar.gz'):
-                LOGGER.info('Found {0}'.format(key.key))
+        for key in self._bucket.objects.filter(
+            Prefix="observation_data/phase_{}".format(self._observation_phase)
+        ):
+            if key.key.endswith("_calibrated_deepfield.ms.tar") or key.key.endswith(
+                "_calibrated_deepfield.ms.tar.gz"
+            ):
+                LOGGER.info("Found {0}".format(key.key))
 
                 list_measurement_sets.append(
-                    MeasurementSetData(
-                        key.key,
-                        key.size,
-                        key.key.endswith('gz')
-                    )
+                    MeasurementSetData(key.key, key.size, key.key.endswith("gz"))
                 )
 
         # Get work we've already done
@@ -82,18 +102,26 @@ class WorkToDo(object):
         self._work_already_done = self._get_work_already_done()
 
         for day_to_process in list_measurement_sets:
-            day_work_already_done = self._work_already_done.get(day_to_process.short_name)
-            list_frequency_groups = self._get_details_for_measurement_set(day_work_already_done)
+            day_work_already_done = self._work_already_done.get(
+                day_to_process.short_name
+            )
+            list_frequency_groups = self._get_details_for_measurement_set(
+                day_work_already_done
+            )
 
             if self._ignore_day(list_frequency_groups):
-                LOGGER.info('{0} has already been process.'.format(day_to_process.input_s3_key_name))
+                LOGGER.info(
+                    "{0} has already been process.".format(
+                        day_to_process.input_s3_key_name
+                    )
+                )
             else:
                 self._work_to_do[day_to_process] = list_frequency_groups
 
     def _get_work_already_done(self):
         frequencies_per_day = {}
         for key in self._bucket.objects.filter(Prefix=self._s3_split_name):
-            elements = key.key.split('/')
+            elements = key.key.split("/")
 
             if len(elements) > 2:
                 day_key = elements[2]
@@ -125,7 +153,9 @@ class WorkToDo(object):
         # Check if we have the first groups
         count_bottom = 0
         for bottom_frequency in range(940, 956, self._width):
-            frequency_group = FrequencyPair(bottom_frequency, bottom_frequency + self._width)
+            frequency_group = FrequencyPair(
+                bottom_frequency, bottom_frequency + self._width
+            )
             if frequency_group in list_frequency_groups:
                 count_bottom += 1
 
@@ -159,47 +189,55 @@ def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlar
     if counts[2] > 0:
         count = max(counts[2] // days_per_node, 1)
         node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i3.4xlarge',
-            'spot_price': spot_price_4xlarge
-        })
+        nodes.append(
+            {
+                "number_instances": count,
+                "instance_type": "i3.4xlarge",
+                "spot_price": spot_price_4xlarge,
+            }
+        )
     if counts[1] > 0:
         count = max(counts[1] // days_per_node, 1)
         node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i3.2xlarge',
-            'spot_price': spot_price_2xlarge
-        })
+        nodes.append(
+            {
+                "number_instances": count,
+                "instance_type": "i3.2xlarge",
+                "spot_price": spot_price_2xlarge,
+            }
+        )
     if counts[0] > 0:
         count = max(counts[0] // days_per_node, 1)
         node_count += count
-        nodes.append({
-            'number_instances': count,
-            'instance_type': 'i3.xlarge',
-            'spot_price': spot_price_2xlarge
-        })
+        nodes.append(
+            {
+                "number_instances": count,
+                "instance_type": "i3.xlarge",
+                "spot_price": spot_price_2xlarge,
+            }
+        )
 
     return nodes, node_count
 
 
-def create_and_generate(bucket_name,
-                        frequency_width,
-                        ami_id,
-                        spot_price1,
-                        spot_price2,
-                        volume,
-                        days_per_node,
-                        add_shutdown,
-                        use_bash,
-                        casa_version,
-                        split_directory,
-                        observation_phase,
-                        run_note,
-                        s3_storage_class,
-                        s3_tags):
-    boto_data = get_aws_credentials('aws-chiles02')
+def create_and_generate(
+    bucket_name,
+    frequency_width,
+    ami_id,
+    spot_price1,
+    spot_price2,
+    volume,
+    days_per_node,
+    add_shutdown,
+    use_bash,
+    casa_version,
+    split_directory,
+    observation_phase,
+    run_note,
+    s3_storage_class,
+    s3_tags,
+):
+    boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
         work_to_do = WorkToDo(
             width=frequency_width,
@@ -214,7 +252,7 @@ def create_and_generate(bucket_name,
             days=days,
             days_per_node=days_per_node,
             spot_price_2xlarge=spot_price1,
-            spot_price_4xlarge=spot_price2
+            spot_price_4xlarge=spot_price2,
         )
 
         if len(nodes_required) > 0:
@@ -223,34 +261,19 @@ def create_and_generate(bucket_name,
                 ami_id,
                 nodes_required,
                 get_node_manager_user_data(
-                    boto_data,
-                    uuid,
-                    chiles=not use_bash,
-                    casa_version=casa_version,
+                    boto_data, uuid, chiles=not use_bash, casa_version=casa_version
                 ),
                 AWS_REGION,
                 tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'DALiuGE NM - MsTransform',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
-
+                    {"Key": "Owner", "Value": getpass.getuser()},
+                    {"Key": "Name", "Value": "DALiuGE NM - MsTransform"},
+                    {"Key": "uuid", "Value": uuid},
+                ],
             )
             ec2_data.start_instances()
 
             reported_running = get_reported_running(
-                uuid,
-                node_count,
-                wait=WAIT_TIMEOUT_NODE_MANAGER
+                uuid, node_count, wait=WAIT_TIMEOUT_NODE_MANAGER
             )
             hosts = build_hosts(reported_running)
 
@@ -259,40 +282,29 @@ def create_and_generate(bucket_name,
                 ami_id,
                 [
                     {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price1
+                        "number_instances": 1,
+                        "instance_type": "m4.large",
+                        "spot_price": spot_price1,
                     }
                 ],
                 get_data_island_manager_user_data(boto_data, hosts, uuid),
                 AWS_REGION,
                 tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'DALiuGE DIM - MsTransform',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
+                    {"Key": "Owner", "Value": getpass.getuser()},
+                    {"Key": "Name", "Value": "DALiuGE DIM - MsTransform"},
+                    {"Key": "uuid", "Value": uuid},
+                ],
             )
             data_island_manager.start_instances()
             data_island_manager_running = get_reported_running(
-                uuid,
-                1,
-                wait=WAIT_TIMEOUT_ISLAND_MANAGER
+                uuid, 1, wait=WAIT_TIMEOUT_ISLAND_MANAGER
             )
 
-            if len(data_island_manager_running['m4.large']) == 1:
+            if len(data_island_manager_running["m4.large"]) == 1:
                 # Now build the graph
                 session_id = get_session_id()
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
+                instance_details = data_island_manager_running["m4.large"][0]
+                host = instance_details["ip_address"]
                 graph = BuildGraphMsTransform(
                     work_to_do=work_to_do.work_to_do,
                     bucket_name=bucket_name,
@@ -309,53 +321,50 @@ def create_and_generate(bucket_name,
                     casa_version=casa_version,
                     run_note=run_note,
                     s3_storage_class=s3_storage_class,
-                    s3_tags=s3_tags,
+                    s3_tags=convert_yaml_list(s3_tags),
                 )
                 graph.build_graph()
-                graph.tag_all_app_drops({
-                    "session_id": session_id,
-                })
+                graph.tag_all_app_drops({"session_id": session_id})
 
-                LOGGER.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+                LOGGER.info("Connection to {0}:{1}".format(host, DIM_PORT))
                 client = DataIslandManagerClient(host, DIM_PORT, timeout=30)
 
                 client.create_session(session_id)
                 client.append_graph(session_id, graph.drop_list)
                 client.deploy_session(session_id, get_roots(graph.drop_list))
     else:
-        LOGGER.error('Unable to find the AWS credentials')
+        LOGGER.error("Unable to find the AWS credentials")
 
 
-def use_and_generate(host,
-                     port,
-                     bucket_name,
-                     frequency_width,
-                     volume,
-                     add_shutdown,
-                     use_bash,
-                     split_directory,
-                     observation_phase,
-                     casa_version,
-                     run_note,
-                     s3_storage_class,
-                     s3_tags):
-    boto_data = get_aws_credentials('aws-chiles02')
+def use_and_generate(
+    host,
+    port,
+    bucket_name,
+    frequency_width,
+    volume,
+    add_shutdown,
+    use_bash,
+    split_directory,
+    observation_phase,
+    casa_version,
+    run_note,
+    s3_storage_class,
+    s3_tags,
+):
+    boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
         connection = HTTPConnection(host, port)
-        connection.request('GET', '/api', None, {})
+        connection.request("GET", "/api", None, {})
         response = connection.getresponse()
         if response.status != HTTPStatus.OK:
-            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(
-                host,
-                port,
-                response.status,
-                response.read()
+            msg = "Error while processing GET request for {0}:{1}/api (status {2}): {3}".format(
+                host, port, response.status, response.read()
             )
             raise Exception(msg)
 
         json_data = response.read()
         message_details = json.loads(json_data)
-        host_list = message_details['hosts']
+        host_list = message_details["hosts"]
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
@@ -385,11 +394,11 @@ def use_and_generate(host,
                 casa_version=casa_version,
                 run_note=run_note,
                 s3_storage_class=s3_storage_class,
-                s3_tags=s3_tags,
+                s3_tags=convert_yaml_list(s3_tags),
             )
             graph.build_graph()
 
-            LOGGER.info('Connection to {0}:{1}'.format(host, port))
+            LOGGER.info("Connection to {0}:{1}".format(host, port))
             client = DataIslandManagerClient(host, port, timeout=30)
 
             client.create_session(session_id)
@@ -397,29 +406,35 @@ def use_and_generate(host,
             client.deploy_session(session_id, get_roots(graph.drop_list))
 
         else:
-            LOGGER.warning('No nodes are running')
+            LOGGER.warning("No nodes are running")
 
 
-def build_json(bucket,
-               width,
-               volume,
-               nodes,
-               parallel_streams,
-               add_shutdown,
-               use_bash,
-               split_directory,
-               observation_phase,
-               casa_version,
-               run_note,
-               json_path,
-               s3_storage_class,
-               s3_tags):
+def build_json(
+    bucket,
+    width,
+    volume,
+    nodes,
+    parallel_streams,
+    add_shutdown,
+    use_bash,
+    split_directory,
+    observation_phase,
+    casa_version,
+    run_note,
+    json_path,
+    s3_storage_class,
+    s3_tags,
+):
     work_to_do = WorkToDo(width, bucket, split_directory, observation_phase)
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, nodes)],
-        'i3.4xlarge': [{'ip_address': 'node_i4_{0}'.format(i)} for i in range(0, nodes)],
+        "i3.2xlarge": [
+            {"ip_address": "node_i2_{0}".format(i)} for i in range(0, nodes)
+        ],
+        "i3.4xlarge": [
+            {"ip_address": "node_i4_{0}".format(i)} for i in range(0, nodes)
+        ],
     }
     graph = BuildGraphMsTransform(
         work_to_do=work_to_do.work_to_do,
@@ -429,15 +444,15 @@ def build_json(bucket,
         node_details=node_details,
         shutdown=add_shutdown,
         width=width,
-        session_id='json_test',
-        dim_ip='1.2.3.4',
+        session_id="json_test",
+        dim_ip="1.2.3.4",
         use_bash=use_bash,
         split_directory=split_directory,
         observation_phase=observation_phase,
         casa_version=casa_version,
         run_note=run_note,
         s3_storage_class=s3_storage_class,
-        s3_tags=s3_tags,
+        s3_tags=convert_yaml_list(s3_tags),
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -451,93 +466,92 @@ def run(command_line_):
         if exists(command_line_.config_file):
             yaml_filename = command_line_
         else:
-            LOGGER.error('Invalid configuration filename: {}'.format(command_line_.config_file))
+            LOGGER.error(
+                "Invalid configuration filename: {}".format(command_line_.config_file)
+            )
             return
     else:
         path_dirname, filename = os.path.split(__file__)
-        yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
+        yaml_filename = "{0}/aws-chiles02.yaml".format(path_dirname)
 
-    LOGGER.info('Reading YAML file {}'.format(yaml_filename))
+    LOGGER.info("Reading YAML file {}".format(yaml_filename))
     config = get_config(yaml_filename, command_line_.tag_name)
-    if config['action'] != 'split':
-        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+    if config["action"] != "split":
+        LOGGER.error(
+            "Invalid tag: {} for {}".format(command_line_.tag_name, config["action"])
+        )
         return
 
     # Run the command
-    if config['run_type'] == 'create':
+    if config["run_type"] == "create":
         create_and_generate(
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            ami_id=config['ami'],
-            spot_price1=config['spot_price_i3_2xlarge'],
-            spot_price2=config['spot_price_i3_4xlarge'],
-            volume=config['volume'],
-            days_per_node=config['days_per_node'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
-            run_note=config['run_note'],
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            bucket_name=config["bucket_name"],
+            frequency_width=config["width"],
+            ami_id=config["ami"],
+            spot_price1=config["spot_price_i3_2xlarge"],
+            spot_price2=config["spot_price_i3_4xlarge"],
+            volume=config["volume"],
+            days_per_node=config["days_per_node"],
+            add_shutdown=config["shutdown"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            split_directory=config["split_directory"],
+            observation_phase=config["observation_phase"],
+            run_note=config["run_note"],
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
-    elif config['run_type'] == 'use':
+    elif config["run_type"] == "use":
         use_and_generate(
-            host=config['dim'],
+            host=config["dim"],
             port=DIM_PORT,
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            volume=config['volume'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
-            run_note=config['run_note'],
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            bucket_name=config["bucket_name"],
+            frequency_width=config["width"],
+            volume=config["volume"],
+            add_shutdown=config["shutdown"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            split_directory=config["split_directory"],
+            observation_phase=config["observation_phase"],
+            run_note=config["run_note"],
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
     else:
         build_json(
-            bucket=config['bucket_name'],
-            width=config['width'],
-            volume=config['volume'],
-            nodes=config['nodes'],
-            parallel_streams=config['parallel_streams'],
-            add_shutdown=config['shutdown'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            split_directory=config['split_directory'],
-            observation_phase=config['observation_phase'],
-            run_note=config['run_note'],
+            bucket=config["bucket_name"],
+            width=config["width"],
+            volume=config["volume"],
+            nodes=config["nodes"],
+            parallel_streams=config["parallel_streams"],
+            add_shutdown=config["shutdown"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            split_directory=config["split_directory"],
+            observation_phase=config["observation_phase"],
+            run_note=config["run_note"],
             json_path="/tmp/json_file.json",
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
 
 
-if __name__ == '__main__':
-    print('Before you run this - have you figured out why days without '
-          'the 944-948 band copy the whole observation over?')
+if __name__ == "__main__":
+    print(
+        "Before you run this - have you figured out why days without "
+        "the 944-948 band copy the whole observation over?"
+    )
     sys.exit()
 
-    parser = argparse.ArgumentParser(description='Split')
+    parser = argparse.ArgumentParser(description="Split")
     parser.add_argument(
-        '--config_file',
-        default=None,
-        help='the config file for this run'
+        "--config_file", default=None, help="the config file for this run"
     )
     parser.add_argument(
-        'tag_name',
-        nargs='?',
-        default='split',
-        help='the tag name to execute'
+        "tag_name", nargs="?", default="split", help="the tag name to execute"
     )
     command_line = parser.parse_args()
     logging.basicConfig(
-        level=logging.INFO,
-        format='{asctime}:{levelname}:{name}:{message}',
-        style='{',
+        level=logging.INFO, format="{asctime}:{levelname}:{name}:{message}", style="{"
     )
     run(command_line)

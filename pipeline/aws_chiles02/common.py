@@ -35,6 +35,7 @@ from os.path import expanduser, join, exists
 
 from configobj import ConfigObj
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, INPUT_MS_SUFFIX_TAR_GZ
 
@@ -45,8 +46,8 @@ class FrequencyPair(object):
     def __init__(self, bottom_frequency, top_frequency):
         self.bottom_frequency = bottom_frequency
         self.top_frequency = top_frequency
-        self._name = 'FrequencyPair({0}, {1})'.format(bottom_frequency, top_frequency)
-        self._underscore_name = '{0}_{1}'.format(bottom_frequency, top_frequency)
+        self._name = "FrequencyPair({0}, {1})".format(bottom_frequency, top_frequency)
+        self._underscore_name = "{0}_{1}".format(bottom_frequency, top_frequency)
 
     def __str__(self):
         return self._name
@@ -85,14 +86,14 @@ class MeasurementSetData:
         self.size = size
         self.gzipped = gzipped
         # Get rid of the '_calibrated_deepfield.ms.tar'
-        elements = input_s3_key_name.split('/')
-        if input_s3_key_name.endswith('.gz'):
-            self.short_name = elements[-1][:-len(INPUT_MS_SUFFIX_TAR_GZ)]
+        elements = input_s3_key_name.split("/")
+        if input_s3_key_name.endswith(".gz"):
+            self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX_TAR_GZ)]
         else:
-            self.short_name = elements[-1][:-len(INPUT_MS_SUFFIX_TAR)]
+            self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX_TAR)]
 
     def __str__(self):
-        return 'MeasurementSetData(\'{0}\', {1})'.format(self.short_name, self.size)
+        return "MeasurementSetData('{0}', {1})".format(self.short_name, self.size)
 
     def __repr__(self):
         return self.__str__()
@@ -107,12 +108,16 @@ class MeasurementSetData:
 def get_list_frequency_groups(frequency_width):
     list_frequencies = []
     for bottom_frequency in range(944, 1420, frequency_width):
-        list_frequencies.append(FrequencyPair(bottom_frequency, bottom_frequency + frequency_width))
+        list_frequencies.append(
+            FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
+        )
     return list_frequencies
 
 
 def pair_in_set(frequency_pair, frequencies_required):
-    for frequency in range(frequency_pair.bottom_frequency, frequency_pair.top_frequency + 1):
+    for frequency in range(
+        frequency_pair.bottom_frequency, frequency_pair.top_frequency + 1
+    ):
         if frequency in frequencies_required:
             return True
 
@@ -141,7 +146,7 @@ def get_required_frequencies(frequencies, width):
     if isinstance(frequencies, list):
         frequencies_required = set()
         for frequency in frequencies:
-            elements = frequency.split('-')
+            elements = frequency.split("-")
             if len(elements) == 2:
                 for inner_frequency in range(int(elements[0]), int(elements[1]) + 1):
                     frequencies_required.add(inner_frequency)
@@ -219,25 +224,22 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
 
 
 def get_log_level(args):
-    log_level = 'vvv'
+    log_level = "vvv"
     if args.verbosity <= 1:
-        log_level = 'v'
+        log_level = "v"
     elif args.verbosity == 2:
-        log_level = 'vv'
+        log_level = "vv"
     elif args.verbosity == 3:
-        log_level = 'vvv'
+        log_level = "vvv"
     return log_level
 
 
 def get_module_name(item):
-    return item.__module__ + '.' + item.__name__
+    return item.__module__ + "." + item.__name__
 
 
 def get_session_id():
-    return '{0}-{1}'.format(
-            getpass.getuser(),
-            time.strftime('%Y%m%d%H%M%S')
-    )
+    return "{0}-{1}".format(getpass.getuser(), time.strftime("%Y%m%d%H%M%S"))
 
 
 def split_s3_url(s3_url):
@@ -250,8 +252,8 @@ def split_s3_url(s3_url):
     ('bucket_name', 'key/morekey/ms.tar')
     """
     body = s3_url[5:]
-    index = body.find('/')
-    return body[:index], body[index+1:]
+    index = body.find("/")
+    return body[:index], body[index + 1 :]
 
 
 class OutputStream(threading.Thread):
@@ -287,17 +289,19 @@ class OutputStream(threading.Thread):
 def run_command(command):
     LOG.info(command)
     with OutputStream() as stream:
-        process = subprocess.Popen(command,
-                                   bufsize=1,
-                                   shell=True,
-                                   stdout=stream,
-                                   stderr=subprocess.STDOUT,
-                                   env=os.environ.copy())
+        process = subprocess.Popen(
+            command,
+            bufsize=1,
+            shell=True,
+            stdout=stream,
+            stderr=subprocess.STDOUT,
+            env=os.environ.copy(),
+        )
         while process.poll() is None:
             time.sleep(1)
 
     output = stream.buffer.getvalue()
-    LOG.info('{0}, output follows.\n{1}'.format(command, output))
+    LOG.info("{0}, output follows.\n{1}".format(command, output))
 
     return process.returncode
 
@@ -313,13 +317,13 @@ def module_exists(module_name):
 
 def get_aws_credentials(profile_name):
     data = None
-    dot_boto = join(expanduser('~'), '.aws', 'credentials')
+    dot_boto = join(expanduser("~"), ".aws", "credentials")
     if os.path.exists(dot_boto):
         config = ConfigObj(dot_boto)
         if profile_name in config:
             data = [
-                config[profile_name]['aws_access_key_id'],
-                config[profile_name]['aws_secret_access_key'],
+                config[profile_name]["aws_access_key_id"],
+                config[profile_name]["aws_secret_access_key"],
             ]
     return data
 
@@ -332,7 +336,7 @@ class ProgressPercentage:
     def __init__(self, filename, expected_size):
         self._filename = filename
         self._size = float(expected_size)
-        self._size_mb = bytes2human(expected_size, '{0:.2f}{1}')
+        self._size_mb = bytes2human(expected_size, "{0:.2f}{1}")
         self._seen_so_far = 0
         self._lock = threading.Lock()
         self._percentage = -1
@@ -344,25 +348,37 @@ class ProgressPercentage:
                 percentage = int((self._seen_so_far / self._size) * 100.0)
                 if percentage > self._percentage:
                     LOG.info(
-                        '{0}  {1} / {2} ({3}%)'.format(
+                        "{0}  {1} / {2} ({3}%)".format(
                             self._filename,
-                            bytes2human(self._seen_so_far, '{0:.2f}{1}'),
+                            bytes2human(self._seen_so_far, "{0:.2f}{1}"),
                             self._size_mb,
-                            percentage))
+                            percentage,
+                        )
+                    )
                     self._percentage = percentage
             else:
-                LOG.warning('Filename: {0}, size: 0'.format(self._filename))
+                LOG.warning("Filename: {0}, size: 0".format(self._filename))
 
 
 SYMBOLS = {
-    'customary': ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'),
-    'customary_ext': ('byte', 'kilo', 'mega', 'giga', 'tera', 'peta', 'exa', 'zetta', 'iotta'),
-    'iec': ('Bi', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'),
-    'iec_ext': ('byte', 'kibi', 'mebi', 'gibi', 'tebi', 'pebi', 'exbi', 'zebi', 'yobi'),
+    "customary": ("B", "K", "M", "G", "T", "P", "E", "Z", "Y"),
+    "customary_ext": (
+        "byte",
+        "kilo",
+        "mega",
+        "giga",
+        "tera",
+        "peta",
+        "exa",
+        "zetta",
+        "iotta",
+    ),
+    "iec": ("Bi", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"),
+    "iec_ext": ("byte", "kibi", "mebi", "gibi", "tebi", "pebi", "exbi", "zebi", "yobi"),
 }
 
 
-def bytes2human(n, format_string='{0:.1f}{1}', symbols='customary'):
+def bytes2human(n, format_string="{0:.1f}{1}", symbols="customary"):
     """
     Convert n bytes into a human readable string based on format.
     symbols can be either "customary", "customary_ext", "iec" or "iec_ext",
@@ -443,7 +459,7 @@ def human2bytes(input_string):
     """
     init = input_string
     num = ""
-    while input_string and input_string[0:1].isdigit() or input_string[0:1] == '.':
+    while input_string and input_string[0:1].isdigit() or input_string[0:1] == ".":
         num += input_string[0]
         input_string = input_string[1:]
     num = float(num)
@@ -452,16 +468,14 @@ def human2bytes(input_string):
         if letter in sset:
             break
     else:
-        if letter == 'k':
+        if letter == "k":
             # treat 'k' as an alias for 'K' as per: http://goo.gl/kTQMs
-            sset = SYMBOLS['customary']
+            sset = SYMBOLS["customary"]
             letter = letter.upper()
         else:
             raise ValueError("can't interpret '{0}'".format(init))
 
-    prefix = {
-        sset[0]: 1
-    }
+    prefix = {sset[0]: 1}
     for i, input_string in enumerate(sset[1:]):
         prefix[input_string] = 1 << (i + 1) * 10
     return int(num * prefix[letter])
@@ -480,9 +494,9 @@ def set_logging_level(verbosity):
 
 
 def set_boto_logging_level(level):
-    logging.getLogger('boto3').setLevel(level)
-    logging.getLogger('botocore').setLevel(level)
-    logging.getLogger('nose').setLevel(level)
+    logging.getLogger("boto3").setLevel(level)
+    logging.getLogger("botocore").setLevel(level)
+    logging.getLogger("nose").setLevel(level)
 
 
 @contextlib.contextmanager
@@ -495,12 +509,12 @@ def stopwatch(message):
         yield
     finally:
         t1 = time.time()
-        print('Total elapsed time for {0}: {1:.3f}'.format(message, t1 - t0))
+        print("Total elapsed time for {0}: {1:.3f}".format(message, t1 - t0))
 
 
 def get_config(yaml_filename, task):
     if exists(yaml_filename):
-        with open(yaml_filename, 'r') as yaml_file:
+        with open(yaml_filename, "r") as yaml_file:
             yaml = YAML()
             yaml_config = yaml.load(yaml_file)
 
@@ -511,3 +525,18 @@ def get_config(yaml_filename, task):
 
     return None
 
+
+def convert_yaml_list(yaml_list):
+    if yaml_list is None:
+        return None
+
+    new_list = list()
+    for item in yaml_list:
+        if isinstance(item, CommentedMap):
+            new_dict = dict()
+            for key, value in item.items():
+                new_dict[key] = value
+            new_list.append(new_dict)
+        else:
+            new_list.append(item)
+    return new_list

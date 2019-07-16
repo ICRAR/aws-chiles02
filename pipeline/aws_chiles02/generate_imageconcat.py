@@ -36,12 +36,32 @@ from dlg.droputils import get_roots
 from dlg.manager.client import DataIslandManagerClient
 
 from aws_chiles02.build_graph_imageconcat import BuildGraphImageconcat
-from aws_chiles02.common import ChunkedFrequencyPair, get_aws_credentials, get_list_frequency_groups, \
-    get_required_frequencies, get_session_id, get_uuid, get_config
+from aws_chiles02.common import (
+    ChunkedFrequencyPair,
+    get_aws_credentials,
+    get_list_frequency_groups,
+    get_required_frequencies,
+    get_session_id,
+    get_uuid,
+    get_config,
+    convert_yaml_list,
+)
 from aws_chiles02.ec2_controller import EC2Controller
-from aws_chiles02.generate_common import build_hosts, get_nodes_running, get_reported_running
-from aws_chiles02.settings_file import AWS_REGION, DIM_PORT, WAIT_TIMEOUT_NODE_MANAGER, WAIT_TIMEOUT_ISLAND_MANAGER
-from aws_chiles02.user_data import get_data_island_manager_user_data, get_node_manager_user_data
+from aws_chiles02.generate_common import (
+    build_hosts,
+    get_nodes_running,
+    get_reported_running,
+)
+from aws_chiles02.settings_file import (
+    AWS_REGION,
+    DIM_PORT,
+    WAIT_TIMEOUT_NODE_MANAGER,
+    WAIT_TIMEOUT_ISLAND_MANAGER,
+)
+from aws_chiles02.user_data import (
+    get_data_island_manager_user_data,
+    get_node_manager_user_data,
+)
 
 LOGGER = logging.getLogger(__name__)
 PARALLEL_STREAMS = 8
@@ -49,45 +69,53 @@ PARALLEL_STREAMS = 8
 
 class WorkToDo(object):
     def __init__(self, **keywords):
-        self._bucket_name = keywords['bucket_name']
-        self._frequency_width = keywords['frequency_width']
-        self._imageconcat_width = keywords['imageconcat_width']
-        self._s3_clean_name = keywords['clean_directory_name']
-        self._s3_imageconcat_directory_name = keywords['imageconcat_directory_name']
-        self._frequency_range = get_required_frequencies(keywords['frequency_range'], self._frequency_width)
+        self._bucket_name = keywords["bucket_name"]
+        self._frequency_width = keywords["frequency_width"]
+        self._imageconcat_width = keywords["imageconcat_width"]
+        self._s3_clean_name = keywords["clean_directory_name"]
+        self._s3_imageconcat_directory_name = keywords["imageconcat_directory_name"]
+        self._frequency_range = get_required_frequencies(
+            keywords["frequency_range"], self._frequency_width
+        )
         self._work_to_do = []
         self._cleaned_objects = []
 
     def calculate_work_to_do(self):
-        session = boto3.Session(profile_name='aws-chiles02')
-        s3 = session.resource('s3', use_ssl=False)
+        session = boto3.Session(profile_name="aws-chiles02")
+        s3 = session.resource("s3", use_ssl=False)
 
         imageconcat_objects = []
         bucket = s3.Bucket(self._bucket_name)
-        for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_imageconcat_directory_name)):
+        for key in bucket.objects.filter(
+            Prefix="{0}".format(self._s3_imageconcat_directory_name)
+        ):
             imageconcat_objects.append(key.key)
-            LOGGER.info('imageconcat {0} found'.format(key.key))
+            LOGGER.info("imageconcat {0} found".format(key.key))
 
-        for key in bucket.objects.filter(Prefix='{0}'.format(self._s3_clean_name)):
-            if key.key.endswith('.tar.centre'):
+        for key in bucket.objects.filter(Prefix="{0}".format(self._s3_clean_name)):
+            if key.key.endswith(".tar.centre"):
                 self._cleaned_objects.append(key.key)
-                LOGGER.info('{0} found'.format(key.key))
+                LOGGER.info("{0} found".format(key.key))
 
         # Get work we've already done
         list_frequencies = get_list_frequency_groups(self._frequency_width)
         list_chunked_frequencies = self._chunk_up(list_frequencies)
         for frequency_pair in list_chunked_frequencies:
             # Use the frequency
-            if self._frequency_range is not None and not self._pair_in_range(frequency_pair):
+            if self._frequency_range is not None and not self._pair_in_range(
+                frequency_pair
+            ):
                 continue
 
-            expected_imageconcat_file = '{0}/image_{1}_{2}.tar'.format(
+            expected_imageconcat_file = "{0}/image_{1}_{2}.tar".format(
                 self._s3_imageconcat_directory_name,
                 frequency_pair.bottom_frequency,
                 frequency_pair.top_frequency,
             )
             if expected_imageconcat_file not in imageconcat_objects:
-                if self._some_clean_elements_present(frequency_pair, self._cleaned_objects):
+                if self._some_clean_elements_present(
+                    frequency_pair, self._cleaned_objects
+                ):
                     self._work_to_do.append(frequency_pair)
 
     @property
@@ -100,10 +128,8 @@ class WorkToDo(object):
 
     def _some_clean_elements_present(self, frequency_pair, cleaned_objects):
         for pair in frequency_pair.pairs:
-            expected_tar_file = '{0}/cleaned_{1}_{2}.tar.centre'.format(
-                self._s3_clean_name,
-                pair.bottom_frequency,
-                pair.top_frequency,
+            expected_tar_file = "{0}/cleaned_{1}_{2}.tar.centre".format(
+                self._s3_clean_name, pair.bottom_frequency, pair.top_frequency
             )
             if expected_tar_file in cleaned_objects:
                 return True
@@ -122,9 +148,7 @@ class WorkToDo(object):
 
             if counter == self._imageconcat_width:
                 chunk = ChunkedFrequencyPair(
-                    bottom_frequency,
-                    frequency_pair.top_frequency,
-                    elements,
+                    bottom_frequency, frequency_pair.top_frequency, elements
                 )
                 chunked_up.append(chunk)
 
@@ -137,9 +161,7 @@ class WorkToDo(object):
         if len(elements) >= 2:
             frequency_pair = list_frequencies[-1]
             chunk = ChunkedFrequencyPair(
-                bottom_frequency,
-                frequency_pair.top_frequency,
-                elements,
+                bottom_frequency, frequency_pair.top_frequency, elements
             )
             chunked_up.append(chunk)
 
@@ -154,118 +176,109 @@ class WorkToDo(object):
 
 
 def generate_json(**keywords):
-    frequency_width = keywords['frequency_width']
-    bucket_name = keywords['bucket_name']
-    clean_directory_name = keywords['clean_directory_name']
-    fits_directory_name = keywords['fits_directory_name']
-    imageconcat_directory_name = keywords['imageconcat_directory_name']
+    frequency_width = keywords["frequency_width"]
+    bucket_name = keywords["bucket_name"]
+    clean_directory_name = keywords["clean_directory_name"]
+    fits_directory_name = keywords["fits_directory_name"]
+    imageconcat_directory_name = keywords["imageconcat_directory_name"]
     work_to_do = WorkToDo(
         bucket_name=bucket_name,
         frequency_width=frequency_width,
-        imageconcat_width=keywords['imageconcat_width'],
-        frequency_range=keywords['frequency_range'],
+        imageconcat_width=keywords["imageconcat_width"],
+        frequency_range=keywords["frequency_range"],
         clean_directory_name=clean_directory_name,
         imageconcat_directory_name=imageconcat_directory_name,
     )
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        'i3.2xlarge': [{'ip_address': 'node_i2_{0}'.format(i)} for i in range(0, keywords['nodes'])]
+        "i3.2xlarge": [
+            {"ip_address": "node_i2_{0}".format(i)} for i in range(0, keywords["nodes"])
+        ]
     }
 
     graph = BuildGraphImageconcat(
         work_to_do=work_to_do.work_to_do,
         cleaned_objects=work_to_do.cleaned_objects,
         bucket_name=bucket_name,
-        volume=keywords['volume'],
+        volume=keywords["volume"],
         parallel_streams=PARALLEL_STREAMS,
         node_details=node_details,
-        shutdown=keywords['add_shutdown'],
+        shutdown=keywords["add_shutdown"],
         width=frequency_width,
         clean_directory_name=clean_directory_name,
         fits_directory_name=fits_directory_name,
         imageconcat_directory_name=imageconcat_directory_name,
-        session_id='session_id',
-        dim_ip='1.2.3.4',
-        run_note=keywords['run_note'],
-        use_bash=keywords['use_bash'],
-        casa_version=keywords['casa_version'],
-        build_fits=keywords['build_fits'],
-        s3_storage_class=keywords['s3_storage_class'],
-        s3_tags=keywords['s3_tags'],
+        session_id="session_id",
+        dim_ip="1.2.3.4",
+        run_note=keywords["run_note"],
+        use_bash=keywords["use_bash"],
+        casa_version=keywords["casa_version"],
+        build_fits=keywords["build_fits"],
+        s3_storage_class=keywords["s3_storage_class"],
+        s3_tags=convert_yaml_list(keywords["s3_tags"]),
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
     LOGGER.info(json_dumps)
-    with open(keywords.get('json_path', "/tmp/json_imageconcat.txt"), "w") as json_file:
+    with open(keywords.get("json_path", "/tmp/json_imageconcat.txt"), "w") as json_file:
         json_file.write(json_dumps)
 
 
 def create_and_generate(**keywords):
-    boto_data = get_aws_credentials('aws-chiles02')
+    boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
-        frequency_width = keywords['frequency_width']
-        bucket_name = keywords['bucket_name']
-        clean_directory_name = keywords['clean_directory_name']
-        fits_directory_name = keywords['fits_directory_name']
-        imageconcat_directory_name = keywords['imageconcat_directory_name']
+        frequency_width = keywords["frequency_width"]
+        bucket_name = keywords["bucket_name"]
+        clean_directory_name = keywords["clean_directory_name"]
+        fits_directory_name = keywords["fits_directory_name"]
+        imageconcat_directory_name = keywords["imageconcat_directory_name"]
         work_to_do = WorkToDo(
             bucket_name=bucket_name,
             frequency_width=frequency_width,
-            imageconcat_width=keywords['imageconcat_width'],
-            frequency_range=keywords['frequency_range'],
+            imageconcat_width=keywords["imageconcat_width"],
+            frequency_range=keywords["frequency_range"],
             clean_directory_name=clean_directory_name,
             imageconcat_directory_name=imageconcat_directory_name,
         )
         work_to_do.calculate_work_to_do()
 
-        nodes = keywords['nodes']
-        spot_price = keywords['spot_price']
-        ami_id = keywords['ami_id']
+        nodes = keywords["nodes"]
+        spot_price = keywords["spot_price"]
+        ami_id = keywords["ami_id"]
 
         uuid = get_uuid()
         ec2_data = EC2Controller(
             ami_id,
             [
                 {
-                    'number_instances': nodes,
-                    'instance_type': 'i3.2xlarge',
-                    'spot_price': spot_price
+                    "number_instances": nodes,
+                    "instance_type": "i3.2xlarge",
+                    "spot_price": spot_price,
                 }
             ],
             get_node_manager_user_data(
                 boto_data,
                 uuid,
                 max_request_size=50,
-                chiles=not keywords['use_bash'],
-                casa_version=keywords['casa_version'],
+                chiles=not keywords["use_bash"],
+                casa_version=keywords["casa_version"],
             ),
             AWS_REGION,
             tags=[
-                {
-                    'Key': 'Owner',
-                    'Value': getpass.getuser(),
-                },
-                {
-                    'Key': 'Name',
-                    'Value': 'DALiuGE NM - Imageconcat',
-                },
-                {
-                    'Key': 'uuid',
-                    'Value': uuid,
-                }
-            ]
+                {"Key": "Owner", "Value": getpass.getuser()},
+                {"Key": "Name", "Value": "DALiuGE NM - Imageconcat"},
+                {"Key": "uuid", "Value": uuid},
+            ],
         )
         ec2_data.start_instances()
 
         reported_running = get_reported_running(
-            uuid,
-            nodes,
-            wait=WAIT_TIMEOUT_NODE_MANAGER
+            uuid, nodes, wait=WAIT_TIMEOUT_NODE_MANAGER
         )
 
         if len(reported_running) == 0:
-            LOGGER.error('Nothing has reported ready')
+            LOGGER.error("Nothing has reported ready")
         else:
             hosts = build_hosts(reported_running)
 
@@ -274,108 +287,96 @@ def create_and_generate(**keywords):
                 ami_id,
                 [
                     {
-                        'number_instances': 1,
-                        'instance_type': 'm4.large',
-                        'spot_price': spot_price
+                        "number_instances": 1,
+                        "instance_type": "m4.large",
+                        "spot_price": spot_price,
                     }
                 ],
-                get_data_island_manager_user_data(boto_data, hosts, uuid, max_request_size=50),
+                get_data_island_manager_user_data(
+                    boto_data, hosts, uuid, max_request_size=50
+                ),
                 AWS_REGION,
                 tags=[
-                    {
-                        'Key': 'Owner',
-                        'Value': getpass.getuser(),
-                    },
-                    {
-                        'Key': 'Name',
-                        'Value': 'DALiuGE DIM - Imageconcat',
-                    },
-                    {
-                        'Key': 'uuid',
-                        'Value': uuid,
-                    }
-                ]
+                    {"Key": "Owner", "Value": getpass.getuser()},
+                    {"Key": "Name", "Value": "DALiuGE DIM - Imageconcat"},
+                    {"Key": "uuid", "Value": uuid},
+                ],
             )
             data_island_manager.start_instances()
             data_island_manager_running = get_reported_running(
-                uuid,
-                1,
-                wait=WAIT_TIMEOUT_ISLAND_MANAGER
+                uuid, 1, wait=WAIT_TIMEOUT_ISLAND_MANAGER
             )
 
-            if len(data_island_manager_running['m4.large']) == 1:
+            if len(data_island_manager_running["m4.large"]) == 1:
                 # Now build the graph
                 session_id = get_session_id()
-                instance_details = data_island_manager_running['m4.large'][0]
-                host = instance_details['ip_address']
+                instance_details = data_island_manager_running["m4.large"][0]
+                host = instance_details["ip_address"]
 
                 graph = BuildGraphImageconcat(
                     work_to_do=work_to_do.work_to_do,
                     cleaned_objects=work_to_do.cleaned_objects,
                     bucket_name=bucket_name,
-                    volume=keywords['volume'],
+                    volume=keywords["volume"],
                     parallel_streams=PARALLEL_STREAMS,
                     node_details=reported_running,
-                    shutdown=keywords['add_shutdown'],
+                    shutdown=keywords["add_shutdown"],
                     width=frequency_width,
                     clean_directory_name=clean_directory_name,
                     fits_directory_name=fits_directory_name,
                     imageconcat_directory_name=imageconcat_directory_name,
                     session_id=session_id,
                     dim_ip=host,
-                    run_note=keywords['run_note'],
-                    use_bash=keywords['use_bash'],
-                    casa_version=keywords['casa_version'],
-                    build_fits=keywords['build_fits'],
-                    imageconcat_width=keywords['imageconcat_width'],
-                    s3_storage_class=keywords['s3_storage_class'],
-                    s3_tags=keywords['s3_tags'],
+                    run_note=keywords["run_note"],
+                    use_bash=keywords["use_bash"],
+                    casa_version=keywords["casa_version"],
+                    build_fits=keywords["build_fits"],
+                    imageconcat_width=keywords["imageconcat_width"],
+                    s3_storage_class=keywords["s3_storage_class"],
+                    s3_tags=convert_yaml_list(keywords["s3_tags"]),
                 )
                 graph.build_graph()
 
-                LOGGER.info('Connection to {0}:{1}'.format(host, DIM_PORT))
+                LOGGER.info("Connection to {0}:{1}".format(host, DIM_PORT))
                 client = DataIslandManagerClient(host, DIM_PORT)
 
                 client.create_session(session_id)
                 client.append_graph(session_id, graph.drop_list)
                 client.deploy_session(session_id, get_roots(graph.drop_list))
     else:
-        LOGGER.error('Unable to find the AWS credentials')
+        LOGGER.error("Unable to find the AWS credentials")
 
 
 def use_and_generate(**keywords):
-    boto_data = get_aws_credentials('aws-chiles02')
+    boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
-        host = keywords['host']
-        port = keywords['port']
+        host = keywords["host"]
+        port = keywords["port"]
         connection = HTTPConnection(host, port)
-        connection.request('GET', '/api', None, {})
+        connection.request("GET", "/api", None, {})
         response = connection.getresponse()
         if response.status != HTTPStatus.OK:
-            msg = 'Error while processing GET request for {0}:{1}/api (status {2}): {3}'.format(
-                host,
-                port,
-                response.status,
-                response.read()
+            msg = "Error while processing GET request for {0}:{1}/api (status {2}): {3}".format(
+                host, port, response.status, response.read()
             )
             raise Exception(msg)
 
         json_data = response.read()
         message_details = json.loads(json_data)
-        host_list = message_details['hosts']
+        host_list = message_details["hosts"]
 
         nodes_running = get_nodes_running(host_list)
         if len(nodes_running) > 0:
-            frequency_width = keywords['frequency_width']
-            bucket_name = keywords['bucket_name']
-            clean_directory_name = keywords['clean_directory_name']
-            fits_directory_name = keywords['fits_directory_name']
-            imageconcat_directory_name = keywords['imageconcat_directory_name']
+            frequency_width = keywords["frequency_width"]
+            bucket_name = keywords["bucket_name"]
+            clean_directory_name = keywords["clean_directory_name"]
+            fits_directory_name = keywords["fits_directory_name"]
+            imageconcat_directory_name = keywords["imageconcat_directory_name"]
             work_to_do = WorkToDo(
                 bucket_name=bucket_name,
                 frequency_width=frequency_width,
-                imageconcat_width=keywords['imageconcat_width'],
-                frequency_range=keywords['frequency_range'],
+                imageconcat_width=keywords["imageconcat_width"],
+                frequency_range=keywords["frequency_range"],
                 clean_directory_name=clean_directory_name,
                 imageconcat_directory_name=imageconcat_directory_name,
             )
@@ -387,25 +388,25 @@ def use_and_generate(**keywords):
                 work_to_do=work_to_do.work_to_do,
                 cleaned_objects=work_to_do.cleaned_objects,
                 bucket_name=bucket_name,
-                volume=keywords['volume'],
+                volume=keywords["volume"],
                 parallel_streams=PARALLEL_STREAMS,
                 node_details=nodes_running,
-                shutdown=keywords['add_shutdown'],
+                shutdown=keywords["add_shutdown"],
                 width=frequency_width,
                 clean_directory_name=clean_directory_name,
                 fits_directory_name=fits_directory_name,
                 imageconcat_directory_name=imageconcat_directory_name,
                 session_id=session_id,
                 dim_ip=host,
-                run_note=keywords['run_note'],
-                use_bash=keywords['use_bash'],
-                casa_version=keywords['casa_version'],
-                build_fits=keywords['build_fits'],
-                s3_storage_class=keywords['s3_storage_class'],
-                s3_tags=keywords['s3_tags'],
+                run_note=keywords["run_note"],
+                use_bash=keywords["use_bash"],
+                casa_version=keywords["casa_version"],
+                build_fits=keywords["build_fits"],
+                s3_storage_class=keywords["s3_storage_class"],
+                s3_tags=convert_yaml_list(keywords["s3_tags"]),
             )
             graph.build_graph()
-            LOGGER.info('Connection to {0}:{1}'.format(host, port))
+            LOGGER.info("Connection to {0}:{1}".format(host, port))
             client = DataIslandManagerClient(host, port)
 
             client.create_session(session_id)
@@ -413,7 +414,7 @@ def use_and_generate(**keywords):
             client.deploy_session(session_id, get_roots(graph.drop_list))
 
         else:
-            LOGGER.warning('No nodes are running')
+            LOGGER.warning("No nodes are running")
 
 
 def run(command_line_):
@@ -421,98 +422,95 @@ def run(command_line_):
         if exists(command_line_.config_file):
             yaml_filename = command_line_
         else:
-            LOGGER.error('Invalid configuration filename: {}'.format(command_line_.config_file))
+            LOGGER.error(
+                "Invalid configuration filename: {}".format(command_line_.config_file)
+            )
             return
     else:
         path_dirname, filename = os.path.split(__file__)
-        yaml_filename = '{0}/aws-chiles02.yaml'.format(path_dirname)
+        yaml_filename = "{0}/aws-chiles02.yaml".format(path_dirname)
 
-    LOGGER.info('Reading YAML file {}'.format(yaml_filename))
+    LOGGER.info("Reading YAML file {}".format(yaml_filename))
     config = get_config(yaml_filename, command_line_.tag_name)
-    if config['action'] != 'imageconcat':
-        LOGGER.error('Invalid tag: {} for {}'.format(command_line_.tag_name, config['action']))
+    if config["action"] != "imageconcat":
+        LOGGER.error(
+            "Invalid tag: {} for {}".format(command_line_.tag_name, config["action"])
+        )
         return
 
     # Run the command
-    if config['run_type'] == 'create':
+    if config["run_type"] == "create":
         create_and_generate(
-            ami_id=config['ami'],
-            spot_price=config['spot_price_i3_2xlarge'],
-            nodes=config['nodes'],
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            imageconcat_width=config['imageconcat_width'],
-            volume=config['volume'],
-            add_shutdown=config['shutdown'],
-            frequency_range=config['frequency_range'],
-            clean_directory_name=config['clean_directory_name'],
-            fits_directory_name=config['fits_directory_name'],
-            imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            build_fits=config['build_fits'],
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            ami_id=config["ami"],
+            spot_price=config["spot_price_i3_2xlarge"],
+            nodes=config["nodes"],
+            bucket_name=config["bucket_name"],
+            frequency_width=config["width"],
+            imageconcat_width=config["imageconcat_width"],
+            volume=config["volume"],
+            add_shutdown=config["shutdown"],
+            frequency_range=config["frequency_range"],
+            clean_directory_name=config["clean_directory_name"],
+            fits_directory_name=config["fits_directory_name"],
+            imageconcat_directory_name=config["imageconcat_directory_name"],
+            run_note=config["run_note_imageconcat"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            build_fits=config["build_fits"],
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
-    elif config['run_type'] == 'use':
+    elif config["run_type"] == "use":
         use_and_generate(
-            host=config['dim'],
+            host=config["dim"],
             port=DIM_PORT,
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            imageconcat_width=config['imageconcat_width'],
-            volume=config['volume'],
-            add_shutdown=config['shutdown'],
-            frequency_range=config['frequency_range'],
-            clean_directory_name=config['clean_directory_name'],
-            fits_directory_name=config['fits_directory_name'],
-            imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            build_fits=config['build_fits'],
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            bucket_name=config["bucket_name"],
+            frequency_width=config["width"],
+            imageconcat_width=config["imageconcat_width"],
+            volume=config["volume"],
+            add_shutdown=config["shutdown"],
+            frequency_range=config["frequency_range"],
+            clean_directory_name=config["clean_directory_name"],
+            fits_directory_name=config["fits_directory_name"],
+            imageconcat_directory_name=config["imageconcat_directory_name"],
+            run_note=config["run_note_imageconcat"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            build_fits=config["build_fits"],
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
     else:
         generate_json(
-            nodes=config['nodes'],
-            bucket_name=config['bucket_name'],
-            frequency_width=config['width'],
-            imageconcat_width=config['imageconcat_width'],
-            volume=config['volume'],
-            add_shutdown=config['shutdown'],
-            frequency_range=config['frequency_range'],
-            clean_directory_name=config['clean_directory_name'],
-            fits_directory_name=config['fits_directory_name'],
-            imageconcat_directory_name=config['imageconcat_directory_name'],
-            run_note=config['run_note_imageconcat'],
-            use_bash=config['use_bash'],
-            casa_version=config['casa_version'],
-            build_fits=config['build_fits'],
-            s3_storage_class=config['s3_storage_class'],
-            s3_tags=config['s3_tags'] if 's3_tags' in config else None,
+            nodes=config["nodes"],
+            bucket_name=config["bucket_name"],
+            frequency_width=config["width"],
+            imageconcat_width=config["imageconcat_width"],
+            volume=config["volume"],
+            add_shutdown=config["shutdown"],
+            frequency_range=config["frequency_range"],
+            clean_directory_name=config["clean_directory_name"],
+            fits_directory_name=config["fits_directory_name"],
+            imageconcat_directory_name=config["imageconcat_directory_name"],
+            run_note=config["run_note_imageconcat"],
+            use_bash=config["use_bash"],
+            casa_version=config["casa_version"],
+            build_fits=config["build_fits"],
+            s3_storage_class=config["s3_storage_class"],
+            s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ImageConcat')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="ImageConcat")
     parser.add_argument(
-        '--config_file',
-        default=None,
-        help='the config file for this run'
+        "--config_file", default=None, help="the config file for this run"
     )
     parser.add_argument(
-        'tag_name',
-        nargs='?',
-        default='imageconcat',
-        help='the tag name to execute'
+        "tag_name", nargs="?", default="imageconcat", help="the tag name to execute"
     )
     command_line = parser.parse_args()
     logging.basicConfig(
-        level=logging.INFO,
-        format='{asctime}:{levelname}:{name}:{message}',
-        style='{',
+        level=logging.INFO, format="{asctime}:{levelname}:{name}:{message}", style="{"
     )
     run(command_line)
