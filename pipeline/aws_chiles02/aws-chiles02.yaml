@@ -71,12 +71,12 @@ uvsub_major2:
   uvsub_directory_name: uvsub_maj2_2019_07_21
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '998-999'
+    - '1001-1419'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
     Using new model of the outliers
-    try a second cycle of uvsubtraction
+    try a second cycle of uvsubtraction -- hacked to force application
 
 uvsub_ska:
   <<: *common
