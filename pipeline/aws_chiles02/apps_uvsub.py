@@ -333,7 +333,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
-        if self._absorption == "no":  # Using this key word for Major Cycle 2 now
+        if self._absorption == "skip":  # Using this key word for Major Cycle 2 now
             self._command = (
                 "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
                 "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 "

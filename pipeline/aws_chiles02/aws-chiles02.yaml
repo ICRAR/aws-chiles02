@@ -37,16 +37,17 @@ uvsub_node1:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
+  absorption: 'major-2'
+  w_projection_planes: 99
+  uvsub_directory_name: uvsub_maj2_2019_07_08_Wplane_99
   scan_statistics: False
   produce_qa: True
   frequency_range:      # This should be a list
+    - '999-1001'
   nodes: 1
-  uvsub_directory_name: uvsub_ha_2019_05_20
   s3_storage_class: INTELLIGENT_TIERING
   run_note_uvsub: |
-    Using new model (CI) - following new workflow plan as per MM & AP
-    aka channalised outlier models now stand alone (for absorption)
-    and matching (smaller) in beam models
+    Using major-2 and 99 planes
 
 uvsub:
   <<: *common
@@ -66,13 +67,13 @@ uvsub_major2:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
-  absorption: 'major-2'
-  uvsub_directory_name: uvsub_maj2_2019_07_04
+  absorption: 'yes'  # is this limited in values???
+  uvsub_directory_name: uvsub_maj2_2019_07_21
   scan_statistics: False
   frequency_range:      # This should be a list
-  #  - '1045-1420'
+    - '998-999'
   produce_qa: True
-  nodes: 3
+  nodes: 10
   run_note_uvsub: |
     Using new model of the outliers
     try a second cycle of uvsubtraction
@@ -93,68 +94,95 @@ uvsub_ska:
 clean:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_07_04
-  clean_directory_name: clean_ha_2019_07_04
+  uvsub_directory_name: uvsub_maj2_2019_07_06
+  clean_directory_name: clean_ha_2019_07_16
   frequencies_per_node: 2
-  iterations: 1000
-  arcsec: '2'                   # Needs to be a string
+  iterations: 35000
+  arcsec: '1.5'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
   image_size: 4096
   clean_channel_average: 4
-  region_file: 'CleanRegions.crtf'               # The region file for cleaning in crtf
+  region_file: 'Clean_Regions_All.crtf'               # The region file for cleaning in crtf
   only_image: False             # Only copy the image to S3
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fits_directory_name: ''       # Where to put the fits images
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-      - '1001-1015'
+      - '1221-1419'
   casa_version: '5.5'           # Clean works better with this version
   s3_storage_class: INTELLIGENT_TIERING
   #s3_tags:
   #  - move_to_glacier: True
   run_note_clean: |
-    Using new model (Major Cycle 2) -
-    Narrow channels
+    Approach of 16 July (35,000 iterations) on Narrow channels
 
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_07_04
-  clean_directory_name: clean_ha_2019_07_04_Wide
+  uvsub_directory_name: uvsub_maj2_2019_07_21
+  clean_directory_name: clean_ha_2019_07_21_High_Wide
   frequencies_per_node: 4
-  nodes: 5
-  iterations: 1000
-  arcsec: '2'                   # Needs to be a string
+  nodes: 10
+  iterations: 35000
+  arcsec: '1.5'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
   image_size: 4096
   clean_channel_average: 16
-  region_file: 'CleanRegions.crtf'               # The region file for cleaning in crtf
+  region_file: 'Clean_Regions_All.crtf'        # The region file for cleaning in crtf
   only_image: False             # Only copy the image to S3
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fits_directory_name: ''       # Where to put the fits images
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1041-1200'
+    - '1221-1419'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    Testing whether changing clean_ch_av works when we go to 16
-    Otherwise identical to the Julie run.
+    Testing whether 35,000 iterations helps to get us closer to the required residuals
+    Remaking with major-2 subtraction
+    Keeping high freq separate
+
+clean_very_wide:
+  <<: *common
+  action: clean
+  uvsub_directory_name: uvsub_maj2_2019_07_06
+  clean_directory_name: clean_ha_2019_07_16_Very_Wide
+  frequencies_per_node: 4
+  nodes: 5
+  iterations: 35000
+  arcsec: '2'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 128
+  region_file: 'Clean_Regions_All.crtf'     # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+    - '1212-1300'
+  casa_version: '5.5'           # Clean works better with this version
+  run_note_clean: |
+    Found residuals still had significant flux. Relaunch with double no iterations
+
 
 imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_ha_2019_07_04
-  clean_directory_name: clean_ha_2019_07_04
+  imageconcat_directory_name: imageconcat_ha_2019_07_16
+  clean_directory_name: clean_ha_2019_07_16
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   frequency_range:              # This should be a list
-    - '984-1016'
+    - '1000-1419'
   fits_directory_name: ''       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
