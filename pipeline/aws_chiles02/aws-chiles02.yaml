@@ -78,6 +78,21 @@ uvsub_major2:
     Using new model of the outliers
     try a second cycle of uvsubtraction -- hacked to force application
 
+uvsub_abs:
+  <<: *common
+  action: uvsub
+  number_taylor_terms: 0
+  absorption: 'absorption'  # is this limited in values???
+  uvsub_directory_name: uvsub_maj2_2019_07_25_Abs
+  scan_statistics: False
+  frequency_range:      # This should be a list
+    - '1001-1010'
+  produce_qa: True
+  nodes: 10
+  run_note_uvsub: |
+    Using new model of the outliers
+    try to branch into absorption
+
 uvsub_ska:
   <<: *common
   action: uvsub
@@ -123,11 +138,10 @@ clean_wide:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_maj2_2019_07_21
-  clean_directory_name: clean_ha_2019_07_21_High_Wide
+  clean_directory_name: clean_ha_2019_07_21_Mask_Wide
   frequencies_per_node: 4
-  nodes: 10
   iterations: 35000
-  arcsec: '1.5'                   # Needs to be a string
+  arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
@@ -140,7 +154,34 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1221-1419'
+    - '950-1200'
+  casa_version: '5.5'           # Clean works better with this version
+  run_note_clean: |
+    Testing whether 35,000 iterations helps to get us closer to the required residuals
+    Remaking with major-2 subtraction
+    Keeping high freq separate
+
+clean_hwide:
+  <<: *common
+  action: clean
+  uvsub_directory_name: uvsub_maj2_2019_07_21
+  clean_directory_name: clean_ha_2019_07_21_High_Wide
+  frequencies_per_node: 4
+  iterations: 35000
+  arcsec: '1.5'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 16
+  region_file: '/home/ec2-user/aws-chiles02/LSM/Clean_Regions_All.crtf'        # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+    - '1200-1419'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     Testing whether 35,000 iterations helps to get us closer to the required residuals
@@ -178,11 +219,11 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_ha_2019_07_16
-  clean_directory_name: clean_ha_2019_07_16
+  imageconcat_directory_name: imageconcat_ha_2019_07_21_Low_Wide
+  clean_directory_name: clean_ha_2019_07_21_Mask_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   frequency_range:              # This should be a list
-    - '1000-1419'
+    - '950-1200'
   fits_directory_name: ''       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
