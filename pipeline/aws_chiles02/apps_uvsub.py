@@ -450,6 +450,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
+        self._absorption = "absorption"
         if self._absorption == "major-1":
             self._command = (
                 "cd ; "
