@@ -86,7 +86,7 @@ uvsub_abs:
   uvsub_directory_name: uvsub_maj2_2019_07_25_Abs
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1001-1010'
+    - '1013-1420'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
