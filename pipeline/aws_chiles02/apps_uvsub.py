@@ -333,7 +333,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
-        if self._absorption == "no":  # Using this key word for Major Cycle 2 now
+        if self._absorption == "major-1":  # Using this key word for Major Cycle 2 now
             self._command = (
                 "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
                 "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 "
@@ -350,6 +350,31 @@ class DockerUvsub(DockerApp, ErrorHandling):
                     self._produce_qa,
                     self._w_projection_planes,
                     self._number_taylor_terms,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
+        elif self._absorption == "absorption":  # This should read else if 'absorption'
+            self._command = (
+                "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_2.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_3.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_4.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_5.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_6.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_1.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_2.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_3.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_4.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_5.0,8.spw_{6}.model "
+                "/opt/chiles02/aws-chiles02/LSM/Major-2/Outliers/Outlier_Major2_6.0,8.spw_{6}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    0, #self._number_taylor_terms,  # must be zero -- have hard set it
                     spectral_window,
                     uvsub_command,
                 )
@@ -425,7 +450,8 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
-        if self._absorption == "no":
+        self._absorption = "absorption"
+        if self._absorption == "major-1":
             self._command = (
                 "cd ; "
                 + get_casa_command_line(self._casa_version)
@@ -445,6 +471,35 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                     self._produce_qa,
                     self._w_projection_planes,
                     self._number_taylor_terms,
+                    copy_of_model,
+                    spectral_window,
+                    uvsub_command,
+                )
+            )
+        elif self._absorption == "absorption":  ## This should read else if 'absorption'
+            self._command = (
+                "cd ; "
+                + get_casa_command_line(self._casa_version)
+                + SCRIPT_PATH
+                + "{8} {0} {1} {2} {3} {4} {5} "
+                  "{6}/LSM/Outliers/Outlier_1.0,8.spw_{7}.model "
+                  "{6}/LSM/Outliers/Outlier_2.0,8.spw_{7}.model "
+                  "{6}/LSM/Outliers/Outlier_3.0,8.spw_{7}.model "
+                  "{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model "
+                  "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
+                  "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_1.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_2.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_3.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_4.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_5.0,8.spw_{7}.model "
+                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_6.0,8.spw_{7}.model ".format(
+                    measurement_set_in,
+                    self.outputs[0].path,
+                    "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
+                    self._produce_qa,
+                    self._w_projection_planes,
+                    0, # hard set to be zero # self._number_taylor_terms,
                     copy_of_model,
                     spectral_window,
                     uvsub_command,

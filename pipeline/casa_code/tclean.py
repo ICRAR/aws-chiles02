@@ -43,6 +43,18 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         os.makedirs(cube_dir)
 
     outfile = os.path.join(cube_dir, 'clean_{0}~{1}'.format(min_freq, max_freq))
+    # If region_file is given check it exisits. If not try some paths.
+    # If still not set to blank to prevent failure
+    if (region_file):
+        if (~os.path.isfile(region_file)):
+            LOG.info('Did not find file: {0}'.format(region_file))
+            region_file='/home/ec2-user/aws-chiles02/LSM/'+region_file
+            LOG.info('Setting file to default path: {0}'.format(region_file))
+        if (~os.path.isfile(region_file)):
+            LOG.info('Did not find file: {0}'.format(region_file))
+            region_file=''
+            LOG.info('Setting file to blank: {0}'.format(region_file))
+
     LOG.info('tclean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
     try:
         # dump_all()
