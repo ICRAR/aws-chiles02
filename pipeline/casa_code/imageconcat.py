@@ -67,6 +67,9 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
                 chan=','.join(Is)
         else:
                 chan=''
+        FitOrder=1
+        if build_fits=='yes':
+            FitOrder=2
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=1,chans=chan)
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
@@ -87,7 +90,7 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
         # ia.close()
         ###  could save outfile+'.cont',outfile+'.line', rather than outfile ###
         if build_fits == 'yes':
-            exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
+            #exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
