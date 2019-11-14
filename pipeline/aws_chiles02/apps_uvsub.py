@@ -321,7 +321,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
         self._command = "uvsub.sh"
         self._session_id = self._getArg(kwargs, "session_id", None)
-        self._absorption = self._getArg(kwargs, "absorption", "no")
+        self._absorption = self._getArg(kwargs, "absorption", "major-2")
 
     def run(self):
         measurement_set_in = os.path.join(
@@ -333,7 +333,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
-        self._absorption = "major-2"
+        #self._absorption = "major-2"
         if self._absorption == "major-1":  # Using this key word for Major Cycle 2 now
             self._command = (
                 "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
@@ -439,7 +439,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._session_id = self._getArg(kwargs, "session_id", None)
         self._casa_version = self._getArg(kwargs, "casa_version", None)
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
-        self._absorption = self._getArg(kwargs, "absorption", "no")
+        self._absorption = self._getArg(kwargs, "absorption", "major-2")
 
     def run(self):
         # make the input measurement set
@@ -454,7 +454,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
-        self._absorption = "major-2"
+        #self._absorption = "major-2"
         if self._absorption == "major-1":
             self._command = (
                 "cd ; "
