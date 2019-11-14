@@ -37,7 +37,7 @@ uvsub_node1:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
-  absorption: 'major-2'
+  mode: 'major-2'
   w_projection_planes: 99
   uvsub_directory_name: uvsub_maj2_2019_07_08_Wplane_99
   scan_statistics: False
@@ -67,7 +67,7 @@ uvsub_major2:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
-  absorption: 'major-2'  # is this limited in values???
+  mode: 'major-2'  # is this limited in values???
   uvsub_directory_name: uvsub_maj2_2019_11_11
   scan_statistics: False
   frequency_range:      # This should be a list
@@ -81,7 +81,7 @@ uvsub_abs:
   <<: *common
   action: uvsub
   number_taylor_terms: 0
-  #absorption: 'absorption'  # is this limited in values???
+  #mode: 'absorption'  # is this limited in values???
   uvsub_directory_name: uvsub_maj2_2019_07_25_Abs
   scan_statistics: False
   frequency_range:      # This should be a list

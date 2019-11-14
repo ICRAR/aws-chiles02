@@ -308,7 +308,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._number_taylor_terms = None
         self._produce_qa = None
         self._command = None
-        self._absorption = None
+        self._mode = None
         super(DockerUvsub, self).__init__(oid, uid, **kwargs)
         raise NotImplementedError("The docker version is not maintained at the moment")
 
@@ -321,7 +321,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
         self._command = "uvsub.sh"
         self._session_id = self._getArg(kwargs, "session_id", None)
-        self._absorption = self._getArg(kwargs, "absorption", "major-2")
+        self._mode = self._getArg(kwargs, "mode", "major-2")
 
     def run(self):
         measurement_set_in = os.path.join(
@@ -334,7 +334,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
         #self._absorption = "major-2"
-        if self._absorption == "major-1":  # Using this key word for Major Cycle 2 now
+        if self._mode == "major-1":  # Using this key word for Major Cycle 2 now
             self._command = (
                 "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
                 "/opt/chiles02/aws-chiles02/LSM/epoch1gt4k_si_spw_{6}.model.tt0 "
@@ -356,7 +356,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
                     uvsub_command,
                 )
             )
-        elif self._absorption == "absorption":  # This should read else if 'absorption'
+        elif self._mode == "absorption":  # This should read else if 'absorption'
             self._command = (
                 "{7} /dlg_root{0} /dlg_root{1} {2} {3} {4} {5} "
                 "/opt/chiles02/aws-chiles02/LSM/Outliers/Outlier_1.0,8.spw_{6}.model "
@@ -426,7 +426,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._command = None
         self._casa_version = None
         self._produce_qa = None
-        self._absorption = None
+        self._mode = None
         super(CasaUvsub, self).__init__(oid, uid, **kwargs)
 
     def initialize(self, **kwargs):
@@ -439,7 +439,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._session_id = self._getArg(kwargs, "session_id", None)
         self._casa_version = self._getArg(kwargs, "casa_version", None)
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
-        self._absorption = self._getArg(kwargs, "absorption", "major-2")
+        self._mode = self._getArg(kwargs, "mode", "major-2")
 
     def run(self):
         # make the input measurement set
@@ -455,7 +455,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
         #self._absorption = "major-2"
-        if self._absorption == "major-1":
+        if self._mode == "major-1":
             self._command = (
                 "cd ; "
                 + get_casa_command_line(self._casa_version)
@@ -481,7 +481,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                     uvsub_command,
                 )
             )
-        elif self._absorption == "absorption":  ## This should read else if 'absorption'
+        elif self._mode == "absorption":  ## This should read else if 'absorption'
             self._command = (
                 "cd ; "
                 + get_casa_command_line(self._casa_version)

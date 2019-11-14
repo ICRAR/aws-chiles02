@@ -45,6 +45,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
         self._scan_statistics = keywords['scan_statistics']
         self._s3_uvsub_name = keywords['uvsub_directory_name']
         self._use_bash = keywords['use_bash']
+        self._mode = keywords['mode']
         self._casa_version = keywords['casa_version']
         self._s3_split_name = keywords['split_directory']
         self._produce_qa = keywords['produce_qa']
@@ -151,6 +152,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 casa_version=self._casa_version,
                 min_frequency=frequencies[0],
                 max_frequency=frequencies[1],
+                mode=self._mode,
                 w_projection_planes=self._w_projection_planes,
                 number_taylor_terms=self._number_taylor_terms,
                 produce_qa=self._produce_qa,
@@ -164,6 +166,7 @@ class BuildGraphUvsub(AbstractBuildGraph):
                 'uvsub',
                 min_frequency=frequencies[0],
                 max_frequency=frequencies[1],
+                mode=self._mode,
                 w_projection_planes=self._w_projection_planes,
                 number_taylor_terms=self._number_taylor_terms,
                 produce_qa=self._produce_qa,
