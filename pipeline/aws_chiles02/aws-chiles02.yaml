@@ -68,15 +68,14 @@ uvsub_major2:
   action: uvsub
   number_taylor_terms: 2
   absorption: 'major-2'  # is this limited in values???
-  uvsub_directory_name: uvsub_maj2_2019_08_10
+  uvsub_directory_name: uvsub_maj2_2019_11_11
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '951-1420'
+    - '1392-1420'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
-    Using new addition to model of the outliers, O7
-    and a second cycle of uvsubtraction -- hacked to force application
+    This freq range failed to uvsub -- just trying again.
 
 uvsub_abs:
   <<: *common
@@ -143,7 +142,7 @@ clean_wide:
   uvsub_directory_name: uvsub_maj2_2019_08_10
   clean_directory_name: clean_ha_2019_08_10_Low_Wide
   frequencies_per_node: 1
-  iterations: 35000
+  iterations: 350
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -162,14 +161,15 @@ clean_wide:
   run_note_clean: |
     Using new addition to model of the outliers, O7
     Using suggested beam size
+    Using very small niter to attempt to get completion
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_08_10
-  clean_directory_name: clean_ha_2019_08_10_High_Wide
-  frequencies_per_node: 1
-  iterations: 3000
+  uvsub_directory_name: uvsub_maj2_2019_11_11
+  clean_directory_name: clean_ha_2019_11_11_High_Wide
+  frequencies_per_node: 2
+  iterations: 35000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -183,12 +183,10 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1200-1420'
+    - '1392-1420'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    Using new addition to model of the outliers, O7
-    Using suggested beam size
-    Keeping high freq separate
+    Testing re-run section
 
 clean_very_wide:
   <<: *common
@@ -221,17 +219,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_ha_2019_08_10_Low-2_Wide
-  clean_directory_name: clean_ha_2019_08_10_Low_Wide
+  imageconcat_directory_name: imageconcat_ha_2019_11_11_High_Wide
+  clean_directory_name: clean_ha_2019_11_11_High_Wide
+  fit_order: 1                 # The fit order
   build_fits: yes                # build the fits files for JPEG2000 allowed=[yes, no]
   frequency_range:              # This should be a list
-    - '950-1203'
+    - '1392-1420'
   fits_directory_name: ''       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Image Concat of 16 Channel Averages. 2nd order fit
+    Image Concat of top freq repeat
 
 check_uvsub:
   frequency_range:

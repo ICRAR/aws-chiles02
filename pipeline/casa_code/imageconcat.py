@@ -34,7 +34,7 @@ LOG = logging.getLogger('imageconcat')
 
 
 @echo
-def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
+def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
     """
     Perform the CONCATENATION step
     """
@@ -42,10 +42,10 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
         os.makedirs(cube_dir)
 
     outfile = os.path.join(cube_dir, out_filename)
-    FitOrder=1
-    if build_fits == 'yes':
-        FitOrder=2
-    LOG.info('imageconcat(vis={0}, imagename={1}),fitorder={2}'.format(str(input_files), outfile,FitOrder))
+    #FitOrder=1
+    #if build_fits == 'yes':
+    #    FitOrder=2
+    LOG.info('imageconcat(vis={0}, imagename={1}),fitorder={2}'.format(str(input_files), outfile,fit_order))
 
     try:
         # IA used to report the statistics to the log file
@@ -70,7 +70,7 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
                 chan=','.join(Is)
         else:
                 chan=''
-        imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=FitOrder,chans=chan)
+        imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
@@ -89,8 +89,8 @@ def do_imageconcat(cube_dir, out_filename, build_fits, input_files):
         # ia.statistics(verbose=True,axes=[0,1])
         # ia.close()
         ###  could save outfile+'.cont',outfile+'.line', rather than outfile ###
-        #if build_fits == 'yes':
-        #    exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
+        if build_fits == 'yes':
+            exportfits(imagename=outfile+'.line', fitsimage='{0}.fits'.format(outfile))
     except Exception:
         LOG.exception('*********\nConcatenate exception: \n***********')
 
@@ -101,5 +101,6 @@ if __name__ == "__main__":
     do_imageconcat(
         args.arguments[0],
         args.arguments[1],
-        args.arguments[2],
-        args.arguments[3:])
+        int(args.arguments[2]),
+        args.arguments[3],
+        args.arguments[4:])

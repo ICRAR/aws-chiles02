@@ -286,6 +286,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         self._command = None
         self._max_frequency = None
         self._min_frequency = None
+        self._fit_order = 1
         self._build_fits = None
         super(DockerImageconcat, self).__init__(oid, uid, **kwargs)
 
@@ -294,6 +295,7 @@ class DockerImageconcat(DockerApp, ErrorHandling):
         self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
+        self._fit_order = self._getArg(kwargs, 'fit_order', 1)
         self._build_fits = self._getArg(kwargs, 'build_fits', None)
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._command = 'imageconcat.sh'
@@ -313,9 +315,10 @@ class DockerImageconcat(DockerApp, ErrorHandling):
                     break
 
         LOG.debug('measurement_sets: {0}'.format(measurement_sets))
-        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2} {3}'.format(
+        self._command = 'imageconcat.sh %o0 image_{0}_{1}.cube {2} {3} {4}'.format(
             self._min_frequency,
             self._max_frequency,
+            self._fit_order,
             self._build_fits,
             ' '.join(measurement_sets),
         )
@@ -333,6 +336,7 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
         self._max_frequency = None
         self._min_frequency = None
         self._casa_version = None
+        self._fit_order = 1
         self._build_fits = None
         super(CasaImageconcat, self).__init__(oid, uid, **kwargs)
 
@@ -342,6 +346,7 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._build_fits = self._getArg(kwargs, 'build_fits', None)
+        self._fit_order = self._getArg(kwargs, 'fit_order', 1)
         self._session_id = self._getArg(kwargs, 'session_id', None)
         self._command = 'imageconcat.py'
         self._casa_version = self._getArg(kwargs, 'casa_version', None)
@@ -365,10 +370,11 @@ class CasaImageconcat(BarrierAppDROP, ErrorHandling):
             'cd ; ' \
             + get_casa_command_line(self._casa_version) \
             + SCRIPT_PATH \
-            + 'imageconcat.py {} image_{}_{}.cube {} {}'.format(
+            + 'imageconcat.py {} image_{}_{}.cube {} {} {}'.format(
                 self.outputs[0].path,
                 self._min_frequency,
                 self._max_frequency,
+                self._fit_order,
                 self._build_fits,
                 ' '.join(measurement_sets),
             )
