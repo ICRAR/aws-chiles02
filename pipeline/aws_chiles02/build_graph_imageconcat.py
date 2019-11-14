@@ -48,6 +48,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
         self._use_bash = keywords['use_bash']
         self._casa_version = keywords['casa_version']
         self._build_fits = keywords['build_fits']
+        self._fit_order = keywords['fit_order']
         self._s3_storage_class = keywords['s3_storage_class']
         self._s3_tags = keywords['s3_tags']
 
@@ -71,6 +72,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
                     casa_version=self._casa_version,
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
+                    fit_order=self._fit_order,
                     build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
                 )
@@ -83,6 +85,7 @@ class BuildGraphImageconcat(AbstractBuildGraph):
                     'imageconcat',
                     min_frequency=frequency_pair.bottom_frequency,
                     max_frequency=frequency_pair.top_frequency,
+                    fit_order=self._fit_order,
                     build_fits=self._build_fits,
                     measurement_sets=[drop['dirname'] for drop in s3_drop_outs],
                 )
