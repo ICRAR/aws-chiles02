@@ -71,6 +71,12 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         else:
                 chan=''
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
+        # Blank out the bad lines
+        ia.open(outfile+'.line')
+        zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0.0
+        for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]:
+            ia.putregion(zd,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
+        ia.close()
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
