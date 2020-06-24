@@ -220,17 +220,17 @@ imageconcat:
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
   imageconcat_directory_name: imageconcat_ha_2019_11_11_High_Wide
-  clean_directory_name: clean_ha_2019_11_11_High_Wide
+  clean_directory_name: clean_ha_2019_08_10_High_Wide
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order
-  build_fits: yes                # build the fits files for JPEG2000 allowed=[yes, no]
   frequency_range:              # This should be a list
-    - '1392-1420'
-  fits_directory_name: ''       # Where to put the fits images
+    - '1324-1348'
+  fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Image Concat of top freq repeat
+    Image Concat of missing freq repeat
 
 check_uvsub:
   frequency_range:
