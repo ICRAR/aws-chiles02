@@ -217,6 +217,7 @@ def generate_json(**keywords):
         build_fits=keywords["build_fits"],
         s3_storage_class=keywords["s3_storage_class"],
         s3_tags=convert_yaml_list(keywords["s3_tags"]),
+        fit_order=keywords["fit_order"],
     )
     graph.build_graph()
     json_dumps = json.dumps(graph.drop_list, indent=2)
@@ -334,6 +335,7 @@ def create_and_generate(**keywords):
                     imageconcat_width=keywords["imageconcat_width"],
                     s3_storage_class=keywords["s3_storage_class"],
                     s3_tags=convert_yaml_list(keywords["s3_tags"]),
+                    fit_order=keywords["fit_order"],
                 )
                 graph.build_graph()
 
@@ -404,6 +406,7 @@ def use_and_generate(**keywords):
                 build_fits=keywords["build_fits"],
                 s3_storage_class=keywords["s3_storage_class"],
                 s3_tags=convert_yaml_list(keywords["s3_tags"]),
+                fit_order=keywords["fit_order"],
             )
             graph.build_graph()
             LOGGER.info("Connection to {0}:{1}".format(host, port))
