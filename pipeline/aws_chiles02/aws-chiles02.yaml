@@ -222,7 +222,7 @@ imageconcat:
   imageconcat_directory_name: imageconcat_ha_2019_11_11_High_Wide
   clean_directory_name: clean_ha_2019_08_10_High_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
-  fit_order: 1                 # The fit order
+  fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
     - '1324-1348'
   fits_directory_name: 'fits'       # Where to put the fits images

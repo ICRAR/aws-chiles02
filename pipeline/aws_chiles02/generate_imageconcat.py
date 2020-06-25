@@ -460,6 +460,7 @@ def run(command_line_):
             use_bash=config["use_bash"],
             casa_version=config["casa_version"],
             build_fits=config["build_fits"],
+            fit_order=config["fit_order"],
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
@@ -480,6 +481,7 @@ def run(command_line_):
             use_bash=config["use_bash"],
             casa_version=config["casa_version"],
             build_fits=config["build_fits"],
+            fit_order=config["fit_order"],
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
@@ -499,6 +501,7 @@ def run(command_line_):
             use_bash=config["use_bash"],
             casa_version=config["casa_version"],
             build_fits=config["build_fits"],
+            fit_order=config["fit_order"],
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
         )
