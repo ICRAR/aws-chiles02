@@ -2,7 +2,8 @@ argparse
 boto3
 ConfigObj
 cython
-git+https://github.com/ICRAR/daliuge.git
+daliuge
+daliuge-runtime
 jsonpickle
 mako
 markuppy
