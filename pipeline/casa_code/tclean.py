@@ -56,6 +56,11 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
             LOG.info('Setting file to blank: {0}'.format(region_file))
 
     LOG.info('tclean(vis={0}, imagename={1})'.format(str(in_dirs), outfile))
+    if isinstance(in_dirs,list):
+        cvis=in_dirs[0].replace('.ms','.concat.ms')
+        concat(vis=in_dirs,concatvis=cvis)
+        in_dirs=cvis
+    # else single ms file
     try:
         # dump_all()
         if clean_weighting_uv == 'briggs':
@@ -74,7 +79,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
                    mask=region_file,
                    outframe='BARY',
                    restfreq='1420.405752MHz',
-                   interpolation='nearest',
+                   interpolation='linear',
                    gridder='widefield',
                    wprojplanes=w_projection_planes,
                    pblimit=-0.2,
@@ -101,7 +106,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
                    mask=region_file,
                    outframe='BARY',
                    restfreq='1420.405752MHz',
-                   interpolation='nearest',
+                   interpolation='linear',
                    gridder='widefield',
                    wprojplanes=w_projection_planes,
                    pblimit=-0.2,
