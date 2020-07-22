@@ -73,6 +73,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
+    out_rot_data = 'no'
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
         if not os.path.exists(png_directory):
@@ -171,7 +172,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             print 'HA Range: '+str(ha[0])+' to '+str(ha[-1])
             ut = np.mod(ret['axis_info']['time_axis']['MJDseconds'] / 3600.0 / 24.0,1)*24.0
             not_first = False
-            for nmodel in range(len(model)-1,ntt-1,-1):
+            for nmodel in range(ntt,len(model)): #(ntt,len(model)):
                 if ((ntt>0) & (not_first==False)): # in-beam model done
                     split(vis=in_dir, outputvis=tmp_name, datacolumn='corrected')
                 ia.open(ha_model[nmodel])
@@ -182,11 +183,11 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                 tmp_name1='%s.%d'%(tmp_name,0)
                 tmp_name2='%s.%d'%(tmp_name,1)
                 os.system('rm -r %s'%(tmp_name2))
-                if nmodel==(len(model)-1): # First
-                    tmp_name1=tmp_name
+                #if nmodel==(ntt): # First
+                #    tmp_name1=tmp_name
                 # Rotate to the direction of ha_model[nmodel]
-                fixvis(vis=tmp_name1,outputvis=tmp_name2,phasecenter=model_pc)
-                tmp_name1='%s.%d'%(tmp_name,0)
+                fixvis(vis=tmp_name,outputvis=tmp_name2,phasecenter=model_pc)
+                #tmp_name1='%s.%d'%(tmp_name,0)
                 im.open(thems=tmp_name2, usescratch=True)
                 # delmod(otf=True,vis=tmp_name,scr=True)
                 for m in range(-16, 16):
@@ -238,16 +239,22 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                 # next HA m
                 im.close()
                 uvsub(vis=tmp_name2, reverse=False)
+                os.system('rm -r %s'%(tmp_name))
                 os.system('rm -r %s'%(tmp_name1))
                 split(vis=tmp_name2, outputvis=tmp_name1, datacolumn='corrected')
+                if out_rot_data == 'yes':
+                    split(vis=tmp_name1,datacolumn='data',width=64,timebin='30s',
+                          outputvis='%s/O%d_%s'%(png_directory,nmodel,out_ms))
+                fixvis(vis=tmp_name1,outputvis=tmp_name,phasecenter=ms_phasecentre)   
             # End of run through outlier models
             if out_pngs == 'yes':
-                ret_d = plotms(vis=tmp_name2,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
-                ret_m = plotms(vis=tmp_name2,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
-                ret_c = plotms(vis=tmp_name2,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
+                ret_d = plotms(vis=tmp_name1,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_data.png')
+                ret_m = plotms(vis=tmp_name1,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='model',xdatacolumn='model',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_model.png')
+                ret_c = plotms(vis=tmp_name1,xaxis='freq',yaxis='real',avgtime='43200',overwrite=True,avgbaseline=True,showgui=False,ydatacolumn='corrected',xdatacolumn='corrected',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_outfield_subtraction_corrected.png')
                 if (ret_d&ret_c&ret_m) == False:
                     print 'Reporting Outlier PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
-            fixvis(vis=tmp_name1,outputvis=os.path.join(out_dir, out_ms),phasecenter=ms_phasecentre)     
+            #Could be a copy
+            split(vis=tmp_name,outputvis=os.path.join(out_dir, out_ms),datacolumn='data')
         else:
             split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
     except Exception:
