@@ -63,15 +63,15 @@ uvsub:
     aka channalised outlier models now stand alone (for absorption)
     and matching (smaller) in beam models
 
-uvsub_major2:
+uvsub_major1:
   <<: *common
   action: uvsub
   number_taylor_terms: 2
-  mode: 'major-2'  # is this limited in values???
-  uvsub_directory_name: uvsub_maj2_2019_11_11
+  mode: 'major-1'  # is this limited in values???
+  uvsub_directory_name: uvsub_maj1_2020_07_23
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1392-1420'
+    - '1000-1040,1200-1240,1392-1420'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |

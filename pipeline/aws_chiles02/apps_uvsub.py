@@ -321,7 +321,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
         self._command = "uvsub.sh"
         self._session_id = self._getArg(kwargs, "session_id", None)
-        self._mode = self._getArg(kwargs, "mode", "major-2")
+        self._mode = self._getArg(kwargs, "mode", "major-1")
 
     def run(self):
         measurement_set_in = os.path.join(
@@ -439,7 +439,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         self._session_id = self._getArg(kwargs, "session_id", None)
         self._casa_version = self._getArg(kwargs, "casa_version", None)
         self._produce_qa = self._getArg(kwargs, "produce_qa", None)
-        self._mode = self._getArg(kwargs, "mode", "major-2")
+        self._mode = self._getArg(kwargs, "mode", "major-1")
 
     def run(self):
         # make the input measurement set
