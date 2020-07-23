@@ -135,6 +135,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             for mn in model[0:ntt]:
               tb.open(mn)
               tb.clearlocks()
+              tb.close()
             #
             im.ft(model=model[0:ntt], incremental=False)
             im.close()
@@ -213,6 +214,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                     for mn in ha_model[ntt:len(ha_model)]:
                         tb.open(mn)
                         tb.clearlocks()
+                        tb.close()
                     #
                     im.ft(model=ha_model[ntt:len(ha_model)], incremental=not_first)
                     # not_first=True

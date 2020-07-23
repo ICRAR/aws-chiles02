@@ -10,4 +10,4 @@ chmod oug+rwx $2
 cd $2
 
 # outdir, min_freq, max_freq
-xvfb-run casa --nogui --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casa_code/uvsub_ha.py $@
+xvfb-run casa --nogui --nologger --log2term -c /opt/chiles02/aws-chiles02/pipeline/casa_code/uvsub_ha_fixvis.py $@

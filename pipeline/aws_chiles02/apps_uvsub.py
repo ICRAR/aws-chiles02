@@ -329,7 +329,7 @@ class DockerUvsub(DockerApp, ErrorHandling):
             "vis_{0}~{1}".format(self._min_frequency, self._max_frequency),
         )
 
-        uvsub_command = "uvsub_ha.py "
+        uvsub_command = "uvsub_ha_fixvis.py "
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
         )
@@ -449,7 +449,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
         )
         copy_of_model = self.inputs[1].path
         uvsub_command = (
-            "uvsub_ha.py "
+            "uvsub_ha_fixvis.py "
         )  # Now we can use n taylor terms =0 for absorption
         spectral_window = int(
             ((int(self._min_frequency) + int(self._max_frequency)) / 2 - 946) / 32
