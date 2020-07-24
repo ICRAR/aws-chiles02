@@ -26,7 +26,10 @@ import logging
 import os
 import numpy as np
 import sys
-sys.path.append(os.getenv('HOME')+'/aws-chiles02/pipeline/analysis_scripts')
+if os.path.exists(os.getenv('HOME')+'/aws-chiles02/pipeline/analysis_scripts'):
+  sys.path.append(os.getenv('HOME')+'/aws-chiles02/pipeline/analysis_scripts')
+elif os.path.exists(os.getenv('HOME')+'/Git/aws-chiles02/pipeline/analysis_scripts'):
+  sys.path.append(os.getenv('HOME')+'/Git/aws-chiles02/pipeline/analysis_scripts')
 import analysisUtils as au
 
 from casa_code.casa_common import parse_args
