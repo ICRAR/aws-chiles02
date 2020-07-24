@@ -71,11 +71,13 @@ uvsub_major1:
   uvsub_directory_name: uvsub_maj1_2020_07_23
   scan_statistics: False
   frequency_range:      # This should be a list
+    - '1001-1007'
     - '1200-1240'
+    - '1401-1411'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
-    This freq range failed to uvsub -- just trying again.
+    First attempts at DR2 - new model.
 
 uvsub_abs:
   <<: *common
@@ -139,10 +141,10 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_08_10
-  clean_directory_name: clean_ha_2019_08_10_Low_Wide
+  uvsub_directory_name: uvsub_maj1_2020_07_23
+  clean_directory_name: clean_2020_07_23_Low_Wide
   frequencies_per_node: 1
-  iterations: 350
+  iterations: 2000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -156,20 +158,18 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '948-1200'
+    - '1001-1007'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    Using new addition to model of the outliers, O7
-    Using suggested beam size
-    Using very small niter to attempt to get completion
+    With new MSMFS models and new uvsub method
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_11_11
-  clean_directory_name: clean_ha_2019_11_11_High_Wide
+  uvsub_directory_name: uvsub_maj1_2020_07_23
+  clean_directory_name: clean_2020_07_23_High_Wide
   frequencies_per_node: 2
-  iterations: 35000
+  iterations: 2000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -183,10 +183,10 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1392-1420'
+    - '1200-1240'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    Testing re-run section
+    With new MSMFS models and new uvsub method
 
 clean_very_wide:
   <<: *common
