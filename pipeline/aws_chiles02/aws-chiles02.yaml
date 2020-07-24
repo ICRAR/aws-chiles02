@@ -9,7 +9,7 @@ common: &common
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.5'     # allowed=['4.7', ''5.5'],
-  ami: ami-018b8dad2a9205c6f
+  ami: ami-0adf3c45899355e59
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
   spot_price_i3_8xlarge: 1.2
@@ -71,7 +71,7 @@ uvsub_major1:
   uvsub_directory_name: uvsub_maj1_2020_07_23
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1000-1040,1200-1240,1392-1420'
+    - '1200-1240'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
