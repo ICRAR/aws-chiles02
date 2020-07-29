@@ -25,7 +25,7 @@ common: &common
 split:
   <<: *common
   action: split
-  observation_phase: 1
+  observation_phase: 2
   run_note: |
     First run of the new split.
     Maintaining native frequency frame (TOPO)
@@ -71,9 +71,8 @@ uvsub_major1:
   uvsub_directory_name: uvsub_maj1_2020_07_23
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1001-1007'
-    - '1200-1240'
-    - '1401-1411'
+    - '950-1419'
+  #  - '950-1419'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
@@ -110,10 +109,10 @@ uvsub_ska:
 clean:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj2_2019_08_10
-  clean_directory_name: clean_ha_2019_08_10_High_Fine
-  frequencies_per_node: 4
-  iterations: 35000
+  uvsub_directory_name: uvsub_maj1_2020_07_23
+  clean_directory_name: clean_2020_07_27_Low
+  frequencies_per_node: 1
+  iterations: 2000
   arcsec: '1.5'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -127,7 +126,7 @@ clean:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-     - '1365-1387'  # to cover JongHwan's source
+     - '1105-1127'  #
   #    - '1381-1419'    ## Absorption
   #   - '1069-1101'    ## Low (1.5)
   #    - '1365-1419'   ## High (1.5)
@@ -136,7 +135,7 @@ clean:
   #s3_tags:
   #  - move_to_glacier: True
   run_note_clean: |
-    Approach of 21 July (35,000 iterations) on Narrow channels
+    New Models, Narrow channels, 1 block
 
 clean_wide:
   <<: *common
@@ -158,17 +157,19 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1001-1007'
+    - '950-1200'
+  #  - '1001-1007'
+  #  - '1200'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    With new MSMFS models and new uvsub method
+    With new MSMFS models and new uvsub method, 20k interations
 
 clean_hwide:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_maj1_2020_07_23
   clean_directory_name: clean_2020_07_23_High_Wide
-  frequencies_per_node: 2
+  frequencies_per_node: 1
   iterations: 2000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
@@ -183,7 +184,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1200-1240'
+    - '1200-1419'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     With new MSMFS models and new uvsub method
@@ -219,18 +220,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_ha_2019_11_11_High_Wide
-  clean_directory_name: clean_ha_2019_08_10_High_Wide
+  imageconcat_directory_name: imageconcat_2020_07_27_Low
+  clean_directory_name: clean_2020_07_27_Low
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1324-1348'
+    - '1105-1127'
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Image Concat of missing freq repeat
+    New Models, Narrow channels, 1 block
 
 check_uvsub:
   frequency_range:

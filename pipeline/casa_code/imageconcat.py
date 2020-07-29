@@ -61,7 +61,9 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         # find the good (<4 sigma) channels
         sts=ia.statistics(axes=[0,1],verbose=False)
         ia.close()
-        mdn_rms=np.median(sts['rms'])   
+        mdn_rms=np.median(sts['rms'])
+        if mdn_rms>1e-3: # median rms should never be > 300uJy
+            mdn_rms=1e-3
         I=np.where((sts['rms']<4.0*mdn_rms)&(sts['rms']>0))[0] ## Add a filter for blanked channels? where(rms<4*mdn and rms>0)
         Is=[]
         for n in range(len(I)):
@@ -73,9 +75,10 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
         # Blank out the bad lines
         ia.open(outfile+'.line')
-        zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0.0
+        zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
+        md=ia.getdata(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
         for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]:
-            ia.putregion(zd,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
+            ia.putregion(pixels=zd,pixelmask=md,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
         ia.close()
         ia.open(outfile+'.cont')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
