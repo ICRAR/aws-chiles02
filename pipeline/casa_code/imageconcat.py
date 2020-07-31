@@ -59,7 +59,7 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         final.done()
         ia.open(outfile)
         # find the good (<4 sigma) channels
-        sts=ia.statistics(axes=[0,1],verbose=False)
+        sts=ia.statistics(axes=[0,1,2],verbose=False)
         ia.close()
         mdn_rms=np.median(sts['rms'])
         if mdn_rms>1e-3: # median rms should never be > 300uJy
@@ -86,6 +86,7 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         imsubimage(imagename=outfile+'.cont', chans='0~0', outfile=outfile+'.cont.1', overwrite=True)
         imsubimage(imagename=outfile+'.cont', chans=str(ia.shape()[3]-1)+'~'+str(ia.shape()[3]-1), outfile=outfile+'.cont.2', overwrite=True)
         ia.close()
+        os.system('rm -r %s.cont'%(outfile))
         final = ia.imageconcat(infiles=[outfile+'.cont.1',outfile+'.cont.2'], outfile=outfile+'.cont', relax=True, overwrite=True)
         final.done()
         ### OR ###-- still averages data
