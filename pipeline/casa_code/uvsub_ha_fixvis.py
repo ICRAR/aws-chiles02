@@ -271,8 +271,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             fg[I]=True
             tb.putcol('FLAG',fg.T)
             tb.close()
-
-except Exception:
+    except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
 

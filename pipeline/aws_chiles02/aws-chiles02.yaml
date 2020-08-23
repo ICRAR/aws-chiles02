@@ -69,7 +69,7 @@ uvsub_major1:
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
   uvsub_directory_name: uvsub_maj1_2020_08_23
-  scan_statistics: True
+  scan_statistics: False
   frequency_range:      # This should be a list
     - '1044'
   #  - '950-1419'
