@@ -69,7 +69,7 @@ uvsub_major1:
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
   uvsub_directory_name: uvsub_maj1_2020_07_23
-  scan_statistics: False
+  scan_statistics: True
   frequency_range:      # This should be a list
     - '950-1419'
   #  - '950-1419'
@@ -157,7 +157,8 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '950-1200'
+      - '1090'
+  #  - '950-1200'
   #  - '1001-1007'
   #  - '1200'
   casa_version: '5.5'           # Clean works better with this version
@@ -220,18 +221,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_2020_07_27_Low
-  clean_directory_name: clean_2020_07_27_Low
+  imageconcat_directory_name: imageconcat_2020_07_23_High_Wide
+  clean_directory_name: clean_2020_07_23_High_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1105-1127'
+    - '1200-1419'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    New Models, Narrow channels, 1 block
+    New Models, full range
 
 check_uvsub:
   frequency_range:

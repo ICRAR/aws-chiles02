@@ -76,7 +76,8 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    out_rot_data = 'no'
+    out_rot_data = 'no' # Keep a version of the subtracted data
+    sub_uzero=False #or True
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
         if not os.path.exists(png_directory):
@@ -260,7 +261,18 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             split(vis=tmp_name,outputvis=os.path.join(out_dir, out_ms),datacolumn='data')
         else:
             split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
-    except Exception:
+        if sub_uzero == True:
+            tb.open(os.path.join(out_dir, out_ms),nomodify=False)
+            tq=tb.query('',columns='UVW,FLAG')
+            uv=tq['UVW']
+            fg=tq['FLAG'].T
+            I=np.where(np.abs(uv[0])<10)[0]
+            print('Flagging %d baselines on %s, on which u is ~zero'%(len(I),os.path.join(out_dir, out_ms)))
+            fg[I]=True
+            tb.putcol('FLAG',fg.T)
+            tb.close()
+
+except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
 
