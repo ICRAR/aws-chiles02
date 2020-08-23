@@ -470,6 +470,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                 "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
                 "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model "
                 "{6}/LSM/Outliers/Outlier_7.0,8.spw_{7}.model ".format(
+                "{6}/LSM/Outliers/Outlier_8.0,8.spw_{7}.model ".format(
                     measurement_set_in,
                     self.outputs[0].path,
                     "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
@@ -494,12 +495,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                   "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
                   "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model "
                   "{6}/LSM/Outliers/Outlier_7.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_1.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_2.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_3.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_4.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_5.0,8.spw_{7}.model "
-                  "{6}/LSM/Major-2/Outliers/Outlier_Major2_6.0,8.spw_{7}.model ".format(
+                  "{6}/LSM/Outliers/Outlier_8.0,8.spw_{7}.model ".format(
                     measurement_set_in,
                     self.outputs[0].path,
                     "uvsub_{0}~{1}".format(self._min_frequency, self._max_frequency),
@@ -511,7 +507,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                     uvsub_command,
                 )
             )
-        else:  ## This should read else if 'major-2'
+        else:  ## This should read else if 'major-2' WILL NO LONGER WORK
             self._command = (
                 "cd ; "
                 + get_casa_command_line(self._casa_version)

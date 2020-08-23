@@ -68,15 +68,15 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_maj1_2020_07_23
+  uvsub_directory_name: uvsub_maj1_2020_08_23
   scan_statistics: True
   frequency_range:      # This should be a list
-    - '950-1419'
+    - '1044'
   #  - '950-1419'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
-    First attempts at DR2 - new model.
+    Introduce Outlier 8.
 
 uvsub_abs:
   <<: *common
@@ -140,8 +140,8 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj1_2020_07_23
-  clean_directory_name: clean_2020_07_23_Low_Wide
+  uvsub_directory_name: uvsub_maj1_2020_08_23
+  clean_directory_name: clean_2020_08_23_Low_Wide
   frequencies_per_node: 1
   iterations: 2000
   arcsec: '3'                   # Needs to be a string
@@ -157,7 +157,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-      - '1090'
+      - '1044'
   #  - '950-1200'
   #  - '1001-1007'
   #  - '1200'

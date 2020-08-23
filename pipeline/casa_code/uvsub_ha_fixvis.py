@@ -77,7 +77,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
         os.makedirs(out_dir)
 
     out_rot_data = 'no' # Keep a version of the subtracted data
-    sub_uzero=False #or True
+    sub_uzero=True # False #or True
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
         if not os.path.exists(png_directory):
