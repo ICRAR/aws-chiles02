@@ -40,7 +40,7 @@ uvsub_node1:
   mode: 'major-2'
   w_projection_planes: 99
   uvsub_directory_name: uvsub_maj2_2019_07_08_Wplane_99
-  scan_statistics: False
+  scan_statistics: True
   produce_qa: True
   frequency_range:      # This should be a list
     - '999-1001'

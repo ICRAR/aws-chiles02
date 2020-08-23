@@ -469,7 +469,7 @@ class CasaUvsub(BarrierAppDROP, ErrorHandling):
                 "{6}/LSM/Outliers/Outlier_4.0,8.spw_{7}.model "
                 "{6}/LSM/Outliers/Outlier_5.0,8.spw_{7}.model "
                 "{6}/LSM/Outliers/Outlier_6.0,8.spw_{7}.model "
-                "{6}/LSM/Outliers/Outlier_7.0,8.spw_{7}.model ".format(
+                "{6}/LSM/Outliers/Outlier_7.0,8.spw_{7}.model "
                 "{6}/LSM/Outliers/Outlier_8.0,8.spw_{7}.model ".format(
                     measurement_set_in,
                     self.outputs[0].path,
