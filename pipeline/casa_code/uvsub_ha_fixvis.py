@@ -264,8 +264,8 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
         if sub_uzero == True:
             tb.open(os.path.join(out_dir, out_ms),nomodify=False)
             tq=tb.query('',columns='UVW,FLAG')
-            uv=tq['UVW']
-            fg=tq['FLAG'].T
+            uv=tq.getcol('UVW')
+            fg=tq.getcol('FLAG').T
             I=np.where(np.abs(uv[0])<10)[0]
             print('Flagging %d baselines on %s, on which u is ~zero'%(len(I),os.path.join(out_dir, out_ms)))
             fg[I]=True
