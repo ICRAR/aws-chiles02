@@ -78,6 +78,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
 
     out_rot_data = 'no' # Keep a version of the subtracted data
     sub_uzero=True # False #or True
+    pre_average = 2 # average in final split
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
         if not os.path.exists(png_directory):
@@ -258,9 +259,9 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                 if (ret_d&ret_c&ret_m) == False:
                     print 'Reporting Outlier PlotMS Failure! State for Data, Corrected and Model is: '+str(ret_d)+'&'+str(ret_c)+'&'+str(ret_m)
             #Could be a copy
-            split(vis=tmp_name,outputvis=os.path.join(out_dir, out_ms),datacolumn='data')
+            split(vis=tmp_name,outputvis=os.path.join(out_dir, out_ms),datacolumn='data',width=pre_average)
         else:
-            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected')
+            split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected',width=pre_average)
         if sub_uzero == True:
             tb.open(os.path.join(out_dir, out_ms),nomodify=False)
             tq=tb.query('',columns='UVW,FLAG')
