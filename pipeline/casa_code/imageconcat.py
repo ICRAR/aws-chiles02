@@ -75,13 +75,13 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
         # Blank out the bad lines
         os.system('sleep 5') ## Keeeps failing at ia.open
-        ia.open(outfile+'.line')
+        ia.open(infile='%s.line'%(outfile))
         zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
         md=ia.getdata(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
         for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]:
             ia.putregion(pixels=zd,pixelmask=md,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
         ia.close()
-        ia.open(outfile+'.cont')
+        ia.open(infile='%s.cont'%(outfile))
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans='0~'+str(ia.shape()[3]/2-1),outfile=outfile+'.cont.1',function='mean')
         #imcollapse(imagename=outfile+'.cont',axes=[3],chans=str(ia.shape()[3]/2)+'~'+str(ia.shape()[3]-1),outfile=outfile+'.cont.2',function='mean')
         imsubimage(imagename=outfile+'.cont', chans='0~0', outfile=outfile+'.cont.1', overwrite=True)

@@ -143,7 +143,7 @@ clean_wide:
   action: clean
   uvsub_directory_name: uvsub_maj1_2020_08_25
   clean_directory_name: clean_2020_08_25_Low_Wide
-  frequencies_per_node: 2
+  frequencies_per_node: 1
   iterations: 2000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
@@ -225,7 +225,7 @@ imageconcat:
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '944-968'  # '950-1200' # 1200-1419'     #
+    - '1125-1147'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
