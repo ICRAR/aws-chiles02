@@ -74,6 +74,7 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
                 chan=''
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
         # Blank out the bad lines
+        os.system('sleep 5') ## Keeeps failing at ia.open
         ia.open(outfile+'.line')
         zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
         md=ia.getdata(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
