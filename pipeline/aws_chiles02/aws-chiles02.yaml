@@ -71,7 +71,7 @@ uvsub_major1:
   uvsub_directory_name: uvsub_maj1_2020_08_25
   scan_statistics: False
   frequency_range:      # This should be a list
-    - '1125-1147'
+    -  '948-1419'  #'948-1204'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
@@ -110,8 +110,8 @@ uvsub_ska:
 clean:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj1_2020_07_23
-  clean_directory_name: clean_2020_07_27_Low
+  uvsub_directory_name: uvsub_maj1_2020_08_25
+  clean_directory_name: clean_2020_08_25_Low
   frequencies_per_node: 1
   iterations: 2000
   arcsec: '1.5'                   # Needs to be a string
@@ -119,7 +119,7 @@ clean:
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
   image_size: 4096
-  clean_channel_average: 4
+  clean_channel_average: 2
   region_file: '/home/ec2-user/aws-chiles02/LSM/Clean_Regions_All.crtf'               # The region file for cleaning in crtf
   only_image: False             # Only copy the image to S3
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
@@ -127,7 +127,7 @@ clean:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-     - '1105-1127'  #
+     - '1025-1047'  #
   #    - '1381-1419'    ## Absorption
   #   - '1069-1101'    ## Low (1.5)
   #    - '1365-1419'   ## High (1.5)
@@ -143,7 +143,7 @@ clean_wide:
   action: clean
   uvsub_directory_name: uvsub_maj1_2020_08_25
   clean_directory_name: clean_2020_08_25_Low_Wide
-  frequencies_per_node: 1
+  frequencies_per_node: 2
   iterations: 2000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
@@ -158,7 +158,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-      - '1125-1147'
+      - '1041-1047'
   #  - '1025-1031'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
@@ -225,7 +225,7 @@ imageconcat:
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1125-1147'  # '950-1200' # 1200-1419'     #
+    - '945-967'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True

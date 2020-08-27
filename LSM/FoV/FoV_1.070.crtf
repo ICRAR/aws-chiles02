@@ -1,0 +1,3 @@
+#CRTFv0
+global coord=J2000, frame=BARY
+ellipse [[10h01m24s,02.21.00.0],[0.642617deg, 0.642617deg],90deg]
