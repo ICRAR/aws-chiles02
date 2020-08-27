@@ -231,7 +231,7 @@ imageconcat:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    New Models, full range
+    New Models
 
 check_uvsub:
   frequency_range:

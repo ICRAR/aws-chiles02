@@ -74,10 +74,10 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
                 chan=''
         imcontsub(imagename=outfile, linefile=outfile+'.line', contfile=outfile+'.cont', fitorder=fit_order,chans=chan)
         # Blank out the bad lines
-        os.system('sleep 5') ## Keeeps failing at ia.open
+        #os.system('sleep 5') ## Keeeps failing at ia.open
         ia.open(infile='%s.line'%(outfile))
-        zd=ia.getdata(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
-        md=ia.getdata(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
+        zd=ia.getregion(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
+        md=ia.getregion(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
         for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]:
             ia.putregion(pixels=zd,pixelmask=md,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
         ia.close()
