@@ -278,7 +278,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
         if (calc_stats):
           statwt(vis=tmp_name,chanbin=1,timebin='64s',datacolumn="data")
           if out_pngs == 'yes':
-            #ret_d = plotms(vis=tmp_name,xaxis='Frequency',yaxis='WtSp',avgtime='43200',overwrite=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_weight.png')
+            ret_d = plotms(vis=tmp_name,xaxis='Frequency',yaxis='WtSp',avgtime='43200',overwrite=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_weight.png')
             tb.open(tmp_name)
             w=tb.getcol('WEIGHT_SPECTRUM')
             tb.close()
@@ -289,7 +289,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             pl.xlabel('Channel') #Freq. (MHz)')
             pl.ylabel('Weight Sigma')
             pl.legend(['Max Weight/100','Median Weight'])
-            pl.savefig(png_directory+'/'+in_dir.rsplit('/')[-1]+'_weight.png')
+            pl.savefig(png_directory+'/'+in_dir.rsplit('/')[-1]+'_lg_weight.png')
           
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
