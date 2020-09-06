@@ -78,6 +78,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
 
     out_rot_data = 'no' # Keep a version of the subtracted data
     sub_uzero=True # False #or True
+    calc_stats=True # False #or True
     pre_average = 2 # average in final split
     if out_pngs == 'yes':
         png_directory = os.path.join(out_dir, 'qa_pngs')
@@ -262,8 +263,9 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             split(vis=tmp_name,outputvis=os.path.join(out_dir, out_ms),datacolumn='data',width=pre_average)
         else:
             split(vis=in_dir, outputvis=os.path.join(out_dir, out_ms), datacolumn='corrected',width=pre_average)
+        tmp_name=os.path.join(out_dir, out_ms)
         if sub_uzero == True:
-            tb.open(os.path.join(out_dir, out_ms),nomodify=False)
+            tb.open(tmp_name,nomodify=False)
             tq=tb.query('',columns='UVW,FLAG')
             uv=tq.getcol('UVW')
             fg=tq.getcol('FLAG').T
@@ -272,6 +274,23 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
             fg[I]=True
             tb.putcol('FLAG',fg.T)
             tb.close()
+        # Add stat wt calculation
+        if (calc_stats):
+          statwt(vis=tmp_name,chanbin=1,timebin='64s',datacolumn="data")
+          if out_pngs == 'yes':
+            #ret_d = plotms(vis=tmp_name,xaxis='Frequency',yaxis='WtSp',avgtime='43200',overwrite=True,showgui=False,ydatacolumn='data',xdatacolumn='data',plotfile=png_directory+'/'+in_dir.rsplit('/')[-1]+'_weight.png')
+            tb.open(tmp_name)
+            w=tb.getcol('WEIGHT_SPECTRUM')
+            tb.close()
+            pl.semilogy(f,np.nanmax(w,axis=(2)).T/100)
+            #pl.semilogy(f,np.min(w,axis=(2)))
+            pl.semilogy(f,np.nanmedian(w,axis=(2)).T,'.')
+            pl.title('Weights: '+in_dir.rsplit('/')[-1])
+            pl.xlabel('Channel') #Freq. (MHz)')
+            pl.ylabel('Weight Sigma')
+            pl.legend(['Max Weight/100','Median Weight'])
+            pl.savefig(png_directory+'/'+in_dir.rsplit('/')[-1]+'_weight.png')
+          
     except Exception:
         LOG.exception('*********\nUVSub exception: \n***********')
 
