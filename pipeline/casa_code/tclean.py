@@ -42,6 +42,8 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
     if not os.path.exists(cube_dir):
         os.makedirs(cube_dir)
 
+    delete_wtsp=True ## Temp hack till weight spectrum makes sense
+
     outfile = os.path.join(cube_dir, 'clean_{0}~{1}'.format(min_freq, max_freq))
     # If region_file is given check it exisits. If not try some paths.
     # If still not set to blank to prevent failure
@@ -63,6 +65,21 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
     # else single ms file
     try:
         # dump_all()
+        if delete_wtsp: # Temp hack till weight spectrum makes sense
+          if isinstance(in_dirs,list):
+            for vis_file in in_dirs:
+                tb.open(vis_file,nomodify=False)
+                if 'WEIGHT_SPECTRUM' tb.colnames():
+                    tb.removecols('WEIGHT_SPECTRUM')
+                    tb.removecols('SIGMA_SPECTRUM')
+                tb.close()
+          else:
+          # else single ms file
+            tb.open(in_dirs,nomodify=False)
+            if 'WEIGHT_SPECTRUM' tb.colnames():
+                tb.removecols('WEIGHT_SPECTRUM')
+                tb.removecols('SIGMA_SPECTRUM')
+            tb.close()
         if clean_weighting_uv == 'briggs':
             tclean(vis=in_dirs,
                    field='deepfield',

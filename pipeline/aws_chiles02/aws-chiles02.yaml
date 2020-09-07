@@ -68,16 +68,16 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_maj1_2020_08_25
+  uvsub_directory_name: uvsub_2V2_2020_09_05
   scan_statistics: False
   frequency_range:      # This should be a list
-    -  '948-1419'  #'948-1204'
+    -  '1124-1144'  #'948-1204'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
   nodes: 10
   run_note_uvsub: |
-    Introduce Outlier 8. Fix u=0 flagging
+    Introduce fixed Outlier 8. |u|<10 flagging
 
 uvsub_abs:
   <<: *common
@@ -141,9 +141,9 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj1_2020_08_25
-  clean_directory_name: clean_2020_08_25_Low_Wide
-  frequencies_per_node: 2
+  uvsub_directory_name: uvsub_2V2_2020_09_05
+  clean_directory_name: clean_2V2_2020_09_05_Low_Wide
+  frequencies_per_node: 1
   iterations: 2000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
@@ -158,7 +158,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-      - '1041-1047'
+    - '1136-1146'
   #  - '1025-1031'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
@@ -167,8 +167,8 @@ clean_wide:
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj1_2020_08_25
-  clean_directory_name: clean_2020_08_25_High_Wide
+  uvsub_directory_name: semester_1/uvsub_2V2_2020_09_05
+  clean_directory_name: clean_2V2_2020_09_05_High_Wide
   frequencies_per_node: 1
   iterations: 2000
   arcsec: '2'                   # Needs to be a string
@@ -184,7 +184,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1200-1419'
+    - '1200-1220'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     With new MSMFS models and new uvsub method
@@ -220,12 +220,12 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: imageconcat_2020_08_25_Low_Wide
-  clean_directory_name: clean_2020_08_25_Low_Wide
+  imageconcat_directory_name: semester_1/imageconcat_2V2_2020_09_05_Low_Wide
+  clean_directory_name: clean_2V2_2020_09_05_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '945-967'  # '950-1200' # 1200-1419'     #
+    - '1125-1144'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
