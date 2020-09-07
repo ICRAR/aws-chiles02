@@ -68,7 +68,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         if delete_wtsp: # Temp hack till weight spectrum makes sense
           if isinstance(in_dirs,list):
             for vis_file in in_dirs:
-                print('Removing weight spectrum from %'%(vis_file))
+                print('Removing weight spectrum from %s'%(vis_file))
                 tb.open(vis_file,nomodify=False)
                 if 'WEIGHT_SPECTRUM' in tb.colnames():
                     tb.removecols('WEIGHT_SPECTRUM')

@@ -220,8 +220,8 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_1/imageconcat_2V2_2020_09_05_Low_Wide
-  clean_directory_name: clean_2V2_2020_09_05_Low_Wide
+  imageconcat_directory_name: semester_1/imageconcat_2V2_2020_09_07_Low_Wide
+  clean_directory_name: clean_2V2_2020_09_07_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
