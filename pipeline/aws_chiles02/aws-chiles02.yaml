@@ -8,7 +8,7 @@ common: &common
   split_directory: split_4_phase_1
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
-  casa_version: '5.5'     # allowed=['4.7', ''5.5'],
+  casa_version: '5.7'     # allowed=['4.7', ''5.5'],
   ami: ami-052813d2e49fbdf18
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
@@ -68,10 +68,10 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_2V2_2020_09_05
+  uvsub_directory_name: uvsub_2V2_2020_09_08
   scan_statistics: False
   frequency_range:      # This should be a list
-    -  '1124-1144'  #'948-1204'
+    -  '1128'  #'948-1204'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
@@ -160,7 +160,6 @@ clean_wide:
   frequency_range:              # A list of frequency ranges
     - '1126-1146'
   #  - '1025-1031'
-  casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     Without weight spectrum
 
@@ -185,7 +184,6 @@ clean_hwide:
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
     - '1200-1220'
-  casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     With new MSMFS models and new uvsub method
 
@@ -211,7 +209,6 @@ clean_very_wide:
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
     - '1212-1300'
-  casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
     Found residuals still had significant flux. Relaunch with double no iterations
 
