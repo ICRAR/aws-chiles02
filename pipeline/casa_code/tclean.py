@@ -75,9 +75,9 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
                     tb.removecols('SIGMA_SPECTRUM')
                 tb.close()
           else:
-          # else single ms file
-          print('Removing weight spectrum from %'%(in_dirs))
-          tb.open(in_dirs,nomodify=False)
+            # else single ms file
+            print('Removing weight spectrum from %s'%(in_dirs))
+            tb.open(in_dirs,nomodify=False)
             if 'WEIGHT_SPECTRUM' in tb.colnames():
                 tb.removecols('WEIGHT_SPECTRUM')
                 tb.removecols('SIGMA_SPECTRUM')
