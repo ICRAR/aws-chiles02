@@ -69,7 +69,7 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
           if isinstance(in_dirs,list):
             for vis_file in in_dirs:
                 tb.open(vis_file,nomodify=False)
-                if 'WEIGHT_SPECTRUM' tb.colnames():
+                if 'WEIGHT_SPECTRUM' in tb.colnames():
                     tb.removecols('WEIGHT_SPECTRUM')
                     tb.removecols('SIGMA_SPECTRUM')
                 tb.close()

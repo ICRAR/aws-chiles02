@@ -142,7 +142,7 @@ clean_wide:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_2V2_2020_09_05
-  clean_directory_name: clean_2V2_2020_09_05_Low_Wide
+  clean_directory_name: clean_2V2_2020_09_07_Low_Wide
   frequencies_per_node: 1
   iterations: 2000
   arcsec: '3'                   # Needs to be a string
@@ -158,11 +158,11 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1136-1146'
+    - '1126-1146'
   #  - '1025-1031'
   casa_version: '5.5'           # Clean works better with this version
   run_note_clean: |
-    With new MSMFS models (inc 8) and new uvsub method, 2k interations
+    Without weight spectrum
 
 clean_hwide:
   <<: *common
