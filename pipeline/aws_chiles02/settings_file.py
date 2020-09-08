@@ -71,5 +71,7 @@ def get_casa_command_line(casa_version):
         return CASA_COMMAND_LINE_4_7
     elif casa_version == '5.5':
         return CASA_COMMAND_LINE_5_5
+    elif casa_version == '5.7':
+        return CASA_COMMAND_LINE_5_5
     else:
         raise ValueError('Unknown casa version: {}'.format(casa_version))
