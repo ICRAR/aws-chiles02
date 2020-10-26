@@ -133,7 +133,7 @@ def get_nodes_required(work_to_do, frequencies_per_node, spot_price):
     nodes.append(
         {
             "number_instances": node_count,
-            "instance_type": "i3.8xlarge",
+            "instance_type": "i3.4xlarge",
             "spot_price": spot_price,
         }
     )
