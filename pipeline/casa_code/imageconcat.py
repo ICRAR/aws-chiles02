@@ -57,6 +57,10 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         # ia doesn't need an import - it is just available in casa
         final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
+        for n in input_files:
+            input_files[input_files.index(n)]=n.replace('image','psf')
+        final = ia.imageconcat(infiles=input_files, outfile=outfile.replace('cube','psf.cube'), relax=True, overwrite=True)
+        final.done()
         ia.open(outfile)
         # find the good (<4 sigma) channels
         sts=ia.statistics(axes=[0,1,2],verbose=False)
