@@ -170,7 +170,7 @@ clean_hwide:
   uvsub_directory_name: uvsub_2V3_2020_10_17
   clean_directory_name: clean_2V3_2020_10_17_High_Wide
   frequencies_per_node: 1
-  iterations: 0200
+  iterations: 2000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -184,7 +184,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1300-1420'
+    - '1200-1419'
   run_note_clean: |
     With new MSMFS models and new uvsub method
 
@@ -218,18 +218,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_1/imageconcat_2V3_2020_10_17_High_Wide
-  clean_directory_name: clean_2V3_2020_10_17_High_Wide
+  imageconcat_directory_name: semester_1/imageconcat_2V3_2020_10_17b_Low_Wide
+  clean_directory_name: clean_2V3_2020_10_17_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1200-1300' # '1048-1068'  # '950-1200' # 1200-1419'     #
+    - '945-1207' # '1048-1068'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    New Models
+    PSF included now.
 
 check_uvsub:
   frequency_range:
