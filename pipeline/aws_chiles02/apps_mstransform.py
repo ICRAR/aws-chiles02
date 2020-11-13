@@ -157,8 +157,19 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                     pass
 
                 else:
-                    elements = measurement_set_dir.split("/")
-                    full_pathname = os.path.join(elements[-1], key1.key)
+                    elements = []
+                    for element in key1.key.split("/"):
+                        if element.startswith("13B-266."):
+                            elements.append(element[: -len("_calibrated_deepfield.ms")])
+                        elif len(elements) == 0:
+                            # Haven't found the start
+                            pass
+                        else:
+                            elements.append(element)
+
+                    full_pathname = os.path.join(
+                        measurement_set_dir, "/".join(elements)
+                    )
                     LOG.info("full_pathname: {0}".format(full_pathname))
 
                     dir_name = os.path.dirname(full_pathname)
