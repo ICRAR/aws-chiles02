@@ -65,7 +65,7 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         # find the good (<4 sigma) channels
         sts=ia.statistics(axes=[0,1,2],verbose=False)
         ia.close()
-        sts['rms'][np.where(np.isnan(sts['rms']))[0]]=0
+        sts['rms'][np.where(np.isnan(sts['rms']))[0]]=0 # Set NaN channels in cube to RMS zero
         mdn_rms=np.median(sts['rms'])
         if mdn_rms>1e-3: # median rms should never be > 300uJy
             mdn_rms=1e-3
