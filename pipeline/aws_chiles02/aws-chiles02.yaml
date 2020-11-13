@@ -9,7 +9,7 @@ common: &common
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.7'     # allowed=['4.7', ''5.5'. '5.7'],
-  ami: ami-0d1048de192776372
+  ami: ami-026c9160706f1e18d
   # Previous (Sept): ami-0f666972d736bdf95
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
