@@ -158,9 +158,9 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                     pass
 
                 else:
-                    full_pathname = join(measurement_set_dir, key1)
+                    full_pathname = join(measurement_set_dir, key1.key)
                     LOG.info("full_pathname: {0}".format(full_pathname))
-                    s3_object = s3.Object(bucket_name, key1)
+                    s3_object = s3.Object(bucket_name, key1.key)
                     s3_size = s3_object.content_length
 
                     s3_client = s3.meta.client
