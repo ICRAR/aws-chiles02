@@ -158,11 +158,13 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
 
                 else:
                     elements = []
-                    start_adding = False
                     for element in key1.key.split("/"):
                         if element.startswith("13B-266."):
-                            start_adding = True
-                        elif start_adding:
+                            elements.append(element)
+                        elif len(elements) == 0:
+                            # Haven't found the start
+                            pass
+                        else:
                             elements.append(element)
 
                     full_pathname = os.path.join(

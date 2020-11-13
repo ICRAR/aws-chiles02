@@ -46,7 +46,6 @@ split_2:
   s3_storage_class: INTELLIGENT_TIERING
   split_directory: split_4_phase_2
   source_ms_dir: semester_2
-  casa_version: '4.7'
 
 uvsub_node1:
   <<: *common
