@@ -25,7 +25,6 @@ My Docker Apps
 import logging
 import os
 import shutil
-from os.path import join
 
 import boto3
 import six
@@ -158,8 +157,15 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                     pass
 
                 else:
-                    full_pathname = join(measurement_set_dir, key1.key)
+                    elements = measurement_set_dir.split("/")
+                    full_pathname = os.path.join(elements[-1], key1.key)
                     LOG.info("full_pathname: {0}".format(full_pathname))
+
+                    dir_name = os.path.dirname(full_pathname)
+                    if not os.path.exists(dir_name):
+                        LOG.info("Making dir: {0}".format(dir_name))
+                        os.makedirs(dir_name)
+
                     s3_object = s3.Object(bucket_name, key1.key)
                     s3_size = s3_object.content_length
 
@@ -167,9 +173,9 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                     transfer = S3Transfer(s3_client)
                     transfer.download_file(
                         bucket_name,
-                        key1,
+                        key1.key,
                         full_pathname,
-                        callback=ProgressPercentage(key1, s3_size),
+                        callback=ProgressPercentage(key1.key, s3_size),
                     )
 
         return 0
