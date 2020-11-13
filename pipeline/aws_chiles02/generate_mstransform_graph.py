@@ -27,7 +27,6 @@ import getpass
 import json
 import logging
 import os
-import sys
 from http import HTTPStatus
 from http.client import HTTPConnection
 from os.path import exists
@@ -69,7 +68,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class WorkToDo(object):
-    def __init__(self, width, bucket_name, s3_split_name, observation_phase):
+    def __init__(
+        self, width, bucket_name, s3_split_name, observation_phase, source_ms_dir
+    ):
         self._width = width
         self._bucket_name = bucket_name
         self._s3_split_name = s3_split_name
@@ -78,6 +79,7 @@ class WorkToDo(object):
         self._list_frequencies = None
         self._observation_phase = observation_phase
         self._work_to_do = {}
+        self._source_ms_dir = source_ms_dir
 
     def calculate_work_to_do(self):
         session = boto3.Session(profile_name="aws-chiles02")
@@ -85,9 +87,7 @@ class WorkToDo(object):
 
         list_measurement_sets = []
         self._bucket = s3.Bucket(self._bucket_name)
-        for key in self._bucket.objects.filter(
-            Prefix="observation_data/phase_{}".format(self._observation_phase)
-        ):
+        for key in self._bucket.objects.filter(Prefix=self._source_ms_dir):
             if key.key.endswith("_calibrated_deepfield.ms.tar") or key.key.endswith(
                 "_calibrated_deepfield.ms.tar.gz"
             ):
@@ -95,6 +95,13 @@ class WorkToDo(object):
 
                 list_measurement_sets.append(
                     MeasurementSetData(key.key, key.size, key.key.endswith("gz"))
+                )
+            elif key.key.endswith("_calibrated_deepfield.ms/"):
+                LOGGER.info("Found {0}".format(key.key))
+
+                list_objects, total_size = self._get_all_files(key.key)
+                list_measurement_sets.append(
+                    MeasurementSetData(key.key, total_size, False, list_objects)
                 )
 
         # Get work we've already done
@@ -164,6 +171,22 @@ class WorkToDo(object):
     @property
     def work_to_do(self):
         return self._work_to_do
+
+    def _get_all_files(self, ms_key):
+        list_files = []
+        total_size = 0
+
+        for key in self._bucket.objects.filter(Prefix=ms_key):
+            if key.key.endswith("/") and key.size == 0:
+                # Ignore this one
+                pass
+            else:
+                LOGGER.info("Found {0}".format(key.key))
+
+                list_files.append(key.key)
+                total_size += key.size
+
+        return list_files, total_size
 
 
 def get_nodes_required(days, days_per_node, spot_price_2xlarge, spot_price_4xlarge):
@@ -236,6 +259,7 @@ def create_and_generate(
     run_note,
     s3_storage_class,
     s3_tags,
+    source_ms_dir,
 ):
     boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
@@ -244,6 +268,7 @@ def create_and_generate(
             bucket_name=bucket_name,
             s3_split_name=split_directory,
             observation_phase=observation_phase,
+            source_ms_dir=source_ms_dir,
         )
         work_to_do.calculate_work_to_do()
 
@@ -350,6 +375,7 @@ def use_and_generate(
     run_note,
     s3_storage_class,
     s3_tags,
+    source_ms_dir,
 ):
     boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
@@ -373,6 +399,7 @@ def use_and_generate(
                 bucket_name=bucket_name,
                 s3_split_name=split_directory,
                 observation_phase=observation_phase,
+                source_ms_dir=source_ms_dir,
             )
             work_to_do.calculate_work_to_do()
 
@@ -424,18 +451,18 @@ def build_json(
     json_path,
     s3_storage_class,
     s3_tags,
+    source_ms_dir,
 ):
-    work_to_do = WorkToDo(width, bucket, split_directory, observation_phase)
+    work_to_do = WorkToDo(
+        width, bucket, split_directory, observation_phase, source_ms_dir=source_ms_dir
+    )
     work_to_do.calculate_work_to_do()
 
     node_details = {
-        "i3.2xlarge": [
-            {"ip_address": "node_i2_{0}".format(i)} for i in range(0, nodes)
-        ],
-        "i3.4xlarge": [
-            {"ip_address": "node_i4_{0}".format(i)} for i in range(0, nodes)
-        ],
+        "i3.2xlarge": [{"ip_address": "node_i2_{0}".format(i)} for i in range(nodes)],
+        "i3.4xlarge": [{"ip_address": "node_i4_{0}".format(i)} for i in range(nodes)],
     }
+
     graph = BuildGraphMsTransform(
         work_to_do=work_to_do.work_to_do,
         bucket_name=bucket,
@@ -500,6 +527,9 @@ def run(command_line_):
             run_note=config["run_note"],
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
+            source_ms_dir=config["source_ms_dir"]
+            if "source_ms_dir" in config
+            else None,
         )
     elif config["run_type"] == "use":
         use_and_generate(
@@ -516,6 +546,9 @@ def run(command_line_):
             run_note=config["run_note"],
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
+            source_ms_dir=config["source_ms_dir"]
+            if "source_ms_dir" in config
+            else None,
         )
     else:
         build_json(
@@ -533,16 +566,13 @@ def run(command_line_):
             json_path="/tmp/json_file.json",
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
+            source_ms_dir=config["source_ms_dir"]
+            if "source_ms_dir" in config
+            else None,
         )
 
 
 if __name__ == "__main__":
-    print(
-        "Before you run this - have you figured out why days without "
-        "the 944-948 band copy the whole observation over?"
-    )
-    sys.exit()
-
     parser = argparse.ArgumentParser(description="Split")
     parser.add_argument(
         "--config_file", default=None, help="the config file for this run"

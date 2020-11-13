@@ -37,7 +37,11 @@ from configobj import ConfigObj
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
-from aws_chiles02.settings_file import INPUT_MS_SUFFIX_TAR, INPUT_MS_SUFFIX_TAR_GZ
+from aws_chiles02.settings_file import (
+    INPUT_MS_SUFFIX_TAR,
+    INPUT_MS_SUFFIX_TAR_GZ,
+    INPUT_MS_SUFFIX,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -81,13 +85,17 @@ class ChunkedFrequencyPair(FrequencyPair):
 
 
 class MeasurementSetData:
-    def __init__(self, input_s3_key_name, size, gzipped):
+    def __init__(self, input_s3_key_name, size, gzipped, list_files=None):
         self.input_s3_key_name = input_s3_key_name
         self.size = size
         self.gzipped = gzipped
+        self.list_files = list_files
+
         # Get rid of the '_calibrated_deepfield.ms.tar'
         elements = input_s3_key_name.split("/")
-        if input_s3_key_name.endswith(".gz"):
+        if input_s3_key_name.endswith(".ms/"):
+            self.short_name = elements[-2][: -len(INPUT_MS_SUFFIX)]
+        elif input_s3_key_name.endswith(".gz"):
             self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX_TAR_GZ)]
         else:
             self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX_TAR)]
@@ -106,22 +114,19 @@ class MeasurementSetData:
 
 
 def get_list_frequency_groups(frequency_width):
-    list_frequencies = []
-    for bottom_frequency in range(944, 1420, frequency_width):
-        list_frequencies.append(
-            FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
-        )
-    return list_frequencies
+    return [
+        FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
+        for bottom_frequency in range(944, 1420, frequency_width)
+    ]
 
 
 def pair_in_set(frequency_pair, frequencies_required):
-    for frequency in range(
-        frequency_pair.bottom_frequency, frequency_pair.top_frequency + 1
-    ):
-        if frequency in frequencies_required:
-            return True
-
-    return False
+    return any(
+        frequency in frequencies_required
+        for frequency in range(
+            frequency_pair.bottom_frequency, frequency_pair.top_frequency + 1
+        )
+    )
 
 
 def get_required_frequencies(frequencies, width):
@@ -153,12 +158,11 @@ def get_required_frequencies(frequencies, width):
             else:
                 frequencies_required.add(int(frequency))
 
-        list_frequency_pair = []
-        for frequency_pair in get_list_frequency_groups(width):
-            if pair_in_set(frequency_pair, frequencies_required):
-                list_frequency_pair.append(frequency_pair)
-
-        return list_frequency_pair
+        return [
+            frequency_pair
+            for frequency_pair in get_list_frequency_groups(width)
+            if pair_in_set(frequency_pair, frequencies_required)
+        ]
 
     return None
 
@@ -420,9 +424,7 @@ def bytes2human(n, format_string="{0:.1f}{1}", symbols="customary"):
         raise ValueError("n < 0")
 
     symbols = SYMBOLS[symbols]
-    prefix = {}
-    for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i + 1) * 10
+    prefix = {s: 1 << (i + 1) * 10 for i, s in enumerate(symbols[1:])}
     for symbol in reversed(symbols[1:]):
         if n >= prefix[symbol]:
             value = float(n) / prefix[symbol]
@@ -518,7 +520,7 @@ def get_config(yaml_filename, task):
             yaml = YAML()
             yaml_config = yaml.load(yaml_file)
 
-            return_config = dict()
+            return_config = {}
             for key, value in yaml_config[task].items():
                 return_config[key] = value
             return return_config
@@ -530,10 +532,10 @@ def convert_yaml_list(yaml_list):
     if yaml_list is None:
         return None
 
-    new_list = list()
+    new_list = []
     for item in yaml_list:
         if isinstance(item, CommentedMap):
-            new_dict = dict()
+            new_dict = {}
             for key, value in item.items():
                 new_dict[key] = value
             new_list.append(new_dict)
