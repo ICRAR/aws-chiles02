@@ -82,7 +82,8 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
             shutil.rmtree(outfile)
         try:
             # dump_all()
-            mstransform(
+            if len(spw_range):
+              mstransform(
                 vis=infile,
                 outputvis=outfile,
                 regridms=True,
@@ -100,10 +101,12 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
                 nspw=0,
                 createmms=False,
                 datacolumn="data"
-            )
-            ms.open(outfile)
-            LOG.info('Created File: %s %s %s'%(infile,str(ms.getspectralwindowinfo()),str(ms.getscansummary())))
-            ms.close()
+              )
+              ms.open(outfile)
+              LOG.info('Created File: %s %s %s'%(infile,str(ms.getspectralwindowinfo()),str(ms.getscansummary())))
+              ms.close()
+            else:
+              LOG.warning('*********\nmstransform spw out of range:\n***********')
 
         except Exception:
             LOG.exception('*********\nmstransform exception:\n***********')

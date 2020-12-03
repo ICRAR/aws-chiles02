@@ -57,10 +57,15 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         # ia doesn't need an import - it is just available in casa
         final = ia.imageconcat(infiles=input_files, outfile=outfile, relax=True, overwrite=True)
         final.done()
+        for n in input_files:
+            input_files[input_files.index(n)]=n.replace('image','psf')
+        final = ia.imageconcat(infiles=input_files, outfile=outfile.replace('cube','psf.cube'), relax=True, overwrite=True)
+        final.done()
         ia.open(outfile)
         # find the good (<4 sigma) channels
         sts=ia.statistics(axes=[0,1,2],verbose=False)
         ia.close()
+        sts['rms'][np.where(np.isnan(sts['rms']))[0]]=0 # Set NaN channels in cube to RMS zero
         mdn_rms=np.median(sts['rms'])
         if mdn_rms>1e-3: # median rms should never be > 300uJy
             mdn_rms=1e-3
@@ -78,7 +83,9 @@ def do_imageconcat(cube_dir, out_filename, fit_order, build_fits, input_files):
         ia.open(infile='%s.line'%(outfile))
         zd=ia.getregion(region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*0
         md=ia.getregion(getmask=True,region=rg.box(blc=[0,0,0,0],trc=[9999,9999,9999,0]))*False
-        for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]:
+        for n in np.where((sts['rms']>10.0*mdn_rms)|(sts['rms']==0))[0]: # get rid of no data or 10sigma
+            ia.putregion(pixels=zd,pixelmask=md,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
+        for n in np.where(np.isnan(sts['rms']))[0]: # Also check for NaNs
             ia.putregion(pixels=zd,pixelmask=md,region=rg.box(blc=[0,0,0,n],trc=[9999,9999,9999,n]))
         ia.close()
         ia.open(infile='%s.cont'%(outfile))

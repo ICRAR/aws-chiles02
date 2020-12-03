@@ -24,8 +24,14 @@ Build the physical graph
 """
 import operator
 
-from aws_chiles02.apps_mstransform import CasaListobs, CasaMsTransform, CopyMsTransformFromS3, CopyMsTransformToS3, \
-    DockerListobs, DockerMsTransform
+from aws_chiles02.apps_mstransform import (
+    CasaListobs,
+    CasaMsTransform,
+    CopyMsTransformFromS3,
+    CopyMsTransformToS3,
+    DockerListobs,
+    DockerMsTransform,
+)
 from aws_chiles02.build_graph_common import AbstractBuildGraph
 from aws_chiles02.common import get_module_name, make_groups_of_frequencies
 from aws_chiles02.settings_file import CONTAINER_CHILES02, SIZE_1GB
@@ -40,17 +46,17 @@ class CarryOverDataMsTransform:
 class BuildGraphMsTransform(AbstractBuildGraph):
     def __init__(self, **keywords):
         super(BuildGraphMsTransform, self).__init__(**keywords)
-        self._work_to_do = keywords['work_to_do']
-        self._parallel_streams = keywords['parallel_streams']
-        self._s3_split_name = keywords['split_directory']
-        self._use_bash = keywords['use_bash']
-        self._observation_phase = keywords['observation_phase']
-        self._casa_version = keywords['casa_version']
-        self._s3_storage_class = keywords['s3_storage_class']
-        self._s3_tags = keywords['s3_tags']
+        self._work_to_do = keywords["work_to_do"]
+        self._parallel_streams = keywords["parallel_streams"]
+        self._s3_split_name = keywords["split_directory"]
+        self._use_bash = keywords["use_bash"]
+        self._observation_phase = keywords["observation_phase"]
+        self._casa_version = keywords["casa_version"]
+        self._s3_storage_class = keywords["s3_storage_class"]
+        self._s3_tags = keywords["s3_tags"]
 
         # Get a sorted list of the keys
-        self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter('size'))
+        self._keys = sorted(self._work_to_do.keys(), key=operator.attrgetter("size"))
         self._map_day_to_node = None
 
     def new_carry_over_data(self):
@@ -63,19 +69,17 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             node_id = self._get_next_node(day_to_process)
             carry_over_data = self._map_carry_over_data[node_id]
             list_frequency_groups = self._work_to_do[day_to_process]
-            frequency_groups = make_groups_of_frequencies(list_frequency_groups, self._parallel_streams)
+            frequency_groups = make_groups_of_frequencies(
+                list_frequency_groups, self._parallel_streams
+            )
 
             add_output_s3 = []
             if carry_over_data.drop_listobs is not None:
                 add_output_s3.append(carry_over_data.drop_listobs)
 
-            measurement_set, properties, drop_listobs = \
-                self._setup_measurement_set(
-                    day_to_process,
-                    carry_over_data.barrier_drop,
-                    add_output_s3,
-                    node_id
-                )
+            measurement_set, properties, drop_listobs = self._setup_measurement_set(
+                day_to_process, carry_over_data.barrier_drop, add_output_s3, node_id
+            )
 
             carry_over_data.drop_listobs = drop_listobs
 
@@ -89,7 +93,7 @@ class BuildGraphMsTransform(AbstractBuildGraph):
                         measurement_set,
                         properties,
                         day_to_process.short_name,
-                        node_id
+                        node_id,
                     )
 
                 if last_element is not None:
@@ -106,13 +110,21 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         self.copy_logfiles_and_shutdown(self._s3_split_name)
         self.create_system_monitor()
 
-    def _split(self, last_element, frequency_pairs, measurement_set, properties, observation_name, node_id):
+    def _split(
+        self,
+        last_element,
+        frequency_pairs,
+        measurement_set,
+        properties,
+        observation_name,
+        node_id,
+    ):
         if self._use_bash:
             casa_py_drop = self.create_casa_app(
                 node_id,
                 get_module_name(CasaMsTransform),
-                'app_ms_transform',
-                'ms_transform',
+                "app_ms_transform",
+                "ms_transform",
                 casa_version=self._casa_version,
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
@@ -122,14 +134,14 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             casa_py_drop = self.create_docker_app(
                 node_id,
                 get_module_name(DockerMsTransform),
-                'app_ms_transform',
+                "app_ms_transform",
                 CONTAINER_CHILES02,
-                'ms_transform',
+                "ms_transform",
                 min_frequency=frequency_pairs.bottom_frequency,
                 max_frequency=frequency_pairs.top_frequency,
                 observation_phase=self._observation_phase,
             )
-        result = self.create_directory_container(node_id, 'dir_split')
+        result = self.create_directory_container(node_id, "dir_split")
         casa_py_drop.addInput(measurement_set)
         casa_py_drop.addInput(properties)
         if last_element is not None:
@@ -140,21 +152,21 @@ class BuildGraphMsTransform(AbstractBuildGraph):
         copy_to_s3 = self.create_app(
             node_id,
             get_module_name(CopyMsTransformToS3),
-            'app_copy_mstransform_to_s3',
+            "app_copy_mstransform_to_s3",
             min_frequency=frequency_pairs.bottom_frequency,
             max_frequency=frequency_pairs.top_frequency,
         )
         s3_drop_out = self.create_s3_drop(
             node_id,
             self._bucket_name,
-            '{3}/{0}_{1}/{2}.tar'.format(
+            "{3}/{0}_{1}/{2}.tar".format(
                 frequency_pairs.bottom_frequency,
                 frequency_pairs.top_frequency,
                 observation_name,
-                self._s3_split_name
+                self._s3_split_name,
             ),
-            'aws-chiles02',
-            oid='s3_out',
+            "aws-chiles02",
+            oid="s3_out",
             storage_class=self._s3_storage_class,
             tags=self._s3_tags,
         )
@@ -163,21 +175,30 @@ class BuildGraphMsTransform(AbstractBuildGraph):
 
         return s3_drop_out
 
-    def _setup_measurement_set(self, day_to_process, barrier_drop, add_output_s3, node_id):
+    def _setup_measurement_set(
+        self, day_to_process, barrier_drop, add_output_s3, node_id
+    ):
         s3_drop = self.create_s3_drop(
             node_id,
             self._bucket_name,
             day_to_process.input_s3_key_name,
-            'aws-chiles02',
-            's3_in')
+            "aws-chiles02",
+            "s3_in",
+        )
         if len(add_output_s3) == 0:
-            pass    # Do nothing
+            pass  # Do nothing
         else:
             for drop in add_output_s3:
                 drop.addOutput(s3_drop)
 
-        copy_from_s3 = self.create_app(node_id, get_module_name(CopyMsTransformFromS3), 'app_copy_mstransform_from_s3')
-        measurement_set = self.create_directory_container(node_id, 'dir_in_ms', expire_after_use=False)
+        copy_from_s3 = self.create_app(
+            node_id,
+            get_module_name(CopyMsTransformFromS3),
+            "app_copy_mstransform_from_s3",
+        )
+        measurement_set = self.create_directory_container(
+            node_id, "dir_in_ms", expire_after_use=False
+        )
 
         if barrier_drop is not None:
             barrier_drop.addOutput(measurement_set)
@@ -188,17 +209,17 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             drop_listobs = self.create_casa_app(
                 node_id,
                 get_module_name(CasaListobs),
-                'app_listobs',
-                'listobs',
+                "app_listobs",
+                "listobs",
                 casa_version=self._casa_version,
             )
         else:
             drop_listobs = self.create_docker_app(
                 node_id,
                 get_module_name(DockerListobs),
-                'app_listobs',
+                "app_listobs",
                 CONTAINER_CHILES02,
-                'listobs'
+                "listobs",
             )
         properties = self.create_json_drop(node_id)
         drop_listobs.addInput(measurement_set)
@@ -216,26 +237,29 @@ class BuildGraphMsTransform(AbstractBuildGraph):
             allocation_dictionary = {}
             allocation[key] = allocation_dictionary
             for value in values:
-                allocation_dictionary[value['ip_address']] = []
+                allocation_dictionary[value["ip_address"]] = []
 
         for day_to_process in self._work_to_do.keys():
-            if day_to_process.size <= 50 * SIZE_1GB and 'i3.xlarge' in allocation:
-                allocation_dictionary = allocation['i3.xlarge']
+            if day_to_process.size <= 50 * SIZE_1GB and "i3.xlarge" in allocation:
+                allocation_dictionary = allocation["i3.xlarge"]
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
-            elif day_to_process.size <= 500 * SIZE_1GB and 'i3.2xlarge' in allocation:
-                allocation_dictionary = allocation['i3.2xlarge']
+            elif day_to_process.size <= 500 * SIZE_1GB and "i3.2xlarge" in allocation:
+                allocation_dictionary = allocation["i3.2xlarge"]
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
             else:
-                allocation_dictionary = allocation['i3.4xlarge']
+                allocation_dictionary = allocation["i3.4xlarge"]
                 self._add_to_shortest_list(allocation_dictionary, day_to_process)
 
         # Now balance the nodes a bit if needed
-        if allocation.get('i3.2xlarge') is not None and allocation.get('i3.4xlarge') is not None:
-            max_2xlarge = self._get_max(allocation['i3.2xlarge'])
-            min_4xlarge = self._get_min(allocation['i3.4xlarge'])
+        if (
+            allocation.get("i3.2xlarge") is not None
+            and allocation.get("i3.4xlarge") is not None
+        ):
+            max_2xlarge = self._get_max(allocation["i3.2xlarge"])
+            min_4xlarge = self._get_min(allocation["i3.4xlarge"])
 
             if max_2xlarge > min_4xlarge + 1:
-                self._move_nodes(allocation['i3.2xlarge'], allocation['i3.4xlarge'])
+                self._move_nodes(allocation["i3.2xlarge"], allocation["i3.4xlarge"])
 
         # Build the map
         self._map_day_to_node = {}

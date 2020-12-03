@@ -27,7 +27,8 @@ import uuid
 from abc import ABCMeta, abstractmethod
 
 from dlg.apps.bash_shell_app import BashShellApp
-from dlg.drop import BarrierAppDROP, DirectoryContainer, dropdict
+from dlg.common import dropdict
+from dlg.drop import BarrierAppDROP, DirectoryContainer
 from ruamel.yaml import YAML, StringIO
 
 from aws_chiles02.apps_general import (
@@ -196,7 +197,7 @@ class AbstractBuildGraph:
 
     @abstractmethod
     def new_carry_over_data(self):
-        """"
+        """ "
         Get the carry over data structure
         """
 

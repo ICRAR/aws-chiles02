@@ -9,7 +9,8 @@ common: &common
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.7'     # allowed=['4.7', ''5.5'. '5.7'],
-  ami: ami-0f666972d736bdf95
+  ami: ami-026c9160706f1e18d
+  # Previous (Sept): ami-0f666972d736bdf95
   spot_price_i3_2xlarge: 0.4
   spot_price_i3_4xlarge: 0.8
   spot_price_i3_8xlarge: 1.2
@@ -32,6 +33,19 @@ split:
   days_per_node: 3
   parallel_streams: 4
   s3_storage_class: INTELLIGENT_TIERING
+
+split_2:
+  <<: *common
+  action: split
+  observation_phase: 2
+  run_note: |
+    Splitting the new semester.
+    MS are not zipped
+  days_per_node: 300  # TODO:
+  parallel_streams: 4
+  s3_storage_class: INTELLIGENT_TIERING
+  split_directory: split_4_phase_2
+  source_ms_dir: semester_2
 
 uvsub_node1:
   <<: *common
@@ -68,16 +82,16 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_2V2_2020_09_08
+  uvsub_directory_name: uvsub_2V3_2020_10_17
   scan_statistics: False
   frequency_range:      # This should be a list
-    -  '1128'  #'948-1204'
+    -  '1200-1420'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
-  nodes: 10
+  nodes: 6
   run_note_uvsub: |
-    Introduce fixed Outlier 8. |u|<10 flagging
+    New AMI. Another cycle on Outlier 8. |u|<10 flagging
 
 uvsub_abs:
   <<: *common
@@ -141,10 +155,10 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V2_2020_09_05
-  clean_directory_name: clean_2V2_2020_09_07_Low_Wide
+  uvsub_directory_name: uvsub_2V3_2020_10_17
+  clean_directory_name: clean_2V3_2020_10_17_Low_Wide
   frequencies_per_node: 1
-  iterations: 2000
+  iterations: 0000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -158,16 +172,16 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1126-1146'
+    - '1070-1200'
   #  - '1025-1031'
   run_note_clean: |
-    Without weight spectrum
+    niter=0 for the 4MHz which fails
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: semester_1/uvsub_2V2_2020_09_05
-  clean_directory_name: clean_2V2_2020_09_05_High_Wide
+  uvsub_directory_name: uvsub_2V3_2020_10_17
+  clean_directory_name: clean_2V3_2020_10_17_High_Wide
   frequencies_per_node: 1
   iterations: 2000
   arcsec: '2'                   # Needs to be a string
@@ -183,7 +197,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1200-1220'
+    - '1200-1419'
   run_note_clean: |
     With new MSMFS models and new uvsub method
 
@@ -217,18 +231,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_1/imageconcat_2V2_2020_09_07_Low_Wide
-  clean_directory_name: clean_2V2_2020_09_07_Low_Wide
+  imageconcat_directory_name: semester_1/imageconcat_2V3_2020_10_17b_Low_Wide
+  clean_directory_name: clean_2V3_2020_10_17_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1125-1144'  # '950-1200' # 1200-1419'     #
+    - '945-1207' # '1048-1068'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    New Models
+    PSF included now.
 
 check_uvsub:
   frequency_range:
