@@ -78,7 +78,7 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
 
     out_rot_data = 'no' # Keep a version of the subtracted data
     sub_uzero=True # False #or True
-    calc_stats=True # False #or True
+    calc_stats=False #or True
     pre_average = 2 # average in final split
 
     if out_pngs == 'yes':
