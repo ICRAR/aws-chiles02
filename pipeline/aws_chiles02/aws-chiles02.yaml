@@ -82,16 +82,25 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_2V3_2020_10_17
+  uvsub_directory_name: uvsub_2V4_2020_12_07
   scan_statistics: False
   frequency_range:      # This should be a list
-    -  '1200-1420'
+    -  '975-983'
+    -  '1005-1015'
+    -  '1078-1079'
+    -  '1105-1111'
+    -  '1253-1257'
+    -  '1163-1176'
+    -  '1199-1207'
+    -  '1229-1239'
+  # '1037-1047','1133-1143','1325',
+  # - '973-983','1005-1015','1037-1047','1077-1079','1105-1111','1133-1139','1143','1165-1175','1197-1207','1229-1239','1257','1253-1255','1325'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
   nodes: 6
   run_note_uvsub: |
-    New AMI. Another cycle on Outlier 8. |u|<10 flagging
+    Epoch 1.  model 2V4
 
 uvsub_abs:
   <<: *common
@@ -155,10 +164,10 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V3_2020_10_17
-  clean_directory_name: clean_2V3_2020_10_17_Low_Wide
+  uvsub_directory_name: uvsub_2V4_2020_12_07
+  clean_directory_name: clean_2V4_2020_12_07_Low_Wide
   frequencies_per_node: 1
-  iterations: 0000
+  iterations: 2000
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -172,17 +181,17 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1070-1200'
+    - '1037-1047'
   #  - '1025-1031'
   run_note_clean: |
-    niter=0 for the 4MHz which fails
+    new model 2v4 and new regions
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V3_2020_10_17
-  clean_directory_name: clean_2V3_2020_10_17_High_Wide
-  frequencies_per_node: 1
+  uvsub_directory_name: uvsub_2V4_2020_12_07
+  clean_directory_name: clean_2V4_2020_11_23_High_Wide
+  frequencies_per_node: 4
   iterations: 2000
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
@@ -197,9 +206,9 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1200-1419'
+    - '1037-1047'
   run_note_clean: |
-    With new MSMFS models and new uvsub method
+    DR2V4  -- model
 
 clean_very_wide:
   <<: *common
@@ -231,18 +240,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_1/imageconcat_2V3_2020_10_17b_Low_Wide
-  clean_directory_name: clean_2V3_2020_10_17_Low_Wide
+  imageconcat_directory_name: semester_2/imageconcat_2V3_2020_12_01_High_Wide
+  clean_directory_name: clean_2V3e2_2020_11_23_High_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '945-1207' # '1048-1068'  # '950-1200' # 1200-1419'     #
+    - '1341-1367' # '1048-1068'  # '950-1200' # 1200-1419'     #
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    PSF included now.
+    Epoch 2 test. 2
 
 check_uvsub:
   frequency_range:

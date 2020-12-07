@@ -36,7 +36,7 @@ setup(
     install_requires=[
         'boto3',
         'ConfigObj',
-        'dlg',
+        'daliuge',
         'jsonpickle',
         'mako',
         'pip',
