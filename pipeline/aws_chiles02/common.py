@@ -118,7 +118,9 @@ def get_list_frequency_groups(
 ):
     return [
         FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
-        for bottom_frequency in range(minimum_frequency, 1420, maximum_frequency)
+        for bottom_frequency in range(
+            minimum_frequency, maximum_frequency, frequency_width
+        )
     ]
 
 
