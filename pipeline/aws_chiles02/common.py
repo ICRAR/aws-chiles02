@@ -93,8 +93,8 @@ class MeasurementSetData:
 
         # Get rid of the '_calibrated_deepfield.ms.tar'
         elements = input_s3_key_name.split("/")
-        if input_s3_key_name.endswith(".ms/"):
-            self.short_name = elements[-2][: -len(INPUT_MS_SUFFIX)]
+        if input_s3_key_name.endswith(".ms"):
+            self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX)]
         elif input_s3_key_name.endswith(".gz"):
             self.short_name = elements[-1][: -len(INPUT_MS_SUFFIX_TAR_GZ)]
         else:
@@ -113,10 +113,12 @@ class MeasurementSetData:
         return (self.input_s3_key_name, self.size) == (other.full_tar_name, other.size)
 
 
-def get_list_frequency_groups(frequency_width):
+def get_list_frequency_groups(
+    frequency_width, minimum_frequency=944, maximum_frequency=1420
+):
     return [
         FrequencyPair(bottom_frequency, bottom_frequency + frequency_width)
-        for bottom_frequency in range(944, 1420, frequency_width)
+        for bottom_frequency in range(minimum_frequency, 1420, maximum_frequency)
     ]
 
 
@@ -215,15 +217,10 @@ def make_groups_of_frequencies(frequencies_to_batch_up, number_of_groups):
       FrequencyPair(1320, 1324), FrequencyPair(1352, 1356), FrequencyPair(1384, 1388),
       FrequencyPair(1416, 1420)]]
     """
-    groups = []
-    for group in range(0, number_of_groups):
-        groups.append([])
-    count = 0
-    for frequency_group in frequencies_to_batch_up:
+    groups = [[] for _ in range(number_of_groups)]
+    for count, frequency_group in enumerate(frequencies_to_batch_up):
         mod = count % number_of_groups
         groups[mod].append(frequency_group)
-        count += 1
-
     return groups
 
 

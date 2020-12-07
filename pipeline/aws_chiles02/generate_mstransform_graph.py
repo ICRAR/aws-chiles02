@@ -69,7 +69,13 @@ LOGGER = logging.getLogger(__name__)
 
 class WorkToDo(object):
     def __init__(
-        self, width, bucket_name, s3_split_name, observation_phase, source_ms_dir
+        self,
+        width,
+        bucket_name,
+        s3_split_name,
+        observation_phase,
+        source_ms_dir,
+        minimum_frequency,
     ):
         self._width = width
         self._bucket_name = bucket_name
@@ -80,12 +86,14 @@ class WorkToDo(object):
         self._observation_phase = observation_phase
         self._work_to_do = {}
         self._source_ms_dir = source_ms_dir
+        self._minimum_frequency = minimum_frequency
 
     def calculate_work_to_do(self):
         session = boto3.Session(profile_name="aws-chiles02")
         s3 = session.resource("s3", use_ssl=False)
 
         list_measurement_sets = []
+        processed_ms = set()
         self._bucket = s3.Bucket(self._bucket_name)
         for key in self._bucket.objects.filter(Prefix=self._source_ms_dir):
             if key.key.endswith("_calibrated_deepfield.ms.tar") or key.key.endswith(
@@ -96,16 +104,22 @@ class WorkToDo(object):
                 list_measurement_sets.append(
                     MeasurementSetData(key.key, key.size, key.key.endswith("gz"))
                 )
-            elif key.key.endswith("_calibrated_deepfield.ms/"):
-                LOGGER.info("Found {0}".format(key.key))
+            elif "_calibrated_deepfield.ms/" in key.key:
+                elements = key.key.split("/")
+                ms_key = "/".join(elements[:2])
+                if ms_key not in processed_ms:
+                    LOGGER.info("Found {0}".format(ms_key))
 
-                list_objects, total_size = self._get_all_files(key.key)
-                list_measurement_sets.append(
-                    MeasurementSetData(key.key, total_size, False, list_objects)
-                )
+                    list_objects, total_size = self._get_all_files(ms_key)
+                    list_measurement_sets.append(
+                        MeasurementSetData(ms_key, total_size, False, list_objects)
+                    )
+                    processed_ms.add(ms_key)
 
         # Get work we've already done
-        self._list_frequencies = get_list_frequency_groups(self._width)
+        self._list_frequencies = get_list_frequency_groups(
+            self._width, minimum_frequency=self._minimum_frequency
+        )
         self._work_already_done = self._get_work_already_done()
 
         for day_to_process in list_measurement_sets:
@@ -132,15 +146,17 @@ class WorkToDo(object):
 
             if len(elements) > 2:
                 day_key = elements[2]
-                # Remove the .tar
-                day_key = day_key[:-4]
 
-                frequencies = frequencies_per_day.get(day_key)
-                if frequencies is None:
-                    frequencies = []
-                    frequencies_per_day[day_key] = frequencies
+                if day_key.startswith("13B-266."):
+                    # Remove the .tar
+                    day_key = day_key[:-4]
 
-                frequencies.append(elements[1])
+                    frequencies = frequencies_per_day.get(day_key)
+                    if frequencies is None:
+                        frequencies = []
+                        frequencies_per_day[day_key] = frequencies
+
+                    frequencies.append(elements[1])
 
         return frequencies_per_day
 
@@ -260,6 +276,7 @@ def create_and_generate(
     s3_storage_class,
     s3_tags,
     source_ms_dir,
+    minimum_frequency,
 ):
     boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
@@ -269,6 +286,7 @@ def create_and_generate(
             s3_split_name=split_directory,
             observation_phase=observation_phase,
             source_ms_dir=source_ms_dir,
+            minimum_frequency=minimum_frequency,
         )
         work_to_do.calculate_work_to_do()
 
@@ -376,6 +394,7 @@ def use_and_generate(
     s3_storage_class,
     s3_tags,
     source_ms_dir,
+    minimum_frequency,
 ):
     boto_data = get_aws_credentials("aws-chiles02")
     if boto_data is not None:
@@ -400,6 +419,7 @@ def use_and_generate(
                 s3_split_name=split_directory,
                 observation_phase=observation_phase,
                 source_ms_dir=source_ms_dir,
+                minimum_frequency=minimum_frequency,
             )
             work_to_do.calculate_work_to_do()
 
@@ -452,9 +472,15 @@ def build_json(
     s3_storage_class,
     s3_tags,
     source_ms_dir,
+    minimum_frequency,
 ):
     work_to_do = WorkToDo(
-        width, bucket, split_directory, observation_phase, source_ms_dir=source_ms_dir
+        width,
+        bucket,
+        split_directory,
+        observation_phase,
+        source_ms_dir=source_ms_dir,
+        minimum_frequency=minimum_frequency,
     )
     work_to_do.calculate_work_to_do()
 
@@ -530,6 +556,9 @@ def run(command_line_):
             source_ms_dir=config["source_ms_dir"]
             if "source_ms_dir" in config
             else None,
+            minimum_frequency=config["minimum_frequency"]
+            if "minimum_frequency" in config
+            else 944,
         )
     elif config["run_type"] == "use":
         use_and_generate(
@@ -549,6 +578,9 @@ def run(command_line_):
             source_ms_dir=config["source_ms_dir"]
             if "source_ms_dir" in config
             else None,
+            minimum_frequency=config["minimum_frequency"]
+            if "minimum_frequency" in config
+            else 944,
         )
     else:
         build_json(
@@ -569,6 +601,9 @@ def run(command_line_):
             source_ms_dir=config["source_ms_dir"]
             if "source_ms_dir" in config
             else None,
+            minimum_frequency=config["minimum_frequency"]
+            if "minimum_frequency" in config
+            else 944,
         )
 
 
