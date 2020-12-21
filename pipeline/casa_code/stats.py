@@ -34,7 +34,7 @@ LOG = logging.getLogger('stats')
 
 
 @echo
-def do_stats(in_ms, out_csv_file, observation):
+def do_stats(in_ms_list, out_csv_file, observation):
     """
     Performs the Stats extraction
     Inputs: VIS_name (str), Output (str)
@@ -42,8 +42,9 @@ def do_stats(in_ms, out_csv_file, observation):
     example:
      do_stats('vis_1400~1404','vis_1400~1404.stats')
     """
-    LOG.info('stats(vis={0}, out_csv_file={1})'.format(in_ms, out_csv_file))
+    LOG.info('stats(vis={0}, out_csv_file={1})'.format(in_ms_list, out_csv_file))
     try:
+      for in_ms in in_ms_list.split(','):
         ms.open(in_ms)
         scan_summary = ms.getscansummary()
         scans = scan_summary.keys()
@@ -68,7 +69,7 @@ def do_stats(in_ms, out_csv_file, observation):
         for k in zerov.keys():
             zerov[k] = 0
 
-        with open(out_csv_file, 'wb') as csv_file:
+        with open(out_csv_file, 'ab') as csv_file:
             csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow([
                 'observation',
