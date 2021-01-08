@@ -270,14 +270,28 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
         self._session_id = self._getArg(kwargs, 'session_id', None)
 
     def run(self):
-        self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH +\
-                        'stats.py {0}/uvsub_{1}~{2} {0}/stats_{1}~{2}.csv {3}'.format(
-            self.inputs[0].path,
-            self._min_frequency,
-            self._max_frequency,
-            self._observation,
-        )
-        run_command(self._command)
+        # Because of the lifecycle the drop isn't attached when the command is
+        # created so we have to do it later
+        measurement_sets = []
+        for measurement_set_dir in self._measurement_sets:
+            measurement_set_name = os.path.join(measurement_set_dir,
+                                                'uvsub_{0}~{1}'.format(self._min_frequency, self._max_frequency))
+            if os.path.exists(measurement_set_name):
+                measurement_sets.append(measurement_set_name)
+            else:
+                LOG.error('Missing: {0}'.format(measurement_set_name))
 
+        if len(measurement_sets) > 0:
+            self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
+                            'stats.py {0}/{4} {0}/stats_{1}~{2}.csv {3}'.format(
+                                self.inputs[0].path,
+                                self._min_frequency,
+                                self._max_frequency,
+                                self._observation,
+                                ','.join(measurement_sets)
+                            )
+            run_command(self._command)
+        else:
+            LOG.error('No input files')
     def dataURL(self):
         return 'CASA Stats'

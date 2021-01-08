@@ -39,7 +39,7 @@ split_2:
   action: split
   observation_phase: 2
   run_note: |
-    Splitting the new semester.
+    Splitting the new semester for the lowest freq
     MS are not zipped
   days_per_node: 300  # TODO:
   parallel_streams: 4
@@ -82,18 +82,20 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_2V4_2020_12_07
+  uvsub_directory_name: uvsub_2V4_2020_12_09
   scan_statistics: False
   frequency_range:      # This should be a list
     -  '975-983'
     -  '1005-1015'
     -  '1078-1079'
     -  '1105-1111'
-    -  '1253-1257'
     -  '1163-1176'
     -  '1199-1207'
     -  '1229-1239'
-  # '1037-1047','1133-1143','1325',
+    -  '1253-1257'
+    -  '1037-1047'
+    -  '1133-1143'
+    -  '1325'
   # - '973-983','1005-1015','1037-1047','1077-1079','1105-1111','1133-1139','1143','1165-1175','1197-1207','1229-1239','1257','1253-1255','1325'
   #  - '948-967'
   #  - '950-1419'
@@ -164,10 +166,10 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V4_2020_12_07
-  clean_directory_name: clean_2V4_2020_12_07_Low_Wide
+  uvsub_directory_name: uvsub_2V4_2020_12_09
+  clean_directory_name: clean_2V4_2020_12_09_Low_Wide
   frequencies_per_node: 1
-  iterations: 2000
+  iterations: 200
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -181,18 +183,24 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1037-1047'
-  #  - '1025-1031'
+   - '1009-1015'
+   - '1041-1047'
+   - '1078-1079'
+   - '1105-1111'
+   - '1133-1143'
+   - '1163-1176'
+   - '1200'
+   - '975-983'
   run_note_clean: |
     new model 2v4 and new regions
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V4_2020_12_07
-  clean_directory_name: clean_2V4_2020_11_23_High_Wide
-  frequencies_per_node: 4
-  iterations: 2000
+  uvsub_directory_name: uvsub_2V4_2020_12_09
+  clean_directory_name: clean_2V4_2020_12_09_High_Wide
+  frequencies_per_node: 1
+  iterations: 200
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
@@ -206,7 +214,10 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-    - '1037-1047'
+   - '1325'
+   - '1199-1207'
+   - '1229-1239'
+   - '1253-1257'
   run_note_clean: |
     DR2V4  -- model
 
@@ -235,23 +246,39 @@ clean_very_wide:
   run_note_clean: |
     Found residuals still had significant flux. Relaunch with double no iterations
 
+stats:
+  <<: *common
+  action: stats
+  uvsub_directory_name: uvsub_2V4_2020_12_09
+  stats_directory_name: clean_2V4_2020_12_09_High_Wide
+  frequencies_per_node: 1
+  frequency_range:              # A list of frequency ranges
+   - '1325'
+  #   - '1199-1207'
+  #   - '1229-1239'
+  #   - '1253-1257'
+  run_note_stats: |
+    first try of stats as standalone
+
 
 imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_2/imageconcat_2V3_2020_12_01_High_Wide
-  clean_directory_name: clean_2V3e2_2020_11_23_High_Wide
+  imageconcat_directory_name: semester_1/imageconcat_2V4_2020_12_09_Low_Wide
+  clean_directory_name: clean_2V4_2020_12_09_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order0
   frequency_range:              # This should be a list
-    - '1341-1367' # '1048-1068'  # '950-1200' # 1200-1419'     #
+    - '1105-1204'
+    - '965-987'
+    - '1005-1087'
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Epoch 2 test. 2
+    Epoch 1 combined V3 and V4
 
 check_uvsub:
   frequency_range:
