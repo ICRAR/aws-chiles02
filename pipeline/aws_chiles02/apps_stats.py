@@ -285,7 +285,7 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
 
         if len(measurement_sets) > 0:
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
-                            'stats.py {0}/{4} {0}/stats_{1}~{2}.csv {3}'.format(
+                            'stats.py {4} {0}/stats_{1}~{2}.csv {3}'.format(
                                 self.inputs[0].path,
                                 self._min_frequency,
                                 self._max_frequency,
