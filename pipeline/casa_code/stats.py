@@ -105,10 +105,17 @@ def do_stats(in_ms_list, out_csv_file, observation):
                             spw=str(spectral_window_number) + ':' + str(channel_number)
                         )
                         if vis_stats is None:
-                            write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, zerov)
+                            try:
+                                write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, zerov)
+                            except:
+                                LOG.warning('WriteLine Failed!')
                         else:
                             # strip off the ['CORRECTED']
-                            write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]])
+                            try:
+                                write_line(csv_writer, observation, scan_number, begin_time, end_time, spectral_window_number, channel_number, vis_stats[vis_stats.keys()[0]])
+                            except:
+                                LOG.warning('WriteLine Failed!')
+
 
     except Exception:
         LOG.exception('*********\nStats exception: \n***********')

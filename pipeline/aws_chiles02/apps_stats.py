@@ -169,7 +169,8 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
         LOG.info('dir: {2}, bucket: {0}, key: {1}'.format(bucket_name, key, measurement_set_dir))
         # Does the file exists
         stem_name = 'stats_{0}~{1}.csv'.format(self._min_frequency, self._max_frequency)
-        file_name = os.path.join(measurement_set_dir, stem_name)
+        msd='/'.join(measurement_set_dir.split('/')[:-1])
+        file_name = os.path.join(msd,stem_name)
         LOG.debug('checking {0} exists'.format(file_name))
         if not os.path.exists(file_name) or not os.path.isfile(file_name):
             message = 'Stats: {0} does not exist'.format(file_name)
@@ -183,9 +184,9 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
 
         # Make the tar file
         tar_filename = os.path.join(
-            measurement_set_dir,
+            msd,
             'stats_{0}~{1}.tar.gz'.format(self._min_frequency, self._max_frequency))
-        os.chdir(measurement_set_dir)
+        os.chdir(msd)
         bash = 'tar -cvzf {0} {1}'.format(
             tar_filename,
             stem_name,
@@ -284,9 +285,11 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
                 LOG.error('Missing: {0}'.format(measurement_set_name))
 
         if len(measurement_sets) > 0:
+            msd=self.inputs[0].path
+            msd='/'.join(msd.split('/')[:-1])
             self._command = 'cd ; ' + get_casa_command_line(self._casa_version) + SCRIPT_PATH + \
                             'stats.py {4} {0}/stats_{1}~{2}.csv {3}'.format(
-                                self.inputs[0].path,
+                                msd,
                                 self._min_frequency,
                                 self._max_frequency,
                                 self._observation,
