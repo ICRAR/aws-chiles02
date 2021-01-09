@@ -253,6 +253,7 @@ class DockerStats(DockerApp, ErrorHandling):
 
 class CasaStats(BarrierAppDROP, ErrorHandling):
     def __init__(self, oid, uid, **kwargs):
+        self._measurement_sets = None
         self._max_frequency = None
         self._min_frequency = None
         self._observation = None
@@ -262,6 +263,7 @@ class CasaStats(BarrierAppDROP, ErrorHandling):
 
     def initialize(self, **kwargs):
         super(CasaStats, self).initialize(**kwargs)
+        self._measurement_sets = self._getArg(kwargs, 'measurement_sets', None)
         self._max_frequency = self._getArg(kwargs, 'max_frequency', None)
         self._min_frequency = self._getArg(kwargs, 'min_frequency', None)
         self._observation = self._getArg(kwargs, 'observation', None)
