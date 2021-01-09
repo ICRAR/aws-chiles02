@@ -58,6 +58,7 @@ def do_stats(in_ms_list, out_csv_file, observation):
         # This will fail if there is no data
         zerov = visstat(
             vis=in_ms,
+            axis='real',
             datacolumn='data',
             scan=str(scans[0]),
             spw='0:0',
