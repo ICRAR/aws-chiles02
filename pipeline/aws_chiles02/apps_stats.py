@@ -33,7 +33,7 @@ from dlg.drop import BarrierAppDROP
 
 from aws_chiles02.apps_general import ErrorHandling, tag_s3_object
 from aws_chiles02.common import ProgressPercentage, run_command
-from settings_file import SCRIPT_PATH, get_casa_command_line
+from aws_chiles02.settings_file import SCRIPT_PATH, get_casa_command_line
 
 LOG = logging.getLogger(__name__)
 TAR_FILE = 'ms.tar'
