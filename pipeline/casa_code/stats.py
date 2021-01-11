@@ -52,7 +52,9 @@ def do_stats(in_ms_list, out_csv_file, observation):
         # This assumes all spw have the same no channels as the first
         spectral_window_info = ms.getspectralwindowinfo()
         number_spectral_windows = len(spectral_window_info)
-        number_channels = spectral_window_info['0']['NumChan']
+        number_channels = np.zeros(number_spectral_windows)
+        for spectral_window_number in range(number_spectral_windows):
+            number_channels[spectral_window_number] = spectral_window_info[str(spectral_window_number)]['NumChan']
         ms.close()
 
         # This will fail if there is no data
@@ -97,7 +99,7 @@ def do_stats(in_ms_list, out_csv_file, observation):
                 begin_time = scan_summary[scan_number]['0']['BeginTime']
                 end_time = scan_summary[scan_number]['0']['EndTime']
                 for spectral_window_number in range(0, number_spectral_windows):
-                    for channel_number in range(0, number_channels):
+                    for channel_number in range(0, number_channels[spectral_window_number]):
                         vis_stats = visstat(
                             vis=in_ms,
                             datacolumn='data',

@@ -251,10 +251,10 @@ stats:
   action: stats
   uvsub_directory_name: uvsub_2V4_2020_12_09
   stats_directory_name: stats_2V4_2020_12_09
-  frequencies_per_node: 3
+  frequencies_per_node: 1
   frequency_range:              # A list of frequency ranges
   # - '1325'
-   - '1209-1419'
+   - '1300-1419'
   run_note_stats: |
     first try of stats as standalone
 
