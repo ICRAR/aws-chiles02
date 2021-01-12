@@ -52,7 +52,7 @@ def do_stats(in_ms_list, out_csv_file, observation):
         # This assumes all spw have the same no channels as the first
         spectral_window_info = ms.getspectralwindowinfo()
         number_spectral_windows = len(spectral_window_info)
-        number_channels = np.zeros(number_spectral_windows)
+        number_channels = np.zeros(number_spectral_windows,dtype=int)
         for spectral_window_number in range(number_spectral_windows):
             number_channels[spectral_window_number] = spectral_window_info[str(spectral_window_number)]['NumChan']
         ms.close()
