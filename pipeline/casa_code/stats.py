@@ -95,13 +95,21 @@ def do_stats(in_ms_list, out_csv_file, observation):
                 'sumsq',
                 'var',
             ])
+            observation='quick'
+            if observation=='quick':
+                scans=scans[:1]
             for scan_number in scans:
                 begin_time = scan_summary[scan_number]['0']['BeginTime']
                 end_time = scan_summary[scan_number]['0']['EndTime']
-                for spectral_window_number in range(0, number_spectral_windows):
+                if observation=='quick':
+                    k=np.array(scan_summary.keys())
+                    end_time = scan_summary[str(np.max(k.astype(np.int)))]['0']['EndTime']
+                    scan_number=''
+            for spectral_window_number in range(0, number_spectral_windows):
                     for channel_number in range(0, number_channels[spectral_window_number]):
                         vis_stats = visstat(
                             vis=in_ms,
+                            axis='real',
                             datacolumn='data',
                             scan=scan_number,
                             spw=str(spectral_window_number) + ':' + str(channel_number)

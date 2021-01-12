@@ -251,10 +251,11 @@ stats:
   <<: *common
   action: stats
   uvsub_directory_name: uvsub_2V4_2020_12_09
-  stats_directory_name: stats_2V4_2020_12_09
+  stats_directory_name: stats_quick_2V4_2021_01_01
+  observation: 'quick'
   frequencies_per_node: 2
   frequency_range:              # A list of frequency ranges
-   - '1001-1201'
+   - '1001'
   run_note_stats: |
     first try of stats as standalone
 
