@@ -85,22 +85,23 @@ uvsub_major1:
   uvsub_directory_name: uvsub_2V4_2020_12_09
   scan_statistics: False
   frequency_range:      # This should be a list
-    -  '975-983'
-    -  '1005-1015'
-    -  '1078-1079'
-    -  '1105-1111'
-    -  '1163-1176'
-    -  '1199-1207'
-    -  '1229-1239'
-    -  '1253-1257'
-    -  '1037-1047'
-    -  '1133-1143'
-    -  '1325'
+    -  '948-1419'
+  #    -  '975-983'
+  #    -  '1005-1015'
+  #    -  '1078-1079'
+  #    -  '1105-1111'
+  #    -  '1163-1176'
+  #    -  '1199-1207'
+  #    -  '1229-1239'
+  #    -  '1253-1257'
+  #    -  '1037-1047'
+  #    -  '1133-1143'
+  #    -  '1325'
   # - '973-983','1005-1015','1037-1047','1077-1079','1105-1111','1133-1139','1143','1165-1175','1197-1207','1229-1239','1257','1253-1255','1325'
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
-  nodes: 6
+  nodes: 12
   run_note_uvsub: |
     Epoch 1.  model 2V4
 
@@ -251,10 +252,9 @@ stats:
   action: stats
   uvsub_directory_name: uvsub_2V4_2020_12_09
   stats_directory_name: stats_2V4_2020_12_09
-  frequencies_per_node: 1
+  frequencies_per_node: 2
   frequency_range:              # A list of frequency ranges
-  # - '1325'
-   - '1300-1419'
+   - '1001-1201'
   run_note_stats: |
     first try of stats as standalone
 
@@ -266,7 +266,7 @@ imageconcat:
   imageconcat_directory_name: semester_1/imageconcat_2V4_2020_12_09_Low_Wide
   clean_directory_name: clean_2V4_2020_12_09_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
-  fit_order: 1                 # The fit order0
+  fit_order: 1                 # The fit order
   frequency_range:              # This should be a list
     - '1105-1204'
     - '965-987'

@@ -191,7 +191,8 @@ class CopyStatsToS3(BarrierAppDROP, ErrorHandling):
             tar_filename,
             stem_name,
         )
-        return_code = run_command(bash)
+        if os.path.exists(stem_name):
+            return_code = run_command(bash)
         path_exists = os.path.exists(tar_filename)
         if return_code != 0 or not path_exists:
             message = 'tar return_code: {0}, exists: {1}'.format(return_code, path_exists)
