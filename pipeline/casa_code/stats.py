@@ -105,7 +105,7 @@ def do_stats(in_ms_list, out_csv_file, observation):
                     k=np.array(scan_summary.keys())
                     end_time = scan_summary[str(np.max(k.astype(np.int)))]['0']['EndTime']
                     scan_number=''
-            for spectral_window_number in range(0, number_spectral_windows):
+                for spectral_window_number in range(0, number_spectral_windows):
                     for channel_number in range(0, number_channels[spectral_window_number]):
                         vis_stats = visstat(
                             vis=in_ms,
