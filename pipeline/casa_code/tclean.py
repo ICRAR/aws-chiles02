@@ -144,14 +144,14 @@ def do_tclean(cube_dir, min_freq, max_freq, iterations, arcsec, w_projection_pla
         ia.open(outfile+'.image')
         # box=rg.box([image_size/4,image_size*3/4],[image_size/4,image_size*3/4])
         # box=rg.box([1024,1024],[3072,3072])
-        box = rg.box([image_size/2-1024,image_size/2-1024],[image_size/2+1024,image_size/2+1024])
+        box = rg.box([image_size/2-600,image_size/2-600],[image_size/2+600,image_size/2+600])
         im2 = ia.subimage(outfile+'.image.centre', box, overwrite=True)
         im2.done()
         ia.close()
 
     # Make a smaller version of the PDF cube
     ia.open(outfile+'.psf')
-    box = rg.box([image_size/2-128, image_size/2-128], [image_size/2+128, image_size/2+128])
+    box = rg.box([image_size/2-600, image_size/2-600], [image_size/2+600, image_size/2+600])
     im2 = ia.subimage(outfile+'.psf.centre', box, overwrite=True)
     im2.done()
     ia.close()

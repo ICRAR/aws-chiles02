@@ -5,7 +5,7 @@ common: &common
   shutdown: True
   use_bash: True
   volume: /mnt/daliuge/dlg_root
-  split_directory: split_4_phase_1
+  split_directory: split_4_phase_2
   uvsub_directory_name: uvsub_ha_2019_02_03
   clean_directory_name: tclean_ha_2019_02_13
   casa_version: '5.7'     # allowed=['4.7', ''5.5'. '5.7'],
@@ -82,7 +82,7 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_2V4_2020_12_09
+  uvsub_directory_name: uvsub_Ep2_2021_01_15
   scan_statistics: False
   frequency_range:      # This should be a list
     -  '948-1419'
@@ -103,7 +103,7 @@ uvsub_major1:
   produce_qa: True
   nodes: 12
   run_note_uvsub: |
-    Epoch 1.  model 2V4
+    Epoch 2.  model 2V4
 
 uvsub_abs:
   <<: *common
@@ -136,9 +136,9 @@ uvsub_ska:
 clean:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_maj1_2020_08_25
-  clean_directory_name: clean_2020_08_25_Low
-  frequencies_per_node: 1
+  uvsub_directory_name: uvsub_2V4_2020_12_09
+  clean_directory_name: clean_Ep1_2021_01_15_Low
+  frequencies_per_node: 2
   iterations: 2000
   arcsec: '1.5'                   # Needs to be a string
   w_projection_planes: 24
@@ -153,7 +153,7 @@ clean:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-     - '1025-1047'  #
+     - '1021-1047'  #
   #    - '1381-1419'    ## Absorption
   #   - '1069-1101'    ## Low (1.5)
   #    - '1365-1419'   ## High (1.5)
@@ -184,16 +184,16 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1009-1015'
-   - '1041-1047'
-   - '1078-1079'
-   - '1105-1111'
-   - '1133-1143'
-   - '1163-1176'
-   - '1200'
-   - '975-983'
+   - '948-1200'
+  # - '1041-1047'
+  # - '1078-1079'
+  # - '1105-1111'
+  # - '1133-1143'
+  # - '1163-1176'
+  # - '1200'
+  # - '975-983'
   run_note_clean: |
-    new model 2v4 and new regions
+    Epoch 1 model 2v4
 
 clean_hwide:
   <<: *common
@@ -215,10 +215,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1325'
-   - '1199-1207'
-   - '1229-1239'
-   - '1253-1257'
+   - '1200-1419'
   run_note_clean: |
     DR2V4  -- model
 
@@ -247,15 +244,46 @@ clean_very_wide:
   run_note_clean: |
     Found residuals still had significant flux. Relaunch with double no iterations
 
+clean_e2wide:
+  <<: *common
+  action: clean
+  uvsub_directory_name: uvsub_Ep2_2021_01_15
+  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
+  frequencies_per_node: 1
+  iterations: 200
+  arcsec: '3'                   # Needs to be a string
+  w_projection_planes: 24
+  clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
+  robust: 0.8                   # Robustness of the Briggs
+  image_size: 4096
+  clean_channel_average: 8      # Note a pre-averaging of 2 is now hardwired into the uvsub step
+  region_file: '/home/ec2-user/aws-chiles02/LSM/Clean_Regions_All.crtf'        # The region file for cleaning in crtf
+  only_image: False             # Only copy the image to S3
+  build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
+  fits_directory_name: ''       # Where to put the fits images
+  produce_qa: yes               # allowed=[yes, no]
+  clean_tclean: tclean          # allowed=[tclean, clean]
+  frequency_range:              # A list of frequency ranges
+   - '1001-1047'
+  # - '1041-1047'
+  # - '1078-1079'
+  # - '1105-1111'
+  # - '1133-1143'
+  # - '1163-1176'
+  # - '1200'
+  # - '975-983'
+  run_note_clean: |
+    Epoch 1 model 2v4
+
 stats:
   <<: *common
   action: stats
   uvsub_directory_name: uvsub_2V4_2020_12_09
   stats_directory_name: stats_quick_2V4_2021_01_01
   observation: 'quick'
-  frequencies_per_node: 2
+  frequencies_per_node: 1
   frequency_range:              # A list of frequency ranges
-   - '1001'
+   - '948-1420'
   run_note_stats: |
     first try of stats as standalone
 
@@ -264,20 +292,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_1/imageconcat_2V4_2020_12_09_Low_Wide
-  clean_directory_name: clean_2V4_2020_12_09_Low_Wide
+  imageconcat_directory_name: semester_2/imageconcat_Ep2_2V4_2021_01_15_Low_Wide
+  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order
   frequency_range:              # This should be a list
-    - '1105-1204'
-    - '965-987'
-    - '1005-1087'
+    - '1021-1047'
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Epoch 1 combined V3 and V4
+    Epoch 1 fine res.
 
 check_uvsub:
   frequency_range:
