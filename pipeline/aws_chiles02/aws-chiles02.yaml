@@ -167,9 +167,9 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V4_2020_12_09
-  clean_directory_name: clean_2V4_2020_12_09_Low_Wide
-  frequencies_per_node: 1
+  uvsub_directory_name: uvsub_Ep2_2021_01_15
+  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
+  frequencies_per_node: 4
   iterations: 200
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
@@ -193,14 +193,14 @@ clean_wide:
   # - '1200'
   # - '975-983'
   run_note_clean: |
-    Epoch 1 model 2v4
+    Epoch 2 model 2v4
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_2V4_2020_12_09
-  clean_directory_name: clean_2V4_2020_12_09_High_Wide
-  frequencies_per_node: 1
+  uvsub_directory_name: uvsub_Ep2_2021_01_15
+  clean_directory_name: clean_Ep2_2021_01_15_High_Wide
+  frequencies_per_node: 4
   iterations: 200
   arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
@@ -215,9 +215,9 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1200-1419'
+   - '1200-1403'
   run_note_clean: |
-    DR2V4  -- model
+    Epoch 2 model 2v4
 
 clean_very_wide:
   <<: *common
@@ -292,18 +292,18 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_2/imageconcat_Ep2_2V4_2021_01_15_Low_Wide
-  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
+  imageconcat_directory_name: semester_2/imageconcat_Ep2_2021_01_15_High_Wide
+  clean_directory_name: clean_Ep2_2021_01_15_High_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order
   frequency_range:              # This should be a list
-    - '1021-1047'
+    - '1200-1419'
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
   s3_storage_class: INTELLIGENT_TIERING
   run_note_imageconcat: |
-    Epoch 1 fine res.
+    Epoch 2 low res.
 
 check_uvsub:
   frequency_range:
