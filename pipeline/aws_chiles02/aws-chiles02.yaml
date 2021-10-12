@@ -39,13 +39,12 @@ split_2:
   action: split
   observation_phase: 2
   run_note: |
-    Splitting the new semester for the lowest freq
-    MS are not zipped
+    Splitting the new flagged session 1
   days_per_node: 300  # TODO:
   parallel_streams: 4
   s3_storage_class: INTELLIGENT_TIERING
-  split_directory: split_4_phase_2
-  source_ms_dir: semester_2
+  split_directory: split_4_phase_6
+  source_ms_dir: semester_1_new
 
 uvsub_node1:
   <<: *common

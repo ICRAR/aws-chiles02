@@ -73,6 +73,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
             )
         )
         measurement_set = os.path.basename(key)
+        measurement_set_original = os.path.basename(key)
         if measurement_set.endswith(".tar"):
             measurement_set = measurement_set[:-4]
         elif measurement_set.endswith(".tar.gz"):
@@ -89,7 +90,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
         if not os.path.exists(measurement_set_dir):
             os.makedirs(measurement_set_dir)
 
-        if measurement_set.endswith(".tar") or measurement_set.endswith(".tar.gz"):
+        if measurement_set_original.endswith(".tar") or measurement_set_original.endswith(".tar.gz"):
             # The following will need (16 + 1) * 262144000 bytes of heap space, ie approximately 4.5G.
             # Note setting minimum as well as maximum heap results in OutOfMemory errors at times!
             # The -d64 is to make sure we are using a 64bit JVM.
@@ -128,7 +129,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                 return 1
 
             # The tar file exists and is the same size
-            bash = "tar -xvf {0} -C {1}".format(full_path_tar_file, measurement_set_dir)
+            bash = "tar -xvf {0} -C {1} --strip=1".format(full_path_tar_file, measurement_set_dir)
             return_code = run_command(bash)
 
             path_to_measurement_set = os.path.join(measurement_set_dir, measurement_set)
