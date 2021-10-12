@@ -27,9 +27,10 @@ import getpass
 import json
 import logging
 import os
+import tempfile
 from http import HTTPStatus
 from http.client import HTTPConnection
-from os.path import exists
+from os.path import exists, join
 
 import boto3
 from dlg.droputils import get_roots
@@ -595,7 +596,7 @@ def run(command_line_):
             split_directory=config["split_directory"],
             observation_phase=config["observation_phase"],
             run_note=config["run_note"],
-            json_path="/tmp/json_file.json",
+            json_path=join(tempfile.gettempdir(), "json_file.json"),
             s3_storage_class=config["s3_storage_class"],
             s3_tags=config["s3_tags"] if "s3_tags" in config else None,
             source_ms_dir=config["source_ms_dir"]

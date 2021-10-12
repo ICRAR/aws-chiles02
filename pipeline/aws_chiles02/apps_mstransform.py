@@ -129,7 +129,7 @@ class CopyMsTransformFromS3(BarrierAppDROP, ErrorHandling):
                 return 1
 
             # The tar file exists and is the same size
-            bash = "tar -xvf {0} -C {1} --strip=1".format(full_path_tar_file, measurement_set_dir)
+            bash = "tar -xvf {0} -C {1}".format(full_path_tar_file, measurement_set_dir)
             return_code = run_command(bash)
 
             path_to_measurement_set = os.path.join(measurement_set_dir, measurement_set)

@@ -22,7 +22,6 @@
 """
 The abstract graph builder
 """
-import os
 import uuid
 from abc import ABCMeta, abstractmethod
 
@@ -345,7 +344,7 @@ class AbstractBuildGraph:
                 "oid": oid_text,
                 # "uid": uid_text,
                 "precious": False,
-                "dirname": os.path.join(self._volume, oid_text),
+                "dirname": "/".join([self._volume, oid_text]),
                 "check_exists": False,
                 "expireAfterUse": expire_after_use,
                 "node": node_id,
@@ -411,7 +410,7 @@ class AbstractBuildGraph:
                 "oid": oid_text,
                 # "uid": uid_text,
                 "precious": False,
-                "dirname": os.path.join(self._volume, oid_text),
+                "dirname": "/".join([self._volume, oid_text]),
                 "check_exists": False,
                 "node": node_id,
             }
