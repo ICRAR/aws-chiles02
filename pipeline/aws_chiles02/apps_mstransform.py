@@ -329,18 +329,33 @@ class CasaMsTransform(BarrierAppDROP, ErrorHandling):
     def run(self):
         # Because of the lifecycle the drop isn't attached when the command is
         # created so we have to do it later
-        self._command = (
-            "cd ; "
-            + get_casa_command_line(self._casa_version)
-            + SCRIPT_PATH
-            + "mstransform.py {} {} {} {} {}".format(
-                self.inputs[0].path,
-                self.outputs[0].path,
-                self._min_frequency,
-                self._max_frequency,
-                self.inputs[1].path,
+        if self._observation_phase == "-1":
+            self._command = (
+                "cd ; "
+                + get_casa_command_line(self._casa_version)
+                + SCRIPT_PATH
+                + "mstransform.py {} {} {} {} {}".format(
+                    self.inputs[0].path,
+                    self.outputs[0].path,
+                    0,
+                    0,
+                )
             )
-        )
+        else:
+            self._command = (
+                "cd ; "
+                + get_casa_command_line(self._casa_version)
+                + SCRIPT_PATH
+                + "mstransform.py {} {} {} {} {}".format(
+                    self.inputs[0].path,
+                    self.outputs[0].path,
+                    self._min_frequency,
+                    self._max_frequency,
+                    self.inputs[1].path,
+                )
+            )
+
+
         run_command(self._command)
 
         error_message = None

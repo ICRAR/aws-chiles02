@@ -36,14 +36,26 @@ split:
 split_2:
   <<: *common
   action: split
-  observation_phase: 2
+  observation_phase: 5
   run_note: |
-    Splitting the new flagged session 1
-  days_per_node: 300  # TODO:
+    Splitting  session 5
+  days_per_node: 1  # TODO:
   parallel_streams: 4
   s3_storage_class: STANDARD
-  split_directory: split_4_phase_6
-  source_ms_dir: semester_1_new
+  split_directory: split_4_phase_5
+  source_ms_dir: semester_5
+
+split_cavg:
+  <<: *common
+  action: split
+  observation_phase: -1
+  run_note: |
+    Averaging to 1MHz cahnnels based on obs_phase
+  days_per_node: 12  # TODO:
+  parallel_streams: 4
+  s3_storage_class: STANDARD
+  split_directory: chan_avg_5
+  source_ms_dir: semester_5
 
 uvsub_node1:
   <<: *common
@@ -80,7 +92,8 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_Ep2_2021_01_15
+  uvsub_directory_name: uvsub_Ep5_2021_10_23
+  split_directory: split_4_phase_5
   scan_statistics: False
   frequency_range:      # This should be a list
     -  '948-1419'
@@ -99,9 +112,9 @@ uvsub_major1:
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
-  nodes: 12
+  nodes: 10  # no. nodes should be <= no. MS files
   run_note_uvsub: |
-    Epoch 2.  model 2V4
+    Epoch 5  model 2V4 --- which does not cover HA_8 and above!
 
 uvsub_abs:
   <<: *common
@@ -165,8 +178,8 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_Ep2_2021_01_15
-  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
+  uvsub_directory_name: uvsub_Ep5_2021_10_23
+  clean_directory_name: clean_Ep5_2021_10_23_Low_Wide
   frequencies_per_node: 4
   iterations: 200
   arcsec: '3'                   # Needs to be a string
@@ -191,13 +204,13 @@ clean_wide:
   # - '1200'
   # - '975-983'
   run_note_clean: |
-    Epoch 2 model 2v4
+    Epoch 5 model 2v4
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_Ep2_2021_01_15
-  clean_directory_name: clean_Ep2_2021_01_15_High_Wide
+  uvsub_directory_name: uvsub_Ep5_2021_10_23
+  clean_directory_name: clean_Ep5_2021_10_23_High_Wide
   frequencies_per_node: 4
   iterations: 200
   arcsec: '2'                   # Needs to be a string
@@ -213,9 +226,9 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1200-1403'
+   - '1200-1419'
   run_note_clean: |
-    Epoch 2 model 2v4
+    Epoch 5 model 2v4
 
 clean_very_wide:
   <<: *common
