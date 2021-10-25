@@ -206,42 +206,45 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                         ha_model[nmodel] = model[nmodel].replace('Outliers', 'Outliers/HA_'+str(m))
                         ptr = ptr1[0]
                         print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted model: '+str(ha_model[nmodel])
-                        # ut_start=ut[ptr]
-                        date_start = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                        print 'to start at '+date_start
-                        if len(ptr2) == 0:
-                            ptr = -1
+                        if os.path.isdir(ha_model[nmodel])==False:
+                            print 'Model does not exist! Continuing but residuals will be larger'
                         else:
-                            ptr = ptr2[0]
-                        # ut_end=ut[ptr]
-                        date_end = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
-                        print 'and to end at '+date_end+' sample no. '+str(ptr)
-                        # if (ut_end<ut_start):
-                        #    ut_end=ut_end+24
-                        # timerange=str(ut_start)+'~'+str(ut_end)
-                        timerange = date_start + '~' + date_end
-                        im.selectvis(time=timerange)
-                        # These are the parameters for the generation of the model
-                        # Not sure how many of them are important here -- all except mode?
-                        im.defineimage(
-                            nx=4096,
-                            ny=4096,
-                            cellx='2arcsec',
-                            celly='2arcsec',
-                            mode='mfs',
-                            facets=1
-                        )
-                        im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes, freqinterp='linear')
-                        im.settaylorterms(ntaylorterms=1)
-                        #
-                        print 'Model in this pass: ' + str(ha_model[nmodel])
-                        print 'Time range in this pass: ' + timerange
-                        tb.open(ha_model[nmodel])
-                        tb.clearlocks()
-                        tb.close()
-                        #
-                        im.ft(model=ha_model[nmodel], incremental=False) # not_first)
-                        not_first=True
+                            # ut_start=ut[ptr]
+                            date_start = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                            print 'to start at '+date_start
+                            if len(ptr2) == 0:
+                                ptr = -1
+                            else:
+                                ptr = ptr2[0]
+                            # ut_end=ut[ptr]
+                            date_end = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
+                            print 'and to end at '+date_end+' sample no. '+str(ptr)
+                            # if (ut_end<ut_start):
+                            #    ut_end=ut_end+24
+                            # timerange=str(ut_start)+'~'+str(ut_end)
+                            timerange = date_start + '~' + date_end
+                            im.selectvis(time=timerange)
+                            # These are the parameters for the generation of the model
+                            # Not sure how many of them are important here -- all except mode?
+                            im.defineimage(
+                                nx=4096,
+                                ny=4096,
+                                cellx='2arcsec',
+                                celly='2arcsec',
+                                mode='mfs',
+                                facets=1
+                            )
+                            im.setoptions(ftmachine='wproject', wprojplanes=w_projection_planes, freqinterp='linear')
+                            im.settaylorterms(ntaylorterms=1)
+                            #
+                            print 'Model in this pass: ' + str(ha_model[nmodel])
+                            print 'Time range in this pass: ' + timerange
+                            tb.open(ha_model[nmodel])
+                            tb.clearlocks()
+                            tb.close()
+                            #
+                            im.ft(model=ha_model[nmodel], incremental=False) # not_first)
+                            not_first=True
                     # if samples in this HA range
                 # next HA m
                 im.close()
