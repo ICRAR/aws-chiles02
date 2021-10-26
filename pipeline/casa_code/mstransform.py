@@ -126,7 +126,8 @@ def do_mstransform_chan_avg(infile, outdir):
     ms.close()
 
     LOG.info('width_chan: {}'.format(width_chan))
-    outfile = os.path.join(outdir, infile.replace('.ms','_contavg.ms'))
+    #outfile = os.path.join(outdir, infile.replace('.ms','_contavg.ms'))
+    outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
     LOG.info('working on: {}'.format(outfile))
     if os.path.exists(outfile):
         shutil.rmtree(outfile)
