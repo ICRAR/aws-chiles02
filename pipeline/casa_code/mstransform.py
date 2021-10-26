@@ -150,6 +150,7 @@ if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
+    # If min max freq are equal (inc. zero) or if greater than 100MHz
     if (int(args.arguments[3])-int(args.arguments[2])==0)|(int(args.arguments[3])-int(args.arguments[2])>100):
         do_mstransform_chan_avg(
         infile=find_file(args.arguments[0]),
