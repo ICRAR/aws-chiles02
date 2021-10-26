@@ -221,7 +221,10 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
             )
         )
 
-        directory_name = "vis_{0}~{1}".format(self._min_frequency, self._max_frequency)
+        if self._observation_phase == "-1":
+            directory_name = self._infile.replace('.ms','_contavg.ms')
+        else:
+            directory_name = "vis_{0}~{1}".format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, directory_name)
         LOG.debug("check {0} exists".format(measurement_set))
         if not os.path.exists(measurement_set) or not os.path.isdir(measurement_set):

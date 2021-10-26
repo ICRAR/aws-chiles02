@@ -48,6 +48,7 @@ split_2:
 split_cavg:
   <<: *common
   action: split
+  width: 480
   observation_phase: -1
   run_note: |
     Averaging to 1MHz cahnnels based on obs_phase
