@@ -220,7 +220,6 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
                 bucket_name, key, measurement_set_dir
             )
         )
-
         #if self._observation_phase == "-1":
         #    directory_name = self._infile.replace('.ms','_contavg.ms')
         #else:
