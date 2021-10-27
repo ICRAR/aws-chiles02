@@ -112,7 +112,7 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
             LOG.exception('*********\nmstransform exception:\n***********')
 
 
-def do_mstransform_chan_avg(infile, outdir):
+def do_mstransform_chan_avg(infile, outdir, min_freq, max_freq):
     """
     Average data for continuum work
     """
@@ -155,7 +155,9 @@ if __name__ == "__main__":
     if (int(args.arguments[3])-int(args.arguments[2])==0)|(int(args.arguments[3])-int(args.arguments[2])>100):
         do_mstransform_chan_avg(
         infile=find_file(args.arguments[0]),
-        outdir=args.arguments[1]
+        outdir=args.arguments[1],
+        min_freq=int(args.arguments[2]),
+        max_freq=int(args.arguments[3])
         )
 
     else:

@@ -54,9 +54,9 @@ split_cavg:
     Averaging to 1MHz cahnnels based on obs_phase
   days_per_node: 12  # TODO:
   parallel_streams: 4
-  s3_storage_class: STANDARD
+  s3_storage_class: INTELLIGENT_TIERING
   split_directory: chan_avg_1
-  source_ms_dir: semester_1_new
+  source_ms_dir: "[semester_1_new"
 
 uvsub_node1:
   <<: *common
@@ -196,7 +196,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '948-1100'
+   - '948-1200'
   # - '1041-1047'
   # - '1078-1079'
   # - '1105-1111'
@@ -227,7 +227,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1200-1419'
+   - '1200-1219'
   run_note_clean: |
     Epoch 5 model 2v4
 
