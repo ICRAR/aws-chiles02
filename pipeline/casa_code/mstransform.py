@@ -122,7 +122,7 @@ def do_mstransform_chan_avg(infile, outdir, min_freq, max_freq):
     ms.open(infile)
     msspecinfo=ms.getspectralwindowinfo()
     # Hardwired to 1MHz
-    width_chan=int(1e6/msspecinfo['0']['ChanWidth'])
+    width_chan=int(0.5e6/msspecinfo['0']['ChanWidth'])
     ms.close()
 
     LOG.info('width_chan: {}'.format(width_chan))
