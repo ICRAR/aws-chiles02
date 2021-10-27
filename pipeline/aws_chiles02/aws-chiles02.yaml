@@ -55,8 +55,8 @@ split_cavg:
   days_per_node: 12  # TODO:
   parallel_streams: 4
   s3_storage_class: STANDARD
-  split_directory: chan_avg_5
-  source_ms_dir: semester_5
+  split_directory: chan_avg_1
+  source_ms_dir: semester_1_new
 
 uvsub_node1:
   <<: *common
@@ -196,7 +196,7 @@ clean_wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '948-1200'
+   - '948-1100'
   # - '1041-1047'
   # - '1078-1079'
   # - '1105-1111'

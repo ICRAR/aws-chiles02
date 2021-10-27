@@ -225,7 +225,7 @@ class CopyMsTransformToS3(BarrierAppDROP, ErrorHandling):
         #else:
         directory_name = "vis_{0}~{1}".format(self._min_frequency, self._max_frequency)
         measurement_set = os.path.join(measurement_set_dir, directory_name)
-        if (self._max_frequency-self._min_frequency)>100:
+        if ((self._max_frequency-self._min_frequency)==0)|((self._max_frequency-self._min_frequency)>100):
             directory_name=key[key.rindex('/')+1:-3]+'chan_av.ms'
             new_name=os.path.join(measurement_set_dir,directory_name)
             os.system('mv %s %s'%(measurement_set,new_name))
