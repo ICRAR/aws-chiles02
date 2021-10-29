@@ -51,12 +51,12 @@ split_cavg:
   width: 480
   observation_phase: -1
   run_note: |
-    Averaging to 1MHz cahnnels based on obs_phase
-  days_per_node: 12  # TODO:
+    Averaging to 0.5MHz cahnnels based on obs_phase
+  days_per_node: 1  # TODO:
   parallel_streams: 4
   s3_storage_class: INTELLIGENT_TIERING
-  split_directory: chan_avg_1
-  source_ms_dir: "[semester_1_new"
+  split_directory: chan_avg_5
+  source_ms_dir: semester_5
 
 uvsub_node1:
   <<: *common
@@ -113,9 +113,9 @@ uvsub_major1:
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
-  nodes: 10  # no. nodes should be <= no. MS files
+  nodes: 4  # no. nodes should be <= no. MS files
   run_note_uvsub: |
-    Epoch 5  model 2V4 --- which does not cover HA_8 and above!
+    Epoch 5 model 2V4 --- which does not cover HA_8 and above!
 
 uvsub_abs:
   <<: *common
@@ -180,8 +180,8 @@ clean_wide:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_Ep5_2021_10_23
-  clean_directory_name: clean_Ep5_2021_10_23_Low_Wide
-  frequencies_per_node: 4
+  clean_directory_name: clean_Ep5_2021_10_29_Low_Wide
+  frequencies_per_node: 8
   iterations: 200
   arcsec: '3'                   # Needs to be a string
   w_projection_planes: 24
@@ -211,7 +211,7 @@ clean_hwide:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_Ep5_2021_10_23
-  clean_directory_name: clean_Ep5_2021_10_23_High_Wide
+  clean_directory_name: clean_Ep5_2021_10_29_High_Wide
   frequencies_per_node: 4
   iterations: 200
   arcsec: '2'                   # Needs to be a string
@@ -227,7 +227,7 @@ clean_hwide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1200-1219'
+   - '1200-1419'
   run_note_clean: |
     Epoch 5 model 2v4
 
