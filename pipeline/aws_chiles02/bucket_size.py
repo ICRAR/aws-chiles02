@@ -52,11 +52,8 @@ def main():
 
     bucket = s3.Bucket(arguments.bucket)
     size = 0
-    count = 0
-    for key in bucket.objects.all():
+    for count, key in enumerate(bucket.objects.all(), start=1):
         size += key.size
-        count += 1
-
         if count % 100 == 0:
             LOG.info('Count: {0}, size: {1}'.format(count, bytes2human(size)))
 
