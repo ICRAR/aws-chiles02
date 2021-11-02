@@ -206,6 +206,12 @@ def do_uvsub(in_dir, out_dir, out_ms, out_pngs, w_projection_planes, number_tayl
                         ha_model[nmodel] = model[nmodel].replace('Outliers', 'Outliers/HA_'+str(m))
                         ptr = ptr1[0]
                         print 'This HA ('+str(m*0.5)+') will start at '+str(ptr)+' and use the following adjusted model: '+str(ha_model[nmodel])
+                        if os.path.isdir(ha_model[nmodel])==False:
+                            print 'Model does not exist! Continuning but residuals will be larger'
+                            if m<-10:
+                                ha_model[nmodel] = model[nmodel].replace('Outliers', 'Outliers/HA_'+str(-10))
+                            if m>7:
+                                ha_model[nmodel] = model[nmodel].replace('Outliers', 'Outliers/HA_'+str(7))
                         # ut_start=ut[ptr]
                         date_start = time_convert(ret['axis_info']['time_axis']['MJDseconds'][ptr])[0][0]
                         print 'to start at '+date_start

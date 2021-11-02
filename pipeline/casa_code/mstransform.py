@@ -112,14 +112,59 @@ def do_mstransform(infile, outdir, min_freq, max_freq, list_obs_json):
             LOG.exception('*********\nmstransform exception:\n***********')
 
 
+def do_mstransform_chan_avg(infile, outdir, min_freq, max_freq):
+    """
+    Average data for continuum work
+    """
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    ms.open(infile)
+    msspecinfo=ms.getspectralwindowinfo()
+    # Hardwired to 1MHz
+    width_chan=int(0.5e6/msspecinfo['0']['ChanWidth'])
+    ms.close()
+
+    LOG.info('width_chan: {}'.format(width_chan))
+    #outfile = os.path.join(outdir, infile.replace('.ms','_contavg.ms'))
+    outfile = os.path.join(outdir, 'vis_{0}~{1}'.format(min_freq, max_freq))
+    LOG.info('working on: {}'.format(outfile))
+    if os.path.exists(outfile):
+        shutil.rmtree(outfile)
+    try:
+        mstransform(
+            vis=infile,
+            outputvis=outfile,
+            chanaverage=True,
+            chanbin=width_chan, ## different form with channels
+            combinespws=False,
+            createmms=False,
+            datacolumn="data"
+        )
+        ms.open(outfile)
+        LOG.info('Created File: %s %s %s'%(infile,str(ms.getspectralwindowinfo()),str(ms.getscansummary())))
+        ms.close()
+    except Exception:
+        LOG.exception('*********\nmstransform exception:\n***********')
+
 if __name__ == "__main__":
     args = parse_args()
     LOG.info(args)
 
-    do_mstransform(
+    # If min max freq are equal (inc. zero) or if greater than 100MHz
+    if (int(args.arguments[3])-int(args.arguments[2])==0)|(int(args.arguments[3])-int(args.arguments[2])>100):
+        do_mstransform_chan_avg(
         infile=find_file(args.arguments[0]),
         outdir=args.arguments[1],
         min_freq=int(args.arguments[2]),
-        max_freq=int(args.arguments[3]),
-        list_obs_json=args.arguments[4],
-    )
+        max_freq=int(args.arguments[3])
+        )
+
+    else:
+        do_mstransform(
+            infile=find_file(args.arguments[0]),
+            outdir=args.arguments[1],
+            min_freq=int(args.arguments[2]),
+            max_freq=int(args.arguments[3]),
+            list_obs_json=args.arguments[4],
+        )
