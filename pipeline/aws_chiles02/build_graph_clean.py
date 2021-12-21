@@ -238,9 +238,13 @@ class BuildGraphClean(AbstractBuildGraph):
             frequency_pair.bottom_frequency,
             frequency_pair.top_frequency,
         )
-        for key in self._bucket.objects.filter(Prefix=prefix):
-            if not key.key.startswith("stats") and key.key.endswith(".tar"):
-                s3_objects.append(key.key)
+        #for key in self._bucket.objects.filter(Prefix=prefix):
+        # when there is more than one match to the uvsub_name the above will fail
+        for key in self._bucket.objects.filter(Prefix=self._s3_uvsub_name):
+            elements = key.key.split("/")
+            if elements[1]=="{1}_{2}".format(self._s3_uvsub_name,frequency_pair.bottom_frequency,frequency_pair.top_frequency):
+                if not key.key.startswith("stats") and key.key.endswith(".tar"):
+                    s3_objects.append(key.key)
 
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []
