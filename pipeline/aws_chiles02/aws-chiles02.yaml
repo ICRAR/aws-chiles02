@@ -36,14 +36,14 @@ split:
 split_2:
   <<: *common
   action: split
-  observation_phase: 3
+  observation_phase: 4
   run_note: |
-    Splitting  session 3
+    Splitting  session 4
   days_per_node: 1  # TODO:
   parallel_streams: 4
   s3_storage_class: STANDARD
-  split_directory: split_4_phase_3
-  source_ms_dir: semester_3_new
+  split_directory: split_4_phase_4
+  source_ms_dir: semester_4
 
 split_cavg:
   <<: *common
@@ -54,9 +54,9 @@ split_cavg:
     Averaging to 0.5MHz cahnnels based on obs_phase
   days_per_node: 1  # TODO:
   parallel_streams: 4
-  s3_storage_class: INTELLIGENT_TIERING
-  split_directory: chan_avg_3
-  source_ms_dir: semester_3_new
+  s3_storage_class: ONEZONE_IA
+  split_directory: chan_avg_4
+  source_ms_dir: semester_4
 
 uvsub_node1:
   <<: *common
@@ -93,8 +93,8 @@ uvsub_major1:
   action: uvsub
   number_taylor_terms: 2
   mode: 'major-1'  # is this limited in values???
-  uvsub_directory_name: uvsub_Ep1b_2021_10_12
-  split_directory: split_4_phase_1_new
+  split_directory: split_4_phase_4
+  uvsub_directory_name: uvsub_Ep4_2021_11_26
   scan_statistics: False
   frequency_range:      # This should be a list
     -  '948-1419'
@@ -113,9 +113,10 @@ uvsub_major1:
   #  - '948-967'
   #  - '950-1419'
   produce_qa: True
-  nodes: 4  # no. nodes should be <= no. MS files
+  s3_storage_class: ONEZONE_IA
+  nodes: 3  # no. nodes should be <= no. MS files
   run_note_uvsub: |
-    Epoch 1 new model 2V4 --- which does not cover HA_8 and above!
+    Epoch 4 model 2V4 --- which does not cover HA_8 and above!
 
 uvsub_abs:
   <<: *common
@@ -179,8 +180,8 @@ clean:
 clean_wide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_Ep5_2021_10_23
-  clean_directory_name: clean_Ep5_2021_10_29_Low_Wide
+  uvsub_directory_name: uvsub_Ep4_2021_11_26
+  clean_directory_name: clean_Ep4_2021_11_26_Low_Wide
   frequencies_per_node: 1
   iterations: 200
   arcsec: '3'                   # Needs to be a string
@@ -205,13 +206,13 @@ clean_wide:
   # - '1200'
   # - '975-983'
   run_note_clean: |
-    Tidy up Epoch 5 model 2v4
+    Part of Epoch 4 model 2v4
 
 clean_hwide:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_Ep1b_2021_10_12
-  clean_directory_name: clean_Ep1b_2021_10_29_High_Wide
+  uvsub_directory_name: uvsub_Ep4_2021_11_26
+  clean_directory_name: clean_Ep4_2021_11_26_High_Wide
   frequencies_per_node: 1
   iterations: 200
   arcsec: '2'                   # Needs to be a string
@@ -229,7 +230,7 @@ clean_hwide:
   frequency_range:              # A list of frequency ranges
    - '1200-1419'
   run_note_clean: |
-    Tidy up Epoch 1b model 2v4
+    Part of Epoch 4 model 2v4
 
 clean_very_wide:
   <<: *common
@@ -256,14 +257,14 @@ clean_very_wide:
   run_note_clean: |
     Found residuals still had significant flux. Relaunch with double no iterations
 
-clean_e2wide:
+clean_all:
   <<: *common
   action: clean
-  uvsub_directory_name: uvsub_Ep2_2021_01_15
-  clean_directory_name: clean_Ep2_2021_01_15_Low_Wide
+  uvsub_directory_name: uvsub_Ep
+  clean_directory_name: clean_EpAll_2021_12_21_Low
   frequencies_per_node: 1
   iterations: 200
-  arcsec: '3'                   # Needs to be a string
+  arcsec: '2'                   # Needs to be a string
   w_projection_planes: 24
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
@@ -276,7 +277,7 @@ clean_e2wide:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1001-1047'
+   - '1029-1047'
   # - '1041-1047'
   # - '1078-1079'
   # - '1105-1111'
@@ -285,15 +286,15 @@ clean_e2wide:
   # - '1200'
   # - '975-983'
   run_note_clean: |
-    Epoch 1 model 2v4
+    Epoch All model 2v4
 
 stats:
   <<: *common
   action: stats
-  uvsub_directory_name: uvsub_2V4_2020_12_09
-  stats_directory_name: stats_quick_2V4_2021_01_01
+  uvsub_directory_name: uvsub_Ep5_2021_10_23
+  stats_directory_name: stats_quick_Ep5_10_23
   observation: 'quick'
-  frequencies_per_node: 1
+  frequencies_per_node: 12
   frequency_range:              # A list of frequency ranges
    - '948-1420'
   run_note_stats: |
@@ -304,8 +305,8 @@ imageconcat:
   <<: *common
   action: imageconcat
   imageconcat_width: 6         # the number of frequency blocks to add together
-  imageconcat_directory_name: semester_5/imageconcat_Ep5_2021_10_29_Low_Wide
-  clean_directory_name: clean_Ep5_2021_10_29_Low_Wide
+  imageconcat_directory_name: semester_4/imageconcat_Ep4_2021_11_26_Low_Wide
+  clean_directory_name: clean_Ep4_2021_11_26_Low_Wide
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
   fit_order: 1                 # The fit order
   frequency_range:              # This should be a list
@@ -313,9 +314,9 @@ imageconcat:
   fits_directory_name: 'fits'       # Where to put the fits images
   s3_tags:
     - move_to_glacier: True
-  s3_storage_class: INTELLIGENT_TIERING
+  s3_storage_class: ONEZONE_IA
   run_note_imageconcat: |
-    Epoch 5 low res.
+    Epoch 4 low res. partial dataset
 
 check_uvsub:
   frequency_range:
