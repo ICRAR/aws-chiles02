@@ -261,7 +261,7 @@ clean_all:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_Ep
-  clean_directory_name: clean_EpAll_2021_12_21_Low
+  clean_directory_name: clean_EpAll_2021_12_24_Low
   frequencies_per_node: 1
   iterations: 200
   arcsec: '2'                   # Needs to be a string
@@ -269,7 +269,7 @@ clean_all:
   clean_weighting_uv: briggs    # Allow=[briggs, uniform, natural]
   robust: 0.8                   # Robustness of the Briggs
   image_size: 4096
-  clean_channel_average: 8      # Note a pre-averaging of 2 is now hardwired into the uvsub step
+  clean_channel_average: 2      # Note a pre-averaging of 2 is now hardwired into the uvsub step
   region_file: '/home/ec2-user/aws-chiles02/LSM/Clean_Regions_All.crtf'        # The region file for cleaning in crtf
   only_image: False             # Only copy the image to S3
   build_fits: no                # build the fits files for JPEG2000 allowed=[yes, no]
