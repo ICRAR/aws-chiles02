@@ -246,6 +246,7 @@ class BuildGraphClean(AbstractBuildGraph):
                 # This uvsub_Ep2 needs removing!!! # not key.key.startswith("uvsub_Ep2") and
                 if not key.key.startswith("stats") and key.key.endswith(".tar"):
                     s3_objects.append(key.key)
+                    #print('Selecting %s'%(key.key))
 
         parallel_streams = [None] * self._parallel_streams
         s3_out_drops = []
