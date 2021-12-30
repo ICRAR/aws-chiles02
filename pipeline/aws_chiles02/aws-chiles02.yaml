@@ -261,7 +261,7 @@ clean_all:
   <<: *common
   action: clean
   uvsub_directory_name: uvsub_Ep
-  clean_directory_name: clean_EpAll_2021_12_24_Low
+  clean_directory_name: clean_EpAllbut2_2021_12_24_Low
   frequencies_per_node: 1
   iterations: 200
   arcsec: '2'                   # Needs to be a string
@@ -277,7 +277,7 @@ clean_all:
   produce_qa: yes               # allowed=[yes, no]
   clean_tclean: tclean          # allowed=[tclean, clean]
   frequency_range:              # A list of frequency ranges
-   - '1029-1047'
+   - '1320'
   # - '1041-1047'
   # - '1078-1079'
   # - '1105-1111'
