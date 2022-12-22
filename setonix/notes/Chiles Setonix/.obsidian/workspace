@@ -1,0 +1,138 @@
+{
+  "main": {
+    "id": "0792de4ccb8d080d",
+    "type": "split",
+    "children": [
+      {
+        "id": "37b8a2610c867751",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "Wisconsin/Login.md",
+            "mode": "source",
+            "source": false
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "eafc98ad6beb756a",
+    "type": "split",
+    "children": [
+      {
+        "id": "4f572199e7f94084",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "39bafcd8ee1a3998",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "61285b2fa91de6fa",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "93caaaa2decc5fed",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "50b7b967249105f0",
+    "type": "split",
+    "children": [
+      {
+        "id": "e576b382ab5c547a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "446b79940a3a2d00",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Wisconsin/Login.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "4458bcb8855cbeea",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Wisconsin/Login.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "41a647eafea24914",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "1d58d028a44b8a56",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Wisconsin/Login.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "37b8a2610c867751",
+  "lastOpenFiles": [
+    "Pawsey/Data movers.md",
+    "Globus/Setup CLI.md",
+    "Useful Commands/bash/find with du.md",
+    "CASA/Install CASA.md"
+  ]
+}
